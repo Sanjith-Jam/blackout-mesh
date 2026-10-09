@@ -1,39 +1,66 @@
 # Blackout Mesh
 
-Keep critical services first when available power falls, and show when evidence is insufficient.
+A hackathon prototype for simulated power allocation, RFID classroom interaction and ESP32 LED feedback. “Mesh” is a working name; multi-hop routing is outside scope.
 
-A hackathon prototype combining ML-based lab-activity estimation, constrained power allocation, a simulated campus network and real ESP32 radio/LED feedback. “Mesh” is a working name; multi-hop routing is outside scope.
+## Current progress
 
-## Project documents
+Frontend, backend, ESP32 A firmware and ESP32 B bench implementation exist. Component builds/tests pass. **A/B protocols, catalogs and RFID semantics still differ; the complete hardware demo and required trained ML are pending.**
 
-- [Implementation plan](PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md): authoritative scope, architecture, contracts, delivery gates and acceptance checks.
-- [Required lab activity ML plan](LAB_ACTIVITY_ML_PLAN.md): model, data, nine-load catalog, priority policy and phased implementation.
-- [Agent instructions](AGENTS.md): implementation workflow and invariants.
-- [Context](CONTEXT.md): project status and next action.
-- [Person A wiring and flashing](docs/ESP32_A_WIRING.md): RC522 and four buttons.
-- [ESP32 A status](ESP32_A_STATUS.md): actual builds/tests and remaining physical checks.
-- [Shared serial/radio v2 contract](contracts/serial_protocol.md): agreement for Person B.
+See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations and next steps.
 
-## Status
+## Documents
 
-ESP32 A firmware compiles and passes host checks. Application/ML and physical integration remain pending.
+- [Remaining application plan v2.0](PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
+- [Required ML plan](LAB_ACTIVITY_ML_PLAN.md): training/evaluation requirement; catalog must be reconciled with the current application.
+- [Context](CONTEXT.md) and [agent instructions](AGENTS.md).
+- [A wiring](docs/ESP32_A_WIRING.md), [A status](ESP32_A_STATUS.md), [A serial/radio contract](contracts/serial_protocol.md).
+- [B bench guide](hardware/README.md) and [B contract](hardware/PROTOCOL.md). Contracts are currently incompatible.
 
-Commands:
-- `python3 tools/test_esp32_a.py` — run host assertions.
-- `pio run -d firmware -e esp32-a` — compile the gateway (radio requires private provisioning).
-- `python3 tools/test_radio_protocol.py` — synthetic wire fixtures and all 512 mask round trips.
+## Application
 
-- `pio run -d firmware -e esp32-a -e esp32-a-enroll` — build normal/enrollment firmware.
-- `pio run -d firmware -e esp32-a-enroll -t upload --upload-port /dev/ttyUSB0` — flash local enrollment mode.
-- `pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0` — flash normal gateway.
-- `pio device monitor --port /dev/ttyUSB0 --baud 115200` — raw JSON output (no host sync).
-- `python3 tools/test_host_tools.py` — simulated console/enrollment checks.
-- `.venv/bin/python tools/enroll_cards.py --port /dev/ttyUSB0` — capture A/B/C to an ignored map.
-- `.venv/bin/python tools/gateway_console.py --port /dev/ttyUSB0` — input-only synchronized acceptance console.
+From repository root:
 
-For utility dependencies: `python3 -m venv .venv`, then `.venv/bin/python -m pip install pyserial`.
-Run `pio pkg install -d firmware` before host C++ checks on a fresh checkout.
+```sh
+uv run --no-project --with-requirements backend/requirements.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
 
-The main demo has nine circuits with 84 kW total configured demand: three labs plus six other services. A required classifier estimates lab activity; a fixed policy prioritizes active labs below protected critical services, and the optimizer enforces capacity/feeder limits. Inputs are simulated or explicitly emulated; no real-campus occupancy accuracy is claimed. The full design uses two ESP32s for Lab-ID cards, four buttons and nine indicators; the current hardware bench projects only the three lab bits onto B’s LEDs. Old seven/six-load examples remain separate regression fixtures.
+In another terminal:
 
-Review notes, reuse research, notices drafts and historical plans are maintained locally outside this repository. Preserve applicable third-party license notices whenever code is incorporated.
+```sh
+cd frontend
+npm ci --no-audit --no-fund
+npm run dev
+```
+
+Routes: `/`, `/demo`, `/hospital`, `/classrooms`. Power values and RFID API inputs are simulated; the backend currently reports hardware disconnected.
+
+## Verified checks
+
+```sh
+python3 tools/test_esp32_a.py
+python3 tools/test_radio_protocol.py
+python3 tools/test_host_tools.py
+pio run -d firmware -e esp32-a -e esp32-a-enroll
+PYTHONPATH=backend uv run --no-project --with-requirements backend/requirements.txt --with pytest --with httpx python -m pytest backend/tests -q
+```
+
+From `hardware/host/`: `python3 -m unittest test_person_b`. From `frontend/`: `npm run build` after installing dependencies. Detailed results are in the progress report.
+
+## Hardware utilities
+
+A enrollment/input commands (from repository root; board identity/wiring/access must be verified first):
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install pyserial
+pio run -d firmware -e esp32-a-enroll -t upload --upload-port /dev/ttyUSB0
+.venv/bin/python tools/enroll_cards.py --port /dev/ttyUSB0
+pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0
+.venv/bin/python tools/gateway_console.py --port /dev/ttyUSB0
+```
+
+`pio device monitor --port /dev/ttyUSB0 --baud 115200` shows raw output without host sync. Run `pio pkg install -d firmware` before native C++ checks on a fresh checkout.
+
+B bench commands (from `hardware/host/`): `python3 controller.py --sim`, `python3 controller.py --port <port>`, `python3 hw_check.py <port>`. Real serial needs pyserial. Board B flashing/core instructions are in its guide. Do not connect the unchanged A and B implementations expecting protocol compatibility, or run a bench controller alongside the backend authority.
+
+Local planning/reuse research, judge critique, notice drafts, private credentials and historical archives stay outside this repository. Existing reuse recommendations remain unchanged; preserve required license notices when incorporating upstream code.

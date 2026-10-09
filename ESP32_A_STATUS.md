@@ -21,7 +21,7 @@ No device was flashed and no reader/button/radio test was observed by the agent.
   shared wire agreement and six synthetic golden fixtures.
 - `docs/ESP32_A_WIRING.md`, `docs/ESP32_A_INTEGRATION.md`,
   `docs/FIRMWARE_DEPENDENCIES.md`: wiring, commands, recovery and dependency notices.
-- README, AGENTS, CONTEXT and ignore rules updated. Changes committed locally; no push.
+- README, AGENTS, CONTEXT and ignore rules updated. This section records the original local handoff; see PROGRESS_REPORT.md for subsequent repository synchronization.
 
 ## Actual commands and results
 
@@ -124,3 +124,11 @@ pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0
 **Integration readiness:** compile/test gates pass. Flashing, exact carrier,
 card mapping, button operation, actual peer contract and end-to-end ACK gates
 remain pending. A connected USB device alone is not evidence of those gates.
+
+## Repository sync update — 2026-10-09
+
+Board B firmware, USB bench controller and the web application now exist in the
+merged repository. The earlier statements that they were unimplemented describe
+the original Person A handoff. A and B use different serial/radio contracts;
+real interoperation remains unverified and requires coordinated changes.
+See [current progress report](PROGRESS_REPORT.md).

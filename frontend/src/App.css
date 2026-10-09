@@ -1,0 +1,54 @@
+/* Global resets and Light Theme Variables */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Minimalist Graph Theme - Light */
+  --bg-color: #fffdf7; /* Very light yellow/off-white */
+  --grid-line: rgba(0, 0, 0, 0.05); /* Subtle grid line */
+  
+  --text-main: #111827; /* Near black */
+  --text-muted: #4b5563; /* Dark gray for secondary text */
+  --text-on-dark: #ffffff; 
+  
+  --surface-color: #ffffff;
+  --surface-border: #e5e7eb;
+  --surface-border-strong: #000000;
+  
+  /* Non-neon, professional accents */
+  --accent-primary: #111827; /* Black for primary buttons */
+  --accent-primary-hover: #374151;
+  --accent-secondary: #f3f4f6;
+  --accent-secondary-hover: #e5e7eb;
+  
+  /* Status Colors (Muted, accessible, non-neon) */
+  --status-ok: #166534; /* Dark green */
+  --status-ok-bg: #dcfce7;
+  --status-err: #991b1b; /* Dark red */
+  --status-err-bg: #fee2e2;
+  --status-warn: #854d0e; /* Dark yellow/brown */
+  --status-warn-bg: #fef9c3;
+  
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  /* Graph paper effect */
+  background-image: 
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center top;
+}
+
+button {
+  font-family: inherit;
+}

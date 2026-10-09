@@ -1,0 +1,61 @@
+.incident-timeline {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+}
+
+.timeline-container {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 8px;
+}
+
+.timeline-event {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-left: 3px solid #3b82f6;
+  background: #f8fafc;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.9rem;
+}
+
+.event-time {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.event-type {
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.event-desc {
+  color: #334155;
+}
+
+/* Event type colors */
+.type-fault-detected, .type-critical-shortfall {
+  border-left-color: #ef4444;
+}
+
+.type-capacity-change, .type-feeder-change {
+  border-left-color: #f59e0b;
+}
+
+.type-rfid-scan, .type-card-recognized {
+  border-left-color: #10b981;
+}
+
+.type-unknown-card {
+  border-left-color: #8b5cf6;
+}

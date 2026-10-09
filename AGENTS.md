@@ -1,16 +1,16 @@
 # AGENTS.md
 
 Offline campus-power decision demo: simulated electrical model, Python authority, real ESP32 radio/LED feedback.
-Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.2) plus `LAB_ACTIVITY_ML_PLAN.md`; the latter governs lab ML, current catalog/objective and hardware. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
+Spec: `PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md`; `LAB_ACTIVITY_ML_PLAN.md` preserves the user-required classifier scope. Catalog and transport conflicts are tracked in `PROGRESS_REPORT.md`; do not mix variants silently. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
 
-**Status:** ESP32 A compiles and passes host checks; application/ML and physical integration remain pending.
+**Status:** frontend/backend and both hardware implementations exist. A/B transport compatibility, trained ML and end-to-end physical integration remain pending. See `PROGRESS_REPORT.md` for current evidence.
 
 ## Stack
 
 - `backend/` Python + FastAPI, single worker, the only owner of modeled state.
 - `frontend/` React + TypeScript + Vite, renders full snapshots.
 - `firmware/` Arduino C++ + ESP-NOW.
-- Allocation: exact 512-mask enumeration (128/64 for separate legacy fixtures) is the oracle; OR-Tools CP-SAT must match it.
+- Allocation: current web app uses six services; older required-ML plan specifies nine. Resolve the catalog explicitly before integration; exact enumeration is the planned oracle, not a verified implementation claim.
 - Pin versions only after a successful local install/compile. Never invent pins.
 
 ## Commands
@@ -30,9 +30,23 @@ Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.2) plus `LAB_ACTIVITY_ML
 For utility dependencies: `python3 -m venv .venv`, then `.venv/bin/python -m pip install pyserial`.
 Run `pio pkg install -d firmware` before host C++ checks on a fresh checkout.
 
+Hardware B commands (run from `hardware/host/`; current USB bench only):
+
+- `python3 -m unittest test_person_b` — simulated B protocol/allocator/fault checks.
+- `python3 controller.py --sim` or `--port <port>` — bench controller.
+- `python3 hw_check.py <port>` — connected B bench check; physical access required.
+- Board B flashing guide and toolchain: `hardware/README.md`.
+
+Application checks (from repo root):
+
+- `PYTHONPATH=backend uv run --no-project --with-requirements backend/requirements.txt --with pytest --with httpx python -m pytest backend/tests -q`
+- `cd frontend && npm ci --no-audit --no-fund && npm run build`
+
+A and B currently use incompatible v2 codecs and serial envelopes. Do not claim a functioning bridge until a coordinated contract change passes both suites and physical acceptance.
+
 ## Workflow: small commits
 
-1. Pick the next unfinished step from `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` dependencies and delivery gates (§14, §15). Break it into commit-sized pieces; one piece = one commit.
+1. Pick the next unfinished step from `PROGRESS_REPORT.md` and the current remaining implementation plan. Break it into commit-sized pieces; one piece = one commit.
 2. Read the code you touch and its callers.
 3. Make the smallest change that completes the step, plus its check if the logic is nontrivial.
 4. Run the relevant checks. Do not commit failing checks.
