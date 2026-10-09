@@ -249,12 +249,24 @@ export interface ClassroomDemoSnapshot {
 
 export type HospitalDemoScenario = "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
 
+export interface DiagnosisHypothesis {
+  code: string;
+  status: "INFERRED" | "ALARM" | "ABSTAINED";
+  supporting: string[];
+  contradicting: string[];
+}
+
+/** Telemetry-only diagnosis (#4): INFERRED after two agreeing readings, ALARM on one, ABSTAINED on missing/stale data. */
 export interface HospitalDemoDiagnosis {
   code: string;
   cause: string;
   severity: string;
   evidence: string[];
   recommendation: string;
+  status?: "INFERRED" | "ALARM" | "ABSTAINED";
+  hypotheses?: DiagnosisHypothesis[];
+  missing?: string[];
+  stale?: string[];
 }
 
 
