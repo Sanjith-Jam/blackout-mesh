@@ -171,21 +171,39 @@ export interface ClassroomDemoLoad {
   reason: string;
 }
 
+export interface ClassroomDemoActivity {
+  state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
+  score: number | null;
+  reason: string;
+  model_version: string;
+  evidence: { temperature_c?: number | null; humidity_pct?: number | null; co2_ppm?: number | null; humidity_ratio?: number | null };
+}
+
 export interface ClassroomDemoRoom {
   id: "CR1" | "CR2" | "CR3";
   name: string;
   rfid_active: boolean;
+  priority_rank: number | null;
+  activity: ClassroomDemoActivity;
   loads: ClassroomDemoLoad[];
 }
 
+export type ClassroomDemoActionName = "scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset"
+  | "replay_pause" | "replay_resume" | "replay_step";
+
 export interface ClassroomDemoSnapshot {
   capacity_w: number;
+  capacity_range_w: [number, number];
   requested_w: number;
   served_w: number;
   shortfall_w: number;
   selected_classroom_id: "CR1" | "CR2" | "CR3" | null;
+  scanned_classroom_ids: ("CR1" | "CR2" | "CR3")[];
+  priority_order: ("CR1" | "CR2" | "CR3")[];
   rooms: ClassroomDemoRoom[];
   mode: "SIMULATED";
+  model: { ready: boolean; model_version: string; fallback_reason: string | null };
+  replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
 }
 

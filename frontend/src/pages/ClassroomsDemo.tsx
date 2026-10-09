@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, AlertTriangle, Zap } from 'lucide-react';
 import { getClassroomDemo, postClassroomDemo } from '../api';
-import { ClassroomDemoRoom, ClassroomDemoSnapshot } from '../types';
+import { ClassroomDemoActionName, ClassroomDemoRoom, ClassroomDemoSnapshot } from '../types';
 import './ClassroomVisualizer.css';
 import ClassroomBlueprint from './ClassroomBlueprint';
 
@@ -47,7 +47,23 @@ export default function ClassroomsDemo() {
     };
   }, [refresh]);
 
-  const runAction = async (action: 'scan' | 'normal' | 'overload' | 'reset', classroomId?: ClassroomDemoRoom['id']) => {
+  const [capacityDraft, setCapacityDraft] = useState<number | null>(null);
+  const capacityTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (capacityTimer.current) window.clearTimeout(capacityTimer.current); }, []);
+
+  const describe = (action: ClassroomDemoActionName, classroomId?: string, capacity?: number) => ({
+    scan: `Scanned ${classroomId}.`,
+    unscan: `Ended ${classroomId}'s session.`,
+    set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
+    normal: 'Full supply 8,000 W applied.',
+    overload: 'Overload preset 3,400 W applied.',
+    reset: 'Classroom demo reset.',
+    replay_pause: 'Sensor replay paused.',
+    replay_resume: 'Sensor replay resumed.',
+    replay_step: 'Moved to the next recorded reading.',
+  }[action]);
+
+  const runAction = async (action: ClassroomDemoActionName, classroomId?: ClassroomDemoRoom['id'], capacity?: number) => {
     if (actionInFlight.current) return;
     actionInFlight.current = true;
     requestVersion.current += 1;
@@ -55,10 +71,11 @@ export default function ClassroomsDemo() {
     setError(null);
     setFeedback(null);
     try {
-      const next = await postClassroomDemo(action, classroomId);
+      const next = await postClassroomDemo(action, classroomId, capacity);
       if (mounted.current) {
         setSnapshot(next);
-        setFeedback(action === 'scan' ? `Scanned ${classroomId}.` : `${action === 'normal' ? 'Normal 8,000 W' : action === 'overload' ? 'Overload 3,400 W' : 'Classroom demo reset'} applied.`);
+        setFeedback(describe(action, classroomId, capacity));
+        if (action === 'set_capacity' || action === 'normal' || action === 'overload' || action === 'reset') setCapacityDraft(null);
       }
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : 'The classroom action failed.');
@@ -66,6 +83,12 @@ export default function ClassroomsDemo() {
       actionInFlight.current = false;
       if (mounted.current) setPending(false);
     }
+  };
+
+  const onCapacityChange = (value: number) => {
+    setCapacityDraft(value);
+    if (capacityTimer.current) window.clearTimeout(capacityTimer.current);
+    capacityTimer.current = window.setTimeout(() => void runAction('set_capacity', undefined, value), 300);
   };
 
   if (!snapshot) {
@@ -90,6 +113,32 @@ export default function ClassroomsDemo() {
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Served</span><span className="classroom-demo__metric-value">{snapshot.served_w.toLocaleString()} W</span></div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Unmet</span><span className="classroom-demo__metric-value">{snapshot.shortfall_w.toLocaleString()} W</span></div>
         </div>
+        <section className="classroom-demo__panel classroom-demo__ml" aria-labelledby="classroom-ml-title">
+          <header className="classroom-demo__ml-head">
+            <div><h2 id="classroom-ml-title">ML priority for scanned rooms</h2>
+              <p>{snapshot.model.ready ? `Activity model ${snapshot.model.model_version}` : `Model unavailable: ${snapshot.model.fallback_reason ?? 'unknown reason'}`} · recorded office sensor replay, reading {snapshot.replay.length ? snapshot.replay.index + 1 : 0} of {snapshot.replay.length}{snapshot.replay.running ? `, changes every ${snapshot.replay.step_s} s` : ', paused'}</p></div>
+            <div className="classroom-demo__ml-actions">
+              <button className="classroom-demo__button" disabled={pending || !snapshot.replay.length} onClick={() => void runAction(snapshot.replay.running ? 'replay_pause' : 'replay_resume')}>{snapshot.replay.running ? 'Pause readings' : 'Resume readings'}</button>
+              <button className="classroom-demo__button" disabled={pending || !snapshot.replay.length} onClick={() => void runAction('replay_step')}>Next reading</button>
+            </div>
+          </header>
+          <div className="classroom-demo__ml-grid">
+            {snapshot.rooms.map(room => {
+              const act = room.activity;
+              return <article key={room.id} className={`classroom-demo__ml-card ${room.rfid_active ? 'is-scanned' : ''}`} aria-label={`${room.name} activity estimate`}>
+                <header><strong>{room.name}</strong><span>{room.priority_rank ? `Priority #${room.priority_rank}` : 'Not scanned'}</span></header>
+                <span className={`classroom-demo__state classroom-demo__state--${act.state.toLowerCase()}`}>{act.state}</span>
+                <dl>
+                  <div><dt>Score</dt><dd>{act.score === null ? '—' : act.score.toFixed(2)}</dd></div>
+                  <div><dt>CO₂</dt><dd>{act.evidence.co2_ppm == null ? '—' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
+                  <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
+                </dl>
+                <p>{act.reason}</p>
+              </article>;
+            })}
+          </div>
+          <p className="classroom-demo__ml-note">Only scanned rooms are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the room scanned first goes first. The model is an office-occupancy proxy, not a measurement of these classrooms.</p>
+        </section>
         <section aria-label="Classroom floor plans" aria-describedby="classroom-blueprint-key">
           <p id="classroom-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three tiled classrooms. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
           <ClassroomBlueprint snapshot={snapshot} connected={!error} />
@@ -97,14 +146,26 @@ export default function ClassroomsDemo() {
       </section>
       <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="classroom-controls-title" aria-busy={pending}>
         <h2 id="classroom-controls-title">Demo controls</h2>
-        <p>Scans and power presets update the simulated classroom allocator.</p>
-        <div className="classroom-demo__button-stack" aria-label="Scan a classroom RFID card">
-          {(['CR1', 'CR2', 'CR3'] as const).map(id => <button key={id} className={`classroom-demo__button ${snapshot.selected_classroom_id === id ? 'classroom-demo__button--primary' : ''}`} aria-pressed={snapshot.selected_classroom_id === id} disabled={pending} onClick={() => void runAction('scan', id)}>Scan {id}{snapshot.rooms.find(room => room.id === id)?.rfid_active ? ' · scanned' : ''}</button>)}
+        <p>Scan any number of classrooms, then lower the supply to see which rooms keep their equipment.</p>
+        <div className="classroom-demo__button-stack" role="group" aria-label="Scan classroom RFID cards">
+          {(['CR1', 'CR2', 'CR3'] as const).map(id => {
+            const scanned = snapshot.scanned_classroom_ids.includes(id);
+            return <button key={id} className={`classroom-demo__button ${scanned ? 'classroom-demo__button--primary' : ''}`} aria-pressed={scanned} disabled={pending} onClick={() => void runAction(scanned ? 'unscan' : 'scan', id)}>{scanned ? `✓ ${id} scanned · tap to end` : `Scan ${id}`}</button>;
+          })}
         </div>
         <div className="classroom-demo__control-divider" />
+        {(() => {
+          const [low, high] = snapshot.capacity_range_w;
+          const value = capacityDraft ?? snapshot.capacity_w;
+          return <div className="classroom-demo__slider">
+            <label htmlFor="classroom-capacity">Supply limit <strong>{value.toLocaleString()} W</strong></label>
+            <input id="classroom-capacity" type="range" min={low} max={high} step={100} value={value} onChange={event => onCapacityChange(Number(event.target.value))} aria-valuetext={`${value} watts`} />
+            <div className="classroom-demo__slider-scale"><span>{low.toLocaleString()} W</span><span>{high.toLocaleString()} W</span></div>
+          </div>;
+        })()}
         <div className="classroom-demo__button-stack">
-          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Normal · 8,000 W</button>
-          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload · 3,400 W</button>
+          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 8,000 W</button>
+          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 3,400 W</button>
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
         <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating classroom state…' : feedback ?? ''}</p>
