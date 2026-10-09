@@ -25,9 +25,9 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.core.control_loop import ControlLoop
-from app.core.site import HospitalFixtures, SiteAuthority
+from app.core.site import SiteAuthority
 from app.activity.model import FEATURES
-from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo
+from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -38,8 +38,9 @@ class ClassroomDemoAction(BaseModel):
 
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"]
-    zone: Literal["ICU", "Theatre", "Wards"] | None = None
+    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"]
+    zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
+    capacity_w: StrictInt | None = None
 
 class ConnectionManager:
     def __init__(self):
@@ -77,9 +78,9 @@ replay_data = load_replay()
 grid = GridState()
 grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
 classroom_demo = ClassroomDemo(model=grid.model, replay=replay_data)
-hospital = HospitalFixtures()
+hospital_demo = HospitalPriorityDemo(model=grid.model, replay=replay_data)
 # One authority: every command goes through `site`, and every projection carries its run/revision.
-site = SiteAuthority(grid, classroom_demo, hospital)
+site = SiteAuthority(grid, classroom_demo, hospital_demo)
 
 
 def with_site(data: dict, identity: dict) -> dict:
@@ -214,12 +215,16 @@ async def act_classroom_demo(req: ClassroomDemoAction):
 
 @app.get("/api/v1/visualizers/hospital")
 async def get_hospital_demo():
-    return with_site(*site.read(hospital.snapshot))
+    return with_site(*site.read(hospital_demo.snapshot))
 
 @app.post("/api/v1/visualizers/hospital")
 async def act_hospital_demo(req: HospitalDemoAction):
-    _, receipt = site.command("hospital.scenario", lambda: hospital.act(req.scenario, req.zone))
-    data, identity = site.read(hospital.snapshot)
+    if req.capacity_w is not None:
+        low, high = hospital_demo.snapshot()["capacity_range_w"]
+        if not (low <= req.capacity_w <= high):
+            raise HTTPException(422, f"capacity_w must be between {low} and {high}")
+    _, receipt = site.command(f"hospital.{req.action}", lambda: hospital_demo.act(req.action, req.zone_id, req.capacity_w))
+    data, identity = site.read(hospital_demo.snapshot)
     return with_site(data, identity) | {"command": receipt}
 
 @app.post("/api/v1/activity/observations")

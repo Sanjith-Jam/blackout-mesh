@@ -48,9 +48,11 @@ def test_hospital_diagnosis_uses_sensor_values_only():
     assert upstream["code"] == "UPSTREAM_LOSS"
     assert missing["code"] == "UNKNOWN"
     with TestClient(app) as client:
-        cooling = client.post("/api/v1/visualizers/hospital", json={"scenario": "cooling_failure"}).json()
-        assert [t["diagnosis"]["code"] for t in cooling["transformers"]] == ["NORMAL", "COOLING_FAILURE", "NORMAL"]
-        assert client.post("/api/v1/visualizers/hospital", json={"scenario": "normal", "code": "OVERLOAD"}).status_code == 422
+        # The hospital route now uses zone scans and a supply limit (HospitalPriorityDemo).
+        scanned = client.post("/api/v1/visualizers/hospital", json={"action": "scan", "zone_id": "ICU"}).json()
+        assert scanned["scanned_zone_ids"] == ["ICU"]
+        assert client.post("/api/v1/visualizers/hospital", json={"action": "normal", "code": "OVERLOAD"}).status_code == 422
+        assert client.post("/api/v1/visualizers/hospital", json={"action": "set_capacity", "capacity_w": 9000}).status_code == 422
 
 
 def test_classroom_restoration_uses_time_not_snapshot_count():

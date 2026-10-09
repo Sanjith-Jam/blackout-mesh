@@ -35,9 +35,17 @@ The classroom demo's appliances are the leaves of the campus classroom services.
 
 \* protected essential minimum (#22). Classroom leaves total 8,000 W = feeder B limit.
 
-## Hospital transformer fixtures (not mapped)
+## Hospital zone view (not mapped)
 
-TX1 ICU, TX2 Theatre, TX3 Wards with per-zone equipment lists are **named sensor fixtures**. There is no reviewed mapping from these transformers to L0/L1/L2, so they are not part of the campus power balance. They share the site run identity and revision, but their readings come from the selected fixture, not from campus allocation. Mapping them is open work.
+The `/hospital` route is `HospitalPriorityDemo`: ICU, Theatre and Wards behind TX1–TX3, with zone scans, its own 0–7,000 W supply limit (7,000 W normal, 3,000 W overload preset) and essential equipment served first.
+
+| Zone | Essential (W) | Optional (W) | Total |
+|---|---|---|---:|
+| ICU | ventilator 300, monitor 100, infusion 50, lights 50, O₂ 500 | — | 1,000 |
+| Theatre | surgical light 500, anesthesia 200, ESU 800, monitor 100 | climate 1,400 | 3,000 |
+| Wards | nurse call 100 | bed lights 200, fans 500, TV 200, AC 2,000 | 3,000 |
+
+These 7,000 W do not reconcile with the campus feeder A services (L0 2,000 + L1 1,000 + L2 3,000 = 6,000 W). There is no reviewed mapping, so the hospital view is not coupled to the campus budget. It shares the site run identity and revision only. The earlier scenario-based transformer sensor fixtures (`hospital_snapshot`) still exist in code but are no longer served by a route.
 
 ## Room and indicator mappings (unchanged)
 
@@ -61,7 +69,7 @@ Every command below goes through `SiteAuthority.command()`, which applies it, ti
 | `POST /api/v1/activity/observations` | activity evidence | campus |
 | `POST /api/v1/replay` | campus replay start/pause/reset | campus |
 | `POST /api/v1/visualizers/classrooms` | scan/unscan, classroom limit, presets, replay controls, reset | classroom |
-| `POST /api/v1/visualizers/hospital` | scenario, scanned zone | hospital fixtures |
+| `POST /api/v1/visualizers/hospital` | zone scan/unscan, hospital supply limit, presets, reset | hospital zone view |
 
 ## Coupling introduced in this step
 
@@ -71,5 +79,5 @@ The classroom view now allocates within `min(classroom limit, campus feeder B he
 
 - The campus allocator still decides L3–L5 as whole rooms while the classroom view decides appliances. Both respect the same feeder B budget, but they are two decisions. Next step: derive L3–L5 served watts from the leaf allocation (partial service) and retire whole-room classroom decisions.
 - Campus RFID selection / load events and classroom-view scans are still separate session stores (#21).
-- Hospital transformer fixtures are not mapped to L0–L2.
+- The hospital zone view (7,000 W) is not mapped to campus feeder A (6,000 W).
 - `GridState` is still a process-wide singleton (#11).

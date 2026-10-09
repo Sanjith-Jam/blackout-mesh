@@ -66,13 +66,14 @@ def test_slider_still_limits_below_campus_headroom():
 
 
 def test_hospital_commands_share_the_site_revision_and_reads_never_bump_it():
-    reply = client.post("/api/v1/visualizers/hospital", json={"scenario": "overload", "zone": "ICU"}).json()
+    reply = client.post("/api/v1/visualizers/hospital", json={"action": "set_capacity", "capacity_w": 2000}).json()
     assert reply["site"]["revision"] == reply["command"]["applied_revision"]
     revision = reply["site"]["revision"]
     for _ in range(50):
         for p in read_all():
             assert p["site"]["revision"] == revision
-    assert read_all()[2]["transformers"][0]["diagnosis"]["code"] == "OVERLOAD"
+    hospital = read_all()[2]
+    assert hospital["served_w"] <= 2000 and hospital["safety"]["status"] == "PROTECTED_SHORTFALL"
 
 
 def test_headroom_is_zero_without_feeder_b_and_capped_by_its_limit():

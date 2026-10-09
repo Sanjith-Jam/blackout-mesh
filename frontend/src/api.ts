@@ -10,7 +10,7 @@ import {
   ClassroomDemoActionName,
   ClassroomDemoRoom,
   HospitalDemoSnapshot,
-  HospitalDemoScenario
+  HospitalDemoActionName
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -112,8 +112,8 @@ export async function getHospitalDemo(signal?: AbortSignal): Promise<HospitalDem
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', { signal });
 }
 
-export async function postHospitalDemo(scenario: HospitalDemoScenario, zone?: string | null): Promise<HospitalDemoSnapshot> {
+export async function postHospitalDemo(action: HospitalDemoActionName, zone_id?: string, capacity_w?: number): Promise<HospitalDemoSnapshot> {
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', {
-    method: 'POST', body: JSON.stringify(zone ? { scenario, zone } : { scenario })
+    method: 'POST', body: JSON.stringify({ action, ...(zone_id ? { zone_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}) })
   });
 }

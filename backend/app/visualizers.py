@@ -258,11 +258,140 @@ HOSPITAL_FAULT_FIXTURES = {
 }
 
 
-HOSPITAL_LOADS = {
-    "ICU": [("ventilator", True), ("monitor", True), ("infusion", True), ("lights", True), ("oxygen", True)],
-    "Theatre": [("surgical_light", True), ("anesthesia", True), ("esu", True), ("monitor", True), ("ac", False)],
-    "Wards": [("bed_lights", True), ("nurse_call", True), ("fans", False), ("tv", False), ("ac", False)]
+
+HOSP_ZONES = ("ICU", "Theatre", "Wards")
+HOSP_LOADS = {
+    "ICU": [("ventilator", "Ventilator", 300, True), ("monitor", "Patient Monitor", 100, True), ("infusion", "Infusion Pump", 50, True), ("lights", "Emergency Lights", 50, True), ("oxygen", "O2 System", 500, True)],
+    "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 800, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 1400, False)],
+    "Wards": [("bed_lights", "Bed Lights", 200, False), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 500, False), ("tv", "Patient TV", 200, False), ("ac", "Air Conditioning", 2000, False)],
 }
+HOSP_LOAD_KEYS = tuple((zone, item[0]) for zone in HOSP_ZONES for item in HOSP_LOADS[zone])
+
+class HospitalPriorityDemo(ClassroomDemo):
+    """Hospital zone view with the classroom demo's controls: zone scans, a supply slider and presets.
+
+    Follows the same tick/publish contract as ClassroomDemo: tick() advances restoration and
+    publishes; snapshot() is a read-only copy (#9, #10). Essential equipment is protected (#22).
+    """
+
+    NORMAL_W, OVERLOAD_W, RANGE_W = 7000, 3000, (0, 7000)
+
+    def __init__(self, clock=None, model=None, replay=None):
+        import time
+        clock = clock or time.monotonic
+        if model is None:
+            from app.activity.model import ActivityModel
+            model = ActivityModel()
+        self.model = model
+        self.replay = {} if replay is None else replay
+        self.replay_length = 0  # no recorded activity evidence exists for hospital zones
+        self.capacity = self.NORMAL_W
+        self.campus_limit_w = None  # not coupled: hospital zones have no reviewed campus mapping
+        self.scanned: list[str] = []
+        self.gate = RestorationGate(clock)
+        self.replay_running = False
+        self.replay_base = 0
+        self.replay_anchor = clock()
+        self._predictions = {}
+        self._replay_index = 0
+        self._activity = {}
+        self.guard = ActivityGuard()
+        self.published = None
+        self.published_revision = 0
+        self._advance_evidence()
+        initial = (1 << len(HOSP_LOAD_KEYS)) - 1
+        self.gate.update(initial, self._signature(self._room_order()), range(len(HOSP_LOAD_KEYS)))
+        self.tick()
+
+    def _advance_evidence(self):
+        self._activity = {z: {"state": "UNKNOWN", "raw_state": "UNKNOWN", "score": None, "model_version": "unavailable",
+                              "reason": "no recorded activity evidence for hospital zones",
+                              "guard": "conservative fallback: no evidence", "evidence": {}}
+                          for z in HOSP_ZONES}
+
+    def _room_order(self):
+        act = {z: self.activity(z) for z in HOSP_ZONES}
+        def sort_key(z):
+            state = act[z].get("state")
+            state_rank = 0 if state == "ACTIVE" else 1 if state == "UNKNOWN" else 2
+            scan_rank = self.scanned.index(z) if z in self.scanned else 999
+            return (state_rank, scan_rank, HOSP_ZONES.index(z))
+        return sorted(HOSP_ZONES, key=sort_key)
+
+    def _priority(self, order):
+        essentials = [(z, item) for z in HOSP_ZONES for item in HOSP_LOADS[z] if item[3]]
+        optionals = [(z, item) for z in order for item in HOSP_LOADS[z] if not item[3]]
+        return essentials + optionals
+
+    def _project(self):
+        order = self._room_order()
+        priority = self._priority(order)
+        target = set()
+        remaining = self.effective_capacity()
+        for z, item in priority:
+            key = (z, item[0])
+            if item[2] <= remaining:
+                target.add(key)
+                remaining -= item[2]
+        proposed = sum(1 << HOSP_LOAD_KEYS.index(key) for key in target)
+        bit_order = [HOSP_LOAD_KEYS.index((z, item[0])) for z, item in priority]
+        applied = self.gate.update(proposed, self._signature(order), bit_order)
+        current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
+
+        transformers = []
+        for i, z in enumerate(HOSP_ZONES):
+            loads = []
+            for lid, name, watts, essential in HOSP_LOADS[z]:
+                key = (z, lid)
+                on = key in current
+                reason = ("served" if on else "waiting" if key in target else "shed")
+                loads.append({"id": lid, "name": name, "watts": watts, "essential": essential, "served": on, "reason": reason})
+            act = self.activity(z)
+            transformers.append({
+                "id": f"TX{i+1}", "name": f"Transformer {i+1}", "zone": z,
+                "rated_current_a": 100.0, "sensors": {"cooling_ok": True},
+                "diagnosis": {"code": "NORMAL", "severity": "normal"},
+                "energized": True,
+                "rfid_active": z in self.scanned,
+                "priority_rank": order.index(z) + 1 if z in self.scanned else None,
+                "activity": {key: act.get(key) for key in ("state", "raw_state", "guard", "score", "reason", "model_version", "evidence")},
+                "loads": loads
+            })
+
+        requested = sum(x[2] for rows in HOSP_LOADS.values() for x in rows)
+        served_w = sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current)
+        essential = [(z, x) for z in HOSP_ZONES for x in HOSP_LOADS[z] if x[3]]
+        safety = shortfall_status(sum(x[2] for _, x in essential), sum(x[2] for z, x in essential if (z, x[0]) in current))
+        status = self.model.status() if hasattr(self.model, "status") else {}
+        return {
+            "capacity_w": self.capacity, "capacity_range_w": list(self.RANGE_W),
+            "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
+            "selected_zone_id": self.scanned[-1] if self.scanned else None,
+            "scanned_zone_ids": [z for z in HOSP_ZONES if z in self.scanned],
+            "priority_order": [z for z in order if z in self.scanned],
+            "transformers": transformers, "mode": "SIMULATED", "safety": safety,
+            "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"), "fallback_reason": status.get("fallback_reason")},
+            "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": REPLAY_STEP_S},
+            "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next."
+        }
+
+    def act(self, action: str, zone_id: str | None = None, capacity_w: int | None = None):
+        if action == "scan":
+            if zone_id not in self.scanned:
+                self.scanned.append(zone_id)
+        elif action == "unscan":
+            if zone_id in self.scanned:
+                self.scanned.remove(zone_id)
+        elif action == "set_capacity":
+            self.capacity = capacity_w
+        elif action == "normal":
+            self.capacity = self.NORMAL_W
+        elif action == "overload":
+            self.capacity = self.OVERLOAD_W
+        elif action == "reset":
+            self.__init__(self.gate.clock, self.model, self.replay)
+        return self.tick()  # a command wakes control immediately
+
 
 def hospital_snapshot(scenario="normal", zone="Theatre"):
     target_i = 2
@@ -284,7 +413,7 @@ def hospital_snapshot(scenario="normal", zone="Theatre"):
         energized = vout is not None and vout >= 100.0
         
         loads = []
-        for eq_id, essential in HOSPITAL_LOADS[zname]:
+        for eq_id, _name, _watts, essential in HOSP_LOADS[zname]:
             # Default to energized status
             served = energized
             # If we are in overload, non-scanned zones shed their non-essential loads

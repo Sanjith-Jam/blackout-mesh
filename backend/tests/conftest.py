@@ -48,6 +48,6 @@ def default_site():
     site = main.site
     reset_campus(site.grid)
     site.classroom.act("reset")
-    site.hospital.act("normal", "Theatre")
+    site.hospital.act("reset")
     site.tick()
     yield

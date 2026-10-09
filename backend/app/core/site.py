@@ -5,13 +5,12 @@ carries the same run_id and revision. See docs/CATALOG_MIGRATION.md for the cata
 """
 from __future__ import annotations
 
-import copy
 import itertools
 import threading
 import uuid
 
 from app.core.state import CLASSROOMS, SERVICE_CATALOG
-from app.visualizers import LOADS as CLASSROOM_LEAVES, hospital_snapshot
+from app.visualizers import LOADS as CLASSROOM_LEAVES
 
 CATALOG_VERSION = "site-catalog-2026-10-10.1"
 PROFILE = "campus"
@@ -41,32 +40,6 @@ def classroom_headroom_w(grid) -> int:
     feeder_a_served = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
                           if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
     return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - feeder_a_served))
-
-
-class HospitalFixtures:
-    """Selected hospital scenario and zone as a ticked, published authority part."""
-
-    def __init__(self):
-        self.scenario = "normal"
-        self.zone = "Theatre"
-        self.published = None
-        self.published_revision = 0
-        self.tick()
-
-    def act(self, scenario, zone=None):
-        self.scenario = scenario
-        if zone is not None:
-            self.zone = zone
-
-    def tick(self):
-        candidate = hospital_snapshot(self.scenario, self.zone)
-        if self.published is None or candidate != {k: v for k, v in self.published.items() if k != "published_revision"}:
-            self.published_revision += 1
-            candidate["published_revision"] = self.published_revision
-            self.published = candidate
-
-    def snapshot(self):
-        return copy.deepcopy(self.published)
 
 
 class SiteAuthority:
