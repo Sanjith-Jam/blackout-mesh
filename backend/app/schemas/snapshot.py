@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
+from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
 from typing import List, Optional, Dict
 from datetime import datetime
@@ -197,5 +197,3 @@ class FeederChangeResponse(BaseModel):
     feeder: str
     available: bool
     control_revision: int
-
-

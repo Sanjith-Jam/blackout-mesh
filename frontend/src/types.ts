@@ -1,4 +1,4 @@
-﻿export interface SourceInfo {
+export interface SourceInfo {
   kind: string;
   capacity_w: number;
 }
@@ -357,6 +357,3 @@ export interface HospitalDemoSnapshot {
   replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
 }
-
-
-

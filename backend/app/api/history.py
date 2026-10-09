@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
@@ -42,4 +42,3 @@ def register_history(site_provider):
             site_id, run_id, after=after, limit=limit, kind=kind,
             start=utc(start) if start else None, end=utc(end) if end else None)
     return router
-

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Download, split, compare, and package the local activity proxy model."""
 from __future__ import annotations
 
@@ -247,4 +247,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -51,3 +51,7 @@ Frontend history checks: 4 passed. Production build: passed with existing bundle
 warning. This supersedes the older branch's two hospital failures. Remaining
 dependency limits are in docs/ISSUE_25_DELIVERY.md. Next: friend review of the PR;
 #25 remains open for the journal/transport/generated-schema gates.
+
+PR #36 conflict resolution was committed and pushed on issue-25-server-history.
+Final whitespace cleanup is limited to files already changed by the history work.
+No PR merge or issue closure was performed.
