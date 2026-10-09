@@ -1,0 +1,562 @@
+{
+  "benchmark": "UCI Occupancy Detection, office occupancy proxy; labels are not campus lab activity",
+  "data_source": {
+    "url": "https://archive.ics.uci.edu/static/public/357/occupancy+detection.zip",
+    "doi": "10.24432/C5X01N",
+    "license": "CC BY 4.0",
+    "sha256": "4ae3f46aa98eedff564a9f6924d1635173e2fd2c816004342a9be93076d3a81a"
+  },
+  "feature_schema": [
+    "temperature_c",
+    "humidity_pct",
+    "co2_ppm",
+    "humidity_ratio"
+  ],
+  "excluded_inputs": [
+    "Light",
+    "record ID",
+    "timestamp",
+    "Occupancy truth outside fit/evaluation",
+    "room/card/scenario/mask/served power"
+  ],
+  "deduplication": "duplicate records across archive files collapsed by (timestamp, features, label)",
+  "split": {
+    "train": {
+      "dates": [
+        "2015-02-02",
+        "2015-02-03",
+        "2015-02-04",
+        "2015-02-05",
+        "2015-02-06",
+        "2015-02-07",
+        "2015-02-08"
+      ],
+      "rows": 8794,
+      "class_counts_0_1": [
+        6681,
+        2113
+      ]
+    },
+    "validation": {
+      "dates": [
+        "2015-02-09",
+        "2015-02-10",
+        "2015-02-11"
+      ],
+      "rows": 2566,
+      "class_counts_0_1": [
+        1764,
+        802
+      ]
+    },
+    "test": {
+      "dates": [
+        "2015-02-12",
+        "2015-02-13",
+        "2015-02-14",
+        "2015-02-15",
+        "2015-02-16",
+        "2015-02-17",
+        "2015-02-18"
+      ],
+      "rows": 9200,
+      "class_counts_0_1": [
+        7365,
+        1835
+      ]
+    }
+  },
+  "versions": {
+    "python": "3.14.7",
+    "numpy": "2.5.3",
+    "scikit_learn": "1.9.1",
+    "tabicl_source_revision": "c91f00df184a5097e584cb376f7e699e9f3444c4",
+    "tabicl_version": "2.2.0",
+    "torch": "2.14.1+cpu"
+  },
+  "test_status": "Time-disjoint dates, but exploratory draft metrics were inspected before this final model selection; this split must not be described as an untouched final test.",
+  "models": {
+    "random_forest": {
+      "train_seconds": 2.0571017030015355,
+      "validation": {
+        "n": 2566,
+        "occupied": 802,
+        "unoccupied": 1764,
+        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+          [
+            1437,
+            243,
+            84
+          ],
+          [
+            143,
+            601,
+            58
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "macro_f1_covered": 0.8192610220827989,
+        "macro_f1_all_rows_unknown_as_error": 0.7948524623997861,
+        "accuracy_covered": 0.8407590759075908,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.7493765586034913,
+        "false_inactive_count": 143,
+        "false_inactive_rate_of_occupied": 0.17830423940149626,
+        "unknown_count": 142,
+        "unknown_rate": 0.05533904910366329,
+        "coverage": 0.9446609508963367,
+        "operating_point_tuned_on_validation": {
+          "decision_threshold": 0.13,
+          "abstain_margin": 0.025
+        }
+      },
+      "warm_batch_1_latency": {
+        "n": 100,
+        "median_ms": 7.6167125,
+        "p95_ms": 8.0388453
+      },
+      "warm_batch_128_latency": {
+        "n": 100,
+        "median_ms": 7.9716625,
+        "p95_ms": 8.7955546
+      },
+      "test_exploratory": {
+        "n": 9200,
+        "occupied": 1835,
+        "unoccupied": 7365,
+        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+          [
+            3735,
+            2466,
+            1164
+          ],
+          [
+            688,
+            1023,
+            124
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "macro_f1_covered": 0.5482932692307693,
+        "macro_f1_all_rows_unknown_as_error": 0.5089964020000729,
+        "accuracy_covered": 0.6013650151668352,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5574931880108992,
+        "false_inactive_count": 688,
+        "false_inactive_rate_of_occupied": 0.3749318801089918,
+        "unknown_count": 1288,
+        "unknown_rate": 0.14,
+        "coverage": 0.86,
+        "operating_point_tuned_on_validation": {
+          "decision_threshold": 0.13,
+          "abstain_margin": 0.025
+        }
+      }
+    },
+    "logistic": {
+      "train_seconds": 0.01354091199755203,
+      "validation": {
+        "n": 2566,
+        "occupied": 802,
+        "unoccupied": 1764,
+        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+          [
+            1491,
+            205,
+            68
+          ],
+          [
+            68,
+            656,
+            78
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "macro_f1_covered": 0.8719446423119976,
+        "macro_f1_all_rows_unknown_as_error": 0.8431587711442453,
+        "accuracy_covered": 0.8871900826446281,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.8179551122194514,
+        "false_inactive_count": 68,
+        "false_inactive_rate_of_occupied": 0.08478802992518704,
+        "unknown_count": 146,
+        "unknown_rate": 0.05689789555728761,
+        "coverage": 0.9431021044427124,
+        "operating_point_tuned_on_validation": {
+          "decision_threshold": 0.24,
+          "abstain_margin": 0.15
+        }
+      },
+      "warm_batch_1_latency": {
+        "n": 100,
+        "median_ms": 0.1635505,
+        "p95_ms": 0.17478565000000001
+      },
+      "warm_batch_128_latency": {
+        "n": 100,
+        "median_ms": 0.164046,
+        "p95_ms": 0.19130205
+      },
+      "test_exploratory": {
+        "n": 9200,
+        "occupied": 1835,
+        "unoccupied": 7365,
+        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+          [
+            3038,
+            2725,
+            1602
+          ],
+          [
+            348,
+            1240,
+            247
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "macro_f1_covered": 0.555360867682378,
+        "macro_f1_all_rows_unknown_as_error": 0.49637146825155,
+        "accuracy_covered": 0.5819616378723983,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.6757493188010899,
+        "false_inactive_count": 348,
+        "false_inactive_rate_of_occupied": 0.1896457765667575,
+        "unknown_count": 1849,
+        "unknown_rate": 0.20097826086956522,
+        "coverage": 0.7990217391304347,
+        "operating_point_tuned_on_validation": {
+          "decision_threshold": 0.24,
+          "abstain_margin": 0.15
+        }
+      }
+    },
+    "selection": {
+      "selected_model": "logistic",
+      "criterion": "highest validation macro-F1 (unknown counted as error), then occupancy recall; no test results used",
+      "chosen_operating_point": {
+        "decision_threshold": 0.24,
+        "abstain_margin": 0.15
+      },
+      "tabicl_matched_validation_macro_f1": 0.7968169761273209,
+      "logistic_matched_validation_macro_f1": 0.8428948236069898,
+      "tabicl_adopted": false,
+      "tabicl_reason": "selected candidate did not meet validation quality/CPU latency/resource gate",
+      "operating_point_criterion": "Widest positive abstention band within 0.01 validation macro-F1 of the maximum among points with >=90% coverage; then macro-F1, occupancy recall, coverage."
+    },
+    "co2_rule_1000ppm_test_exploratory": {
+      "n": 9200,
+      "occupied": 1835,
+      "unoccupied": 7365,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          6426,
+          939,
+          0
+        ],
+        [
+          1302,
+          533,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.5869335550491098,
+      "macro_f1_all_rows_unknown_as_error": 0.5869335550491098,
+      "accuracy_covered": 0.7564130434782609,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.2904632152588556,
+      "false_inactive_count": 1302,
+      "false_inactive_rate_of_occupied": 0.7095367847411445,
+      "unknown_count": 0,
+      "unknown_rate": 0.0,
+      "coverage": 1.0
+    },
+    "random_forest_validation_same_tabicl_rows": {
+      "n": 256,
+      "occupied": 77,
+      "unoccupied": 179,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          144,
+          25,
+          10
+        ],
+        [
+          13,
+          58,
+          6
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.8183411680344196,
+      "macro_f1_all_rows_unknown_as_error": 0.7910714285714285,
+      "accuracy_covered": 0.8416666666666667,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.7532467532467533,
+      "false_inactive_count": 13,
+      "false_inactive_rate_of_occupied": 0.16883116883116883,
+      "unknown_count": 16,
+      "unknown_rate": 0.0625,
+      "coverage": 0.9375
+    },
+    "logistic_validation_same_tabicl_rows": {
+      "n": 256,
+      "occupied": 77,
+      "unoccupied": 179,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          153,
+          22,
+          4
+        ],
+        [
+          5,
+          63,
+          9
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.8712241653418125,
+      "macro_f1_all_rows_unknown_as_error": 0.8428948236069898,
+      "accuracy_covered": 0.8888888888888888,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.8181818181818182,
+      "false_inactive_count": 5,
+      "false_inactive_rate_of_occupied": 0.06493506493506493,
+      "unknown_count": 13,
+      "unknown_rate": 0.05078125,
+      "coverage": 0.94921875
+    },
+    "random_forest_test_same_tabicl_rows": {
+      "n": 256,
+      "occupied": 51,
+      "unoccupied": 205,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          103,
+          68,
+          34
+        ],
+        [
+          17,
+          30,
+          4
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.5608484417585022,
+      "macro_f1_all_rows_unknown_as_error": 0.5182653588022715,
+      "accuracy_covered": 0.6100917431192661,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5882352941176471,
+      "false_inactive_count": 17,
+      "false_inactive_rate_of_occupied": 0.3333333333333333,
+      "unknown_count": 38,
+      "unknown_rate": 0.1484375,
+      "coverage": 0.8515625
+    },
+    "logistic_test_same_tabicl_rows": {
+      "n": 256,
+      "occupied": 51,
+      "unoccupied": 205,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          84,
+          76,
+          45
+        ],
+        [
+          11,
+          34,
+          6
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.5487666034155598,
+      "macro_f1_all_rows_unknown_as_error": 0.4911801242236025,
+      "accuracy_covered": 0.5756097560975609,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.6666666666666666,
+      "false_inactive_count": 11,
+      "false_inactive_rate_of_occupied": 0.21568627450980393,
+      "unknown_count": 51,
+      "unknown_rate": 0.19921875,
+      "coverage": 0.80078125
+    },
+    "tabicl": {
+      "evaluated": true,
+      "reason": null,
+      "validation": {
+        "n": 256,
+        "occupied": 77,
+        "unoccupied": 179,
+        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+          [
+            167,
+            7,
+            5
+          ],
+          [
+            31,
+            46,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "macro_f1_covered": 0.8027708850289496,
+        "macro_f1_all_rows_unknown_as_error": 0.7968169761273209,
+        "accuracy_covered": 0.848605577689243,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5974025974025974,
+        "false_inactive_count": 31,
+        "false_inactive_rate_of_occupied": 0.4025974025974026,
+        "unknown_count": 5,
+        "unknown_rate": 0.01953125,
+        "coverage": 0.98046875,
+        "sampled_rows": 256,
+        "operating_point_tuned_on_validation": {
+          "decision_threshold": 0.61,
+          "abstain_margin": 0.025
+        }
+      },
+      "warm_latency_batch_1": {
+        "n": 10,
+        "median_ms": 511.4292635,
+        "p95_ms": 526.54466155
+      },
+      "test": {
+        "n": 256,
+        "occupied": 51,
+        "unoccupied": 205,
+        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+          [
+            136,
+            65,
+            4
+          ],
+          [
+            28,
+            22,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "macro_f1_covered": 0.5331866813318669,
+        "macro_f1_all_rows_unknown_as_error": 0.5279839754919289,
+        "accuracy_covered": 0.6294820717131474,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.43137254901960786,
+        "false_inactive_count": 28,
+        "false_inactive_rate_of_occupied": 0.5490196078431373,
+        "unknown_count": 5,
+        "unknown_rate": 0.01953125,
+        "coverage": 0.98046875,
+        "sampled_rows": 256
+      },
+      "warm_latency_batch_32": {
+        "n": 10,
+        "median_ms": 537.2542470000001,
+        "p95_ms": 553.99209865
+      },
+      "version": "official TabICL @ c91f00df184a5097e584cb376f7e699e9f3444c4",
+      "weights_revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19",
+      "checkpoint_sha256": "bdc7dbd5e4ff21f8f0456fcf90c6b7cdf72dbea960f2d05b19bec19f9b3d4ed0",
+      "checkpoint_size_bytes": 110368038,
+      "checkpoint_license": "BSD-3-Clause (weight card)",
+      "source_license": "BSD-3-Clause",
+      "torch_version": "2.14.1+cpu",
+      "peak_rss_mib": 711.9921875,
+      "checkpoint_fetch_and_context_setup_seconds": 0.23096037800132763,
+      "first_single_prediction_ms": 536.6829189988493,
+      "warm_single_row_latency_isolated_measurement_ms": {
+        "n": 10,
+        "median_ms": 524.1097905,
+        "p95_ms": 552.7029821
+      },
+      "isolated_peak_rss_mib": 601.4765625,
+      "runtime_note": "Bounded feasibility trial: 256 evenly spaced validation/test rows and a 512-row train-only context; not a full-dataset TabICL evaluation.",
+      "threshold_metadata_note": "The full benchmark used choose_operating_point on the 256 validation rows; result assembly overwrote its stored point. A repeat with the same pinned checkpoint, seeded context, and exact validation indices reproduced the confusion matrix/F1 and recovered threshold 0.61, margin 0.025."
+    }
+  },
+  "resource": {
+    "peak_rss_mib": 711.9921875
+  },
+  "attribution": "Candanedo, L. M. and Feldheim, V. (2016), Accurate occupancy detection of an office room from light, temperature, humidity and CO2 measurements using statistical learning models, Energy and Buildings 112, 28-39. UCI dataset DOI 10.24432/C5X01N, CC BY 4.0.",
+  "runtime_inference": {
+    "model_init_seconds_includes_hash_and_artifact_load": 0.7330393310003274,
+    "first_prediction_ms": 2.9384909976215567,
+    "warm_single_prediction_ms": {
+      "n": 100,
+      "median_ms": 0.17187599999999997,
+      "p95_ms": 0.212255
+    }
+  },
+  "tabicl_weights": {
+    "repo": "jingang/TabICL",
+    "revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19",
+    "filename": "tabicl-classifier-v2-20260212.ckpt",
+    "sha256": "bdc7dbd5e4ff21f8f0456fcf90c6b7cdf72dbea960f2d05b19bec19f9b3d4ed0",
+    "size_bytes": 110368038,
+    "license": "BSD-3-Clause"
+  },
+  "partition_method": "Sort by actual timestamp and split whole calendar days; never random adjacent rows.",
+  "training": {
+    "random_forest": {
+      "n_estimators": 250,
+      "min_samples_leaf": 2,
+      "class_weight": "balanced",
+      "random_state": 42,
+      "n_jobs": 1
+    },
+    "logistic": {
+      "scaler": "StandardScaler",
+      "max_iter": 1000,
+      "class_weight": "balanced",
+      "random_state": 42
+    },
+    "operating_point": "Validation-only search over ACTIVE threshold and abstention margin; require coverage >=90%, maximize macro-F1 with UNKNOWN as error, then prefer the widest positive band within 0.01 macro-F1 of the best; ties by macro-F1, occupancy recall, then coverage."
+  },
+  "tabicl_protocol": {
+    "context_rows": 512,
+    "context_source": "Training partition only, deterministic seed 42",
+    "evaluation_rows_per_partition": 256,
+    "sample_method": "Deterministically evenly spaced by sorted timestamp",
+    "device": "CPU",
+    "n_estimators": 1,
+    "n_jobs": 1
+  },
+  "replay_selection": "40 validation rows per classroom: 20 from each truth class, seed 42, timestamp-sorted; labels were used only for offline stratified sample selection and are absent from replay and inference."
+}

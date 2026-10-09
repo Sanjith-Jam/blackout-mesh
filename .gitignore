@@ -35,3 +35,6 @@ dist/
 firmware/include/cards.local.h
 firmware/include/hardware.local.h
 firmware/.local/
+
+# Isolated ML benchmark environment
+.venv-ml/

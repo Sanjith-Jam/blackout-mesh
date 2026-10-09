@@ -1,0 +1,97 @@
+{
+  "model_version": "uci-occ-logistic-2026-10-09",
+  "model_type": "StandardScaler + LogisticRegression",
+  "artifact": "activity-logistic.joblib",
+  "sha256": "b552641e908e6c1011c61223401f6e527d9d87aebc247025cf4812c1243efdf9",
+  "features": [
+    "temperature_c",
+    "humidity_pct",
+    "co2_ppm",
+    "humidity_ratio"
+  ],
+  "data_source": "UCI Occupancy Detection (office occupancy proxy; CC BY 4.0)",
+  "decision_threshold": 0.24,
+  "abstain_margin": 0.15,
+  "evaluation": {
+    "validation": {
+      "n": 2566,
+      "occupied": 802,
+      "unoccupied": 1764,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          1491,
+          205,
+          68
+        ],
+        [
+          68,
+          656,
+          78
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.8719446423119976,
+      "macro_f1_all_rows_unknown_as_error": 0.8431587711442453,
+      "accuracy_covered": 0.8871900826446281,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.8179551122194514,
+      "false_inactive_count": 68,
+      "false_inactive_rate_of_occupied": 0.08478802992518704,
+      "unknown_count": 146,
+      "unknown_rate": 0.05689789555728761,
+      "coverage": 0.9431021044427124,
+      "operating_point_tuned_on_validation": {
+        "decision_threshold": 0.24,
+        "abstain_margin": 0.15
+      }
+    },
+    "test_exploratory": {
+      "n": 9200,
+      "occupied": 1835,
+      "unoccupied": 7365,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          3038,
+          2725,
+          1602
+        ],
+        [
+          348,
+          1240,
+          247
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.555360867682378,
+      "macro_f1_all_rows_unknown_as_error": 0.49637146825155,
+      "accuracy_covered": 0.5819616378723983,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.6757493188010899,
+      "false_inactive_count": 348,
+      "false_inactive_rate_of_occupied": 0.1896457765667575,
+      "unknown_count": 1849,
+      "unknown_rate": 0.20097826086956522,
+      "coverage": 0.7990217391304347,
+      "operating_point_tuned_on_validation": {
+        "decision_threshold": 0.24,
+        "abstain_margin": 0.15
+      }
+    },
+    "scope": "UCI Occupancy Detection, office occupancy proxy; labels are not campus lab activity"
+  },
+  "runtime_inference": {
+    "model_init_seconds_includes_hash_and_artifact_load": 0.7330393310003274,
+    "first_prediction_ms": 2.9384909976215567,
+    "warm_single_prediction_ms": {
+      "n": 100,
+      "median_ms": 0.17187599999999997,
+      "p95_ms": 0.212255
+    }
+  }
+}

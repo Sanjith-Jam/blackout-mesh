@@ -1,0 +1,1088 @@
+{
+  "CR1": [
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.7,
+      "co2_ppm": 472.0,
+      "humidity_ratio": 0.00371272675749,
+      "observed_at": "2015-02-09T02:30:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.7,
+      "co2_ppm": 469.0,
+      "humidity_ratio": 0.00371272675749,
+      "observed_at": "2015-02-09T02:35:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.65,
+      "co2_ppm": 470.5,
+      "humidity_ratio": 0.00370573266324294,
+      "observed_at": "2015-02-09T02:44:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 19.34,
+      "humidity_pct": 26.7,
+      "co2_ppm": 468.5,
+      "humidity_ratio": 0.00370112036732517,
+      "observed_at": "2015-02-09T03:45:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.79,
+      "co2_ppm": 465.333333333333,
+      "humidity_ratio": 0.00372531652116727,
+      "observed_at": "2015-02-09T05:53:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.175,
+      "humidity_pct": 30.15,
+      "co2_ppm": 765.75,
+      "humidity_ratio": 0.00440660425600342,
+      "observed_at": "2015-02-09T09:22:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.4725,
+      "humidity_pct": 30.9175,
+      "co2_ppm": 921.5,
+      "humidity_ratio": 0.00460406405837682,
+      "observed_at": "2015-02-09T09:40:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.0,
+      "humidity_pct": 32.56,
+      "co2_ppm": 1315.0,
+      "humidity_ratio": 0.00501203965460524,
+      "observed_at": "2015-02-09T10:51:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.05,
+      "humidity_pct": 32.775,
+      "co2_ppm": 1334.0,
+      "humidity_ratio": 0.00506105739001047,
+      "observed_at": "2015-02-09T10:57:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.2225,
+      "humidity_pct": 33.145,
+      "co2_ppm": 1404.75,
+      "humidity_ratio": 0.00517362150278515,
+      "observed_at": "2015-02-09T11:22:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.29,
+      "humidity_pct": 32.9666666666667,
+      "co2_ppm": 1123.33333333333,
+      "humidity_ratio": 0.00516708400487401,
+      "observed_at": "2015-02-09T13:50:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.34,
+      "humidity_pct": 32.975,
+      "co2_ppm": 1131.0,
+      "humidity_ratio": 0.00518440374947686,
+      "observed_at": "2015-02-09T13:59:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.89,
+      "humidity_pct": 36.59,
+      "co2_ppm": 1625.0,
+      "humidity_ratio": 0.00595695293387614,
+      "observed_at": "2015-02-09T15:03:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.945,
+      "humidity_pct": 37.2,
+      "co2_ppm": 1723.5,
+      "humidity_ratio": 0.00607779692098183,
+      "observed_at": "2015-02-09T15:22:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 22.0,
+      "humidity_pct": 37.95,
+      "co2_ppm": 1832.75,
+      "humidity_ratio": 0.00622260807187049,
+      "observed_at": "2015-02-09T15:48:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 22.1,
+      "humidity_pct": 39.0425,
+      "co2_ppm": 2014.0,
+      "humidity_ratio": 0.00644315816254509,
+      "observed_at": "2015-02-09T16:27:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.7966666666667,
+      "co2_ppm": 2012.33333333333,
+      "humidity_ratio": 0.00640217086965231,
+      "observed_at": "2015-02-09T17:25:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.5,
+      "humidity_pct": 33.59,
+      "co2_ppm": 676.0,
+      "humidity_ratio": 0.0050138106150364,
+      "observed_at": "2015-02-09T21:30:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.5,
+      "humidity_pct": 33.59,
+      "co2_ppm": 650.0,
+      "humidity_ratio": 0.0050138106150364,
+      "observed_at": "2015-02-09T21:40:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.5,
+      "humidity_pct": 33.29,
+      "co2_ppm": 614.5,
+      "humidity_ratio": 0.00496867341311421,
+      "observed_at": "2015-02-09T22:08:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.39,
+      "humidity_pct": 32.9,
+      "co2_ppm": 502.0,
+      "humidity_ratio": 0.00487651582926721,
+      "observed_at": "2015-02-09T23:57:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.39,
+      "humidity_pct": 33.0,
+      "co2_ppm": 487.0,
+      "humidity_ratio": 0.00489145462900984,
+      "observed_at": "2015-02-10T00:16:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.2,
+      "humidity_pct": 32.9,
+      "co2_ppm": 453.0,
+      "humidity_ratio": 0.00481914656360182,
+      "observed_at": "2015-02-10T03:56:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.2,
+      "humidity_pct": 33.0,
+      "co2_ppm": 447.5,
+      "humidity_ratio": 0.0048339082621864,
+      "observed_at": "2015-02-10T05:15:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.1,
+      "humidity_pct": 33.09,
+      "co2_ppm": 447.0,
+      "humidity_ratio": 0.00481706462404567,
+      "observed_at": "2015-02-10T05:55:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.1,
+      "humidity_pct": 33.09,
+      "co2_ppm": 454.0,
+      "humidity_ratio": 0.00481706462404567,
+      "observed_at": "2015-02-10T06:26:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.09,
+      "co2_ppm": 452.0,
+      "humidity_ratio": 0.00487445346169922,
+      "observed_at": "2015-02-10T07:12:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.0,
+      "co2_ppm": 447.5,
+      "humidity_ratio": 0.00486109204215602,
+      "observed_at": "2015-02-10T07:25:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.09,
+      "co2_ppm": 454.0,
+      "humidity_ratio": 0.00487445346169922,
+      "observed_at": "2015-02-10T07:57:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.365,
+      "humidity_pct": 33.4975,
+      "co2_ppm": 482.5,
+      "humidity_ratio": 0.0049580629225364,
+      "observed_at": "2015-02-10T08:42:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.6,
+      "humidity_pct": 33.8633333333333,
+      "co2_ppm": 509.5,
+      "humidity_ratio": 0.00508647319424473,
+      "observed_at": "2015-02-10T08:55:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.79,
+      "humidity_pct": 31.3933333333333,
+      "co2_ppm": 1018.66666666667,
+      "humidity_ratio": 0.00507264928829298,
+      "observed_at": "2015-02-11T14:55:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.79,
+      "humidity_pct": 31.3175,
+      "co2_ppm": 1022.0,
+      "humidity_ratio": 0.00506029617368585,
+      "observed_at": "2015-02-11T14:55:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.815,
+      "humidity_pct": 31.5,
+      "co2_ppm": 1049.25,
+      "humidity_ratio": 0.00509786935872823,
+      "observed_at": "2015-02-11T15:03:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.89,
+      "humidity_pct": 31.79,
+      "co2_ppm": 1110.0,
+      "humidity_ratio": 0.00516900558343851,
+      "observed_at": "2015-02-11T15:16:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.9175,
+      "humidity_pct": 30.2925,
+      "co2_ppm": 786.0,
+      "humidity_ratio": 0.00493192454865155,
+      "observed_at": "2015-02-11T16:49:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.84,
+      "humidity_pct": 29.55,
+      "co2_ppm": 674.0,
+      "humidity_ratio": 0.0047872222532215,
+      "observed_at": "2015-02-11T17:48:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.15,
+      "humidity_pct": 31.05,
+      "co2_ppm": 515.0,
+      "humidity_ratio": 0.00482238981986243,
+      "observed_at": "2015-02-11T19:15:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 21.1,
+      "humidity_pct": 29.5,
+      "co2_ppm": 526.0,
+      "humidity_ratio": 0.00456574222763784,
+      "observed_at": "2015-02-11T19:38:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR1",
+      "temperature_c": 20.6,
+      "humidity_pct": 27.84,
+      "co2_ppm": 491.5,
+      "humidity_ratio": 0.0041756590857365,
+      "observed_at": "2015-02-11T23:09:00",
+      "source": "RECORDED_REPLAY"
+    }
+  ],
+  "CR2": [
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.6666666666667,
+      "co2_ppm": 471.333333333333,
+      "humidity_ratio": 0.00370806401061887,
+      "observed_at": "2015-02-09T02:50:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 19.29,
+      "humidity_pct": 26.89,
+      "co2_ppm": 467.0,
+      "humidity_ratio": 0.00371595805246803,
+      "observed_at": "2015-02-09T04:40:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 19.29,
+      "humidity_pct": 26.1,
+      "co2_ppm": 470.0,
+      "humidity_ratio": 0.00360615416412876,
+      "observed_at": "2015-02-09T07:01:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 19.5,
+      "humidity_pct": 26.79,
+      "co2_ppm": 469.0,
+      "humidity_ratio": 0.00375105117481805,
+      "observed_at": "2015-02-09T08:28:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.5,
+      "humidity_pct": 31.1633333333333,
+      "co2_ppm": 970.333333333333,
+      "humidity_ratio": 0.00464888702878125,
+      "observed_at": "2015-02-09T09:49:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.6,
+      "humidity_pct": 31.445,
+      "co2_ppm": 1050.5,
+      "humidity_ratio": 0.00472046845351942,
+      "observed_at": "2015-02-09T10:00:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.79,
+      "humidity_pct": 31.8933333333333,
+      "co2_ppm": 1145.33333333333,
+      "humidity_ratio": 0.00484511202958552,
+      "observed_at": "2015-02-09T10:17:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.89,
+      "humidity_pct": 32.2725,
+      "co2_ppm": 1228.0,
+      "humidity_ratio": 0.0049336768608085,
+      "observed_at": "2015-02-09T10:37:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.39,
+      "humidity_pct": 33.4666666666667,
+      "co2_ppm": 1455.0,
+      "humidity_ratio": 0.00527864852744951,
+      "observed_at": "2015-02-09T12:00:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.5,
+      "humidity_pct": 33.7,
+      "co2_ppm": 1315.66666666667,
+      "humidity_ratio": 0.00535201629114317,
+      "observed_at": "2015-02-09T12:51:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.2,
+      "humidity_pct": 32.9,
+      "co2_ppm": 1128.25,
+      "humidity_ratio": 0.0051279196436793,
+      "observed_at": "2015-02-09T13:31:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.89,
+      "humidity_pct": 36.29,
+      "co2_ppm": 1579.2,
+      "humidity_ratio": 0.00590764822460584,
+      "observed_at": "2015-02-09T14:55:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.945,
+      "humidity_pct": 37.2,
+      "co2_ppm": 1723.5,
+      "humidity_ratio": 0.00607779692098183,
+      "observed_at": "2015-02-09T15:22:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.69,
+      "co2_ppm": 1995.0,
+      "humidity_ratio": 0.00638438821586721,
+      "observed_at": "2015-02-09T16:32:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.79,
+      "co2_ppm": 1989.0,
+      "humidity_ratio": 0.00640105942430457,
+      "observed_at": "2015-02-09T16:37:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.8225,
+      "co2_ppm": 1993.5,
+      "humidity_ratio": 0.00640647775751022,
+      "observed_at": "2015-02-09T16:38:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.834,
+      "co2_ppm": 1982.0,
+      "humidity_ratio": 0.0064083950362563,
+      "observed_at": "2015-02-09T16:40:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.7,
+      "co2_ppm": 1974.5,
+      "humidity_ratio": 0.00638605529690565,
+      "observed_at": "2015-02-09T16:46:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 39.0225,
+      "co2_ppm": 2019.0,
+      "humidity_ratio": 0.00643982340332354,
+      "observed_at": "2015-02-09T17:13:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.2675,
+      "humidity_pct": 38.62,
+      "co2_ppm": 1978.75,
+      "humidity_ratio": 0.00643874686034003,
+      "observed_at": "2015-02-09T17:35:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 38.29,
+      "co2_ppm": 1893.33333333333,
+      "humidity_ratio": 0.00631771222677822,
+      "observed_at": "2015-02-09T17:45:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 22.1,
+      "humidity_pct": 37.95,
+      "co2_ppm": 1831.0,
+      "humidity_ratio": 0.0062610487601564,
+      "observed_at": "2015-02-09T17:57:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.5,
+      "humidity_pct": 34.9,
+      "co2_ppm": 921.5,
+      "humidity_ratio": 0.00521098590547799,
+      "observed_at": "2015-02-09T20:15:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.5,
+      "humidity_pct": 33.59,
+      "co2_ppm": 667.0,
+      "humidity_ratio": 0.0050138106150364,
+      "observed_at": "2015-02-09T21:38:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.29,
+      "humidity_pct": 32.9,
+      "co2_ppm": 472.0,
+      "humidity_ratio": 0.00484624668845129,
+      "observed_at": "2015-02-10T01:19:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.29,
+      "humidity_pct": 32.9,
+      "co2_ppm": 450.5,
+      "humidity_ratio": 0.00484624668845129,
+      "observed_at": "2015-02-10T03:16:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.1,
+      "humidity_pct": 33.0,
+      "co2_ppm": 447.25,
+      "humidity_ratio": 0.00480386171918592,
+      "observed_at": "2015-02-10T04:23:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.1,
+      "humidity_pct": 33.0,
+      "co2_ppm": 447.333333333333,
+      "humidity_ratio": 0.00480386171918592,
+      "observed_at": "2015-02-10T04:57:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.2,
+      "humidity_pct": 33.0,
+      "co2_ppm": 441.0,
+      "humidity_ratio": 0.0048339082621864,
+      "observed_at": "2015-02-10T05:19:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.045,
+      "co2_ppm": 450.5,
+      "humidity_ratio": 0.00486777268072938,
+      "observed_at": "2015-02-10T07:21:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.2,
+      "co2_ppm": 448.0,
+      "humidity_ratio": 0.00489078485912552,
+      "observed_at": "2015-02-10T08:28:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.79,
+      "humidity_pct": 31.55,
+      "co2_ppm": 1059.5,
+      "humidity_ratio": 0.00509817155006976,
+      "observed_at": "2015-02-11T15:06:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.89,
+      "humidity_pct": 30.7633333333333,
+      "co2_ppm": 887.333333333333,
+      "humidity_ratio": 0.00500072903471261,
+      "observed_at": "2015-02-11T15:38:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.89,
+      "humidity_pct": 30.1333333333333,
+      "co2_ppm": 756.666666666667,
+      "humidity_ratio": 0.00489751312530247,
+      "observed_at": "2015-02-11T16:18:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.29,
+      "humidity_pct": 29.03,
+      "co2_ppm": 1255.66666666667,
+      "humidity_ratio": 0.00454555500550858,
+      "observed_at": "2015-02-11T18:53:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.29,
+      "humidity_pct": 29.9266666666667,
+      "co2_ppm": 582.0,
+      "humidity_ratio": 0.00468701421209814,
+      "observed_at": "2015-02-11T18:56:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 21.15,
+      "humidity_pct": 31.05,
+      "co2_ppm": 515.0,
+      "humidity_ratio": 0.00482238981986243,
+      "observed_at": "2015-02-11T19:15:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.79,
+      "humidity_pct": 29.2966666666667,
+      "co2_ppm": 495.5,
+      "humidity_ratio": 0.00444781563042489,
+      "observed_at": "2015-02-11T20:57:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.7,
+      "humidity_pct": 29.9966666666667,
+      "co2_ppm": 490.0,
+      "humidity_ratio": 0.00452950652627233,
+      "observed_at": "2015-02-11T21:58:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR2",
+      "temperature_c": 20.55,
+      "humidity_pct": 27.55,
+      "co2_ppm": 499.0,
+      "humidity_ratio": 0.00411906846086061,
+      "observed_at": "2015-02-11T23:51:59",
+      "source": "RECORDED_REPLAY"
+    }
+  ],
+  "CR3": [
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.84,
+      "co2_ppm": 463.5,
+      "humidity_ratio": 0.00373231105323758,
+      "observed_at": "2015-02-09T00:39:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.7,
+      "co2_ppm": 471.5,
+      "humidity_ratio": 0.00371272675749,
+      "observed_at": "2015-02-09T02:38:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.7,
+      "co2_ppm": 469.666666666667,
+      "humidity_ratio": 0.00371272675749,
+      "observed_at": "2015-02-09T03:06:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 19.39,
+      "humidity_pct": 26.7,
+      "co2_ppm": 466.0,
+      "humidity_ratio": 0.00371272675749,
+      "observed_at": "2015-02-09T03:40:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 19.29,
+      "humidity_pct": 26.89,
+      "co2_ppm": 467.5,
+      "humidity_ratio": 0.00371595805246803,
+      "observed_at": "2015-02-09T04:53:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.6,
+      "humidity_pct": 31.2675,
+      "co2_ppm": 1016.0,
+      "humidity_ratio": 0.00469362139263832,
+      "observed_at": "2015-02-09T09:55:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.79,
+      "humidity_pct": 31.8925,
+      "co2_ppm": 1157.5,
+      "humidity_ratio": 0.00484498444669539,
+      "observed_at": "2015-02-09T10:20:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.575,
+      "humidity_pct": 33.79,
+      "co2_ppm": 1385.25,
+      "humidity_ratio": 0.00539134128479374,
+      "observed_at": "2015-02-09T12:16:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.6,
+      "humidity_pct": 33.8,
+      "co2_ppm": 1378.5,
+      "humidity_ratio": 0.00540127867028301,
+      "observed_at": "2015-02-09T12:16:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.5666666666667,
+      "humidity_pct": 34.43,
+      "co2_ppm": 1366.5,
+      "humidity_ratio": 0.00549153199576074,
+      "observed_at": "2015-02-09T12:17:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.1333333333333,
+      "humidity_pct": 32.79,
+      "co2_ppm": 1094.0,
+      "humidity_ratio": 0.00508958977608224,
+      "observed_at": "2015-02-09T13:37:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.2,
+      "humidity_pct": 32.845,
+      "co2_ppm": 1104.25,
+      "humidity_ratio": 0.00511927657889409,
+      "observed_at": "2015-02-09T13:38:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.29,
+      "humidity_pct": 32.9333333333333,
+      "co2_ppm": 1127.66666666667,
+      "humidity_ratio": 0.00516181609355951,
+      "observed_at": "2015-02-09T13:59:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.89,
+      "humidity_pct": 36.845,
+      "co2_ppm": 1667.5,
+      "humidity_ratio": 0.00599886802512078,
+      "observed_at": "2015-02-09T15:10:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.9175,
+      "humidity_pct": 37.09,
+      "co2_ppm": 1689.5,
+      "humidity_ratio": 0.00604938956720005,
+      "observed_at": "2015-02-09T15:13:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.9725,
+      "humidity_pct": 37.745,
+      "co2_ppm": 1837.5,
+      "humidity_ratio": 0.00617818361300241,
+      "observed_at": "2015-02-09T15:42:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.79,
+      "humidity_pct": 37.29,
+      "co2_ppm": 1678.0,
+      "humidity_ratio": 0.00603469838933611,
+      "observed_at": "2015-02-09T18:16:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.39,
+      "humidity_pct": 36.59,
+      "co2_ppm": 1449.0,
+      "humidity_ratio": 0.00577586195943773,
+      "observed_at": "2015-02-09T18:40:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.5,
+      "humidity_pct": 34.26,
+      "co2_ppm": 807.0,
+      "humidity_ratio": 0.00511464050180856,
+      "observed_at": "2015-02-09T20:44:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.55,
+      "humidity_pct": 34.09,
+      "co2_ppm": 794.5,
+      "humidity_ratio": 0.00510490513069162,
+      "observed_at": "2015-02-09T20:50:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.5,
+      "humidity_pct": 34.0,
+      "co2_ppm": 750.5,
+      "humidity_ratio": 0.0050755086358581,
+      "observed_at": "2015-02-09T21:06:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.5,
+      "humidity_pct": 33.09,
+      "co2_ppm": 588.0,
+      "humidity_ratio": 0.0049385855553457,
+      "observed_at": "2015-02-09T22:27:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.39,
+      "humidity_pct": 33.0,
+      "co2_ppm": 521.333333333333,
+      "humidity_ratio": 0.00489145462900984,
+      "observed_at": "2015-02-09T23:36:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.29,
+      "humidity_pct": 32.9666666666667,
+      "co2_ppm": 482.0,
+      "humidity_ratio": 0.00485614351279357,
+      "observed_at": "2015-02-10T01:06:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.2,
+      "humidity_pct": 32.9,
+      "co2_ppm": 443.0,
+      "humidity_ratio": 0.00481914656360182,
+      "observed_at": "2015-02-10T04:15:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.2,
+      "humidity_pct": 33.0,
+      "co2_ppm": 449.0,
+      "humidity_ratio": 0.0048339082621864,
+      "observed_at": "2015-02-10T05:22:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.1,
+      "humidity_pct": 33.09,
+      "co2_ppm": 449.0,
+      "humidity_ratio": 0.00481706462404567,
+      "observed_at": "2015-02-10T06:06:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.0,
+      "co2_ppm": 452.5,
+      "humidity_ratio": 0.00486109204215602,
+      "observed_at": "2015-02-10T07:32:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.29,
+      "humidity_pct": 33.0,
+      "co2_ppm": 451.0,
+      "humidity_ratio": 0.00486109204215602,
+      "observed_at": "2015-02-10T07:44:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.6,
+      "humidity_pct": 33.895,
+      "co2_ppm": 525.75,
+      "humidity_ratio": 0.00509126864873998,
+      "observed_at": "2015-02-10T08:58:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.89,
+      "humidity_pct": 35.4,
+      "co2_ppm": 684.666666666667,
+      "humidity_ratio": 0.00541595834222399,
+      "observed_at": "2015-02-10T09:17:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.7675,
+      "humidity_pct": 31.1225,
+      "co2_ppm": 1009.5,
+      "humidity_ratio": 0.0050215691326541,
+      "observed_at": "2015-02-11T14:51:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.79,
+      "humidity_pct": 31.55,
+      "co2_ppm": 1059.5,
+      "humidity_ratio": 0.00509817155006976,
+      "observed_at": "2015-02-11T15:06:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.89,
+      "humidity_pct": 31.7225,
+      "co2_ppm": 1092.75,
+      "humidity_ratio": 0.00515793917268696,
+      "observed_at": "2015-02-11T15:20:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.89,
+      "humidity_pct": 31.36,
+      "co2_ppm": 1031.0,
+      "humidity_ratio": 0.00509851512797734,
+      "observed_at": "2015-02-11T15:24:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.89,
+      "humidity_pct": 30.795,
+      "co2_ppm": 878.5,
+      "humidity_ratio": 0.00500591803312054,
+      "observed_at": "2015-02-11T15:34:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.945,
+      "humidity_pct": 30.5,
+      "co2_ppm": 803.5,
+      "humidity_ratio": 0.0049743855341721,
+      "observed_at": "2015-02-11T16:59:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.815,
+      "humidity_pct": 29.7475,
+      "co2_ppm": 695.75,
+      "humidity_ratio": 0.00481205560045731,
+      "observed_at": "2015-02-11T17:39:59",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 21.89,
+      "humidity_pct": 29.29,
+      "co2_ppm": 635.0,
+      "humidity_ratio": 0.00475939897688161,
+      "observed_at": "2015-02-11T17:53:00",
+      "source": "RECORDED_REPLAY"
+    },
+    {
+      "classroom_id": "CR3",
+      "temperature_c": 20.7,
+      "humidity_pct": 27.65,
+      "co2_ppm": 497.5,
+      "humidity_ratio": 0.00417278189443148,
+      "observed_at": "2015-02-11T23:38:00",
+      "source": "RECORDED_REPLAY"
+    }
+  ]
+}
