@@ -205,11 +205,104 @@ HOSPITAL_FAULT_FIXTURES = {
 }
 
 
-HOSPITAL_LOADS = {
-    "ICU": [("ventilator", True), ("monitor", True), ("infusion", True), ("lights", True), ("oxygen", True)],
-    "Theatre": [("surgical_light", True), ("anesthesia", True), ("esu", True), ("monitor", True), ("ac", False)],
-    "Wards": [("bed_lights", True), ("nurse_call", True), ("fans", False), ("tv", False), ("ac", False)]
+
+HOSP_ZONES = ("ICU", "Theatre", "Wards")
+HOSP_LOADS = {
+    "ICU": [("ventilator", "Ventilator", 300, True), ("monitor", "Patient Monitor", 100, True), ("infusion", "Infusion Pump", 50, True), ("lights", "Emergency Lights", 50, True), ("oxygen", "O2 System", 500, True)],
+    "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 800, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 1400, False)],
+    "Wards": [("bed_lights", "Bed Lights", 200, False), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 500, False), ("tv", "Patient TV", 200, False), ("ac", "Air Conditioning", 2000, False)],
 }
+HOSP_LOAD_KEYS = tuple((zone, item[0]) for zone in HOSP_ZONES for item in HOSP_LOADS[zone])
+
+class HospitalPriorityDemo(ClassroomDemo):
+    def __init__(self, clock=None, model=None, replay=None):
+        import time
+        super().__init__(clock or time.monotonic, model, replay)
+        self.capacity = 7000
+        initial = (1 << len(HOSP_LOAD_KEYS)) - 1
+        self.gate.update(initial, self._signature(self._room_order()), range(len(HOSP_LOAD_KEYS)))
+
+    def _room_order(self):
+        act = {z: self.activity(z) for z in HOSP_ZONES}
+        def sort_key(z):
+            state = act[z].get("state")
+            state_rank = 0 if state == "ACTIVE" else 1 if state == "UNKNOWN" else 2
+            scan_rank = self.scanned.index(z) if z in self.scanned else 999
+            return (state_rank, scan_rank, HOSP_ZONES.index(z))
+        return sorted(HOSP_ZONES, key=sort_key)
+
+    def _priority(self, order):
+        essentials = [(z, item) for z in HOSP_ZONES for item in HOSP_LOADS[z] if item[3]]
+        optionals = [(z, item) for z in order for item in HOSP_LOADS[z] if not item[3]]
+        return essentials + optionals
+
+    def snapshot(self):
+        order = self._room_order()
+        priority = self._priority(order)
+        target = set()
+        remaining = self.capacity
+        for z, item in priority:
+            key = (z, item[0])
+            if item[2] <= remaining:
+                target.add(key)
+                remaining -= item[2]
+        proposed = sum(1 << HOSP_LOAD_KEYS.index(key) for key in target)
+        bit_order = [HOSP_LOAD_KEYS.index((z, item[0])) for z, item in priority]
+        applied = self.gate.update(proposed, self._signature(order), bit_order)
+        current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
+        
+        transformers = []
+        for i, z in enumerate(HOSP_ZONES):
+            loads = []
+            for lid, name, watts, essential in HOSP_LOADS[z]:
+                key = (z, lid)
+                on = key in current
+                reason = ("served" if on else "waiting" if key in target else "shed")
+                loads.append({"id": lid, "name": name, "watts": watts, "essential": essential, "served": on, "reason": reason})
+            act = self.activity(z)
+            transformers.append({
+                "id": f"TX{i+1}", "name": f"Transformer {i+1}", "zone": z,
+                "rated_current_a": 100.0, "sensors": {"cooling_ok": True},
+                "diagnosis": {"code": "NORMAL", "severity": "normal"},
+                "energized": True,
+                "rfid_active": z in self.scanned,
+                "priority_rank": order.index(z) + 1 if z in self.scanned else None,
+                "activity": {key: act.get(key) for key in ("state", "score", "reason", "model_version", "evidence")},
+                "loads": loads
+            })
+            
+        requested = sum(x[2] for rows in HOSP_LOADS.values() for x in rows)
+        served_w = sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current)
+        status = self.model.status() if hasattr(self.model, "status") else {}
+        return {
+            "capacity_w": self.capacity, "capacity_range_w": [0, 7000],
+            "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
+            "selected_zone_id": self.scanned[-1] if self.scanned else None,
+            "scanned_zone_ids": [z for z in HOSP_ZONES if z in self.scanned],
+            "priority_order": [z for z in order if z in self.scanned],
+            "transformers": transformers, "mode": "SIMULATED",
+            "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"), "fallback_reason": status.get("fallback_reason")},
+            "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": 5.0},
+            "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next."
+        }
+        
+    def act(self, action: str, zone_id: str | None = None, capacity_w: int | None = None):
+        if action == "scan":
+            if zone_id not in self.scanned:
+                self.scanned.append(zone_id)
+        elif action == "unscan":
+            if zone_id in self.scanned:
+                self.scanned.remove(zone_id)
+        elif action == "set_capacity":
+            self.capacity = capacity_w
+        elif action == "normal":
+            self.capacity = 7000
+        elif action == "overload":
+            self.capacity = 3000
+        elif action == "reset":
+            self.__init__(self.gate.clock, self.model, self.replay)
+        return self.snapshot()
+
 
 def hospital_snapshot(scenario="normal", zone="Theatre"):
     target_i = 2

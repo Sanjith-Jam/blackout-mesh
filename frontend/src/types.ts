@@ -217,25 +217,73 @@ export interface HospitalDemoDiagnosis {
   recommendation: string;
 }
 
+
+export type HospitalDemoActionName = "scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset" | "replay_pause" | "replay_resume" | "replay_step";
+
+export interface HospitalDemoZone {
+  id: string;
+  name: string;
+  rfid_active: boolean;
+  priority_rank: number | null;
+  activity: {
+    state: "ACTIVE" | "UNKNOWN" | "INACTIVE";
+    score: number | null;
+    reason: string;
+    model_version: string;
+    evidence: Record<string, number>;
+  };
+  loads: {
+    id: string;
+    name: string;
+    watts: number;
+    essential: boolean;
+    served: boolean;
+    reason: string;
+  }[];
+}
+
 export interface HospitalDemoTransformer {
   id: string;
   name: string;
   zone: string;
   rated_current_a: number;
   sensors: {
-    current_a: number | null;
-    temperature_c: number | null;
-    input_voltage_v: number | null;
-    output_voltage_v: number | null;
+    current_a?: number | null;
+    temperature_c?: number | null;
+    input_voltage_v?: number | null;
+    output_voltage_v?: number | null;
     cooling_ok: boolean | null;
   };
-  diagnosis: HospitalDemoDiagnosis;
+  diagnosis: {
+    code: string;
+    severity: string;
+  };
   energized: boolean;
-  loads?: { id: string; served: boolean }[];
+  rfid_active: boolean;
+  priority_rank: number | null;
+  activity: {
+    state: "ACTIVE" | "UNKNOWN" | "INACTIVE";
+    score: number | null;
+    reason: string;
+    model_version: string;
+    evidence: Record<string, number>;
+  };
+  loads: HospitalDemoZone['loads'];
 }
 
 export interface HospitalDemoSnapshot {
-  mode: "SIMULATED";
+  capacity_w: number;
+  capacity_range_w: [number, number];
+  requested_w: number;
+  served_w: number;
+  shortfall_w: number;
+  selected_zone_id: string | null;
+  scanned_zone_ids: string[];
+  priority_order: string[];
   transformers: HospitalDemoTransformer[];
-  summary: string;
+  mode: "SIMULATED";
+  model: { ready: boolean; model_version: string; fallback_reason: string | null };
+  replay: { running: boolean; index: number; length: number; step_s: number };
+  policy: string;
 }
+
