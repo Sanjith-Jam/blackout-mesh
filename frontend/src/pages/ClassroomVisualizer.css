@@ -63,3 +63,4 @@
 @media (max-width: 760px) { .classroom-demo__ml-grid { grid-template-columns: 1fr; } .classroom-demo__ml-head { flex-direction: column; } }
 .classroom-demo__safety { margin: 12px 0 0; padding: 8px 10px; border-radius: var(--radius-sm); color: #166534; background: #dcfce7; font-size: .8rem; font-weight: 600; }
 .classroom-demo__safety.is-short { color: var(--status-err); background: var(--status-err-bg); }
+.classroom-demo__metric-note { display: block; margin-top: 4px; color: var(--status-warn); font-size: .75rem; font-weight: 650; }

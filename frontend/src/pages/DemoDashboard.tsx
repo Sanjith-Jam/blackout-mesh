@@ -138,7 +138,7 @@ export default function DemoDashboard() {
           <Activity className="brand-icon" />
           <div>
             <span className="brand-name">PriorityGrid</span>
-            <span className="brand-badge">Live Console</span>
+            <span className="brand-badge">Live Console{snapshot?.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span>
           </div>
         </div>
         

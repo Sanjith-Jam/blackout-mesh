@@ -131,7 +131,7 @@ export default function HospitalDemo() {
   return (
     <main className="classroom-demo">
       <header className="classroom-demo__header">
-        <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Activity size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Hospital power map</h1></div></div>
+        <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Activity size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated{snapshot?.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span><h1 className="classroom-demo__title">Hospital power map</h1></div></div>
         <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/classrooms">Classroom demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
       </header>
 

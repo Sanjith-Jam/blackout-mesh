@@ -117,6 +117,7 @@ export interface Snapshot {
   allocation: AllocationStatus;
   control_revision: number;
   published_revision: number;
+  site?: SiteIdentity;
   generated_at: string;
   /** Socket messages only: when this copy was sent. generated_at is when the state last changed. */
   sent_at?: string;
@@ -175,6 +176,21 @@ export interface ClassroomDemoLoad {
   reason: string;
 }
 
+/** One site authority: every projection carries the same run and revision (#3). */
+export interface SiteIdentity {
+  run_id: string;
+  revision: number;
+  profile: string;
+  catalog_version: string;
+}
+
+export interface CommandReceipt {
+  command_id: number;
+  name: string;
+  run_id: string;
+  applied_revision: number;
+}
+
 export interface SafetyStatus {
   policy_version: string;
   status: "FEASIBLE" | "PROTECTED_SHORTFALL";
@@ -220,6 +236,12 @@ export interface ClassroomDemoSnapshot {
   rooms: ClassroomDemoRoom[];
   mode: "SIMULATED";
   safety: SafetyStatus;
+  classroom_limit_w: number;
+  campus_limit_w: number | null;
+  effective_capacity_w: number;
+  limited_by: "classroom limit" | "campus feeder B";
+  site?: SiteIdentity;
+  command?: CommandReceipt;
   model: { ready: boolean; model_version: string; fallback_reason: string | null };
   replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
@@ -254,6 +276,8 @@ export interface HospitalDemoTransformer {
 
 export interface HospitalDemoSnapshot {
   mode: "SIMULATED";
+  site?: SiteIdentity;
+  command?: CommandReceipt;
   transformers: HospitalDemoTransformer[];
   summary: string;
 }
