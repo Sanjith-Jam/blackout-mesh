@@ -209,12 +209,38 @@ export interface ClassroomDemoSnapshot {
 
 export type HospitalDemoScenario = "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
 
+export interface DiagnosticHypothesis {
+  id: string;
+  code: string;
+  asset_id: string;
+  cause: string;
+  severity: "critical" | "high" | "medium" | "low" | "normal" | "unknown";
+  evidence_score: number;
+  sufficiency: "SUFFICIENT" | "PARTIAL" | "INSUFFICIENT";
+  supporting_evidence: string[];
+  contradicting_evidence: string[];
+  recommendation: string;
+}
+
+export interface DiagnosticAbstention {
+  asset_id: string;
+  reason: "INSUFFICIENT_TELEMETRY" | "CONTRADICTORY_EVIDENCE" | "INDISTINGUISHABLE_CAUSES";
+  details: string;
+  missing_sensors: string[];
+  contradictory_readings: string[];
+  indistinguishable_candidates: string[];
+  next_check_needed: string;
+}
+
 export interface HospitalDemoDiagnosis {
   code: string;
   cause: string;
   severity: string;
   evidence: string[];
   recommendation: string;
+  status?: "NORMAL" | "FAULT_DETECTED" | "ABSTAINED";
+  hypotheses?: DiagnosticHypothesis[];
+  abstention?: DiagnosticAbstention | null;
 }
 
 
@@ -254,10 +280,7 @@ export interface HospitalDemoTransformer {
     output_voltage_v?: number | null;
     cooling_ok: boolean | null;
   };
-  diagnosis: {
-    code: string;
-    severity: string;
-  };
+  diagnosis: HospitalDemoDiagnosis;
   energized: boolean;
   rfid_active: boolean;
   priority_rank: number | null;

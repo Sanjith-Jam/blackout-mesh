@@ -134,7 +134,29 @@ export default function HospitalDemo() {
                   <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
                 </dl>
                 <p>{act.reason}</p>
+                {tx.diagnosis && tx.diagnosis.code !== 'NORMAL' && (
+                  <div style={{ marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid #ddd' }}>
+                    <span className={`hospital-diagnosis-badge severity-${tx.diagnosis.severity}`}>
+                      {tx.diagnosis.code.replace(/_/g, ' ')}
+                    </span>
+                    {tx.diagnosis.hypotheses && tx.diagnosis.hypotheses.length > 1 && (
+                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                        {tx.diagnosis.hypotheses.map(h => (
+                          <span key={h.id} style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem', borderRadius: '3px', background: '#eee' }}>
+                            {h.code} ({h.evidence_score})
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {tx.diagnosis.abstention && (
+                      <p style={{ fontSize: '0.75rem', color: '#b23b18', margin: '0.2rem 0' }}>
+                        ⚠️ Abstained: {tx.diagnosis.abstention.next_check_needed}
+                      </p>
+                    )}
+                  </div>
+                )}
               </article>;
+
             })}
           </div>
           <p className="classroom-demo__ml-note">Only scanned zones are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the zone scanned first goes first. The model is an office-occupancy proxy, not a measurement of these classzones.</p>
