@@ -100,6 +100,7 @@ class SystemSnapshot(BaseModel):
     model: Dict[str, object] = Field(default_factory=dict)
     replay: "ReplaySnapshot"
     allocation: "AllocationSnapshot"
+    site: Optional[Dict[str, object]] = None
 
 
 class ActivityObservationRequest(BaseModel):

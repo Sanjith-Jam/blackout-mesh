@@ -25,8 +25,9 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.core.control_loop import ControlLoop
+from app.core.site import HospitalFixtures, SiteAuthority
 from app.activity.model import FEATURES
-from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, hospital_snapshot
+from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -76,26 +77,42 @@ replay_data = load_replay()
 grid = GridState()
 grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
 classroom_demo = ClassroomDemo(model=grid.model, replay=replay_data)
-hospital_scenario = "normal"
-hospital_zone = "Theatre"
+hospital = HospitalFixtures()
+# One authority: every command goes through `site`, and every projection carries its run/revision.
+site = SiteAuthority(grid, classroom_demo, hospital)
+
+
+def with_site(data: dict, identity: dict) -> dict:
+    data = dict(data)
+    data["site"] = identity
+    return data
 
 def socket_payload(snapshot) -> str:
     """Published state plus a transport timestamp; the state's generated_at is never rewritten."""
     payload = json.loads(snapshot.model_dump_json())
+    if payload.get("site") is None:
+        payload["site"] = site.identity()
     payload["sent_at"] = datetime.now(timezone.utc).isoformat()
     return json.dumps(payload)
 
 
 async def publish_to_sockets():
     if manager.active_connections:
-        snapshot = grid.build_snapshot()
+        snapshot = campus_snapshot()
         if snapshot is not None:
             await manager.broadcast(socket_payload(snapshot))
 
 
 def control_tickers():
-    # Looked up at call time so tests that swap app.main.grid / classroom_demo are honoured.
-    return [lambda: grid.tick(), lambda: classroom_demo.tick()]
+    # Looked up at call time so tests that swap app.main.site are honoured.
+    return [lambda: site.tick()]
+
+
+def campus_snapshot():
+    snapshot, identity = site.read(grid.build_snapshot)
+    if snapshot is not None:
+        snapshot.site = identity
+    return snapshot
 
 
 control_loop = ControlLoop(control_tickers(), publish=publish_to_sockets)
@@ -122,7 +139,7 @@ async def run_replay(generation):
             if generation != replay_generation or not grid.replay_running:
                 return
             grid.apply_prediction(cid, rev, pred)
-        grid.tick()
+        site.tick()
         grid.replay_index = (index + 1) % max_len
         await asyncio.sleep(1)
 
@@ -168,7 +185,7 @@ async def health_check():
 
 @app.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot():
-    snapshot = grid.build_snapshot()
+    snapshot = campus_snapshot()
     if snapshot is None:
         raise HTTPException(503, "control state not published yet")
     return snapshot
@@ -179,7 +196,7 @@ async def model_status():
 
 @app.get("/api/v1/visualizers/classrooms")
 async def get_classroom_demo():
-    return classroom_demo.snapshot()
+    return with_site(*site.read(classroom_demo.snapshot))
 
 @app.post("/api/v1/visualizers/classrooms")
 async def act_classroom_demo(req: ClassroomDemoAction):
@@ -190,19 +207,20 @@ async def act_classroom_demo(req: ClassroomDemoAction):
     low, high = CLASSROOM_CAPACITY_RANGE_W
     if req.capacity_w is not None and not low <= req.capacity_w <= high:
         raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    return classroom_demo.act(req.action, req.classroom_id, req.capacity_w)  # act() ticks
+    _, receipt = site.command(f"classroom.{req.action}",
+                              lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w))
+    data, identity = site.read(classroom_demo.snapshot)
+    return with_site(data, identity) | {"command": receipt}
 
 @app.get("/api/v1/visualizers/hospital")
 async def get_hospital_demo():
-    return hospital_snapshot(hospital_scenario, hospital_zone)
+    return with_site(*site.read(hospital.snapshot))
 
 @app.post("/api/v1/visualizers/hospital")
 async def act_hospital_demo(req: HospitalDemoAction):
-    global hospital_scenario, hospital_zone
-    hospital_scenario = req.scenario
-    if req.zone is not None:
-        hospital_zone = req.zone
-    return hospital_snapshot(hospital_scenario, hospital_zone)
+    _, receipt = site.command("hospital.scenario", lambda: hospital.act(req.scenario, req.zone))
+    data, identity = site.read(hospital.snapshot)
+    return with_site(data, identity) | {"command": receipt}
 
 @app.post("/api/v1/activity/observations")
 async def post_activity_observation(req: ActivityObservationRequest):
@@ -231,7 +249,7 @@ async def post_activity_observation(req: ActivityObservationRequest):
     except Exception as exc:
         prediction = {"state": "UNKNOWN", "score": None, "reason": f"inference failed: {type(exc).__name__}", "model_version": "unavailable"}
     applied = grid.apply_prediction(req.classroom_id, revision, prediction)
-    grid.tick()
+    site.commit("campus.activity_observation")
     return {"accepted": True, "applied": applied, "revision": revision,
             "activity": grid.activity[req.classroom_id]}
 
@@ -268,13 +286,13 @@ async def replay_action(req: ReplayActionRequest):
         replay_generation += 1
         replay_task = asyncio.create_task(run_replay(replay_generation))
     grid.replay_length = max_len
-    grid.tick()
+    site.commit(f"campus.replay_{req.action}")
     return {"running": grid.replay_running, "index": grid.replay_index, "length": max_len}
 
 @app.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
 async def process_rfid_scan(req: RfidScanRequest):
     evt_type, class_id, class_name, service_id = grid.process_rfid_scan(req.uid)
-    grid.tick()
+    site.commit("campus.rfid_scan")
     return RfidScanResponse(
         accepted=True if evt_type != RfidEventType.DUPLICATE_SUPPRESSED.value else False,
         active_classroom_id=class_id,
@@ -286,7 +304,7 @@ async def process_rfid_scan(req: RfidScanRequest):
 @app.post("/api/v1/simulation/capacity", response_model=CapacityChangeResponse)
 async def change_capacity(req: CapacityChangeRequest):
     grid.set_capacity(req.capacity_w)
-    grid.tick()
+    site.commit("campus.capacity")
     return CapacityChangeResponse(
         accepted=True,
         new_capacity_w=req.capacity_w,
@@ -298,7 +316,7 @@ async def change_classroom_load(req: ClassroomLoadRequest):
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
     grid.set_classroom_load(req.classroom_id, req.active)
-    grid.tick()
+    site.commit("campus.classroom_load")
     return ClassroomLoadResponse(
         accepted=True,
         classroom_id=req.classroom_id,
@@ -310,7 +328,7 @@ async def change_feeder(req: FeederChangeRequest):
     if req.feeder not in ("A", "B"):
         raise HTTPException(422, "feeder must be A or B")
     grid.set_feeder(req.feeder, req.available)
-    grid.tick()
+    site.commit("campus.feeder")
     return FeederChangeResponse(
         accepted=True,
         feeder=req.feeder,
@@ -321,7 +339,7 @@ async def change_feeder(req: FeederChangeRequest):
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    snapshot = grid.build_snapshot()
+    snapshot = campus_snapshot()
     if snapshot is not None:
         await websocket.send_text(socket_payload(snapshot))
     try:

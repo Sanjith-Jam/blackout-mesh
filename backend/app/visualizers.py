@@ -46,7 +46,8 @@ class ClassroomDemo:
         self.model = model
         self.replay = load_replay() if replay is None else replay
         self.replay_length = min((len(rows) for rows in self.replay.values()), default=0)
-        self.capacity = NORMAL_CAPACITY_W
+        self.capacity = NORMAL_CAPACITY_W  # classroom limit (the slider): a named sub-budget
+        self.campus_limit_w: int | None = None  # set by the site authority from campus feeder B headroom
         self.scanned: list[str] = []   # scan order; the last entry is the most recent card
         self.gate = RestorationGate(clock)
         self.replay_running = self.replay_length > 0
@@ -111,8 +112,11 @@ class ClassroomDemo:
             return (ACTIVITY_RANK.get(self.activity(cid).get("state"), 1), self.scanned.index(cid))
         return sorted(self.scanned, key=key) + [r for r in ROOMS if r not in self.scanned]
 
+    def effective_capacity(self):
+        return self.capacity if self.campus_limit_w is None else min(self.capacity, self.campus_limit_w)
+
     def _signature(self, order):
-        return (self.capacity, tuple(r for r in order if r in self.scanned))
+        return (self.effective_capacity(), tuple(r for r in order if r in self.scanned))
 
     def _priority(self, order):
         # Essentials in every room first, then scanned rooms' optional loads in model rank, then the rest.
@@ -139,7 +143,8 @@ class ClassroomDemo:
         order = self._room_order()
         priority = self._priority(order)
         target: set[tuple[str, str]] = set()
-        remaining = self.capacity
+        effective = self.effective_capacity()
+        remaining = effective
         for room, item in priority:
             key = (room, item[0])
             if item[2] <= remaining:
@@ -173,7 +178,11 @@ class ClassroomDemo:
         safety = shortfall_status(sum(x[2] for _, x in essential),
                                   sum(x[2] for r, x in essential if (r, x[0]) in current))
         status = self.model.status() if hasattr(self.model, "status") else {}
+        limited_by = ("campus feeder B" if self.campus_limit_w is not None and self.campus_limit_w < self.capacity
+                      else "classroom limit")
         return {"capacity_w": self.capacity, "capacity_range_w": list(CAPACITY_RANGE_W),
+                "classroom_limit_w": self.capacity, "campus_limit_w": self.campus_limit_w,
+                "effective_capacity_w": effective, "limited_by": limited_by,
                 "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
                 "selected_classroom_id": self.scanned[-1] if self.scanned else None,
                 "scanned_classroom_ids": [r for r in ROOMS if r in self.scanned],
