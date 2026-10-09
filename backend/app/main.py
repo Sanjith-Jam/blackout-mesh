@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.schemas.snapshot import (
     HealthResponse, ModelStatusResponse, ClassroomDemoSnapshot, HospitalDemoSnapshot,
-    ActivityObservationResponse, ReplayActionResponse, WebSocketMessageEnvelope,
+    ActivityObservationResponse, ReplayActionResponse, WebSocketMessageEnvelope, HardwareAckRequest, HardwareAckResponse,
     SystemSnapshot,
     RfidScanRequest,
     RfidScanResponse,
@@ -282,6 +282,12 @@ async def change_feeder(req: FeederChangeRequest):
         available=req.available,
         control_revision=grid.control_revision
     )
+
+
+@app.post("/api/v1/hardware/ack", response_model=HardwareAckResponse)
+async def hardware_ack(req: HardwareAckRequest):
+    grid.record_ack(req.device_boot, req.sequence, req.session, req.confirmed_mask, req.provenance)
+    return HardwareAckResponse(accepted=True)
 
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):

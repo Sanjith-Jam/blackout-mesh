@@ -300,3 +300,14 @@ class ReplayActionResponse(BaseModel):
 class WebSocketMessageEnvelope(BaseModel):
     type: str
     payload: SystemSnapshot
+
+class HardwareAckRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    device_boot: str
+    sequence: int
+    session: str
+    confirmed_mask: int
+    provenance: str
+
+class HardwareAckResponse(BaseModel):
+    accepted: bool
