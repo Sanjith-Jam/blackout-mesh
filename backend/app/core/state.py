@@ -58,6 +58,10 @@ class GridState:
         if getattr(self, '_initialized', False):
             return
         self._lock = threading.RLock()
+        self.clock = time.monotonic
+        self.published: Optional[SystemSnapshot] = None
+        self.published_revision = 0
+        self.tick_count = 0
         self.source_capacity_w = 14000
         self.feeder_limits_w = {"A": 6000, "B": 8000}
         self.feeder_available = {"A": True, "B": True}
@@ -84,7 +88,7 @@ class GridState:
         self.last_allocation_mask = 0
         self.last_allocation_key = None
         self.proposed_mask = 0
-        self.restoration_gate = RestorationGate(time.monotonic)
+        self.restoration_gate = RestorationGate(lambda: self.clock())
         self.events = []
         self.fault_diagnosis = None
         self.compute_fault_diagnosis()
@@ -92,6 +96,7 @@ class GridState:
                                                   tuple(sorted(self.feeder_available.items())),), range(6))
         self.last_allocation_mask = 0b111111
         self._initialized = True
+        self.tick()  # initial publication so the first read is never empty
 
     def add_event(self, event_type: str, desc: str):
         with self._lock:
@@ -195,7 +200,7 @@ class GridState:
                                            "recorded_at": recorded_at, "model_version": "unavailable",
                                            "priority": "UNKNOWN", "evidence": dict(features)}
             age = max(0.0, (datetime.now(timezone.utc) - observed_at).total_seconds())
-            self.activity_received_monotonic[classroom_id] = time.monotonic() - age
+            self.activity_received_monotonic[classroom_id] = self.clock() - age
         return current_revision
 
     def apply_prediction(self, classroom_id, revision, prediction):
@@ -212,7 +217,7 @@ class GridState:
 
     def current_activity(self):
         activity = {cid: dict(value) for cid, value in self.activity.items()}
-        now = time.monotonic()
+        now = self.clock()
         for cid, received in self.activity_received_monotonic.items():
             if received is not None and now - received > 600:
                 activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN")
@@ -220,7 +225,8 @@ class GridState:
 
     def compute_allocation(self) -> int:
         with self._lock:
-            freshness = tuple(received is not None and time.monotonic() - received > 600
+            now = self.clock()
+            freshness = tuple(received is not None and now - received > 600
                               for received in self.activity_received_monotonic.values())
             cache_key = (self.control_revision, freshness)
             if cache_key != self.last_allocation_key:
@@ -272,9 +278,29 @@ class GridState:
                         
             return mask
 
-    def build_snapshot(self) -> SystemSnapshot:
+    def tick(self) -> SystemSnapshot:
+        """Advance control (evidence freshness, allocation, staged restoration) and publish.
+
+        This is the only place time-dependent state moves forward. Readers call build_snapshot().
+        """
         with self._lock:
             modeled_mask = self.compute_allocation()
+            candidate = self._project(modeled_mask)
+            self.tick_count += 1
+            if self.published is None or _content(candidate) != _content(self.published):
+                self.published_revision += 1
+                candidate.published_revision = self.published_revision
+                self.published = candidate
+            return self.published
+
+    def build_snapshot(self) -> Optional[SystemSnapshot]:
+        """Read-only: a copy of the last published snapshot, or None before the first tick.
+        Never advances control."""
+        with self._lock:
+            return None if self.published is None else self.published.model_copy(deep=True)
+
+    def _project(self, modeled_mask: int) -> SystemSnapshot:
+        with self._lock:
             indicator_command = self.compute_indicator_command_mask(modeled_mask)
             requested_mask = 0b111111
             if self.software_mode:
@@ -367,3 +393,8 @@ class GridState:
                             "baseline_mask": fixed_priority_mask(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
                                                                  self.feeder_available, requested_mask)}
             )
+
+
+def _content(snapshot: SystemSnapshot) -> dict:
+    """Snapshot fields that define state, excluding publication bookkeeping."""
+    return snapshot.model_dump(exclude={"generated_at", "published_revision"})

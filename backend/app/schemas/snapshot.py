@@ -82,6 +82,7 @@ class FaultDiagnosis(BaseModel):
 class SystemSnapshot(BaseModel):
     control_revision: int
     generated_at: datetime
+    published_revision: int = 0
     source: SourceInfo
     feeder_limits_w: Dict[str, int]
     requested_mask: int
