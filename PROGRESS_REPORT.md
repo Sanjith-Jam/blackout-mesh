@@ -2,6 +2,20 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## Simultaneous fault diagnosis & hypothesis ranking (BM-17 / #19) — 2026-10-10
+
+Delivered the modular telemetry-derived diagnosis system in `backend/app/diagnostics/` resolving Issue #19:
+- **Independent rule evaluators**: Overload, cooling failure, thermal stress, upstream loss, branch interruption run concurrently without an `if-elif` waterfall.
+- **Simultaneous faults**: Overload and cooling failure co-occur in candidate hypotheses; shared-cause physical explanation attached without double-counting correlated temperature readings.
+- **Deterministic ranking**: Severity tier primary (`CRITICAL` > `HIGH` > `MEDIUM` > `LOW`), heuristic evidence score $[0.0, 1.0]$ secondary. Explicitly labeled as an uncalibrated heuristic score, not a probability.
+- **Diagnostic abstention**:
+  - `CONTRADICTORY_EVIDENCE`: catches powerless current ($V=0\text{V}, I>10\text{A}$) and physical temperature limits ($T<-30^\circ\text{C}$ or $T>250^\circ\text{C}$).
+  - `INSUFFICIENT_TELEMETRY`: scoped evaluation ensures missing current does not silence valid cooling failure evidence; complete absence abstains with enumerated missing sensors.
+  - `INDISTINGUISHABLE_CAUSES`: normal input with zero output and zero current returns candidate set (`SECONDARY_BREAKER_OPEN`, `PRIMARY_FUSE_BLOWN`, `SEVERED_DOWNSTREAM_CONDUCTOR`) with actionable `next_check_needed` instead of guessing.
+- **Campus & hospital integration**: Hospital visualizer delegates to the new engine; campus `GridState` emits structured candidate hypotheses without plain string concatenation.
+- **Frontend UI**: `HospitalDemo.tsx` renders multi-hypothesis badges with heuristic scores and explicit abstention warning callouts.
+- **Verification**: 42 backend tests pass (`backend/tests/test_diagnostics.py` and existing test suite); frontend production build succeeds cleanly.
+
 ## Classroom and hospital visualizers — 2026-10-09
 
 This update preserves the original light graph-paper theme and supersedes earlier descriptions of the demo routes. Three Luna workers implemented the initial endpoints/views; a further Luna worker replaced the rejected classroom node graph with a physical floor-plan renderer under parent review.
