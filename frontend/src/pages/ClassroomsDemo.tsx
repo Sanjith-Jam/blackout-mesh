@@ -133,11 +133,16 @@ export default function ClassroomsDemo() {
                   <div><dt>CO₂</dt><dd>{act.evidence.co2_ppm == null ? '—' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
                   <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
                 </dl>
-                <p>{act.reason}</p>
+                <p>{act.guard ?? act.reason}</p>
               </article>;
             })}
           </div>
-          <p className="classroom-demo__ml-note">Only scanned rooms are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the room scanned first goes first. The model is an office-occupancy proxy, not a measurement of these classrooms.</p>
+          <p className={`classroom-demo__safety ${snapshot.safety.status === 'FEASIBLE' ? '' : 'is-short'}`} role="status">
+            {snapshot.safety.status === 'FEASIBLE'
+              ? `Protected essentials served: ${snapshot.safety.protected_served_w.toLocaleString()} of ${snapshot.safety.protected_requested_w.toLocaleString()} W (lighting and computers in every room).`
+              : `Protected shortfall: ${snapshot.safety.protected_shortfall_w.toLocaleString()} W of lighting and computers can't be supplied at this limit.`}
+          </p>
+          <p className="classroom-demo__ml-note">Only scanned rooms are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the room scanned first goes first. A room only counts as INACTIVE after two INACTIVE readings in a row, and predictions never switch off lighting or computers. The model is an office-occupancy proxy, not a measurement of these classrooms.</p>
         </section>
         <section aria-label="Classroom floor plans" aria-describedby="classroom-blueprint-key">
           <p id="classroom-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three tiled classrooms. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>

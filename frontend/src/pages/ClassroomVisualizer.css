@@ -61,3 +61,5 @@
 .classroom-demo__state--unknown { color: #78350f; background: #fde68a; }
 .classroom-demo__ml-note { margin: 12px 0 0; color: var(--text-muted); font-size: .78rem; }
 @media (max-width: 760px) { .classroom-demo__ml-grid { grid-template-columns: 1fr; } .classroom-demo__ml-head { flex-direction: column; } }
+.classroom-demo__safety { margin: 12px 0 0; padding: 8px 10px; border-radius: var(--radius-sm); color: #166534; background: #dcfce7; font-size: .8rem; font-weight: 600; }
+.classroom-demo__safety.is-short { color: var(--status-err); background: var(--status-err-bg); }
