@@ -1,4 +1,4 @@
-﻿# Issue #25 history contract (v1)
+# Issue #25 history contract (v1)
 Scope: campus six-service model. Separate hospital/classroom visualizers are not
 silently merged into this run. No historical records exist before this delivery.
 
@@ -30,7 +30,7 @@ is not exposed; it must allocate a new run before future implementation.
 SQLite path: PRIORITYGRID_HISTORY_DB, default backend/history.sqlite3 (ignored).
 SQLModel 0.0.48 installed successfully on Python 3.14. Indexes cover site/run/seq
 and site/run/UTC timestamp; record IDs have a compound uniqueness constraint.
-Raw evidence retention: 30 days, trimmed at startup; no lossy rollups are produced.
+Raw evidence retention: 30 days, trimmed at startup and hourly during recording; no lossy rollups are produced.
 The sampling policy aggregates rendered frames, not incident or decision evidence.
 retention_gap warns that an old cursor has expired. Each process starts a new run;
 the previous run remains available after restart. No live controller restoration
@@ -44,4 +44,3 @@ worker thread so SQLite does not block the async publication loop. Failures are
 surfaced, not replaced by fabricated records. No calibrated hardware ACK trail,
 causal model re-execution, cross-site catalogs, schema-generated TS (#14), or
 what-if execution is claimed. Do not close #25 until those integration gates land.
-

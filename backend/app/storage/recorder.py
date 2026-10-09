@@ -1,7 +1,7 @@
-﻿import hashlib
+import hashlib
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 def utc(value):
@@ -16,6 +16,7 @@ class HistoryRecorder:
         self.signature = None
         self.pending_events = []
         self.counter = 0
+        self.last_prune = clock()
 
     def event(self, event, inputs):
         self.store.append("campus", self.run_id, "event", event.event_id,
@@ -24,6 +25,9 @@ class HistoryRecorder:
         self.pending_events.append(event.event_id)
 
     def capture(self, snapshot, inputs):
+        if self.clock() - self.last_prune >= 3600:
+            self.store.prune(utc(snapshot.generated_at - timedelta(days=30)))
+            self.last_prune = self.clock()
         data = snapshot.model_dump(mode="json")
         signature_data = {k: v for k, v in data.items() if k not in ("generated_at", "events", "replay")}
         signature = hashlib.sha256(json.dumps(signature_data, sort_keys=True).encode()).hexdigest()
@@ -53,4 +57,3 @@ class HistoryRecorder:
                                "servedCount": sum(s["modeled_served"] for s in data["services"]),
                                "shedCount": sum(s["requested"] and not s["modeled_served"] for s in data["services"])})
             self.last_sample = now
-

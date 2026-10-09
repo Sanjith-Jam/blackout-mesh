@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import math
 from contextlib import asynccontextmanager
@@ -81,12 +81,11 @@ hospital_demo = HospitalPriorityDemo(model=grid.model, replay=replay_data)
 
 async def broadcast_state():
     while True:
-        if True:
-            try:
-                snapshot = await asyncio.to_thread(grid.build_snapshot)
-                await manager.broadcast(snapshot.model_dump_json())
-            except Exception as e:
-                print(f"Broadcast error: {e}")
+        try:
+            snapshot = await asyncio.to_thread(grid.build_snapshot)
+            await manager.broadcast(snapshot.model_dump_json())
+        except Exception as e:
+            print(f"Broadcast error: {e}")
         await asyncio.sleep(0.25)
 
 async def run_replay(generation):
@@ -156,7 +155,7 @@ async def health_check():
 @app.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot():
     attach_history(grid)
-    return grid.build_snapshot()
+    return await asyncio.to_thread(grid.build_snapshot)
 
 @app.get("/api/v1/model/status")
 async def model_status():
@@ -304,5 +303,3 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-
-

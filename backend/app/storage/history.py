@@ -1,4 +1,4 @@
-﻿"""Durable ordered history. Playback reads these records; it never runs control."""
+"""Durable ordered history. Playback reads these records; it never runs control."""
 import json
 from fastapi.encoders import jsonable_encoder
 import threading
@@ -10,6 +10,7 @@ class HistoryRecord(SQLModel, table=True):
     __table_args__ = (
         Index("history_scope_cursor", "site_id", "run_id", "seq"),
         Index("history_scope_time", "site_id", "run_id", "timestamp"),
+        Index("history_kind_cursor", "site_id", "run_id", "kind", "seq"),
         UniqueConstraint("site_id", "run_id", "record_id"),
         {"sqlite_autoincrement": True},
     )
@@ -38,6 +39,8 @@ class HistoryStore:
         self.engine = create_engine(f"sqlite:///{path}", connect_args={"check_same_thread": False})
         self.lock = threading.RLock()
         SQLModel.metadata.create_all(self.engine)
+        for index in HistoryRecord.__table__.indexes:
+            index.create(self.engine, checkfirst=True)
         with self.engine.connect() as connection:
             connection.exec_driver_sql("PRAGMA journal_mode=WAL")
             connection.exec_driver_sql("PRAGMA busy_timeout=5000")
@@ -80,7 +83,7 @@ class HistoryStore:
                           revision=row.revision, provenance=row.provenance,
                           payload=json.loads(row.payload_json)) for row in rows[:limit]]
             return {"items": items, "next_cursor": items[-1]["seq"] if len(rows) > limit else None,
-                    "retention_gap": bool(known_run and after and after <= known_run.pruned_through),
+                    "retention_gap": bool(known_run and known_run.pruned_through and after <= known_run.pruned_through),
                     "pruned_through": known_run.pruned_through if known_run else 0}
 
     def runs(self, site):
@@ -101,5 +104,3 @@ class HistoryStore:
             session.exec(delete(HistoryRecord).where(HistoryRecord.timestamp < before))
             session.commit()
             return len(old)
-
-

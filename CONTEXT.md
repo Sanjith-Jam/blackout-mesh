@@ -32,3 +32,5 @@ Issue #25 foundation: indexed SQLModel/SQLite ordered history, deduplication and
 Windows check prerequisite: training metrics import now tolerates absent Unix resource module; peak memory remains null on Windows. Full suite reached 34 passed / 2 existing hospital visualizer failures (removed HOSPITAL_LOADS and obsolete scenario API), outside #25.
 
 Issue #25 recording/API: sampled telemetry, stable event IDs, separate decisions with captured evidence, model/policy/catalog and null ACK trail; read-only site/run cursor endpoints added. Relevant checks: 22 passed (history/API/ML integration). See docs/HISTORY_CONTRACT.md for blockers; full suite has 2 unchanged hospital failures. Next: server-history frontend.
+
+Issue #25 refinements: model hash/threshold identity is captured (null when unavailable); pruning runs hourly, kind/cursor indexes also upgrade existing history files. Public fixture and fresh-process run-identity check added. History tests: 5 passed. Remaining integration limits unchanged.

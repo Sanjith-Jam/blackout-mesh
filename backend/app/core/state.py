@@ -1,4 +1,4 @@
-﻿from uuid import uuid4
+from uuid import uuid4
 import threading
 import time
 from datetime import datetime, timezone
@@ -285,7 +285,9 @@ class GridState:
         return {"capacity_w": self.source_capacity_w, "feeder_limits_w": self.feeder_limits_w.copy(),
                 "feeder_available": self.feeder_available.copy(), "loads": self.classroom_load_events.copy(),
                 "active_classroom_id": self.active_classroom_id, "activity": self.current_activity(),
-                "catalog": SERVICE_CATALOG, "software_mode": self.software_mode}
+                "catalog": SERVICE_CATALOG, "software_mode": self.software_mode,
+                "model_identity": {key: getattr(self.model, "_manifest", {}).get(key) for key in
+                                   ("model_version", "sha256", "features", "decision_threshold", "abstain_margin")}}
 
     def build_snapshot(self) -> SystemSnapshot:
         with self._lock:
@@ -385,5 +387,3 @@ class GridState:
             if self.history:
                 self.history.capture(snapshot, self.history_inputs())
             return snapshot
-
-

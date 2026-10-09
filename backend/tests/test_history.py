@@ -1,4 +1,4 @@
-﻿from app.storage.history import HistoryStore
+from app.storage.history import HistoryStore
 STAMP = "2026-10-10T00:00:00.000000Z"
 
 def test_pagination_duplicates_equal_timestamps_restart(tmp_path):
@@ -67,3 +67,18 @@ def test_recording_is_sampled_and_readonly_api_does_not_advance_grid(tmp_path, m
     assert client.get(url + "&after=-1").status_code == 422
     assert client.get(url + "&site_id=invalid").status_code == 422
 
+
+def test_public_history_fixture_and_restart_run_identity(tmp_path):
+    import json
+    from pathlib import Path
+    from app.storage.recorder import HistoryRecorder
+    fixture = json.loads((Path(__file__).resolve().parents[2] / "contracts/schema_examples/history_v1.json").read_text(encoding="utf-8"))
+    row = fixture["items"][0]
+    path = tmp_path / "restart.sqlite3"
+    store = HistoryStore(path)
+    assert store.append(row["site_id"], row["run_id"], row["kind"], row["record_id"], row["timestamp"], row["revision"], row["payload"]) == row["seq"]
+    assert store.page("campus", "example-run") == fixture
+    previous = HistoryRecorder(store)
+    restarted = HistoryRecorder(HistoryStore(path))
+    assert restarted.run_id != previous.run_id
+    assert restarted.store.page("campus", "example-run") == fixture
