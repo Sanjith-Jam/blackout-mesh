@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Activity, AlertTriangle, Zap } from 'lucide-react';
 import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoActionName, HospitalDemoZone, HospitalDemoSnapshot } from '../types';
-import './ClasszoneVisualizer.css';
+import './ClassroomVisualizer.css';
 import HospitalBlueprint from './HospitalBlueprint';
 
 export default function HospitalDemo() {
@@ -94,17 +94,17 @@ export default function HospitalDemo() {
   if (!snapshot) {
     return <main className="classroom-demo classroom-demo__loading" aria-busy={!error}>
       {error ? <AlertTriangle size={30} aria-hidden="true" /> : <Activity size={30} aria-hidden="true" />}
-      <h1>{error ? 'Classzone demo unavailable' : 'Connecting to classzone supply…'}</h1>
+      <h1>{error ? 'Classzone demo unavailable' : 'Connecting to classzone supplyâ€¦'}</h1>
       {error && <><p role="alert">{error}</p><button className="classroom-demo__button" onClick={() => void refresh()}>Try again</button></>}
     </main>;
   }
 
   return <main className="classroom-demo">
     <header className="classroom-demo__header">
-      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Classzone power map</h1></div></div>
+      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid Â· Simulated</span><h1 className="classroom-demo__title">Classzone power map</h1></div></div>
       <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/hospital">Hospital demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
     </header>
-    {error && <div className="classroom-demo__alert" role="alert">Connection lost — displaying last known simulated state. {error}</div>}
+    {error && <div className="classroom-demo__alert" role="alert">Connection lost â€” displaying last known simulated state. {error}</div>}
     <div className="classroom-demo__layout">
       <section className="classroom-demo__main" aria-label="Classzone power state">
         <div className="classroom-demo__metrics">
@@ -116,7 +116,7 @@ export default function HospitalDemo() {
         <section className="classroom-demo__panel classroom-demo__ml" aria-labelledby="classzone-ml-title">
           <header className="classroom-demo__ml-head">
             <div><h2 id="classzone-ml-title">ML priority for scanned zones</h2>
-              <p>{snapshot.model.ready ? `Activity model ${snapshot.model.model_version}` : `Model unavailable: ${snapshot.model.fallback_reason ?? 'unknown reason'}`} · recorded office sensor replay, reading {snapshot.replay.length ? snapshot.replay.index + 1 : 0} of {snapshot.replay.length}{snapshot.replay.running ? `, changes every ${snapshot.replay.step_s} s` : ', paused'}</p></div>
+              <p>{snapshot.model.ready ? `Activity model ${snapshot.model.model_version}` : `Model unavailable: ${snapshot.model.fallback_reason ?? 'unknown reason'}`} Â· recorded office sensor replay, reading {snapshot.replay.length ? snapshot.replay.index + 1 : 0} of {snapshot.replay.length}{snapshot.replay.running ? `, changes every ${snapshot.replay.step_s} s` : ', paused'}</p></div>
             <div className="classroom-demo__ml-actions">
               <button className="classroom-demo__button" disabled={pending || !snapshot.replay.length} onClick={() => void runAction(snapshot.replay.running ? 'replay_pause' : 'replay_resume')}>{snapshot.replay.running ? 'Pause readings' : 'Resume readings'}</button>
               <button className="classroom-demo__button" disabled={pending || !snapshot.replay.length} onClick={() => void runAction('replay_step')}>Next reading</button>
@@ -129,9 +129,9 @@ export default function HospitalDemo() {
                 <header><strong>{tx.zone}</strong><span>{tx.priority_rank ? `Priority #${tx.priority_rank}` : 'Not scanned'}</span></header>
                 <span className={`classroom-demo__state classroom-demo__state--${act.state.toLowerCase()}`}>{act.state}</span>
                 <dl>
-                  <div><dt>Score</dt><dd>{act.score === null ? '—' : act.score.toFixed(2)}</dd></div>
-                  <div><dt>CO₂</dt><dd>{act.evidence.co2_ppm == null ? '—' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
-                  <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
+                  <div><dt>Score</dt><dd>{act.score === null ? 'â€”' : act.score.toFixed(2)}</dd></div>
+                  <div><dt>COâ‚‚</dt><dd>{act.evidence.co2_ppm == null ? 'â€”' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
+                  <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? 'â€”' : `${act.evidence.temperature_c.toFixed(1)} Â°C`}</dd></div>
                 </dl>
                 <p>{act.reason}</p>
               </article>;
@@ -150,7 +150,7 @@ export default function HospitalDemo() {
         <div className="classroom-demo__button-stack" role="group" aria-label="Scan hospital ward RFID cards">
           {(['ICU', 'Theatre', 'Wards'] as const).map(id => {
             const scanned = snapshot.scanned_zone_ids.includes(id);
-            return <button key={id} className={`classroom-demo__button ${scanned ? 'classroom-demo__button--primary' : ''}`} aria-pressed={scanned} disabled={pending} onClick={() => void runAction(scanned ? 'unscan' : 'scan', id)}>{scanned ? `✓ ${id} scanned · tap to end` : `Scan ${id}`}</button>;
+            return <button key={id} className={`classroom-demo__button ${scanned ? 'classroom-demo__button--primary' : ''}`} aria-pressed={scanned} disabled={pending} onClick={() => void runAction(scanned ? 'unscan' : 'scan', id)}>{scanned ? `âœ“ ${id} scanned Â· tap to end` : `Scan ${id}`}</button>;
           })}
         </div>
         <div className="classroom-demo__control-divider" />
@@ -164,11 +164,11 @@ export default function HospitalDemo() {
           </div>;
         })()}
         <div className="classroom-demo__button-stack">
-          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 8,000 W</button>
-          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 3,400 W</button>
+          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply Â· 8,000 W</button>
+          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset Â· 3,400 W</button>
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
-        <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating hospital state…' : feedback ?? ''}</p>
+        <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating hospital stateâ€¦' : feedback ?? ''}</p>
         <p><strong>Policy:</strong> {snapshot.policy}</p>
         <p>RFID scan state is shown as session evidence. The 8,000 W budget belongs to this hospital demo and is separate from the six-service campus model.</p>
       </aside>
