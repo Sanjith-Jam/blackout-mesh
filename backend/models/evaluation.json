@@ -20,6 +20,33 @@
     "room/card/scenario/mask/served power"
   ],
   "deduplication": "duplicate records across archive files collapsed by (timestamp, features, label)",
+  "partition_method": "sort by actual source timestamp, then keep entire calendar days disjoint; no random adjacent-row split",
+  "training": {
+    "random_forest": {
+      "n_estimators": 250,
+      "min_samples_leaf": 2,
+      "class_weight": "balanced",
+      "random_state": 42,
+      "n_jobs": 1
+    },
+    "logistic": {
+      "scaler": "StandardScaler",
+      "max_iter": 1000,
+      "class_weight": "balanced",
+      "random_state": 42
+    },
+    "operating_point": "Validation-only ACTIVE threshold and abstention-band grid; require >=90% coverage, maximize macro-F1 with UNKNOWN as error, then choose the widest positive band within 0.01 macro-F1 of the best; remaining ties by macro-F1, occupancy recall, coverage."
+  },
+  "tabicl_protocol": {
+    "context_rows": 512,
+    "context_source": "training partition only, deterministic seed 42",
+    "evaluation_rows_per_partition": 1500,
+    "sample_method": "deterministically evenly spaced by sorted timestamp",
+    "device": "CPU",
+    "n_estimators": 1,
+    "n_jobs": 1
+  },
+  "replay_selection": "40 validation rows per classroom: 20 sampled from each truth class with seed 42, then timestamp-sorted; labels used only for offline stratified demo selection and are not included in replay.json or inference",
   "split": {
     "train": {
       "dates": [
@@ -67,31 +94,38 @@
     }
   },
   "versions": {
-    "python": "3.14.7",
-    "numpy": "2.5.3",
-    "scikit_learn": "1.9.1",
-    "tabicl_source_revision": "c91f00df184a5097e584cb376f7e699e9f3444c4",
-    "tabicl_version": "2.2.0",
-    "torch": "2.14.1+cpu"
+    "python": "3.10.22",
+    "numpy": "2.2.6",
+    "scikit_learn": "1.7.2",
+    "tabicl": "not evaluated",
+    "torch": "not installed"
   },
-  "test_status": "Time-disjoint dates, but exploratory draft metrics were inspected before this final model selection; this split must not be described as an untouched final test.",
+  "tabicl_weights": {
+    "repo": "jingang/TabICL",
+    "revision": null,
+    "filename": "tabicl-classifier-v2-20260212.ckpt",
+    "sha256": null,
+    "size_bytes": null,
+    "license": null
+  },
+  "test_status": "time-disjoint dates, but exploratory draft metrics were inspected before this final model selection; do not describe as untouched final test",
   "models": {
     "random_forest": {
-      "train_seconds": 2.0571017030015355,
+      "train_seconds": 0.9340375419997144,
       "validation": {
         "n": 2566,
         "occupied": 802,
         "unoccupied": 1764,
         "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
           [
-            1437,
-            243,
-            84
+            1559,
+            205,
+            0
           ],
           [
-            143,
-            601,
-            58
+            208,
+            594,
+            0
           ],
           [
             0,
@@ -99,29 +133,29 @@
             0
           ]
         ],
-        "macro_f1_covered": 0.8192610220827989,
-        "macro_f1_all_rows_unknown_as_error": 0.7948524623997861,
-        "accuracy_covered": 0.8407590759075908,
-        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.7493765586034913,
-        "false_inactive_count": 143,
-        "false_inactive_rate_of_occupied": 0.17830423940149626,
-        "unknown_count": 142,
-        "unknown_rate": 0.05533904910366329,
-        "coverage": 0.9446609508963367,
+        "macro_f1_covered": 0.812536097253009,
+        "macro_f1_all_rows_unknown_as_error": 0.812536097253009,
+        "accuracy_covered": 0.8390491036632892,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.7406483790523691,
+        "false_inactive_count": 208,
+        "false_inactive_rate_of_occupied": 0.2593516209476309,
+        "unknown_count": 0,
+        "unknown_rate": 0.0,
+        "coverage": 1.0,
         "operating_point_tuned_on_validation": {
           "decision_threshold": 0.13,
-          "abstain_margin": 0.025
+          "abstain_margin": 0.0
         }
       },
       "warm_batch_1_latency": {
         "n": 100,
-        "median_ms": 7.6167125,
-        "p95_ms": 8.0388453
+        "median_ms": 2.9182505,
+        "p95_ms": 3.19976425
       },
       "warm_batch_128_latency": {
         "n": 100,
-        "median_ms": 7.9716625,
-        "p95_ms": 8.7955546
+        "median_ms": 3.202646,
+        "p95_ms": 4.1680271
       },
       "test_exploratory": {
         "n": 9200,
@@ -129,14 +163,14 @@
         "unoccupied": 7365,
         "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
           [
-            3735,
-            2466,
-            1164
+            4918,
+            2447,
+            0
           ],
           [
-            688,
-            1023,
-            124
+            773,
+            1062,
+            0
           ],
           [
             0,
@@ -144,23 +178,23 @@
             0
           ]
         ],
-        "macro_f1_covered": 0.5482932692307693,
-        "macro_f1_all_rows_unknown_as_error": 0.5089964020000729,
-        "accuracy_covered": 0.6013650151668352,
-        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5574931880108992,
-        "false_inactive_count": 688,
-        "false_inactive_rate_of_occupied": 0.3749318801089918,
-        "unknown_count": 1288,
-        "unknown_rate": 0.14,
-        "coverage": 0.86,
+        "macro_f1_covered": 0.5754125939297875,
+        "macro_f1_all_rows_unknown_as_error": 0.5754125939297875,
+        "accuracy_covered": 0.65,
+        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5787465940054496,
+        "false_inactive_count": 773,
+        "false_inactive_rate_of_occupied": 0.4212534059945504,
+        "unknown_count": 0,
+        "unknown_rate": 0.0,
+        "coverage": 1.0,
         "operating_point_tuned_on_validation": {
           "decision_threshold": 0.13,
-          "abstain_margin": 0.025
+          "abstain_margin": 0.0
         }
       }
     },
     "logistic": {
-      "train_seconds": 0.01354091199755203,
+      "train_seconds": 0.006745459002559073,
       "validation": {
         "n": 2566,
         "occupied": 802,
@@ -198,13 +232,13 @@
       },
       "warm_batch_1_latency": {
         "n": 100,
-        "median_ms": 0.1635505,
-        "p95_ms": 0.17478565000000001
+        "median_ms": 0.06889600000000001,
+        "p95_ms": 0.09938095
       },
       "warm_batch_128_latency": {
         "n": 100,
-        "median_ms": 0.164046,
-        "p95_ms": 0.19130205
+        "median_ms": 0.0690415,
+        "p95_ms": 0.08275210000000001
       },
       "test_exploratory": {
         "n": 9200,
@@ -245,15 +279,11 @@
     "selection": {
       "selected_model": "logistic",
       "criterion": "highest validation macro-F1 (unknown counted as error), then occupancy recall; no test results used",
+      "operating_point_criterion": "widest positive abstention band within 0.01 validation macro-F1 of the maximum among >=90% coverage points; then macro-F1, occupancy recall, coverage",
       "chosen_operating_point": {
         "decision_threshold": 0.24,
         "abstain_margin": 0.15
-      },
-      "tabicl_matched_validation_macro_f1": 0.7968169761273209,
-      "logistic_matched_validation_macro_f1": 0.8428948236069898,
-      "tabicl_adopted": false,
-      "tabicl_reason": "selected candidate did not meet validation quality/CPU latency/resource gate",
-      "operating_point_criterion": "Widest positive abstention band within 0.01 validation macro-F1 of the maximum among points with >=90% coverage; then macro-F1, occupancy recall, coverage."
+      }
     },
     "co2_rule_1000ppm_test_exploratory": {
       "n": 9200,
@@ -286,277 +316,22 @@
       "unknown_rate": 0.0,
       "coverage": 1.0
     },
-    "random_forest_validation_same_tabicl_rows": {
-      "n": 256,
-      "occupied": 77,
-      "unoccupied": 179,
-      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
-        [
-          144,
-          25,
-          10
-        ],
-        [
-          13,
-          58,
-          6
-        ],
-        [
-          0,
-          0,
-          0
-        ]
-      ],
-      "macro_f1_covered": 0.8183411680344196,
-      "macro_f1_all_rows_unknown_as_error": 0.7910714285714285,
-      "accuracy_covered": 0.8416666666666667,
-      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.7532467532467533,
-      "false_inactive_count": 13,
-      "false_inactive_rate_of_occupied": 0.16883116883116883,
-      "unknown_count": 16,
-      "unknown_rate": 0.0625,
-      "coverage": 0.9375
-    },
-    "logistic_validation_same_tabicl_rows": {
-      "n": 256,
-      "occupied": 77,
-      "unoccupied": 179,
-      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
-        [
-          153,
-          22,
-          4
-        ],
-        [
-          5,
-          63,
-          9
-        ],
-        [
-          0,
-          0,
-          0
-        ]
-      ],
-      "macro_f1_covered": 0.8712241653418125,
-      "macro_f1_all_rows_unknown_as_error": 0.8428948236069898,
-      "accuracy_covered": 0.8888888888888888,
-      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.8181818181818182,
-      "false_inactive_count": 5,
-      "false_inactive_rate_of_occupied": 0.06493506493506493,
-      "unknown_count": 13,
-      "unknown_rate": 0.05078125,
-      "coverage": 0.94921875
-    },
-    "random_forest_test_same_tabicl_rows": {
-      "n": 256,
-      "occupied": 51,
-      "unoccupied": 205,
-      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
-        [
-          103,
-          68,
-          34
-        ],
-        [
-          17,
-          30,
-          4
-        ],
-        [
-          0,
-          0,
-          0
-        ]
-      ],
-      "macro_f1_covered": 0.5608484417585022,
-      "macro_f1_all_rows_unknown_as_error": 0.5182653588022715,
-      "accuracy_covered": 0.6100917431192661,
-      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5882352941176471,
-      "false_inactive_count": 17,
-      "false_inactive_rate_of_occupied": 0.3333333333333333,
-      "unknown_count": 38,
-      "unknown_rate": 0.1484375,
-      "coverage": 0.8515625
-    },
-    "logistic_test_same_tabicl_rows": {
-      "n": 256,
-      "occupied": 51,
-      "unoccupied": 205,
-      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
-        [
-          84,
-          76,
-          45
-        ],
-        [
-          11,
-          34,
-          6
-        ],
-        [
-          0,
-          0,
-          0
-        ]
-      ],
-      "macro_f1_covered": 0.5487666034155598,
-      "macro_f1_all_rows_unknown_as_error": 0.4911801242236025,
-      "accuracy_covered": 0.5756097560975609,
-      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.6666666666666666,
-      "false_inactive_count": 11,
-      "false_inactive_rate_of_occupied": 0.21568627450980393,
-      "unknown_count": 51,
-      "unknown_rate": 0.19921875,
-      "coverage": 0.80078125
-    },
     "tabicl": {
-      "evaluated": true,
-      "reason": null,
-      "validation": {
-        "n": 256,
-        "occupied": 77,
-        "unoccupied": 179,
-        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
-          [
-            167,
-            7,
-            5
-          ],
-          [
-            31,
-            46,
-            0
-          ],
-          [
-            0,
-            0,
-            0
-          ]
-        ],
-        "macro_f1_covered": 0.8027708850289496,
-        "macro_f1_all_rows_unknown_as_error": 0.7968169761273209,
-        "accuracy_covered": 0.848605577689243,
-        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.5974025974025974,
-        "false_inactive_count": 31,
-        "false_inactive_rate_of_occupied": 0.4025974025974026,
-        "unknown_count": 5,
-        "unknown_rate": 0.01953125,
-        "coverage": 0.98046875,
-        "sampled_rows": 256,
-        "operating_point_tuned_on_validation": {
-          "decision_threshold": 0.61,
-          "abstain_margin": 0.025
-        }
-      },
-      "warm_latency_batch_1": {
-        "n": 10,
-        "median_ms": 511.4292635,
-        "p95_ms": 526.54466155
-      },
-      "test": {
-        "n": 256,
-        "occupied": 51,
-        "unoccupied": 205,
-        "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
-          [
-            136,
-            65,
-            4
-          ],
-          [
-            28,
-            22,
-            1
-          ],
-          [
-            0,
-            0,
-            0
-          ]
-        ],
-        "macro_f1_covered": 0.5331866813318669,
-        "macro_f1_all_rows_unknown_as_error": 0.5279839754919289,
-        "accuracy_covered": 0.6294820717131474,
-        "occupancy_recall_all_rows_unknown_counts_as_miss": 0.43137254901960786,
-        "false_inactive_count": 28,
-        "false_inactive_rate_of_occupied": 0.5490196078431373,
-        "unknown_count": 5,
-        "unknown_rate": 0.01953125,
-        "coverage": 0.98046875,
-        "sampled_rows": 256
-      },
-      "warm_latency_batch_32": {
-        "n": 10,
-        "median_ms": 537.2542470000001,
-        "p95_ms": 553.99209865
-      },
-      "version": "official TabICL @ c91f00df184a5097e584cb376f7e699e9f3444c4",
-      "weights_revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19",
-      "checkpoint_sha256": "bdc7dbd5e4ff21f8f0456fcf90c6b7cdf72dbea960f2d05b19bec19f9b3d4ed0",
-      "checkpoint_size_bytes": 110368038,
-      "checkpoint_license": "BSD-3-Clause (weight card)",
-      "source_license": "BSD-3-Clause",
-      "torch_version": "2.14.1+cpu",
-      "peak_rss_mib": 711.9921875,
-      "checkpoint_fetch_and_context_setup_seconds": 0.23096037800132763,
-      "first_single_prediction_ms": 536.6829189988493,
-      "warm_single_row_latency_isolated_measurement_ms": {
-        "n": 10,
-        "median_ms": 524.1097905,
-        "p95_ms": 552.7029821
-      },
-      "isolated_peak_rss_mib": 601.4765625,
-      "runtime_note": "Bounded feasibility trial: 256 evenly spaced validation/test rows and a 512-row train-only context; not a full-dataset TabICL evaluation.",
-      "threshold_metadata_note": "The full benchmark used choose_operating_point on the 256 validation rows; result assembly overwrote its stored point. A repeat with the same pinned checkpoint, seeded context, and exact validation indices reproduced the confusion matrix/F1 and recovered threshold 0.61, margin 0.025."
+      "evaluated": false,
+      "reason": "not requested"
     }
   },
   "resource": {
-    "peak_rss_mib": 711.9921875
+    "peak_rss_mib": 140464.0
   },
   "attribution": "Candanedo, L. M. and Feldheim, V. (2016), Accurate occupancy detection of an office room from light, temperature, humidity and CO2 measurements using statistical learning models, Energy and Buildings 112, 28-39. UCI dataset DOI 10.24432/C5X01N, CC BY 4.0.",
   "runtime_inference": {
-    "model_init_seconds_includes_hash_and_artifact_load": 0.7330393310003274,
-    "first_prediction_ms": 2.9384909976215567,
+    "model_init_seconds_includes_hash_and_artifact_load": 0.00034895899443654343,
+    "first_prediction_ms": 0.184834,
     "warm_single_prediction_ms": {
       "n": 100,
-      "median_ms": 0.17187599999999997,
-      "p95_ms": 0.212255
+      "median_ms": 0.0724795,
+      "p95_ms": 0.07835179999999999
     }
-  },
-  "tabicl_weights": {
-    "repo": "jingang/TabICL",
-    "revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19",
-    "filename": "tabicl-classifier-v2-20260212.ckpt",
-    "sha256": "bdc7dbd5e4ff21f8f0456fcf90c6b7cdf72dbea960f2d05b19bec19f9b3d4ed0",
-    "size_bytes": 110368038,
-    "license": "BSD-3-Clause"
-  },
-  "partition_method": "Sort by actual timestamp and split whole calendar days; never random adjacent rows.",
-  "training": {
-    "random_forest": {
-      "n_estimators": 250,
-      "min_samples_leaf": 2,
-      "class_weight": "balanced",
-      "random_state": 42,
-      "n_jobs": 1
-    },
-    "logistic": {
-      "scaler": "StandardScaler",
-      "max_iter": 1000,
-      "class_weight": "balanced",
-      "random_state": 42
-    },
-    "operating_point": "Validation-only search over ACTIVE threshold and abstention margin; require coverage >=90%, maximize macro-F1 with UNKNOWN as error, then prefer the widest positive band within 0.01 macro-F1 of the best; ties by macro-F1, occupancy recall, then coverage."
-  },
-  "tabicl_protocol": {
-    "context_rows": 512,
-    "context_source": "Training partition only, deterministic seed 42",
-    "evaluation_rows_per_partition": 256,
-    "sample_method": "Deterministically evenly spaced by sorted timestamp",
-    "device": "CPU",
-    "n_estimators": 1,
-    "n_jobs": 1
-  },
-  "replay_selection": "40 validation rows per classroom: 20 from each truth class, seed 42, timestamp-sorted; labels were used only for offline stratified sample selection and are absent from replay and inference."
+  }
 }
