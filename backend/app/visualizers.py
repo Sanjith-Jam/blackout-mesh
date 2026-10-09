@@ -4,6 +4,8 @@ from __future__ import annotations
 import time
 from app.core.restoration import RestorationGate
 
+from app.core.identity import get_run_identity
+from app.core.state import GridState, SITE_CONFIG_HASH, site_profile
 from app.core.config import load_site_profile, AssetType
 import os
 
@@ -86,7 +88,19 @@ class ClassroomDemo:
             rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": self.rfid == cid, "loads": loads})
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
-        return {"capacity_w": self.capacity, "requested_w": requested, "served_w": served_w,
+
+        identity = get_run_identity(site_profile.name, SITE_CONFIG_HASH, site_profile.version, GridState().control_revision)
+        contract = {
+            "identity": identity,
+            "zone_totals": {
+                "classroom": {
+                    "capacity_w": self.capacity,
+                    "requested_w": requested,
+                    "served_w": served_w
+                }
+            }
+        }
+        return {"contract": contract, "capacity_w": self.capacity, "requested_w": requested, "served_w": served_w,
                 "shortfall_w": requested-served_w, "selected_classroom_id": self.selected,
                 "rooms": rooms, "mode": "SIMULATED", "policy": "Classroom-only: essential lighting and computers first, selected room next, then deterministic optional loads."}
 
@@ -150,5 +164,17 @@ def hospital_snapshot(scenario="normal"):
         transformers.append({"id": tx["id"], "name": tx["name"], "zone": tx["zone"],
                              "rated_current_a": tx["rated_current_a"], "sensors": sensors, "diagnosis": diagnosis,
                              "energized": vout is not None and vout >= 100.0})
-    return {"mode": "SIMULATED", "transformers": transformers,
+
+    identity = get_run_identity(site_profile.name, SITE_CONFIG_HASH, site_profile.version, GridState().control_revision)
+    contract = {
+        "identity": identity,
+        "zone_totals": {
+            "hospital": {
+                "capacity_w": None,
+                "requested_w": 0,
+                "served_w": 0
+            }
+        }
+    }
+    return {"contract": contract, "mode": "SIMULATED", "transformers": transformers,
             "summary": "Synthetic sensor diagnosis for demonstration; thresholds are not certified protection settings."}

@@ -30,6 +30,7 @@ export default function DemoDashboard() {
   const MAX_HISTORY = 50;
 
   const wsRef = useRef<WebSocket | null>(null);
+  const runIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const connectWs = () => {
@@ -41,14 +42,23 @@ export default function DemoDashboard() {
         setError(null);
       };
 
+
       ws.onmessage = (event) => {
         try {
           const data: Snapshot = JSON.parse(event.data);
+          
+          if (runIdRef.current !== null && runIdRef.current !== data.contract.identity.run_id) {
+             // Run ID changed, reset history
+             setHistory([]);
+          }
+          runIdRef.current = data.contract.identity.run_id;
+
           setSnapshot(data);
           setHealthOk(true);
 
           // Update history
           const now = new Date(data.generated_at).toLocaleTimeString();
+
           const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
           const servedCount = data.services.filter(s => s.modeled_served).length;
           const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;

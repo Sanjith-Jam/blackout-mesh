@@ -79,7 +79,30 @@ class FaultDiagnosis(BaseModel):
     severity: str
     status: str
 
+
+class ScopeTotals(BaseModel):
+    capacity_w: Optional[int] = None
+    requested_w: int
+    served_w: int
+
+class RunIdentity(BaseModel):
+    site_id: str
+    run_id: str
+    server_epoch: int
+    config_hash: str
+    catalog_version: str
+    policy_version: str
+    model_version: str
+    state_revision: int
+    observation_time: str
+
+class CrossRouteContract(BaseModel):
+    identity: RunIdentity
+    campus_totals: Optional[ScopeTotals] = None
+    zone_totals: Dict[str, ScopeTotals] = {}
+
 class SystemSnapshot(BaseModel):
+    contract: CrossRouteContract
     control_revision: int
     config_hash: str = ""
     generated_at: datetime

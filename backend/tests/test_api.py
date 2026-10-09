@@ -178,3 +178,26 @@ def test_hardware_confirmation_truth():
     snap = client.get("/api/v1/snapshot").json()
     # Indicator confirmed mask should be None (never fabricate a confirmation)
     assert snap["indicator_confirmed_mask"] is None
+
+
+def test_contract_fields_present():
+    response = client.get("/api/v1/snapshot")
+    assert response.status_code == 200
+    data = response.json()
+    assert "contract" in data
+    assert "identity" in data["contract"]
+    assert "run_id" in data["contract"]["identity"]
+    assert "site_id" in data["contract"]["identity"]
+    
+    response2 = client.get("/api/v1/visualizers/classrooms")
+    data2 = response2.json()
+    assert "contract" in data2
+    assert "identity" in data2["contract"]
+    assert data2["contract"]["identity"]["run_id"] == data["contract"]["identity"]["run_id"]
+
+    response3 = client.get("/api/v1/visualizers/hospital")
+    data3 = response3.json()
+    assert "contract" in data3
+    assert "identity" in data3["contract"]
+    assert data3["contract"]["identity"]["run_id"] == data["contract"]["identity"]["run_id"]
+

@@ -1,3 +1,28 @@
+
+export interface ScopeTotals {
+  capacity_w: number | null;
+  requested_w: number;
+  served_w: number;
+}
+
+export interface RunIdentity {
+  site_id: string;
+  run_id: string;
+  server_epoch: number;
+  config_hash: string;
+  catalog_version: string;
+  policy_version: string;
+  model_version: string;
+  state_revision: number;
+  observation_time: string;
+}
+
+export interface CrossRouteContract {
+  identity: RunIdentity;
+  campus_totals: ScopeTotals | null;
+  zone_totals: Record<string, ScopeTotals>;
+}
+
 export interface SourceInfo {
   kind: string;
   capacity_w: number;
@@ -110,6 +135,7 @@ export interface ActivityObservation {
 }
 
 export interface Snapshot {
+  contract: CrossRouteContract;
   activity: Record<string, ActivityPrediction>;
   model: ModelStatus;
   replay: ReplayStatus;
@@ -179,6 +205,7 @@ export interface ClassroomDemoRoom {
 }
 
 export interface ClassroomDemoSnapshot {
+  contract: CrossRouteContract;
   capacity_w: number;
   requested_w: number;
   served_w: number;
@@ -216,6 +243,7 @@ export interface HospitalDemoTransformer {
 }
 
 export interface HospitalDemoSnapshot {
+  contract: CrossRouteContract;
   mode: "SIMULATED";
   transformers: HospitalDemoTransformer[];
   summary: string;

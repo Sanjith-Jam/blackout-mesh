@@ -13,6 +13,8 @@ from app.core.allocator import allocate, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
 
+from app.core.identity import get_run_identity
+from app.schemas.snapshot import CrossRouteContract, RunIdentity, ScopeTotals
 from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
 import os
 
@@ -357,7 +359,26 @@ class GridState:
 
             activity = self.current_activity()
 
+
+            requested_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i))
+            served_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i))
+            campus_totals = ScopeTotals(capacity_w=self.source_capacity_w, requested_w=requested_w, served_w=served_w)
+            
+            zone_totals = {}
+            for z in ["hospital", "classroom"]:
+                z_req = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i) and s["zone"] == z)
+                z_srv = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i) and s["zone"] == z)
+                zone_totals[z] = ScopeTotals(capacity_w=None, requested_w=z_req, served_w=z_srv)
+
+            contract_dict = {
+                "identity": get_run_identity(site_profile.name, SITE_CONFIG_HASH, site_profile.version, self.control_revision),
+                "campus_totals": campus_totals,
+                "zone_totals": zone_totals
+            }
+            contract = CrossRouteContract(**contract_dict)
+
             return SystemSnapshot(
+                contract=contract,
                 control_revision=self.control_revision,
                 generated_at=datetime.now(timezone.utc),
                 source=SourceInfo(kind=SourceKind.SIMULATED, capacity_w=self.source_capacity_w),
