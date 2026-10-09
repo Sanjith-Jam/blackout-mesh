@@ -1,14 +1,13 @@
 import { HospitalDemoSnapshot, HospitalDemoTransformer } from '../types';
 import './ClassroomBlueprint.css';
+import { EDGE_FOOTNOTE, EDGE_LABEL, EdgeLegend, PowerWire, edgeIndex } from './PowerEdges';
 
 type Props = { snapshot: HospitalDemoSnapshot; connected: boolean };
 
 export default function HospitalBlueprint({ snapshot, connected }: Props) {
-  const wire = (id: string, d: string, on: boolean, main = false) => <g key={id} data-circuit={id} className={`power-map__circuit ${on ? 'is-on' : 'is-off'} ${main ? 'is-main' : ''}`}>
-    <path className="power-map__cable-bed" d={d} />
-    <path className="power-map__cable" d={d} />
-    {on && connected && <path className="power-map__current" d={d} />}
-  </g>;
+  const edges = edgeIndex(snapshot.edges);
+  // Every wire is one canonical edge from the backend (#23).
+  const wire = (edgeId: string, d: string, main = false) => <PowerWire key={edgeId} edge={edges[edgeId]} d={d} main={main} live={connected} />;
 
   const zones: { zone: string; label: string; equipment: { id: string; name: string; label: string }[] }[] = [
     { zone: 'ICU', label: 'ICU', equipment: [
@@ -38,7 +37,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
   for (const tx of snapshot.transformers) txMap[tx.zone] = tx;
 
   return <section className={`power-map ${connected ? '' : 'is-stale'}`} aria-label="Hospital electricity map">
-    <header className="power-map__toolbar"><div><span className="power-map__eyebrow">Hospital / electrical layer</span><h2>Follow the current</h2></div><div className="power-map__legend"><span><i className="live" />Live current</span><span><i />Cut circuit</span></div></header>
+    <header className="power-map__toolbar"><div><span className="power-map__eyebrow">Hospital / electrical layer</span><h2>Follow the current</h2></div><EdgeLegend stale={!connected} /></header>
     <div className="power-map__viewport" tabIndex={0} role="region" aria-label="Scrollable hospital power map">
       <svg className="power-map__drawing" viewBox="0 0 1080 520" role="img" aria-label="Three hospital zones connected through transformers to a virtual utility supply.">
         <defs>
@@ -49,22 +48,20 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
         <text x="30" y="26" className="power-map__map-note">HOSPITAL CAMPUS / POWER DISTRIBUTION</text>
 
         {/* Main supply bus */}
-        {wire('supply-bus', 'M150 465H1040', snapshot.transformers.some(tx => tx.energized), true)}
+        {wire('hospital:SUPPLY>BUS', 'M150 465H1040', true)}
 
         {zones.map((z, index) => {
           const x = 30 + index * 350;
           const tx = txMap[z.zone];
-          const energized = tx?.energized ?? false;
+          const txId = tx?.id ?? `TX${index + 1}`;
+          const energized = edges[`hospital:BUS>${txId}`]?.state === 'ENERGIZED';
           const severity = tx?.diagnosis.severity ?? 'unknown';
           const outputV = tx?.sensors.output_voltage_v;
           const current = tx?.sensors.current_a;
           const temp = tx?.sensors.temperature_c;
           const coolingOk = tx?.sensors.cooling_ok;
-          const on1 = tx?.loads?.find(l => l.id === z.equipment[0].id)?.served ?? energized;
-          const on2 = tx?.loads?.find(l => l.id === z.equipment[1].id)?.served ?? energized;
-          const on3 = tx?.loads?.find(l => l.id === z.equipment[2].id)?.served ?? energized;
-          const on4 = tx?.loads?.find(l => l.id === z.equipment[3].id)?.served ?? energized;
-          const on5 = tx?.loads?.find(l => l.id === z.equipment[4].id)?.served ?? energized;
+          const eqOn = (k: number) => edges[`hospital:${txId}>${z.equipment[k].id}`]?.state === 'ENERGIZED';
+          const [on1, on2, on3, on4, on5] = [0, 1, 2, 3, 4].map(eqOn);
 
           return <g key={z.zone}>
             {/* Zone building */}
@@ -82,12 +79,13 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             <rect x={x + 240} y="62" width="68" height="48" rx="4" fill={energized ? '#4a6e50' : '#6b6b6b'} stroke={energized ? '#2d4a32' : '#444'} strokeWidth="2" />
             <text x={x + 274} y="80" textAnchor="middle" fill="#e8f0ea" style={{ fontSize: '8px', fontWeight: 800, fontFamily: 'ui-monospace, monospace' }}>{tx?.id ?? '?'}</text>
             <text x={x + 274} y="96" textAnchor="middle" fill="#c4daca" style={{ fontSize: '6px', fontWeight: 600, fontFamily: 'ui-monospace, monospace' }}>{current != null ? `${current.toFixed(0)}A` : '—'} / {temp != null ? `${temp.toFixed(0)}°C` : '—'}</text>
+            <text x={x + 274} y="106" textAnchor="middle" fill="#c4daca" style={{ fontSize: '5px', fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>SIM SENSOR</text>
 
             {/* Feed wire from bus into zone */}
-            {wire(`${z.zone}-feed`, `M${x + 32} 465V106`, energized, true)}
+            {wire(`hospital:BUS>${txId}`, `M${x + 32} 465V106`, true)}
 
             {/* Equipment 1 — top left (critical) */}
-            {wire(`${z.zone}-eq1`, `M${x + 32} 120H${x + 95}`, on1)}
+            {wire(`hospital:${txId}>${z.equipment[0].id}`, `M${x + 32} 120H${x + 95}`)}
             <g className={`power-map__lamp ${on1 ? 'is-on' : ''}`} transform={`translate(${x + 95} 120)`}>
               {on1 && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#95d6a4" opacity=".35" />}
               <rect x="-18" y="-8" width="36" height="16" rx="3" fill={on1 ? '#5cb86e' : '#a6aaa2'} stroke="#3a6640" strokeWidth="2" />
@@ -96,7 +94,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             </g>
 
             {/* Equipment 2 — top right */}
-            {wire(`${z.zone}-eq2`, `M${x + 32} 106H${x + 220}V120`, on2)}
+            {wire(`hospital:${txId}>${z.equipment[1].id}`, `M${x + 32} 106H${x + 220}V120`)}
             <g transform={`translate(${x + 220} 120)`}>
               <rect x="-22" y="-12" width="44" height="28" rx="3" fill={on2 ? '#68b6c2' : '#7c8581'} stroke="#3c585b" strokeWidth="2" />
               <rect x="-16" y="-7" width="32" height="16" rx="2" fill={on2 ? '#8cd6e0' : '#6c797b'} />
@@ -107,7 +105,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             </g>
 
             {/* Equipment 3 — middle left */}
-            {wire(`${z.zone}-eq3`, `M${x + 32} 200H${x + 88}`, on3)}
+            {wire(`hospital:${txId}>${z.equipment[2].id}`, `M${x + 32} 200H${x + 88}`)}
             <g transform={`translate(${x + 88} 200)`}>
               <rect x="-18" y="-14" width="36" height="28" rx="3" fill={on3 ? '#5d8e79' : '#969c92'} stroke="#3a5c48" strokeWidth="2" />
               {on3 && <rect x="-10" y="-8" width="8" height="16" rx="1" fill="#a8e6c2" />}
@@ -116,7 +114,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             </g>
 
             {/* Equipment 4 — middle right */}
-            {wire(`${z.zone}-eq4`, `M${x + 32} 260H${x + 210}V200H${x + 270}`, on4)}
+            {wire(`hospital:${txId}>${z.equipment[3].id}`, `M${x + 32} 260H${x + 210}V200H${x + 270}`)}
             <g transform={`translate(${x + 270} 200)`}>
               {on4 && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#ffe295" opacity=".35" />}
               <rect x="-18" y="-8" width="36" height="16" rx="2" fill={on4 ? '#ffdc64' : '#a6aaa2'} stroke="#797762" strokeWidth="2" />
@@ -124,7 +122,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             </g>
 
             {/* Equipment 5 — bottom */}
-            {wire(`${z.zone}-eq5`, `M${x + 32} 300H${x + 280}V280`, on5)}
+            {wire(`hospital:${txId}>${z.equipment[4].id}`, `M${x + 32} 300H${x + 280}V280`)}
             <g transform={`translate(${x + 280} 270)`}>
               <rect x="-20" y="-12" width="40" height="25" fill="#e1e1d8" stroke="#7c8880" strokeWidth="2" />
               <path d="M-14 3h28m-28 5h28" stroke={on5 ? '#53998f' : '#a2a79f'} strokeWidth="2" />
@@ -143,7 +141,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             <path d={`m${x + 34} 304-9 12h7l-4 9 12-14h-7Z`} fill="#82632b" />
 
             {/* Zone summary */}
-            <text x={x + 80} y="380" className="power-map__feed-label">{outputV != null ? `${outputV.toFixed(0)} V` : '— V'} / {severity === 'normal' ? 'ALL SYSTEMS' : severity.toUpperCase()}</text>
+            <text x={x + 80} y="380" className="power-map__feed-label">{outputV != null ? `${outputV.toFixed(0)} V SIM SENSOR` : '— V (NO READING)'} / {severity === 'normal' ? 'ALL SYSTEMS' : severity.toUpperCase()}</text>
           </g>;
         })}
 
@@ -163,15 +161,16 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
     <div className="power-map__room-ledger">
       {zones.map(z => {
         const tx = txMap[z.zone];
-        const energized = tx?.energized ?? false;
+        const txId = tx?.id ?? '';
         const severity = tx?.diagnosis.severity ?? 'unknown';
         return <article key={z.zone} className={severity !== 'normal' && severity !== 'unknown' ? 'is-selected' : ''} aria-label={`${z.zone} equipment status`}>
           <header><strong>{z.zone}</strong><span>{tx ? tx.diagnosis.code.replace(/_/g, ' ') : 'Unknown'}</span></header>
           <div className="power-map__loads">
             {z.equipment.map(eq => {
-              const on = tx?.loads?.find(l => l.id === eq.id)?.served ?? energized;
-              return <span key={eq.id} className={on ? 'is-on' : 'is-off'} title={`${eq.name} — ${on ? 'Energized' : 'De-energized'}`}>
-                <i />{eq.name}<b>{on ? 'ON' : 'OFF'}</b>
+              const e = edges[`hospital:${txId}>${eq.id}`];
+              const state = e?.state ?? 'UNKNOWN';
+              return <span key={eq.id} data-edge-state={state} className={state === 'ENERGIZED' ? 'is-on' : 'is-off'} title={`${eq.name} — ${e?.reason ?? 'no edge data'}`}>
+                <i />{eq.name}<b>{EDGE_LABEL[state]}</b>
               </span>
             })}
             <span className={tx?.sensors.cooling_ok ? 'is-on' : 'is-off'} title="Cooling system">
@@ -181,5 +180,6 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
         </article>;
       })}
     </div>
+    <p className="power-map__footnote">{EDGE_FOOTNOTE}</p>
   </section>;
 }
