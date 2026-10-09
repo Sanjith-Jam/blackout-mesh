@@ -26,17 +26,18 @@ class HistoryRecorder:
 
     def capture(self, snapshot, inputs):
         if self.clock() - self.last_prune >= 3600:
-            self.store.prune(utc(snapshot.generated_at - timedelta(days=30)))
+            self.store.prune(utc(datetime.now(timezone.utc) - timedelta(days=30)))
             self.last_prune = self.clock()
         data = snapshot.model_dump(mode="json")
-        signature_data = {k: v for k, v in data.items() if k not in ("generated_at", "events", "replay")}
+        signature_data = {k: v for k, v in data.items() if k not in ("generated_at", "published_revision", "site", "events", "replay")}
         signature = hashlib.sha256(json.dumps(signature_data, sort_keys=True).encode()).hexdigest()
         timestamp = utc(snapshot.generated_at)
+        revision = snapshot.site["revision"] if snapshot.site else snapshot.control_revision
         if signature != self.signature:
             self.counter += 1
             decision_id = f"{self.run_id}:decision:{self.counter}"
             self.store.append("campus", self.run_id, "decision", decision_id,
-                              timestamp, snapshot.control_revision,
+                              timestamp, revision,
                               {"snapshot": data, "inputs": inputs, "policy": data["allocation"],
                                "model": data["model"], "event_ids": list(self.pending_events),
                                "trail": {"incident_ids": list(self.pending_events),
@@ -51,8 +52,8 @@ class HistoryRecorder:
         if self.last_sample is None or now - self.last_sample >= 1:
             self.counter += 1
             self.store.append("campus", self.run_id, "telemetry", f"{self.run_id}:sample:{self.counter}",
-                              timestamp, snapshot.control_revision,
-                              {"capacity": data["source"]["capacity_w"],
+                              utc(datetime.now(timezone.utc)), revision,
+                              {"state_generated_at": data["generated_at"], "capacity": data["source"]["capacity_w"],
                                "demand": sum(s["watts"] for s in data["services"] if s["requested"]),
                                "servedCount": sum(s["modeled_served"] for s in data["services"]),
                                "shedCount": sum(s["requested"] and not s["modeled_served"] for s in data["services"])})

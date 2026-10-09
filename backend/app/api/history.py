@@ -8,19 +8,25 @@ from app.storage.recorder import HistoryRecorder, utc
 
 router = APIRouter(prefix="/api/v1/history", tags=["read-only history"])
 
-def attach_history(grid):
+def attach_history(grid, run_id):
     if grid.history is None:
         path = Path(os.environ.get("PRIORITYGRID_HISTORY_DB", str(Path(__file__).resolve().parents[2] / "history.sqlite3")))
         store = HistoryStore(path)
         store.prune(utc(datetime.now(timezone.utc) - timedelta(days=30)))
-        grid.history = HistoryRecorder(store)
+        grid.history = HistoryRecorder(store, run_id)
     return grid.history
 
-def register_history(grid):
+def register_history(site_provider):
+    def recorder():
+        history = site_provider().grid.history
+        if history is None:
+            raise HTTPException(503, "History not initialized; start the application lifespan")
+        return history
+
     @router.get("/runs")
     def runs(site_id: Literal["campus"] = "campus"):
-        recorder = attach_history(grid)
-        return {"current_run_id": recorder.run_id, "runs": recorder.store.runs(site_id)}
+        history = recorder()
+        return {"current_run_id": site_provider().run_id, "runs": history.store.runs(site_id)}
 
     @router.get("/records")
     def records(run_id: str = Query(min_length=1, max_length=100),
@@ -32,7 +38,7 @@ def register_history(grid):
             raise HTTPException(422, "History timestamps require a UTC offset")
         if start and end and start > end:
             raise HTTPException(422, "start must not exceed end")
-        return attach_history(grid).store.page(
+        return recorder().store.page(
             site_id, run_id, after=after, limit=limit, kind=kind,
             start=utc(start) if start else None, end=utc(end) if end else None)
     return router

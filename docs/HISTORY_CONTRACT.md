@@ -32,15 +32,24 @@ SQLModel 0.0.48 installed successfully on Python 3.14. Indexes cover site/run/se
 and site/run/UTC timestamp; record IDs have a compound uniqueness constraint.
 Raw evidence retention: 30 days, trimmed at startup and hourly during recording; no lossy rollups are produced.
 The sampling policy aggregates rendered frames, not incident or decision evidence.
-retention_gap warns that an old cursor has expired. Each process starts a new run;
-the previous run remains available after restart. No live controller restoration
+retention_gap warns that an old cursor has expired. The recorder uses SiteAuthority.run_id; explicit site run resets rotate the recorder,
+and previous runs remain available after restart or reset. No live controller restoration
 from history is claimed.
 
 Limitations: dependency #12's transactional state/input journal and #13's server
 publication sequence are not implemented upstream. This recorder captures public
 events and recorded applied snapshots, not crash-atomic input->decision commits.
-Writes occur under the state lock; broadcast snapshot construction runs in a
-worker thread so SQLite does not block the async publication loop. Failures are
+History recording occurs only in SiteAuthority.tick after its canonical publication,
+never in GET or WebSocket reads. SQLite writes remain synchronous under the
+authority lock; bounded writer-queue/crash-atomic integration is a #12 gate. Failures are
 surfaced, not replaced by fabricated records. No calibrated hardware ACK trail,
 causal model re-execution, cross-site catalogs, schema-generated TS (#14), or
 what-if execution is claimed. Do not close #25 until those integration gates land.
+
+## Current-main integration
+Recording follows the canonical site run and revision while preserving the upstream
+read-only GridState.build_snapshot and single ControlLoop. Event revision fields
+remain campus control revisions; decision/telemetry revisions are site revisions
+and the complete recorded snapshot retains both. Telemetry timestamps identify
+sampling time; state_generated_at retains the original publication time. Generated
+publication/site revision changes alone do not create new decision records.

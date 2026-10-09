@@ -1,4 +1,4 @@
-﻿# Issue #25 delivery — 2026-10-10
+# Issue #25 delivery — 2026-10-10
 
 Implemented server-backed campus history and read-only recorded-decision playback.
 The original theme remains. No push or issue closure was performed.
@@ -68,3 +68,33 @@ See HISTORY_CONTRACT.md for API and retention details. Restart backend and front
 open /demo, cause a campus capacity change in LIVE, then select HISTORY and replay.
 Only records created after this delivery can be recovered.
 
+## Conflict resolution and current-main verification - 2026-10-10
+Merged origin/main at da14c90 into the review branch without rewriting either
+history. Preserved the new site authority, diagnosis/safety, controller scheduling,
+read-only projections, transport timestamps and frontend site headers.
+
+The recorder now attaches at lifespan startup using SiteAuthority.run_id and
+captures only from SiteAuthority.tick after canonical site publication. An explicit
+new site run rotates history while retaining old records. History GET endpoints
+do not attach/initialize a recorder or advance state; without startup they return
+503. Event revisions remain campus control revisions; decision/telemetry revisions
+use site revisions with both identities retained in the snapshot. Sampling time
+and last state-publication time are separate. SQLite writes are still synchronous;
+bounded writer/crash-atomic journal integration remains part of #12.
+
+Added integration checks for canonical identity, run rotation and history-reader
+non-mutation. The prior failure counts and statements about pending current-main
+integration above are historical; the merge verification below supersedes them.
+
+Exact PowerShell commands, repository root:
+- $env:PYTHONPATH='backend'
+- $env:PRIORITYGRID_HISTORY_DB=Join-Path $env:TEMP 'prioritygrid-merge-history-check.sqlite3'
+- python -m pytest backend/tests/test_history.py backend/tests/test_control_loop.py backend/tests/test_site.py -q --tb=short: 20 passed.
+- python -m pytest backend/tests -q --tb=short: 100 passed, no failures;
+  existing Starlette/httpx deprecation warning.
+- npm.cmd run test:history --prefix frontend: 4 passed.
+- npm.cmd run build --prefix frontend: passed, existing large-bundle warning.
+
+#12's crash-atomic journal, the full #13 transport lifecycle, #14 generated contracts,
+real ACK association and causal re-execution remain outside the completed slice.
+Do not close #25 solely because the Git merge conflicts have been resolved.

@@ -48,9 +48,25 @@ def test_hospital_diagnosis_uses_sensor_values_only():
     assert upstream["code"] == "UPSTREAM_LOSS"
     assert missing["code"] == "UNKNOWN"
     with TestClient(app) as client:
-        cooling = client.post("/api/v1/visualizers/hospital", json={"scenario": "cooling_failure"}).json()
-        assert [t["diagnosis"]["code"] for t in cooling["transformers"]] == ["NORMAL", "COOLING_FAILURE", "NORMAL"]
-        assert client.post("/api/v1/visualizers/hospital", json={"scenario": "normal", "code": "OVERLOAD"}).status_code == 422
+        # The hospital route now uses zone scans and a supply limit (HospitalPriorityDemo).
+        scanned = client.post("/api/v1/visualizers/hospital", json={"action": "scan", "zone_id": "ICU"}).json()
+        assert scanned["scanned_zone_ids"] == ["ICU"]
+        assert client.post("/api/v1/visualizers/hospital", json={"action": "normal", "code": "OVERLOAD"}).status_code == 422
+        assert client.post("/api/v1/visualizers/hospital", json={"action": "set_capacity", "capacity_w": 9000}).status_code == 422
+
+
+def test_hospital_diagnosis_multi_hypothesis_and_backward_compatibility():
+    # Multi-fault simultaneous scenario
+    simul = diagnose(100.0, current_a=130.0, temperature_c=91.0, input_voltage_v=230.0, output_voltage_v=218.0, cooling_ok=False)
+    assert "hypotheses" in simul
+    assert len(simul["hypotheses"]) >= 2
+    assert simul["severity"] == "high"
+    # Backward compatible fields exist
+    assert "code" in simul
+    assert "cause" in simul
+    assert "evidence" in simul
+    assert "recommendation" in simul
+
 
 
 def test_classroom_restoration_uses_time_not_snapshot_count():
@@ -64,19 +80,22 @@ def test_classroom_restoration_uses_time_not_snapshot_count():
     assert demo.snapshot()["served_w"] == 3400
     demo.act("normal", None)
     for _ in range(100):
-        waiting = demo.snapshot()
+        waiting = demo.tick()
         assert waiting["served_w"] == 3400
     assert any(load["reason"] == "Waiting for simulated restoration delay"
                for room in waiting["rooms"] for load in room["loads"] if not load["served"])
     now[0] = 2.99
-    assert demo.snapshot()["served_w"] == 3400
+    assert demo.tick()["served_w"] == 3400
+    now[0] = 4.99
+    assert demo.tick()["served_w"] == 3400
     now[0] = 5.0
-    first = demo.snapshot()["served_w"]
+    assert demo.snapshot()["served_w"] == 3400  # reads never advance restoration
+    first = demo.tick()["served_w"]
     assert first > 3400
     for _ in range(100):
-        assert demo.snapshot()["served_w"] == first
+        assert demo.tick()["served_w"] == first  # at most one restored load per second
     now[0] = 6.0
-    assert demo.snapshot()["served_w"] > first
+    assert demo.tick()["served_w"] > first
 
 
 def test_hospital_faults_are_local_except_upstream_loss():
@@ -142,10 +161,12 @@ def test_model_ranks_scanned_rooms_under_a_tight_supply():
 
 
 def test_ties_keep_scan_order_and_unknown_sits_between():
-    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500], CR2=[500], CR3=[200]))
+    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500, 500], CR2=[500, 500], CR3=[200, 200]))
     for cid in ("CR3", "CR2", "CR1"):
         demo.act("scan", cid)
-    assert demo.snapshot()["priority_order"] == ["CR2", "CR1", "CR3"]
+    assert demo.snapshot()["priority_order"] == ["CR3", "CR2", "CR1"]  # one INACTIVE reading is not enough
+    demo.act("replay_pause")
+    assert demo.act("replay_step")["priority_order"] == ["CR2", "CR1", "CR3"]  # confirmed on the second reading
 
 
 def test_replay_steps_change_the_ranking():

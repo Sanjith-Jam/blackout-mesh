@@ -25,8 +25,10 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.api.history import attach_history, register_history
+from app.core.control_loop import ControlLoop
+from app.core.site import SiteAuthority
 from app.activity.model import FEATURES
-from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
+from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo, hospital_snapshot
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -37,9 +39,11 @@ class ClassroomDemoAction(BaseModel):
 
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"]
+    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"] | None = None
     zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
     capacity_w: StrictInt | None = None
+    scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"] | None = None
+
 
 class ConnectionManager:
     def __init__(self):
@@ -78,15 +82,44 @@ grid = GridState()
 grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
 classroom_demo = ClassroomDemo(model=grid.model, replay=replay_data)
 hospital_demo = HospitalPriorityDemo(model=grid.model, replay=replay_data)
+# One authority: every command goes through `site`, and every projection carries its run/revision.
+site = SiteAuthority(grid, classroom_demo, hospital_demo)
 
-async def broadcast_state():
-    while True:
-        try:
-            snapshot = await asyncio.to_thread(grid.build_snapshot)
-            await manager.broadcast(snapshot.model_dump_json())
-        except Exception as e:
-            print(f"Broadcast error: {e}")
-        await asyncio.sleep(0.25)
+
+def with_site(data: dict, identity: dict) -> dict:
+    data = dict(data)
+    data["site"] = identity
+    return data
+
+def socket_payload(snapshot) -> str:
+    """Published state plus a transport timestamp; the state's generated_at is never rewritten."""
+    payload = json.loads(snapshot.model_dump_json())
+    if payload.get("site") is None:
+        payload["site"] = site.identity()
+    payload["sent_at"] = datetime.now(timezone.utc).isoformat()
+    return json.dumps(payload)
+
+
+async def publish_to_sockets():
+    if manager.active_connections:
+        snapshot = campus_snapshot()
+        if snapshot is not None:
+            await manager.broadcast(socket_payload(snapshot))
+
+
+def control_tickers():
+    # Looked up at call time so tests that swap app.main.site are honoured.
+    return [lambda: site.tick()]
+
+
+def campus_snapshot():
+    snapshot, identity = site.read(grid.build_snapshot)
+    if snapshot is not None:
+        snapshot.site = identity
+    return snapshot
+
+
+control_loop = ControlLoop(control_tickers(), publish=publish_to_sockets)
 
 async def run_replay(generation):
     while grid.replay_running and generation == replay_generation:
@@ -110,17 +143,21 @@ async def run_replay(generation):
             if generation != replay_generation or not grid.replay_running:
                 return
             grid.apply_prediction(cid, rev, pred)
+        site.tick()
         grid.replay_index = (index + 1) % max_len
         await asyncio.sleep(1)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    attach_history(grid)
-    task = asyncio.create_task(broadcast_state())
-    yield
-    task.cancel()
-    if replay_task:
-        replay_task.cancel()
+    attach_history(site.grid, site.run_id)
+    control_loop.tick_once()  # initial publication before serving reads
+    control_loop.start()
+    try:
+        yield
+    finally:
+        await control_loop.stop()
+        if replay_task:
+            replay_task.cancel()
 
 app = FastAPI(
     title="PriorityGrid API",
@@ -129,7 +166,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(register_history(grid))
+app.include_router(register_history(lambda: site))
 
 # CORS Configuration
 origins = [
@@ -149,13 +186,16 @@ app.add_middleware(
 async def health_check():
     return {
         "status": "ok",
-        "application": "PriorityGrid"
+        "application": "PriorityGrid",
+        "control_loop": control_loop.health(),
     }
 
 @app.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot():
-    attach_history(grid)
-    return await asyncio.to_thread(grid.build_snapshot)
+    snapshot = campus_snapshot()
+    if snapshot is None:
+        raise HTTPException(503, "control state not published yet")
+    return snapshot
 
 @app.get("/api/v1/model/status")
 async def model_status():
@@ -163,7 +203,7 @@ async def model_status():
 
 @app.get("/api/v1/visualizers/classrooms")
 async def get_classroom_demo():
-    return classroom_demo.snapshot()
+    return with_site(*site.read(classroom_demo.snapshot))
 
 @app.post("/api/v1/visualizers/classrooms")
 async def act_classroom_demo(req: ClassroomDemoAction):
@@ -174,19 +214,29 @@ async def act_classroom_demo(req: ClassroomDemoAction):
     low, high = CLASSROOM_CAPACITY_RANGE_W
     if req.capacity_w is not None and not low <= req.capacity_w <= high:
         raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    return classroom_demo.act(req.action, req.classroom_id, req.capacity_w)
+    _, receipt = site.command(f"classroom.{req.action}",
+                              lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w))
+    data, identity = site.read(classroom_demo.snapshot)
+    return with_site(data, identity) | {"command": receipt}
 
 @app.get("/api/v1/visualizers/hospital")
 async def get_hospital_demo():
-    return hospital_demo.snapshot()
+    return with_site(*site.read(hospital_demo.snapshot))
 
 @app.post("/api/v1/visualizers/hospital")
 async def act_hospital_demo(req: HospitalDemoAction):
+    if req.scenario is not None:
+        return hospital_snapshot(req.scenario)
+    if req.action is None:
+        raise HTTPException(422, "either action or scenario must be provided")
     if req.capacity_w is not None:
         low, high = hospital_demo.snapshot()["capacity_range_w"]
         if not (low <= req.capacity_w <= high):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    return hospital_demo.act(req.action, req.zone_id, req.capacity_w)
+    _, receipt = site.command(f"hospital.{req.action}", lambda: hospital_demo.act(req.action, req.zone_id, req.capacity_w))
+    data, identity = site.read(hospital_demo.snapshot)
+    return with_site(data, identity) | {"command": receipt}
+
 
 @app.post("/api/v1/activity/observations")
 async def post_activity_observation(req: ActivityObservationRequest):
@@ -215,6 +265,7 @@ async def post_activity_observation(req: ActivityObservationRequest):
     except Exception as exc:
         prediction = {"state": "UNKNOWN", "score": None, "reason": f"inference failed: {type(exc).__name__}", "model_version": "unavailable"}
     applied = grid.apply_prediction(req.classroom_id, revision, prediction)
+    site.commit("campus.activity_observation")
     return {"accepted": True, "applied": applied, "revision": revision,
             "activity": grid.activity[req.classroom_id]}
 
@@ -236,6 +287,7 @@ async def replay_action(req: ReplayActionRequest):
             grid.set_classroom_load(cid, True)
             grid.activity_tokens[cid] += 1
             grid.activity_received_monotonic[cid] = None
+            grid.activity_guard.reset(cid)
             grid.activity[cid] = {"state": "UNKNOWN", "score": None, "reason": "replay reset; awaiting evidence",
                                   "source": None, "observed_at": None, "recorded_at": None,
                                   "model_version": "unavailable", "priority": "UNKNOWN",
@@ -250,11 +302,13 @@ async def replay_action(req: ReplayActionRequest):
         replay_generation += 1
         replay_task = asyncio.create_task(run_replay(replay_generation))
     grid.replay_length = max_len
+    site.commit(f"campus.replay_{req.action}")
     return {"running": grid.replay_running, "index": grid.replay_index, "length": max_len}
 
 @app.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
 async def process_rfid_scan(req: RfidScanRequest):
     evt_type, class_id, class_name, service_id = grid.process_rfid_scan(req.uid)
+    site.commit("campus.rfid_scan")
     return RfidScanResponse(
         accepted=True if evt_type != RfidEventType.DUPLICATE_SUPPRESSED.value else False,
         active_classroom_id=class_id,
@@ -266,6 +320,7 @@ async def process_rfid_scan(req: RfidScanRequest):
 @app.post("/api/v1/simulation/capacity", response_model=CapacityChangeResponse)
 async def change_capacity(req: CapacityChangeRequest):
     grid.set_capacity(req.capacity_w)
+    site.commit("campus.capacity")
     return CapacityChangeResponse(
         accepted=True,
         new_capacity_w=req.capacity_w,
@@ -277,6 +332,7 @@ async def change_classroom_load(req: ClassroomLoadRequest):
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
     grid.set_classroom_load(req.classroom_id, req.active)
+    site.commit("campus.classroom_load")
     return ClassroomLoadResponse(
         accepted=True,
         classroom_id=req.classroom_id,
@@ -288,6 +344,7 @@ async def change_feeder(req: FeederChangeRequest):
     if req.feeder not in ("A", "B"):
         raise HTTPException(422, "feeder must be A or B")
     grid.set_feeder(req.feeder, req.available)
+    site.commit("campus.feeder")
     return FeederChangeResponse(
         accepted=True,
         feeder=req.feeder,
@@ -298,6 +355,9 @@ async def change_feeder(req: FeederChangeRequest):
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    snapshot = campus_snapshot()
+    if snapshot is not None:
+        await websocket.send_text(socket_payload(snapshot))
     try:
         while True:
             await websocket.receive_text()

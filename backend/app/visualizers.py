@@ -1,11 +1,16 @@
 """Independent synthetic classroom and hospital demos."""
 from __future__ import annotations
 
+import copy
 import json
 import time
 from pathlib import Path
 
 from app.core.restoration import RestorationGate
+from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
+from app.diagnosis.observations import validate as validate_observation
+from app.simulation.sensors import HOSPITAL_ASSETS, TRANSFORMER_FIELDS, envelopes as sensor_envelopes, hospital_readings, zone_readings
+from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
 
 ROOMS = ("CR1", "CR2", "CR3")
 LOADS = {
@@ -44,28 +49,51 @@ class ClassroomDemo:
         self.model = model
         self.replay = load_replay() if replay is None else replay
         self.replay_length = min((len(rows) for rows in self.replay.values()), default=0)
-        self.capacity = NORMAL_CAPACITY_W
+        self.capacity = NORMAL_CAPACITY_W  # classroom limit (the slider): a named sub-budget
+        self.campus_limit_w: int | None = None  # set by the site authority from campus feeder B headroom
         self.scanned: list[str] = []   # scan order; the last entry is the most recent card
         self.gate = RestorationGate(clock)
         self.replay_running = self.replay_length > 0
         self.replay_base = 0
         self.replay_anchor = clock()
         self._predictions: dict[tuple[str, int], dict] = {}
+        self._replay_index = 0
+        self._activity: dict[str, dict] = {}
+        self.guard = ActivityGuard()
+        self.published: dict | None = None
+        self.published_revision = 0
+        self._advance_evidence()
         initial = (1 << len(LOAD_KEYS)) - 1
         self.gate.update(initial, self._signature(self._room_order()), range(len(LOAD_KEYS)))
+        self.tick()
 
     # ---- recorded sensor replay and model evidence ----
     def replay_index(self):
+        """Replay cursor as of the last tick (read-only)."""
+        return self._replay_index
+
+    def _clock_replay_index(self):
         if not self.replay_length:
             return 0
         steps = int((self.gate.clock() - self.replay_anchor) // REPLAY_STEP_S) if self.replay_running else 0
         return (self.replay_base + steps) % self.replay_length
 
+    def _advance_evidence(self):
+        """Move the replay cursor to the current time and run (cached) inference. Tick-only."""
+        self._replay_index = self._clock_replay_index()
+        # Each replay row is one reading; the guard confirms INACTIVE before it can lower a rank.
+        self._activity = {cid: self.guard.update(cid, self._infer(cid), self._replay_index) for cid in ROOMS}
+
     def activity(self, cid):
+        """Model evidence for a room as of the last tick (read-only)."""
+        return self._activity.get(cid) or {"state": "UNKNOWN", "score": None, "reason": "awaiting first tick",
+                                           "model_version": "unavailable", "evidence": {}}
+
+    def _infer(self, cid):
         if not self.replay_length or cid not in self.replay:
             return {"state": "UNKNOWN", "score": None, "reason": "no recorded sensor evidence",
                     "model_version": "unavailable", "evidence": {}}
-        index = self.replay_index()
+        index = self._replay_index
         cached = self._predictions.get((cid, index))
         if cached is None:
             row = self.replay[cid][index]
@@ -87,8 +115,11 @@ class ClassroomDemo:
             return (ACTIVITY_RANK.get(self.activity(cid).get("state"), 1), self.scanned.index(cid))
         return sorted(self.scanned, key=key) + [r for r in ROOMS if r not in self.scanned]
 
+    def effective_capacity(self):
+        return self.capacity if self.campus_limit_w is None else min(self.capacity, self.campus_limit_w)
+
     def _signature(self, order):
-        return (self.capacity, tuple(r for r in order if r in self.scanned))
+        return (self.effective_capacity(), tuple(r for r in order if r in self.scanned))
 
     def _priority(self, order):
         # Essentials in every room first, then scanned rooms' optional loads in model rank, then the rest.
@@ -98,10 +129,25 @@ class ClassroomDemo:
         return result
 
     def snapshot(self):
+        """Read-only: a copy of the last published state. Never advances replay or restoration."""
+        return copy.deepcopy(self.published)
+
+    def tick(self):
+        """Advance replay evidence, allocation and staged restoration, then publish."""
+        self._advance_evidence()
+        candidate = self._project()
+        if self.published is None or candidate != {k: v for k, v in self.published.items() if k != "published_revision"}:
+            self.published_revision += 1
+            candidate["published_revision"] = self.published_revision
+            self.published = candidate
+        return self.snapshot()
+
+    def _project(self):
         order = self._room_order()
         priority = self._priority(order)
         target: set[tuple[str, str]] = set()
-        remaining = self.capacity
+        effective = self.effective_capacity()
+        remaining = effective
         for room, item in priority:
             key = (room, item[0])
             if item[2] <= remaining:
@@ -126,24 +172,34 @@ class ClassroomDemo:
             act = self.activity(cid)
             rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": cid in self.scanned,
                           "priority_rank": order.index(cid) + 1 if cid in self.scanned else None,
-                          "activity": {key: act.get(key) for key in ("state", "score", "reason", "model_version", "evidence")},
+                          "activity": {key: act.get(key) for key in ("state", "raw_state", "guard", "score", "reason",
+                                                                       "model_version", "evidence")},
                           "loads": loads})
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
+        essential = [(r, x) for r in ROOMS for x in LOADS[r] if x[0] in ROOM_ESSENTIAL_LOADS]
+        safety = shortfall_status(sum(x[2] for _, x in essential),
+                                  sum(x[2] for r, x in essential if (r, x[0]) in current))
         status = self.model.status() if hasattr(self.model, "status") else {}
+        limited_by = ("campus feeder B" if self.campus_limit_w is not None and self.campus_limit_w < self.capacity
+                      else "classroom limit")
         return {"capacity_w": self.capacity, "capacity_range_w": list(CAPACITY_RANGE_W),
+                "classroom_limit_w": self.capacity, "campus_limit_w": self.campus_limit_w,
+                "effective_capacity_w": effective, "limited_by": limited_by,
                 "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
                 "selected_classroom_id": self.scanned[-1] if self.scanned else None,
                 "scanned_classroom_ids": [r for r in ROOMS if r in self.scanned],
                 "priority_order": [r for r in order if r in self.scanned],
-                "rooms": rooms, "mode": "SIMULATED",
+                "rooms": rooms, "mode": "SIMULATED", "safety": safety,
                 "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"),
                           "fallback_reason": status.get("fallback_reason")},
                 "replay": {"running": self.replay_running, "index": self.replay_index(),
                            "length": self.replay_length, "step_s": REPLAY_STEP_S},
-                "policy": "Classroom-only: lighting and computers in every room first. Scanned rooms' other "
-                          "equipment next, ranked by the activity model (ACTIVE, then UNKNOWN, then INACTIVE; "
-                          "earlier scan first within a state). Unscanned rooms' optional loads last."}
+                "policy": "Classroom-only: lighting and computers in every room are protected and served first, "
+                          "whatever the model says. Scanned rooms' other equipment next, ranked by the activity "
+                          "model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE "
+                          f"counts only after {self.guard.confirmations} consecutive readings. Unscanned rooms' "
+                          f"optional loads last. Safety policy {SAFETY_POLICY_VERSION}."}
 
     def act(self, action: str, classroom_id: str | None = None, capacity_w: int | None = None):
         if action == "scan":
@@ -159,50 +215,33 @@ class ClassroomDemo:
         elif action == "overload":
             self.capacity = OVERLOAD_CAPACITY_W
         elif action == "replay_pause":
-            self.replay_base, self.replay_running = self.replay_index(), False
+            self.replay_base, self.replay_running = self._clock_replay_index(), False
         elif action == "replay_resume":
             if self.replay_length:
-                self.replay_base, self.replay_anchor, self.replay_running = self.replay_index(), self.gate.clock(), True
+                self.replay_base, self.replay_anchor, self.replay_running = self._clock_replay_index(), self.gate.clock(), True
         elif action == "replay_step":
             if self.replay_length:
-                self.replay_base, self.replay_anchor = (self.replay_index() + 1) % self.replay_length, self.gate.clock()
+                self.replay_base, self.replay_anchor = (self._clock_replay_index() + 1) % self.replay_length, self.gate.clock()
         elif action == "reset":
             self.__init__(self.gate.clock, self.model, self.replay)
-        return self.snapshot()
+        return self.tick()  # a command wakes control immediately
 
 
 def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok):
-    """Classify only provided synthetic sensor observations and configured rating."""
-    missing = [name for name, value in (("current", current_a), ("temperature", temperature_c),
-               ("input voltage", input_voltage_v), ("output voltage", output_voltage_v), ("cooling", cooling_ok)) if value is None]
-    evidence = []
-    if current_a is not None:
-        evidence.append(f"Current {current_a:.1f} A; overload threshold {rated_current_a * 1.1:.1f} A (110% of rating).")
-    if temperature_c is not None:
-        evidence.append(f"Temperature {temperature_c:.1f} °C; hot threshold 80 °C.")
-    if cooling_ok is not None:
-        evidence.append(f"Cooling {'operational' if cooling_ok else 'failed'}.")
-    if input_voltage_v is not None and output_voltage_v is not None:
-        evidence.append(f"Input {input_voltage_v:.1f} V; output {output_voltage_v:.1f} V; low-input threshold 180 V.")
-    if missing:
-        return {"code": "UNKNOWN", "cause": "Insufficient sensor evidence", "severity": "unknown", "evidence": evidence + ["Missing: " + ", ".join(missing)], "recommendation": "Restore sensor telemetry before diagnosing."}
-    if input_voltage_v < 180 and output_voltage_v < 100:
-        return {"code": "UPSTREAM_LOSS", "cause": "Possible upstream supply loss", "severity": "critical", "evidence": evidence, "recommendation": "Check the upstream supply and incoming connections."}
-    if current_a > rated_current_a * 1.1:
-        return {"code": "OVERLOAD", "cause": "Current exceeds the configured rating threshold", "severity": "high", "evidence": evidence, "recommendation": "Review connected demand and verify with qualified protection equipment."}
-    if temperature_c >= 80 and not cooling_ok:
-        return {"code": "COOLING_FAILURE", "cause": "Elevated temperature with cooling reported failed", "severity": "high", "evidence": evidence, "recommendation": "Inspect cooling equipment and temperature using approved procedures."}
-    if temperature_c >= 80:
-        return {"code": "HIGH_TEMPERATURE", "cause": "Elevated transformer temperature", "severity": "medium", "evidence": evidence, "recommendation": "Check loading, ventilation and sensor readings."}
-    return {"code": "NORMAL", "cause": "No configured demo threshold exceeded", "severity": "normal", "evidence": evidence, "recommendation": "Continue monitoring."}
+    """Compatibility wrapper: one steady reading, diagnosed through the telemetry-only path.
 
+    The reading is fed as two consecutive identical samples so it can be confirmed. Live routes use
+    HospitalTelemetry, which keeps a real rolling window.
+    """
+    from datetime import datetime, timedelta, timezone
 
-NORMAL_SENSORS = (45.0, 58.0, 230.0, 220.0, True)
-HOSPITAL_FAULT_FIXTURES = {
-    "overload": (130.0, 72.0, 230.0, 218.0, True),
-    "cooling_failure": (45.0, 91.0, 230.0, 220.0, False),
-    "missing_sensor": (None, 55.0, 230.0, 220.0, True),
-}
+    now = datetime.now(timezone.utc)
+    window = ObservationWindow()
+    values = dict(zip(TRANSFORMER_FIELDS, (current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok)))
+    for seq, at in ((1, now - timedelta(milliseconds=250)), (2, now)):
+        for raw in sensor_envelopes({"TX": values}, seq, at):
+            window.add(validate_observation(raw, {"TX"}, now))
+    return diagnose_transformer(window, "TX", TransformerRating(rated_current_a=rated_current_a), now)
 
 
 
@@ -212,15 +251,53 @@ HOSP_LOADS = {
     "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 800, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 1400, False)],
     "Wards": [("bed_lights", "Bed Lights", 200, False), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 500, False), ("tv", "Patient TV", 200, False), ("ac", "Air Conditioning", 2000, False)],
 }
+HOSPITAL_LOADS = {zone: [(item[0], item[3]) for item in loads] for zone, loads in HOSP_LOADS.items()}
 HOSP_LOAD_KEYS = tuple((zone, item[0]) for zone in HOSP_ZONES for item in HOSP_LOADS[zone])
 
+
 class HospitalPriorityDemo(ClassroomDemo):
+    """Hospital zone view with the classroom demo's controls: zone scans, a supply slider and presets.
+
+    Follows the same tick/publish contract as ClassroomDemo: tick() advances restoration and
+    publishes; snapshot() is a read-only copy (#9, #10). Essential equipment is protected (#22).
+    """
+
+    NORMAL_W, OVERLOAD_W, RANGE_W = 7000, 3000, (0, 7000)
+
     def __init__(self, clock=None, model=None, replay=None):
         import time
-        super().__init__(clock or time.monotonic, model, replay)
-        self.capacity = 7000
+        clock = clock or time.monotonic
+        if model is None:
+            from app.activity.model import ActivityModel
+            model = ActivityModel()
+        self.model = model
+        self.replay = {} if replay is None else replay
+        self.replay_length = 0  # no recorded activity evidence exists for hospital zones
+        self.capacity = self.NORMAL_W
+        self.campus_limit_w = None  # not coupled: hospital zones have no reviewed campus mapping
+        self.scanned: list[str] = []
+        self.gate = RestorationGate(clock)
+        self.replay_running = False
+        self.replay_base = 0
+        self.replay_anchor = clock()
+        self._predictions = {}
+        self._replay_index = 0
+        self._activity = {}
+        self.guard = ActivityGuard()
+        self.published = None
+        self.published_revision = 0
+        self.telemetry = ObservationWindow()
+        self.telemetry_sequence = 0
+        self._advance_evidence()
         initial = (1 << len(HOSP_LOAD_KEYS)) - 1
         self.gate.update(initial, self._signature(self._room_order()), range(len(HOSP_LOAD_KEYS)))
+        self.tick()
+
+    def _advance_evidence(self):
+        self._activity = {z: {"state": "UNKNOWN", "raw_state": "UNKNOWN", "score": None, "model_version": "unavailable",
+                              "reason": "no recorded activity evidence for hospital zones",
+                              "guard": "conservative fallback: no evidence", "evidence": {}}
+                          for z in HOSP_ZONES}
 
     def _room_order(self):
         act = {z: self.activity(z) for z in HOSP_ZONES}
@@ -236,11 +313,11 @@ class HospitalPriorityDemo(ClassroomDemo):
         optionals = [(z, item) for z in order for item in HOSP_LOADS[z] if not item[3]]
         return essentials + optionals
 
-    def snapshot(self):
+    def _project(self):
         order = self._room_order()
         priority = self._priority(order)
         target = set()
-        remaining = self.capacity
+        remaining = self.effective_capacity()
         for z, item in priority:
             key = (z, item[0])
             if item[2] <= remaining:
@@ -250,7 +327,8 @@ class HospitalPriorityDemo(ClassroomDemo):
         bit_order = [HOSP_LOAD_KEYS.index((z, item[0])) for z, item in priority]
         applied = self.gate.update(proposed, self._signature(order), bit_order)
         current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
-        
+        readings, diagnoses = self._sense_and_diagnose(current)
+
         transformers = []
         for i, z in enumerate(HOSP_ZONES):
             loads = []
@@ -262,30 +340,52 @@ class HospitalPriorityDemo(ClassroomDemo):
             act = self.activity(z)
             transformers.append({
                 "id": f"TX{i+1}", "name": f"Transformer {i+1}", "zone": z,
-                "rated_current_a": 100.0, "sensors": {"cooling_ok": True},
-                "diagnosis": {"code": "NORMAL", "severity": "normal"},
-                "energized": True,
+                "rated_current_a": self._rating(z).rated_current_a, "sensors": readings[f"TX{i+1}"],
+                "diagnosis": diagnoses[f"TX{i+1}"],
+                "energized": any(l["served"] for l in loads),
                 "rfid_active": z in self.scanned,
                 "priority_rank": order.index(z) + 1 if z in self.scanned else None,
-                "activity": {key: act.get(key) for key in ("state", "score", "reason", "model_version", "evidence")},
+                "activity": {key: act.get(key) for key in ("state", "raw_state", "guard", "score", "reason", "model_version", "evidence")},
                 "loads": loads
             })
-            
+
         requested = sum(x[2] for rows in HOSP_LOADS.values() for x in rows)
         served_w = sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current)
+        essential = [(z, x) for z in HOSP_ZONES for x in HOSP_LOADS[z] if x[3]]
+        safety = shortfall_status(sum(x[2] for _, x in essential), sum(x[2] for z, x in essential if (z, x[0]) in current))
         status = self.model.status() if hasattr(self.model, "status") else {}
         return {
-            "capacity_w": self.capacity, "capacity_range_w": [0, 7000],
+            "capacity_w": self.capacity, "capacity_range_w": list(self.RANGE_W),
             "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
             "selected_zone_id": self.scanned[-1] if self.scanned else None,
             "scanned_zone_ids": [z for z in HOSP_ZONES if z in self.scanned],
             "priority_order": [z for z in order if z in self.scanned],
-            "transformers": transformers, "mode": "SIMULATED",
+            "transformers": transformers, "mode": "SIMULATED", "safety": safety,
             "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"), "fallback_reason": status.get("fallback_reason")},
-            "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": 5.0},
+            "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": REPLAY_STEP_S},
             "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next."
         }
-        
+
+    @staticmethod
+    def _rating(zone):
+        # Full zone demand sizes each transformer's configured current rating.
+        return TransformerRating(rated_current_a=round(sum(x[2] for x in HOSP_LOADS[zone]) / 230.0, 2))
+
+    def _sense_and_diagnose(self, current):
+        """Simulated sensors from served load, then telemetry-only diagnosis (#4). Tick-only."""
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        served = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current) for i, z in enumerate(HOSP_ZONES)}
+        demand = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z]) for i, z in enumerate(HOSP_ZONES)}
+        readings = zone_readings(served, demand)
+        self.telemetry_sequence += 1
+        for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
+            self.telemetry.add(validate_observation(raw, set(readings), now))
+        diagnoses = {f"TX{i+1}": diagnose_transformer(self.telemetry, f"TX{i+1}", self._rating(z), now, peers_input_low={})
+                     for i, z in enumerate(HOSP_ZONES)}
+        return readings, diagnoses
+
     def act(self, action: str, zone_id: str | None = None, capacity_w: int | None = None):
         if action == "scan":
             if zone_id not in self.scanned:
@@ -296,44 +396,70 @@ class HospitalPriorityDemo(ClassroomDemo):
         elif action == "set_capacity":
             self.capacity = capacity_w
         elif action == "normal":
-            self.capacity = 7000
+            self.capacity = self.NORMAL_W
         elif action == "overload":
-            self.capacity = 3000
+            self.capacity = self.OVERLOAD_W
         elif action == "reset":
             self.__init__(self.gate.clock, self.model, self.replay)
-        return self.snapshot()
+        return self.tick()  # a command wakes control immediately
 
 
-def hospital_snapshot(scenario="normal", zone="Theatre"):
-    target_i = 2
-    if zone == "ICU":
-        target_i = 1
-    elif zone == "Wards":
-        target_i = 3
 
+class HospitalTelemetry:
+    """Rolling sensor window for the hospital transformers; diagnosis sees only the envelopes."""
+
+    def __init__(self):
+        self.window = ObservationWindow()
+        self.sequence = 0
+
+    def sample(self, scenario, zone, now):
+        self.sequence += 1
+        readings = hospital_readings(scenario, zone)
+        for raw in sensor_envelopes(readings, self.sequence, now):
+            self.window.add(validate_observation(raw, set(HOSPITAL_ASSETS), now))
+        return readings
+
+    def diagnoses(self, now):
+        rating = TransformerRating()
+        low = {}
+        for asset in HOSPITAL_ASSETS:
+            ins, outs = self.window.series(asset, "input_voltage_v"), self.window.series(asset, "output_voltage_v")
+            low[asset] = bool(ins and outs and ins[-1].value is not None and outs[-1].value is not None
+                              and ins[-1].value < rating.low_input_v and outs[-1].value < rating.dead_output_v)
+        return {asset: diagnose_transformer(self.window, asset, rating, now,
+                                            peers_input_low={a: v for a, v in low.items()})
+                for asset in HOSPITAL_ASSETS}
+
+
+def hospital_projection(readings, diagnoses, scenario="normal", zone="Theatre"):
+    """Route view. Load shedding here is simulated actuation; the diagnosis comes only from telemetry."""
     transformers = []
-    for i in range(1, 4):
-        fixture = ((0.0, 40.0, 90.0, 20.0, True) if scenario == "upstream_loss"
-                   else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS) if i == target_i
-                   else NORMAL_SENSORS)
-        current, temp, vin, vout, cooling = fixture
-        sensors = {"current_a": current, "temperature_c": temp, "input_voltage_v": vin,
-                   "output_voltage_v": vout, "cooling_ok": cooling}
-        diagnosis = diagnose(100.0, **sensors)
-        zname = ZONES[i - 1]
+    for asset, zname in HOSPITAL_ASSETS.items():
+        sensors = readings[asset]
+        vout = sensors["output_voltage_v"]
         energized = vout is not None and vout >= 100.0
-        
         loads = []
-        for eq_id, essential in HOSPITAL_LOADS[zname]:
-            # Default to energized status
+        for eq_id, _name, _watts, essential in HOSP_LOADS[zname]:
             served = energized
-            # If we are in overload, non-scanned zones shed their non-essential loads
+            # In the overload teaching scenario, non-scanned zones shed their non-essential loads.
             if scenario == "overload" and zname != zone and not essential:
                 served = False
             loads.append({"id": eq_id, "served": served})
-            
-        transformers.append({"id": f"TX{i}", "name": f"Transformer {i}", "zone": zname,
-                             "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnosis,
+        transformers.append({"id": asset, "name": f"Transformer {asset[-1]}", "zone": zname,
+                             "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnoses[asset],
                              "energized": energized, "loads": loads})
     return {"mode": "SIMULATED", "transformers": transformers,
-            "summary": "Synthetic sensor diagnosis for demonstration; thresholds are not certified protection settings."}
+            "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; "
+                       "a cause is inferred after two consecutive agreeing readings. Thresholds are not "
+                       "certified protection settings."}
+
+
+def hospital_snapshot(scenario="normal", zone="Theatre"):
+    """Steady-state view for a scenario (two samples), used outside the live control loop."""
+    from datetime import datetime, timedelta, timezone
+
+    telemetry = HospitalTelemetry()
+    now = datetime.now(timezone.utc)
+    telemetry.sample(scenario, zone, now - timedelta(milliseconds=250))
+    readings = telemetry.sample(scenario, zone, now)
+    return hospital_projection(readings, telemetry.diagnoses(now), scenario, zone)

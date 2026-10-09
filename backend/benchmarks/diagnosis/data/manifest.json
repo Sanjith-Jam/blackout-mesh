@@ -1,0 +1,140 @@
+{
+ "protocol": "diag-bench-protocol-2",
+ "process": "developer-held-out (no independent custodian)",
+ "splits": {
+  "dev": {
+   "scenarios": 48,
+   "families": {
+    "normal": 4,
+    "demand_change": 4,
+    "hot_ambient": 4,
+    "overload": 4,
+    "cooling_failure": 4,
+    "overload_and_cooling": 4,
+    "upstream_loss": 4,
+    "branch_interruption": 4,
+    "sensor_dropout": 4,
+    "stuck_sensor": 4,
+    "delay_reorder": 4,
+    "recovery_chatter": 4
+   },
+   "seeds": [
+    0,
+    3
+   ],
+   "regime": {
+    "overload": [
+     [
+      1.25,
+      1.4
+     ]
+    ],
+    "hot": [
+     [
+      86.0,
+      95.0
+     ]
+    ],
+    "noise": [
+     1.0,
+     0.5
+    ],
+    "delay": 1
+   },
+   "observations_sha256": "c667f366cdacbdb2ad5cf1cf4966251db655bb9b1d588d33f7f7225e9eed69d9",
+   "truth_sha256": "8c2320eeda8b2151fbc71e66aa2ce67341576f990c6808c70a8bb54cd980077e"
+  },
+  "calibration": {
+   "scenarios": 48,
+   "families": {
+    "normal": 4,
+    "demand_change": 4,
+    "hot_ambient": 4,
+    "overload": 4,
+    "cooling_failure": 4,
+    "overload_and_cooling": 4,
+    "upstream_loss": 4,
+    "branch_interruption": 4,
+    "sensor_dropout": 4,
+    "stuck_sensor": 4,
+    "delay_reorder": 4,
+    "recovery_chatter": 4
+   },
+   "seeds": [
+    100,
+    103
+   ],
+   "regime": {
+    "overload": [
+     [
+      1.16,
+      1.24
+     ]
+    ],
+    "hot": [
+     [
+      82.0,
+      85.9
+     ]
+    ],
+    "noise": [
+     3.0,
+     1.5
+    ],
+    "delay": 2
+   },
+   "observations_sha256": "4226a972d4ca0a21805e087a6d723c8139e07f8ed96071366f56aeb2748521ca",
+   "truth_sha256": "6def646036410534648be57b54c2d9a0f5fea6deb2ee1f7b2e96510acc7b6b27"
+  },
+  "heldout": {
+   "scenarios": 48,
+   "families": {
+    "normal": 4,
+    "demand_change": 4,
+    "hot_ambient": 4,
+    "overload": 4,
+    "cooling_failure": 4,
+    "overload_and_cooling": 4,
+    "upstream_loss": 4,
+    "branch_interruption": 4,
+    "sensor_dropout": 4,
+    "stuck_sensor": 4,
+    "delay_reorder": 4,
+    "recovery_chatter": 4
+   },
+   "seeds": [
+    1000,
+    1003
+   ],
+   "regime": {
+    "overload": [
+     [
+      1.105,
+      1.155
+     ],
+     [
+      1.41,
+      1.7
+     ]
+    ],
+    "hot": [
+     [
+      80.0,
+      81.9
+     ],
+     [
+      95.1,
+      110.0
+     ]
+    ],
+    "noise": [
+     5.0,
+     2.5
+    ],
+    "delay": 3
+   },
+   "observations_sha256": "0c2522c013f39d1d7492be78902f3348843dce0b24e6730213282635185498df",
+   "truth_sha256": "ac17141729ce1331d5dd23b90ce424a5f1875a933098edd1a8ae464299ecd3e9"
+  }
+ }
+}

@@ -37,32 +37,37 @@ def test_readonly_replay_is_persisted_not_recomputed(tmp_path):
 
 def test_recording_is_sampled_and_readonly_api_does_not_advance_grid(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
-    from app.main import app, grid
+    from app.main import app, grid, site
     from app.storage.recorder import HistoryRecorder
     store = HistoryStore(tmp_path / "history.sqlite3")
     clock = [0.0]
-    recorder = HistoryRecorder(store, "check-run", lambda: clock[0])
+    run_id = site.run_id
+    recorder = HistoryRecorder(store, run_id, lambda: clock[0])
     monkeypatch.setattr(grid, "history", recorder)
-    grid.build_snapshot()
+    site.tick()
     for _ in range(10):
-        grid.build_snapshot()
-    assert len(store.page("campus", "check-run", kind="decision")["items"]) == 1
-    assert len(store.page("campus", "check-run", kind="telemetry")["items"]) == 1
+        site.tick()
+    assert len(store.page("campus", run_id, kind="decision")["items"]) == 1
+    assert len(store.page("campus", run_id, kind="telemetry")["items"]) == 1
     grid.set_capacity(6000)
-    grid.build_snapshot()
+    site.tick()
     clock[0] = 1
-    grid.build_snapshot()
-    decisions = store.page("campus", "check-run", kind="decision")["items"]
-    event = store.page("campus", "check-run", kind="event")["items"][0]
+    site.tick()
+    decisions = store.page("campus", run_id, kind="decision")["items"]
+    event = store.page("campus", run_id, kind="event")["items"][0]
     assert event["record_id"] in decisions[-1]["payload"]["event_ids"]
     assert decisions[-1]["payload"]["trail"]["validated_ack"] is None
     assert decisions[-1]["payload"]["trail"]["command_identity"] is None
-    before = (grid.control_revision, grid.last_allocation_mask, grid.replay_index)
+    before = (grid.control_revision, grid.last_allocation_mask, grid.replay_index, grid.tick_count, grid.published_revision)
     client = TestClient(app)
-    url = "/api/v1/history/records?run_id=check-run&kind=decision&limit=1"
+    url = f"/api/v1/history/records?run_id={run_id}&kind=decision&limit=1"
+    assert client.get("/api/v1/history/runs").json()["current_run_id"] == run_id
+    assert decisions[-1]["payload"]["snapshot"]["site"]["run_id"] == run_id
+    rows_before = store.page("campus", run_id)
     first = client.get(url).json()
     assert client.get(url).json() == first
-    assert before == (grid.control_revision, grid.last_allocation_mask, grid.replay_index)
+    assert store.page("campus", run_id) == rows_before
+    assert before == (grid.control_revision, grid.last_allocation_mask, grid.replay_index, grid.tick_count, grid.published_revision)
     assert client.get(url + "&start=2026-10-10T00:00:00").status_code == 422
     assert client.get(url + "&after=-1").status_code == 422
     assert client.get(url + "&site_id=invalid").status_code == 422
@@ -82,3 +87,31 @@ def test_public_history_fixture_and_restart_run_identity(tmp_path):
     restarted = HistoryRecorder(HistoryStore(path))
     assert restarted.run_id != previous.run_id
     assert restarted.store.page("campus", "example-run") == fixture
+
+def test_new_site_run_rotates_history_and_keeps_previous_evidence(tmp_path, monkeypatch):
+    from app.main import site, grid
+    from app.storage.recorder import HistoryRecorder
+    store = HistoryStore(tmp_path / "rotated.sqlite3")
+    monkeypatch.setattr(site, "run_id", site.run_id)
+    previous_run = site.run_id
+    monkeypatch.setattr(grid, "history", HistoryRecorder(store, previous_run))
+    site.tick()
+    previous = store.page("campus", previous_run)
+    current = site.new_run()
+    site.tick()
+    assert current != previous_run
+    assert grid.history.run_id == current
+    assert store.page("campus", previous_run) == previous
+    assert store.page("campus", current)["items"][0]["payload"]["snapshot"]["site"]["run_id"] == current
+
+
+def test_history_get_does_not_initialize_or_tick_the_live_controller(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import app, site, grid
+    monkeypatch.setattr(grid, "history", None)
+    before = (grid.tick_count, site.revision, grid.published_revision)
+    client = TestClient(app)
+    assert client.get("/api/v1/history/runs").status_code == 503
+    assert client.get("/api/v1/history/records?run_id=unknown").status_code == 503
+    assert grid.history is None
+    assert before == (grid.tick_count, site.revision, grid.published_revision)

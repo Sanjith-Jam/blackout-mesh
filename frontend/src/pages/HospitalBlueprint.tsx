@@ -60,6 +60,11 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
           const current = tx?.sensors.current_a;
           const temp = tx?.sensors.temperature_c;
           const coolingOk = tx?.sensors.cooling_ok;
+          const on1 = tx?.loads?.find(l => l.id === z.equipment[0].id)?.served ?? energized;
+          const on2 = tx?.loads?.find(l => l.id === z.equipment[1].id)?.served ?? energized;
+          const on3 = tx?.loads?.find(l => l.id === z.equipment[2].id)?.served ?? energized;
+          const on4 = tx?.loads?.find(l => l.id === z.equipment[3].id)?.served ?? energized;
+          const on5 = tx?.loads?.find(l => l.id === z.equipment[4].id)?.served ?? energized;
 
           return <g key={z.zone}>
             {/* Zone building */}
@@ -82,48 +87,48 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
             {wire(`${z.zone}-feed`, `M${x + 32} 465V106`, energized, true)}
 
             {/* Equipment 1 — top left (critical) */}
-            {wire(`${z.zone}-eq1`, `M${x + 32} 120H${x + 95}`, energized)}
-            <g className={`power-map__lamp ${energized ? 'is-on' : ''}`} transform={`translate(${x + 95} 120)`}>
-              {energized && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#95d6a4" opacity=".35" />}
-              <rect x="-18" y="-8" width="36" height="16" rx="3" fill={energized ? '#5cb86e' : '#a6aaa2'} stroke="#3a6640" strokeWidth="2" />
-              {energized && <circle cx="0" cy="0" r="3" fill="#fff" />}
+            {wire(`${z.zone}-eq1`, `M${x + 32} 120H${x + 95}`, on1)}
+            <g className={`power-map__lamp ${on1 ? 'is-on' : ''}`} transform={`translate(${x + 95} 120)`}>
+              {on1 && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#95d6a4" opacity=".35" />}
+              <rect x="-18" y="-8" width="36" height="16" rx="3" fill={on1 ? '#5cb86e' : '#a6aaa2'} stroke="#3a6640" strokeWidth="2" />
+              {on1 && <circle cx="0" cy="0" r="3" fill="#fff" />}
               <text y="28" textAnchor="middle" className="power-map__fixture-label">{z.equipment[0].label}</text>
             </g>
 
             {/* Equipment 2 — top right */}
-            {wire(`${z.zone}-eq2`, `M${x + 32} 106H${x + 220}V120`, energized)}
+            {wire(`${z.zone}-eq2`, `M${x + 32} 106H${x + 220}V120`, on2)}
             <g transform={`translate(${x + 220} 120)`}>
-              <rect x="-22" y="-12" width="44" height="28" rx="3" fill={energized ? '#68b6c2' : '#7c8581'} stroke="#3c585b" strokeWidth="2" />
-              <rect x="-16" y="-7" width="32" height="16" rx="2" fill={energized ? '#8cd6e0' : '#6c797b'} />
-              {energized && <>
+              <rect x="-22" y="-12" width="44" height="28" rx="3" fill={on2 ? '#68b6c2' : '#7c8581'} stroke="#3c585b" strokeWidth="2" />
+              <rect x="-16" y="-7" width="32" height="16" rx="2" fill={on2 ? '#8cd6e0' : '#6c797b'} />
+              {on2 && <>
                 <path d="M-10 3h5l2-6 3 10 3-4h4" fill="none" stroke="#1a5a64" strokeWidth="1.5" />
               </>}
               <text y="30" textAnchor="middle" className="power-map__fixture-label">{z.equipment[1].label}</text>
             </g>
 
             {/* Equipment 3 — middle left */}
-            {wire(`${z.zone}-eq3`, `M${x + 32} 200H${x + 88}`, energized)}
+            {wire(`${z.zone}-eq3`, `M${x + 32} 200H${x + 88}`, on3)}
             <g transform={`translate(${x + 88} 200)`}>
-              <rect x="-18" y="-14" width="36" height="28" rx="3" fill={energized ? '#5d8e79' : '#969c92'} stroke="#3a5c48" strokeWidth="2" />
-              {energized && <rect x="-10" y="-8" width="8" height="16" rx="1" fill="#a8e6c2" />}
-              {energized && <path d="M2 -6v12M6 -4v8" stroke="#4a8a6a" strokeWidth="2" />}
+              <rect x="-18" y="-14" width="36" height="28" rx="3" fill={on3 ? '#5d8e79' : '#969c92'} stroke="#3a5c48" strokeWidth="2" />
+              {on3 && <rect x="-10" y="-8" width="8" height="16" rx="1" fill="#a8e6c2" />}
+              {on3 && <path d="M2 -6v12M6 -4v8" stroke="#4a8a6a" strokeWidth="2" />}
               <text y="28" textAnchor="middle" className="power-map__fixture-label">{z.equipment[2].label}</text>
             </g>
 
             {/* Equipment 4 — middle right */}
-            {wire(`${z.zone}-eq4`, `M${x + 32} 260H${x + 210}V200H${x + 270}`, energized)}
+            {wire(`${z.zone}-eq4`, `M${x + 32} 260H${x + 210}V200H${x + 270}`, on4)}
             <g transform={`translate(${x + 270} 200)`}>
-              {energized && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#ffe295" opacity=".35" />}
-              <rect x="-18" y="-8" width="36" height="16" rx="2" fill={energized ? '#ffdc64' : '#a6aaa2'} stroke="#797762" strokeWidth="2" />
+              {on4 && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#ffe295" opacity=".35" />}
+              <rect x="-18" y="-8" width="36" height="16" rx="2" fill={on4 ? '#ffdc64' : '#a6aaa2'} stroke="#797762" strokeWidth="2" />
               <text y="28" textAnchor="middle" className="power-map__fixture-label">{z.equipment[3].label}</text>
             </g>
 
             {/* Equipment 5 — bottom */}
-            {wire(`${z.zone}-eq5`, `M${x + 32} 300H${x + 280}V280`, energized)}
+            {wire(`${z.zone}-eq5`, `M${x + 32} 300H${x + 280}V280`, on5)}
             <g transform={`translate(${x + 280} 270)`}>
               <rect x="-20" y="-12" width="40" height="25" fill="#e1e1d8" stroke="#7c8880" strokeWidth="2" />
-              <path d="M-14 3h28m-28 5h28" stroke={energized ? '#53998f' : '#a2a79f'} strokeWidth="2" />
-              {energized && connected && <path className="power-map__air" d="M-12 18v14M0 18v14M12 18v14" />}
+              <path d="M-14 3h28m-28 5h28" stroke={on5 ? '#53998f' : '#a2a79f'} strokeWidth="2" />
+              {on5 && connected && <path className="power-map__air" d="M-12 18v14M0 18v14M12 18v14" />}
               <text y="50" textAnchor="middle" className="power-map__fixture-label">{z.equipment[4].label}</text>
             </g>
 
@@ -163,9 +168,12 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
         return <article key={z.zone} className={severity !== 'normal' && severity !== 'unknown' ? 'is-selected' : ''} aria-label={`${z.zone} equipment status`}>
           <header><strong>{z.zone}</strong><span>{tx ? tx.diagnosis.code.replace(/_/g, ' ') : 'Unknown'}</span></header>
           <div className="power-map__loads">
-            {z.equipment.map(eq => <span key={eq.id} className={energized ? 'is-on' : 'is-off'} title={`${eq.name} — ${energized ? 'Energized' : 'De-energized'}`}>
-              <i />{eq.name}<b>{energized ? 'ON' : 'OFF'}</b>
-            </span>)}
+            {z.equipment.map(eq => {
+              const on = tx?.loads?.find(l => l.id === eq.id)?.served ?? energized;
+              return <span key={eq.id} className={on ? 'is-on' : 'is-off'} title={`${eq.name} — ${on ? 'Energized' : 'De-energized'}`}>
+                <i />{eq.name}<b>{on ? 'ON' : 'OFF'}</b>
+              </span>
+            })}
             <span className={tx?.sensors.cooling_ok ? 'is-on' : 'is-off'} title="Cooling system">
               <i />Cooling<b>{tx?.sensors.cooling_ok == null ? '—' : tx.sensors.cooling_ok ? 'OK' : 'FAIL'}</b>
             </span>

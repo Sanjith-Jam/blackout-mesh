@@ -80,11 +80,15 @@ class FaultDiagnosis(BaseModel):
     has_fault: bool
     diagnosis: str
     severity: str
-    status: str
+    status: str  # NORMAL | FAULT_DETECTED | ALARM | ABSTAINED (telemetry-derived, #4/#19)
+    hypotheses: List[Dict[str, object]] = Field(default_factory=list)
+    affected_assets: List[str] = Field(default_factory=list)
+    supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
 class SystemSnapshot(BaseModel):
     control_revision: int
     generated_at: datetime
+    published_revision: int = 0
     source: SourceInfo
     feeder_limits_w: Dict[str, int]
     requested_mask: int
@@ -102,6 +106,7 @@ class SystemSnapshot(BaseModel):
     model: Dict[str, object] = Field(default_factory=dict)
     replay: "ReplaySnapshot"
     allocation: "AllocationSnapshot"
+    site: Optional[Dict[str, object]] = None
 
 
 class ActivityObservationRequest(BaseModel):
@@ -124,6 +129,8 @@ class ActivitySnapshot(BaseModel):
     model_version: str
     priority: str
     evidence: Optional[Dict[str, Optional[float]]] = None
+    raw_state: Optional[str] = None
+    guard: Optional[str] = None
 
 
 class ReplaySnapshot(BaseModel):
@@ -132,11 +139,21 @@ class ReplaySnapshot(BaseModel):
     length: int
 
 
+class SafetySnapshot(BaseModel):
+    policy_version: str
+    status: str
+    protected_requested_w: int
+    protected_served_w: int
+    protected_shortfall_w: int
+    fallback_order: List[str]
+
+
 class AllocationSnapshot(BaseModel):
     objective: str
     critical_shortfall_w: int
     served_w: int
     baseline_mask: int
+    safety: Optional[SafetySnapshot] = None
 
 
 class ReplayActionRequest(BaseModel):
