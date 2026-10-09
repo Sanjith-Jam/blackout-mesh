@@ -97,6 +97,7 @@ export interface AllocationStatus {
   critical_shortfall_w: number;
   served_w: number;
   baseline_mask: number;
+  safety?: SafetyStatus;
 }
 
 export interface ActivityObservation {
@@ -174,8 +175,20 @@ export interface ClassroomDemoLoad {
   reason: string;
 }
 
+export interface SafetyStatus {
+  policy_version: string;
+  status: "FEASIBLE" | "PROTECTED_SHORTFALL";
+  protected_requested_w: number;
+  protected_served_w: number;
+  protected_shortfall_w: number;
+  fallback_order: string[];
+}
+
 export interface ClassroomDemoActivity {
   state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
+  /** What the model said before the safety guard; state is what the allocator uses. */
+  raw_state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
+  guard: string | null;
   score: number | null;
   reason: string;
   model_version: string;
@@ -206,6 +219,7 @@ export interface ClassroomDemoSnapshot {
   priority_order: ("CR1" | "CR2" | "CR3")[];
   rooms: ClassroomDemoRoom[];
   mode: "SIMULATED";
+  safety: SafetyStatus;
   model: { ready: boolean; model_version: string; fallback_reason: string | null };
   replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
