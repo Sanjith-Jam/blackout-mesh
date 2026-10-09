@@ -173,6 +173,7 @@ def test_failed_inference_and_stale_evidence_become_unknown(clean_grid, monkeypa
     response = client.post("/api/v1/activity/observations", json=payload)
     assert response.json()["activity"]["state"] == "UNKNOWN"
     grid.activity_received_monotonic["CR1"] = time.monotonic() - 601
+    grid.tick()  # staleness is applied by the control loop, not by reads
     assert client.get("/api/v1/snapshot").json()["activity"]["CR1"]["reason"] == "sensor evidence stale"
 
 

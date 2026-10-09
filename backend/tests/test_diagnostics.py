@@ -188,14 +188,18 @@ def test_campus_state_fault_diagnosis_structured():
     state = GridState()
     state.set_capacity(7000)
     state.set_feeder("A", False)
+    state.tick()
+    state.tick()  # telemetry-only diagnosis (#4) confirms on the second agreeing reading
     diag = state.fault_diagnosis
     assert diag is not None
     assert diag.has_fault is True
     assert diag.severity == "HIGH"
     assert hasattr(diag, "hypotheses")
     codes = [h["code"] if isinstance(h, dict) else h.code for h in diag.hypotheses]
-    assert "GRID_CAPACITY_SHORTFALL" in codes
     assert "FEEDER_DISCONNECTED" in codes
+    # A configured capacity limit is an operating constraint, never fault evidence (#4).
+    assert "GRID_CAPACITY_SHORTFALL" not in codes
+    assert "7000" in diag.supply_constraint
 
 
 

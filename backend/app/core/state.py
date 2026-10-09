@@ -12,6 +12,10 @@ from app.schemas.snapshot import (
 from app.core.allocator import allocate, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
+from app.diagnosis.infer import FeederRating, ObservationWindow, diagnose_campus
+from app.diagnosis.observations import validate as validate_observation
+from app.simulation.sensors import CAMPUS_BUS, CAMPUS_FEEDERS, campus_readings, envelopes as sensor_envelopes
+from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, normalize_prediction, shortfall_status
 
 SERVICE_CATALOG = [
     {"id": "L0", "name": "Hospital Essential Circuit", "tier": "T1", "feeder": "A", "watts": 2000, "zone": "hospital"},
@@ -42,6 +46,7 @@ DEFAULT_RFID_MAP = {
 }
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
+NORMAL_SOURCE_CAPACITY_W = 14000
 
 class GridState:
     _instance = None
@@ -58,6 +63,10 @@ class GridState:
         if getattr(self, '_initialized', False):
             return
         self._lock = threading.RLock()
+        self.clock = time.monotonic
+        self.published: Optional[SystemSnapshot] = None
+        self.published_revision = 0
+        self.tick_count = 0
         self.source_capacity_w = 14000
         self.feeder_limits_w = {"A": 6000, "B": 8000}
         self.feeder_available = {"A": True, "B": True}
@@ -79,19 +88,22 @@ class GridState:
         self.replay_running = False
         self.replay_index = 0
         self.replay_length = 0
+        self.activity_guard = ActivityGuard()
         self.activity_tokens = {c["id"]: 0 for c in CLASSROOMS}
         self.activity_received_monotonic = {c["id"]: None for c in CLASSROOMS}
         self.last_allocation_mask = 0
         self.last_allocation_key = None
         self.proposed_mask = 0
-        self.restoration_gate = RestorationGate(time.monotonic)
+        self.restoration_gate = RestorationGate(lambda: self.clock())
         self.events = []
         self.fault_diagnosis = None
-        self.compute_fault_diagnosis()
+        self.telemetry_window = ObservationWindow()
+        self.telemetry_sequence = 0
         self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
                                                   tuple(sorted(self.feeder_available.items())),), range(6))
         self.last_allocation_mask = 0b111111
         self._initialized = True
+        self.tick()  # initial publication so the first read is never empty
 
     def add_event(self, event_type: str, desc: str):
         with self._lock:
@@ -104,56 +116,35 @@ class GridState:
             if len(self.events) > 50:
                 self.events.pop(0)
 
+    def sample_telemetry(self, now: datetime):
+        """Simulation side: turn the modeled campus state into bus/feeder sensor envelopes."""
+        served = {"A": 0, "B": 0}
+        for i, svc in enumerate(SERVICE_CATALOG):
+            if self.last_allocation_mask & (1 << i):
+                served[svc["feeder"]] += svc["watts"]
+        self.telemetry_sequence += 1
+        readings = campus_readings(self.source_capacity_w, self.feeder_available, served)
+        for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
+            self.telemetry_window.add(validate_observation(raw, {CAMPUS_BUS, *CAMPUS_FEEDERS}, now))
+
     def compute_fault_diagnosis(self):
+        """Sample telemetry, then diagnose from the observation window only (#4).
+
+        A configured capacity limit is an explicit operating constraint, never inferred fault evidence.
+        """
         with self._lock:
-            has_fault = False
-            diagnosis_msgs = []
-            hypotheses_list = []
-            
-            if self.source_capacity_w < 14000:
-                has_fault = True
-                diagnosis_msgs.append(f"Grid capacity reduced ({self.source_capacity_w}W).")
-                hypotheses_list.append({
-                    "id": "CAMPUS:SUPPLY_SHORTFALL",
-                    "code": "GRID_CAPACITY_SHORTFALL",
-                    "asset_id": "MAIN_SUPPLY",
-                    "cause": f"Observed grid capacity ({self.source_capacity_w} W) below 14 kW normal supply",
-                    "severity": "medium",
-                    "evidence_score": 0.85,
-                    "sufficiency": "SUFFICIENT",
-                    "supporting_evidence": [f"Grid capacity observed at {self.source_capacity_w} W."],
-                    "contradicting_evidence": [],
-                    "recommendation": "Initiate automated load shedding to protect critical services.",
-                })
-                
-            for f, avail in self.feeder_available.items():
-                if not avail:
-                    has_fault = True
-                    diagnosis_msgs.append(f"Feeder {f} disconnected.")
-                    hypotheses_list.append({
-                        "id": f"FEEDER:{f}:DISCONNECTED",
-                        "code": "FEEDER_DISCONNECTED",
-                        "asset_id": f"FEEDER_{f}",
-                        "cause": f"Feeder {f} interruption detected",
-                        "severity": "high",
-                        "evidence_score": 0.95,
-                        "sufficiency": "SUFFICIENT",
-                        "supporting_evidence": [f"Feeder line telemetry reports feeder {f} open."],
-                        "contradicting_evidence": [],
-                        "recommendation": f"Inspect breaker and feeder line {f}.",
-                    })
-                    
-            if has_fault:
-                severity = "HIGH" if not all(self.feeder_available.values()) else "MEDIUM"
-                self.fault_diagnosis = FaultDiagnosis(
-                    has_fault=True,
-                    diagnosis=" ".join(diagnosis_msgs),
-                    severity=severity,
-                    status="ACTIVE",
-                    hypotheses=hypotheses_list,
-                )
-            else:
+            now = datetime.now(timezone.utc)
+            self.sample_telemetry(now)
+            result = diagnose_campus(self.telemetry_window, CAMPUS_BUS, list(CAMPUS_FEEDERS), FeederRating(), now)
+            constraint = (f"Configured supply limit {self.source_capacity_w} W (operating constraint, not a diagnosed fault)."
+                          if self.source_capacity_w < NORMAL_SOURCE_CAPACITY_W else None)
+            if result["status"] == "NORMAL" and constraint is None:
                 self.fault_diagnosis = None
+                return
+            self.fault_diagnosis = FaultDiagnosis(
+                has_fault=result["has_fault"], diagnosis=result["diagnosis"], severity=result["severity"],
+                status=result["status"], hypotheses=result["hypotheses"], affected_assets=result["affected_assets"],
+                supply_constraint=constraint)
 
 
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
@@ -191,7 +182,6 @@ class GridState:
             self.source_capacity_w = capacity_w
             self.control_revision += 1
             self.add_event("CAPACITY_CHANGE", f"Source capacity set to {capacity_w}W")
-            self.compute_fault_diagnosis()
 
     def set_feeder(self, feeder: str, available: bool):
         with self._lock:
@@ -200,7 +190,6 @@ class GridState:
                 self.control_revision += 1
                 status = "connected" if available else "disconnected"
                 self.add_event("FEEDER_CHANGE", f"Feeder {feeder} {status}")
-                self.compute_fault_diagnosis()
 
     def set_classroom_load(self, classroom_id: str, active: bool):
         with self._lock:
@@ -222,32 +211,35 @@ class GridState:
                                            "recorded_at": recorded_at, "model_version": "unavailable",
                                            "priority": "UNKNOWN", "evidence": dict(features)}
             age = max(0.0, (datetime.now(timezone.utc) - observed_at).total_seconds())
-            self.activity_received_monotonic[classroom_id] = time.monotonic() - age
+            self.activity_received_monotonic[classroom_id] = self.clock() - age
         return current_revision
 
     def apply_prediction(self, classroom_id, revision, prediction):
         with self._lock:
             if revision != self.activity_tokens[classroom_id]:
                 return False
-            pred = prediction or {"state": "UNKNOWN", "score": None, "reason": "inference failed", "model_version": "unavailable"}
-            state = pred.get("state") if pred.get("state") in ("ACTIVE", "INACTIVE", "UNKNOWN") else "UNKNOWN"
+            pred = self.activity_guard.update(classroom_id, normalize_prediction(prediction), revision)
+            state = pred["state"]
             priority = {"ACTIVE": "HIGH", "UNKNOWN": "MEDIUM", "INACTIVE": "LOW"}[state]
-            self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason", "inference failed"),
-                                                model_version=pred.get("model_version", "unavailable"), priority=priority)
+            self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason") or "inference failed",
+                                                model_version=pred.get("model_version", "unavailable"), priority=priority,
+                                                raw_state=pred["raw_state"], guard=pred["guard"])
             self.control_revision += 1
             return True
 
     def current_activity(self):
         activity = {cid: dict(value) for cid, value in self.activity.items()}
-        now = time.monotonic()
+        now = self.clock()
         for cid, received in self.activity_received_monotonic.items():
             if received is not None and now - received > 600:
-                activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN")
+                activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN",
+                                     guard="conservative fallback: evidence older than 600 s")
         return activity
 
     def compute_allocation(self) -> int:
         with self._lock:
-            freshness = tuple(received is not None and time.monotonic() - received > 600
+            now = self.clock()
+            freshness = tuple(received is not None and now - received > 600
                               for received in self.activity_received_monotonic.values())
             cache_key = (self.control_revision, freshness)
             if cache_key != self.last_allocation_key:
@@ -299,9 +291,30 @@ class GridState:
                         
             return mask
 
-    def build_snapshot(self) -> SystemSnapshot:
+    def tick(self) -> SystemSnapshot:
+        """Advance control (evidence freshness, allocation, staged restoration) and publish.
+
+        This is the only place time-dependent state moves forward. Readers call build_snapshot().
+        """
         with self._lock:
             modeled_mask = self.compute_allocation()
+            self.compute_fault_diagnosis()
+            candidate = self._project(modeled_mask)
+            self.tick_count += 1
+            if self.published is None or _content(candidate) != _content(self.published):
+                self.published_revision += 1
+                candidate.published_revision = self.published_revision
+                self.published = candidate
+            return self.published
+
+    def build_snapshot(self) -> Optional[SystemSnapshot]:
+        """Read-only: a copy of the last published snapshot, or None before the first tick.
+        Never advances control."""
+        with self._lock:
+            return None if self.published is None else self.published.model_copy(deep=True)
+
+    def _project(self, modeled_mask: int) -> SystemSnapshot:
+        with self._lock:
             indicator_command = self.compute_indicator_command_mask(modeled_mask)
             requested_mask = 0b111111
             if self.software_mode:
@@ -392,5 +405,15 @@ class GridState:
                                                          sum(SERVICE_CATALOG[i]["watts"] for i in range(2) if modeled_mask & (1 << i))),
                             "served_w": sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i)),
                             "baseline_mask": fixed_priority_mask(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
-                                                                 self.feeder_available, requested_mask)}
+                                                                 self.feeder_available, requested_mask),
+                            "safety": shortfall_status(
+                                sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+                                    if s["id"] in CAMPUS_PROTECTED_SERVICES and requested_mask & (1 << i)),
+                                sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+                                    if s["id"] in CAMPUS_PROTECTED_SERVICES and modeled_mask & (1 << i)))}
             )
+
+
+def _content(snapshot: SystemSnapshot) -> dict:
+    """Snapshot fields that define state, excluding publication bookkeeping."""
+    return snapshot.model_dump(exclude={"generated_at", "published_revision"})

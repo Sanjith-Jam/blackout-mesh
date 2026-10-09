@@ -97,6 +97,7 @@ export interface AllocationStatus {
   critical_shortfall_w: number;
   served_w: number;
   baseline_mask: number;
+  safety?: SafetyStatus;
 }
 
 export interface ActivityObservation {
@@ -115,7 +116,11 @@ export interface Snapshot {
   replay: ReplayStatus;
   allocation: AllocationStatus;
   control_revision: number;
+  published_revision: number;
+  site?: SiteIdentity;
   generated_at: string;
+  /** Socket messages only: when this copy was sent. generated_at is when the state last changed. */
+  sent_at?: string;
   source: SourceInfo;
   feeder_limits_w: FeederLimits;
   requested_mask: number;
@@ -171,8 +176,35 @@ export interface ClassroomDemoLoad {
   reason: string;
 }
 
+/** One site authority: every projection carries the same run and revision (#3). */
+export interface SiteIdentity {
+  run_id: string;
+  revision: number;
+  profile: string;
+  catalog_version: string;
+}
+
+export interface CommandReceipt {
+  command_id: number;
+  name: string;
+  run_id: string;
+  applied_revision: number;
+}
+
+export interface SafetyStatus {
+  policy_version: string;
+  status: "FEASIBLE" | "PROTECTED_SHORTFALL";
+  protected_requested_w: number;
+  protected_served_w: number;
+  protected_shortfall_w: number;
+  fallback_order: string[];
+}
+
 export interface ClassroomDemoActivity {
   state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
+  /** What the model said before the safety guard; state is what the allocator uses. */
+  raw_state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
+  guard: string | null;
   score: number | null;
   reason: string;
   model_version: string;
@@ -192,6 +224,7 @@ export type ClassroomDemoActionName = "scan" | "unscan" | "set_capacity" | "norm
   | "replay_pause" | "replay_resume" | "replay_step";
 
 export interface ClassroomDemoSnapshot {
+  published_revision: number;
   capacity_w: number;
   capacity_range_w: [number, number];
   requested_w: number;
@@ -202,6 +235,13 @@ export interface ClassroomDemoSnapshot {
   priority_order: ("CR1" | "CR2" | "CR3")[];
   rooms: ClassroomDemoRoom[];
   mode: "SIMULATED";
+  safety: SafetyStatus;
+  classroom_limit_w: number;
+  campus_limit_w: number | null;
+  effective_capacity_w: number;
+  limited_by: "classroom limit" | "campus feeder B";
+  site?: SiteIdentity;
+  command?: CommandReceipt;
   model: { ready: boolean; model_version: string; fallback_reason: string | null };
   replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
@@ -232,15 +272,18 @@ export interface DiagnosticAbstention {
   next_check_needed: string;
 }
 
+/** Telemetry-only (#4) multi-hypothesis (#19) diagnosis: FAULT_DETECTED after two agreeing readings, ALARM on one, ABSTAINED on missing/stale/contradictory data. */
 export interface HospitalDemoDiagnosis {
   code: string;
   cause: string;
   severity: string;
   evidence: string[];
   recommendation: string;
-  status?: "NORMAL" | "FAULT_DETECTED" | "ABSTAINED";
+  status?: "NORMAL" | "FAULT_DETECTED" | "ALARM" | "ABSTAINED";
   hypotheses?: DiagnosticHypothesis[];
   abstention?: DiagnosticAbstention | null;
+  missing?: string[];
+  stale?: string[];
 }
 
 
@@ -303,6 +346,8 @@ export interface HospitalDemoSnapshot {
   selected_zone_id: string | null;
   scanned_zone_ids: string[];
   priority_order: string[];
+  site?: SiteIdentity;
+  command?: CommandReceipt;
   transformers: HospitalDemoTransformer[];
   mode: "SIMULATED";
   model: { ready: boolean; model_version: string; fallback_reason: string | null };

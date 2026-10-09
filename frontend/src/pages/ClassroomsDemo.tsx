@@ -101,14 +101,14 @@ export default function ClassroomsDemo() {
 
   return <main className="classroom-demo">
     <header className="classroom-demo__header">
-      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Classroom power map</h1></div></div>
+      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated{snapshot.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span><h1 className="classroom-demo__title">Classroom power map</h1></div></div>
       <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/hospital">Hospital demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
     </header>
     {error && <div className="classroom-demo__alert" role="alert">Connection lost — displaying last known simulated state. {error}</div>}
     <div className="classroom-demo__layout">
       <section className="classroom-demo__main" aria-label="Classroom power state">
         <div className="classroom-demo__metrics">
-          <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Classroom-only supply</span><span className="classroom-demo__metric-value">{snapshot.capacity_w.toLocaleString()} W</span></div>
+          <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Classroom supply</span><span className="classroom-demo__metric-value">{snapshot.effective_capacity_w.toLocaleString()} W</span>{snapshot.limited_by === 'campus feeder B' && <span className="classroom-demo__metric-note">Limited by campus feeder B ({(snapshot.campus_limit_w ?? 0).toLocaleString()} W)</span>}</div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Requested</span><span className="classroom-demo__metric-value">{snapshot.requested_w.toLocaleString()} W</span></div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Served</span><span className="classroom-demo__metric-value">{snapshot.served_w.toLocaleString()} W</span></div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Unmet</span><span className="classroom-demo__metric-value">{snapshot.shortfall_w.toLocaleString()} W</span></div>
@@ -133,11 +133,16 @@ export default function ClassroomsDemo() {
                   <div><dt>CO₂</dt><dd>{act.evidence.co2_ppm == null ? '—' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
                   <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
                 </dl>
-                <p>{act.reason}</p>
+                <p>{act.guard ?? act.reason}</p>
               </article>;
             })}
           </div>
-          <p className="classroom-demo__ml-note">Only scanned rooms are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the room scanned first goes first. The model is an office-occupancy proxy, not a measurement of these classrooms.</p>
+          <p className={`classroom-demo__safety ${snapshot.safety.status === 'FEASIBLE' ? '' : 'is-short'}`} role="status">
+            {snapshot.safety.status === 'FEASIBLE'
+              ? `Protected essentials served: ${snapshot.safety.protected_served_w.toLocaleString()} of ${snapshot.safety.protected_requested_w.toLocaleString()} W (lighting and computers in every room).`
+              : `Protected shortfall: ${snapshot.safety.protected_shortfall_w.toLocaleString()} W of lighting and computers can't be supplied at this limit.`}
+          </p>
+          <p className="classroom-demo__ml-note">Only scanned rooms are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the room scanned first goes first. A room only counts as INACTIVE after two INACTIVE readings in a row, and predictions never switch off lighting or computers. The model is an office-occupancy proxy, not a measurement of these classrooms.</p>
         </section>
         <section aria-label="Classroom floor plans" aria-describedby="classroom-blueprint-key">
           <p id="classroom-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three tiled classrooms. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
