@@ -1,0 +1,97 @@
+{
+  "v": 2,
+  "synthetic": true,
+  "radio": [
+    {
+      "kind": "SET_LOADS",
+      "session": 10,
+      "seq": 2,
+      "boot": 20,
+      "ack": 0,
+      "mask": 8,
+      "status": 0,
+      "flags": 0,
+      "wire_hex": "a50203020a00000002000000140000000000000008000000bb48",
+      "applied_classroom_mask": 8
+    },
+    {
+      "kind": "SET_LOADS",
+      "session": 10,
+      "seq": 2,
+      "boot": 20,
+      "ack": 0,
+      "mask": 16,
+      "status": 0,
+      "flags": 0,
+      "wire_hex": "a50203020a00000002000000140000000000000010000000dfd6",
+      "applied_classroom_mask": 16
+    },
+    {
+      "kind": "SET_LOADS",
+      "session": 10,
+      "seq": 2,
+      "boot": 20,
+      "ack": 0,
+      "mask": 32,
+      "status": 0,
+      "flags": 0,
+      "wire_hex": "a50203020a0000000200000014000000000000002000000036fa",
+      "applied_classroom_mask": 32
+    },
+    {
+      "kind": "SET_LOADS",
+      "session": 10,
+      "seq": 2,
+      "boot": 20,
+      "ack": 0,
+      "mask": 24,
+      "status": 0,
+      "flags": 0,
+      "wire_hex": "a50203020a000000020000001400000000000000180000001c53",
+      "applied_classroom_mask": 24
+    },
+    {
+      "kind": "SET_LOADS",
+      "session": 10,
+      "seq": 2,
+      "boot": 20,
+      "ack": 0,
+      "mask": 56,
+      "status": 0,
+      "flags": 0,
+      "wire_hex": "a50203020a000000020000001400000000000000380000005264",
+      "applied_classroom_mask": 56
+    },
+    {
+      "kind": "SET_LOADS",
+      "session": 10,
+      "seq": 2,
+      "boot": 20,
+      "ack": 0,
+      "mask": 511,
+      "status": 0,
+      "flags": 0,
+      "wire_hex": "a50203020a000000020000001400000000000000ff010000ebb1",
+      "applied_classroom_mask": 56
+    }
+  ],
+  "host_sync": {
+    "v": 2,
+    "type": "sync",
+    "boot": 99,
+    "epoch": 1,
+    "session": 10,
+    "selected": null
+  },
+  "event": {
+    "v": 2,
+    "type": "event",
+    "boot": 99,
+    "epoch": 1,
+    "session": 10,
+    "ms": 1000,
+    "event": 1,
+    "action": "START_SESSION",
+    "room": "A"
+  }
+}

@@ -39,3 +39,5 @@ Recovery checks: RESET now raises the persisted session floor; old B boot report
 Arduino adapter piece: RC522 pins use the user-reported wiring, buttons use the new 25/26/27/32 guide (not wired yet), UID/peer credentials stay local. Reader task isolates synchronous driver waits. Both normal and enrollment targets compiled successfully; encrypted-radio path also linked successfully using temporary synthetic peer provisioning (never flashed; removed afterward).
 
 Gateway loop piece: compiled the nonblocking Arduino event loop, persisted boot/session counters, host acknowledgments, two-second reset and bounded serial/radio queues. Reader errors are distinct from unknown UIDs. Both PlatformIO environments pass; physical checks are blocked by serial permissions.
+
+Contract fixtures piece: explicit serial/radio v2 agreement, Python codec and six golden wire fixtures added. `python3 tools/test_radio_protocol.py` passes one test including all 512 masks; production C++ golden fixture matches. Person B must adopt this previously unimplemented contract before integration.

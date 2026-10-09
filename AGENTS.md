@@ -3,7 +3,7 @@
 Offline campus-power decision demo: simulated electrical model, Python authority, real ESP32 radio/LED feedback.
 Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.2) plus `LAB_ACTIVITY_ML_PLAN.md`; the latter governs lab ML, current catalog/objective and hardware. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
 
-**Status:** ESP32 A implementation in progress; application/ML and physical integration remain pending.
+**Status:** ESP32 A compiles and passes host checks; application/ML and physical integration remain pending.
 
 ## Stack
 
@@ -16,7 +16,8 @@ Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.2) plus `LAB_ACTIVITY_ML
 ## Commands
 
 - `python3 tools/test_esp32_a.py` — host checks for ESP32 A production logic.
-- `pio run -d firmware -e esp32-a` — compile gateway (hardware disabled by default).
+- `pio run -d firmware -e esp32-a` — compile gateway; RC522/button guide pins enabled, radio disabled until provisioned.
+- `python3 tools/test_radio_protocol.py` — synthetic wire fixtures and all 512 mask round trips.
 
 ## Workflow: small commits
 
