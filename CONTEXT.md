@@ -31,3 +31,5 @@ Historical plans and review records are outside the repository. The inherited bl
 Added production input/button state machines and explicit 26-byte v2 codec. Host sanitizer assertions pass (`python3 tools/test_esp32_a.py`). Board carrier/reader unidentified; no wiring or flashing performed. Next: serial and radio lifecycle, Arduino adapters, compile and bring-up guide.
 
 Radio lifecycle piece: host assertions cover one in-flight packet, latest-unsent coalescing, 200/400-ms retries, 600-ms timeout, boot/session/ACK identity and physical projection. `python3 tools/test_esp32_a.py` passes. Actual B integration remains pending.
+
+Serial lifecycle piece: bounded 512-byte frames, strict host fields, reconnect epochs, persistent-session floor, event acknowledgments and freshness checks added. Host assertions including malformed/oversized/trailing data and stale events pass. Connected `/dev/ttyUSB0` is inaccessible to current process (permission denied); no chip query or flash succeeded.
