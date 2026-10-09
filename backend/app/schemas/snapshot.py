@@ -77,7 +77,10 @@ class FaultDiagnosis(BaseModel):
     has_fault: bool
     diagnosis: str
     severity: str
-    status: str
+    status: str  # INFERRED | ALARM | ABSTAINED (telemetry-derived, #4)
+    hypotheses: List[Dict[str, object]] = Field(default_factory=list)
+    affected_assets: List[str] = Field(default_factory=list)
+    supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
 class SystemSnapshot(BaseModel):
     control_revision: int

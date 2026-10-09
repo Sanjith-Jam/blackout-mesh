@@ -12,6 +12,9 @@ from app.schemas.snapshot import (
 from app.core.allocator import allocate, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
+from app.diagnosis.infer import FeederRating, ObservationWindow, diagnose_campus
+from app.diagnosis.observations import validate as validate_observation
+from app.simulation.sensors import CAMPUS_BUS, CAMPUS_FEEDERS, campus_readings, envelopes as sensor_envelopes
 from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, normalize_prediction, shortfall_status
 
 SERVICE_CATALOG = [
@@ -43,6 +46,7 @@ DEFAULT_RFID_MAP = {
 }
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
+NORMAL_SOURCE_CAPACITY_W = 14000
 
 class GridState:
     _instance = None
@@ -93,7 +97,8 @@ class GridState:
         self.restoration_gate = RestorationGate(lambda: self.clock())
         self.events = []
         self.fault_diagnosis = None
-        self.compute_fault_diagnosis()
+        self.telemetry_window = ObservationWindow()
+        self.telemetry_sequence = 0
         self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
                                                   tuple(sorted(self.feeder_available.items())),), range(6))
         self.last_allocation_mask = 0b111111
@@ -111,30 +116,35 @@ class GridState:
             if len(self.events) > 50:
                 self.events.pop(0)
 
+    def sample_telemetry(self, now: datetime):
+        """Simulation side: turn the modeled campus state into bus/feeder sensor envelopes."""
+        served = {"A": 0, "B": 0}
+        for i, svc in enumerate(SERVICE_CATALOG):
+            if self.last_allocation_mask & (1 << i):
+                served[svc["feeder"]] += svc["watts"]
+        self.telemetry_sequence += 1
+        readings = campus_readings(self.source_capacity_w, self.feeder_available, served)
+        for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
+            self.telemetry_window.add(validate_observation(raw, {CAMPUS_BUS, *CAMPUS_FEEDERS}, now))
+
     def compute_fault_diagnosis(self):
+        """Sample telemetry, then diagnose from the observation window only (#4).
+
+        A configured capacity limit is an explicit operating constraint, never inferred fault evidence.
+        """
         with self._lock:
-            has_fault = False
-            diagnosis_msgs = []
-            
-            if self.source_capacity_w < 14000:
-                has_fault = True
-                diagnosis_msgs.append(f"Grid capacity reduced ({self.source_capacity_w}W).")
-                
-            for f, avail in self.feeder_available.items():
-                if not avail:
-                    has_fault = True
-                    diagnosis_msgs.append(f"Feeder {f} disconnected.")
-                    
-            if has_fault:
-                severity = "HIGH" if not all(self.feeder_available.values()) else "MEDIUM"
-                self.fault_diagnosis = FaultDiagnosis(
-                    has_fault=True,
-                    diagnosis=" ".join(diagnosis_msgs),
-                    severity=severity,
-                    status="ACTIVE"
-                )
-            else:
+            now = datetime.now(timezone.utc)
+            self.sample_telemetry(now)
+            result = diagnose_campus(self.telemetry_window, CAMPUS_BUS, list(CAMPUS_FEEDERS), FeederRating(), now)
+            constraint = (f"Configured supply limit {self.source_capacity_w} W (operating constraint, not a diagnosed fault)."
+                          if self.source_capacity_w < NORMAL_SOURCE_CAPACITY_W else None)
+            if result["status"] == "INFERRED" and not result["has_fault"] and constraint is None:
                 self.fault_diagnosis = None
+                return
+            self.fault_diagnosis = FaultDiagnosis(
+                has_fault=result["has_fault"], diagnosis=result["diagnosis"], severity=result["severity"],
+                status=result["status"], hypotheses=result["hypotheses"], affected_assets=result["affected_assets"],
+                supply_constraint=constraint)
 
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:
@@ -171,7 +181,6 @@ class GridState:
             self.source_capacity_w = capacity_w
             self.control_revision += 1
             self.add_event("CAPACITY_CHANGE", f"Source capacity set to {capacity_w}W")
-            self.compute_fault_diagnosis()
 
     def set_feeder(self, feeder: str, available: bool):
         with self._lock:
@@ -180,7 +189,6 @@ class GridState:
                 self.control_revision += 1
                 status = "connected" if available else "disconnected"
                 self.add_event("FEEDER_CHANGE", f"Feeder {feeder} {status}")
-                self.compute_fault_diagnosis()
 
     def set_classroom_load(self, classroom_id: str, active: bool):
         with self._lock:
@@ -289,6 +297,7 @@ class GridState:
         """
         with self._lock:
             modeled_mask = self.compute_allocation()
+            self.compute_fault_diagnosis()
             candidate = self._project(modeled_mask)
             self.tick_count += 1
             if self.published is None or _content(candidate) != _content(self.published):

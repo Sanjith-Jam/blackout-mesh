@@ -7,6 +7,9 @@ import time
 from pathlib import Path
 
 from app.core.restoration import RestorationGate
+from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
+from app.diagnosis.observations import validate as validate_observation
+from app.simulation.sensors import HOSPITAL_ASSETS, TRANSFORMER_FIELDS, envelopes as sensor_envelopes, hospital_readings, zone_readings
 from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
 
 ROOMS = ("CR1", "CR2", "CR3")
@@ -225,37 +228,20 @@ class ClassroomDemo:
 
 
 def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok):
-    """Classify only provided synthetic sensor observations and configured rating."""
-    missing = [name for name, value in (("current", current_a), ("temperature", temperature_c),
-               ("input voltage", input_voltage_v), ("output voltage", output_voltage_v), ("cooling", cooling_ok)) if value is None]
-    evidence = []
-    if current_a is not None:
-        evidence.append(f"Current {current_a:.1f} A; overload threshold {rated_current_a * 1.1:.1f} A (110% of rating).")
-    if temperature_c is not None:
-        evidence.append(f"Temperature {temperature_c:.1f} °C; hot threshold 80 °C.")
-    if cooling_ok is not None:
-        evidence.append(f"Cooling {'operational' if cooling_ok else 'failed'}.")
-    if input_voltage_v is not None and output_voltage_v is not None:
-        evidence.append(f"Input {input_voltage_v:.1f} V; output {output_voltage_v:.1f} V; low-input threshold 180 V.")
-    if missing:
-        return {"code": "UNKNOWN", "cause": "Insufficient sensor evidence", "severity": "unknown", "evidence": evidence + ["Missing: " + ", ".join(missing)], "recommendation": "Restore sensor telemetry before diagnosing."}
-    if input_voltage_v < 180 and output_voltage_v < 100:
-        return {"code": "UPSTREAM_LOSS", "cause": "Possible upstream supply loss", "severity": "critical", "evidence": evidence, "recommendation": "Check the upstream supply and incoming connections."}
-    if current_a > rated_current_a * 1.1:
-        return {"code": "OVERLOAD", "cause": "Current exceeds the configured rating threshold", "severity": "high", "evidence": evidence, "recommendation": "Review connected demand and verify with qualified protection equipment."}
-    if temperature_c >= 80 and not cooling_ok:
-        return {"code": "COOLING_FAILURE", "cause": "Elevated temperature with cooling reported failed", "severity": "high", "evidence": evidence, "recommendation": "Inspect cooling equipment and temperature using approved procedures."}
-    if temperature_c >= 80:
-        return {"code": "HIGH_TEMPERATURE", "cause": "Elevated transformer temperature", "severity": "medium", "evidence": evidence, "recommendation": "Check loading, ventilation and sensor readings."}
-    return {"code": "NORMAL", "cause": "No configured demo threshold exceeded", "severity": "normal", "evidence": evidence, "recommendation": "Continue monitoring."}
+    """Compatibility wrapper: one steady reading, diagnosed through the telemetry-only path.
 
+    The reading is fed as two consecutive identical samples so it can be confirmed. Live routes use
+    HospitalTelemetry, which keeps a real rolling window.
+    """
+    from datetime import datetime, timedelta, timezone
 
-NORMAL_SENSORS = (45.0, 58.0, 230.0, 220.0, True)
-HOSPITAL_FAULT_FIXTURES = {
-    "overload": (130.0, 72.0, 230.0, 218.0, True),
-    "cooling_failure": (45.0, 91.0, 230.0, 220.0, False),
-    "missing_sensor": (None, 55.0, 230.0, 220.0, True),
-}
+    now = datetime.now(timezone.utc)
+    window = ObservationWindow()
+    values = dict(zip(TRANSFORMER_FIELDS, (current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok)))
+    for seq, at in ((1, now - timedelta(milliseconds=250)), (2, now)):
+        for raw in sensor_envelopes({"TX": values}, seq, at):
+            window.add(validate_observation(raw, {"TX"}, now))
+    return diagnose_transformer(window, "TX", TransformerRating(rated_current_a=rated_current_a), now)
 
 
 
@@ -298,6 +284,8 @@ class HospitalPriorityDemo(ClassroomDemo):
         self.guard = ActivityGuard()
         self.published = None
         self.published_revision = 0
+        self.telemetry = ObservationWindow()
+        self.telemetry_sequence = 0
         self._advance_evidence()
         initial = (1 << len(HOSP_LOAD_KEYS)) - 1
         self.gate.update(initial, self._signature(self._room_order()), range(len(HOSP_LOAD_KEYS)))
@@ -337,6 +325,7 @@ class HospitalPriorityDemo(ClassroomDemo):
         bit_order = [HOSP_LOAD_KEYS.index((z, item[0])) for z, item in priority]
         applied = self.gate.update(proposed, self._signature(order), bit_order)
         current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
+        readings, diagnoses = self._sense_and_diagnose(current)
 
         transformers = []
         for i, z in enumerate(HOSP_ZONES):
@@ -349,8 +338,8 @@ class HospitalPriorityDemo(ClassroomDemo):
             act = self.activity(z)
             transformers.append({
                 "id": f"TX{i+1}", "name": f"Transformer {i+1}", "zone": z,
-                "rated_current_a": 100.0, "sensors": {"cooling_ok": True},
-                "diagnosis": {"code": "NORMAL", "severity": "normal"},
+                "rated_current_a": self._rating(z).rated_current_a, "sensors": readings[f"TX{i+1}"],
+                "diagnosis": diagnoses[f"TX{i+1}"],
                 "energized": True,
                 "rfid_active": z in self.scanned,
                 "priority_rank": order.index(z) + 1 if z in self.scanned else None,
@@ -375,6 +364,26 @@ class HospitalPriorityDemo(ClassroomDemo):
             "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next."
         }
 
+    @staticmethod
+    def _rating(zone):
+        # Full zone demand sizes each transformer's configured current rating.
+        return TransformerRating(rated_current_a=round(sum(x[2] for x in HOSP_LOADS[zone]) / 230.0, 2))
+
+    def _sense_and_diagnose(self, current):
+        """Simulated sensors from served load, then telemetry-only diagnosis (#4). Tick-only."""
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        served = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current) for i, z in enumerate(HOSP_ZONES)}
+        demand = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z]) for i, z in enumerate(HOSP_ZONES)}
+        readings = zone_readings(served, demand)
+        self.telemetry_sequence += 1
+        for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
+            self.telemetry.add(validate_observation(raw, set(readings), now))
+        diagnoses = {f"TX{i+1}": diagnose_transformer(self.telemetry, f"TX{i+1}", self._rating(z), now, peers_input_low={})
+                     for i, z in enumerate(HOSP_ZONES)}
+        return readings, diagnoses
+
     def act(self, action: str, zone_id: str | None = None, capacity_w: int | None = None):
         if action == "scan":
             if zone_id not in self.scanned:
@@ -393,36 +402,62 @@ class HospitalPriorityDemo(ClassroomDemo):
         return self.tick()  # a command wakes control immediately
 
 
-def hospital_snapshot(scenario="normal", zone="Theatre"):
-    target_i = 2
-    if zone == "ICU":
-        target_i = 1
-    elif zone == "Wards":
-        target_i = 3
 
+class HospitalTelemetry:
+    """Rolling sensor window for the hospital transformers; diagnosis sees only the envelopes."""
+
+    def __init__(self):
+        self.window = ObservationWindow()
+        self.sequence = 0
+
+    def sample(self, scenario, zone, now):
+        self.sequence += 1
+        readings = hospital_readings(scenario, zone)
+        for raw in sensor_envelopes(readings, self.sequence, now):
+            self.window.add(validate_observation(raw, set(HOSPITAL_ASSETS), now))
+        return readings
+
+    def diagnoses(self, now):
+        rating = TransformerRating()
+        low = {}
+        for asset in HOSPITAL_ASSETS:
+            ins, outs = self.window.series(asset, "input_voltage_v"), self.window.series(asset, "output_voltage_v")
+            low[asset] = bool(ins and outs and ins[-1].value is not None and outs[-1].value is not None
+                              and ins[-1].value < rating.low_input_v and outs[-1].value < rating.dead_output_v)
+        return {asset: diagnose_transformer(self.window, asset, rating, now,
+                                            peers_input_low={a: v for a, v in low.items()})
+                for asset in HOSPITAL_ASSETS}
+
+
+def hospital_projection(readings, diagnoses, scenario="normal", zone="Theatre"):
+    """Route view. Load shedding here is simulated actuation; the diagnosis comes only from telemetry."""
     transformers = []
-    for i in range(1, 4):
-        fixture = ((0.0, 40.0, 90.0, 20.0, True) if scenario == "upstream_loss"
-                   else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS) if i == target_i
-                   else NORMAL_SENSORS)
-        current, temp, vin, vout, cooling = fixture
-        sensors = {"current_a": current, "temperature_c": temp, "input_voltage_v": vin,
-                   "output_voltage_v": vout, "cooling_ok": cooling}
-        diagnosis = diagnose(100.0, **sensors)
-        zname = ZONES[i - 1]
+    for asset, zname in HOSPITAL_ASSETS.items():
+        sensors = readings[asset]
+        vout = sensors["output_voltage_v"]
         energized = vout is not None and vout >= 100.0
-        
         loads = []
         for eq_id, _name, _watts, essential in HOSP_LOADS[zname]:
-            # Default to energized status
             served = energized
-            # If we are in overload, non-scanned zones shed their non-essential loads
+            # In the overload teaching scenario, non-scanned zones shed their non-essential loads.
             if scenario == "overload" and zname != zone and not essential:
                 served = False
             loads.append({"id": eq_id, "served": served})
-            
-        transformers.append({"id": f"TX{i}", "name": f"Transformer {i}", "zone": zname,
-                             "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnosis,
+        transformers.append({"id": asset, "name": f"Transformer {asset[-1]}", "zone": zname,
+                             "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnoses[asset],
                              "energized": energized, "loads": loads})
     return {"mode": "SIMULATED", "transformers": transformers,
-            "summary": "Synthetic sensor diagnosis for demonstration; thresholds are not certified protection settings."}
+            "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; "
+                       "a cause is inferred after two consecutive agreeing readings. Thresholds are not "
+                       "certified protection settings."}
+
+
+def hospital_snapshot(scenario="normal", zone="Theatre"):
+    """Steady-state view for a scenario (two samples), used outside the live control loop."""
+    from datetime import datetime, timedelta, timezone
+
+    telemetry = HospitalTelemetry()
+    now = datetime.now(timezone.utc)
+    telemetry.sample(scenario, zone, now - timedelta(milliseconds=250))
+    readings = telemetry.sample(scenario, zone, now)
+    return hospital_projection(readings, telemetry.diagnoses(now), scenario, zone)
