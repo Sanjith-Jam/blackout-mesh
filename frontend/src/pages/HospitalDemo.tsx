@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowLeft, CheckCircle2, CircleHelp, RefreshCw, Thermometer, Zap } from 'lucide-react';
+import { Activity, CheckCircle2, CircleHelp } from 'lucide-react';
 import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoScenario, HospitalDemoSnapshot, HospitalDemoTransformer } from '../types';
 import HospitalBlueprint from './HospitalBlueprint';
 import './HospitalDemo.css';
-
-const scenarios: { id: HospitalDemoScenario; label: string; detail: string }[] = [
-  { id: 'normal', label: 'Normal operation', detail: 'All transformers within demo ranges' },
-  { id: 'overload', label: 'Overload', detail: 'TX2 current above its rated threshold' },
-  { id: 'cooling_failure', label: 'Cooling failure', detail: 'TX2 is hot while cooling is reported failed' },
-  { id: 'upstream_loss', label: 'Upstream loss', detail: 'Low input and output voltage readings' },
-  { id: 'missing_sensor', label: 'Missing sensor', detail: 'TX2 current reading is unavailable' },
-];
+import './ClassroomVisualizer.css';
 
 function scenarioFromEvidence(snapshot: HospitalDemoSnapshot): HospitalDemoScenario {
   const codes = snapshot.transformers.map((transformer) => transformer.diagnosis.code);
@@ -133,44 +126,60 @@ export default function HospitalDemo() {
   const unknown = transformers.filter((transformer) => transformer.diagnosis.code === 'UNKNOWN').length;
 
   return (
-    <main className="hospital-demo">
-      <header className="hospital-header">
-        <Link to="/" className="hospital-back"><ArrowLeft size={17} aria-hidden="true" /> Home</Link>
-        <div className="hospital-brand"><span className="hospital-brand-mark"><Activity size={19} aria-hidden="true" /></span><span>PriorityGrid <small>Virtual hospital diagnostics</small></span></div>
-        <div className="hospital-header-actions"><nav className="hospital-route-links" aria-label="Demo navigation"><Link to="/classrooms">Classroom demo</Link><Link to="/demo">Live dashboard</Link></nav><span className="hospital-mode"><span /> SIMULATED</span></div>
+    <main className="classroom-demo">
+      <header className="classroom-demo__header">
+        <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Activity size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Hospital power map</h1></div></div>
+        <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/classrooms">Classroom demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
       </header>
 
-      <div className="hospital-content">
-        <section className="hospital-title-row">
-          <div><p className="hospital-eyebrow">Electrical monitoring · three virtual transformers</p><h1>Hospital power overview</h1><p className="hospital-subtitle">Follow sensor readings from the upstream supply through each transformer to its hospital zone.</p></div>
-          <div className="hospital-summary" aria-live="polite"><div className="hospital-summary-icon"><Zap size={18} aria-hidden="true" /></div><div><strong>{unknown ? `${unknown} diagnosis${unknown > 1 ? 'es' : ''} unknown` : faults ? `${faults} transformer alert${faults > 1 ? 's' : ''}` : 'Readings within demo limits'}</strong><span>{snapshot?.summary ?? 'Loading synthetic sensor readings…'}</span></div></div>
-        </section>
-
-        {error && <div className="hospital-error" role="alert"><AlertTriangle size={18} aria-hidden="true" />{error}<button type="button" onClick={() => void refresh()}><RefreshCw size={15} aria-hidden="true" /> Retry</button></div>}
-        {snapshot && stale && <div className="hospital-stale" role="status"><CircleHelp size={16} aria-hidden="true" /> Showing the last sensor snapshot. Flow animation is paused until updates resume.</div>}
-
-        <section className="hospital-scenario-panel" aria-labelledby="scenario-heading">
-          <div className="hospital-panel-heading"><span className="hospital-heading-icon"><Thermometer size={17} aria-hidden="true" /></span><div><h2 id="scenario-heading">Choose a sensor scenario</h2><p>Each choice changes synthetic readings; the diagnosis is computed from those readings.</p></div></div>
-          <div className="hospital-scenario-grid" role="group" aria-label="Sensor scenarios">
-            {scenarios.map((scenario) => <button key={scenario.id} type="button" className={`hospital-scenario ${selected === scenario.id ? 'selected' : ''}`} aria-pressed={selected === scenario.id} disabled={pending} onClick={() => void selectScenario(scenario.id)}><strong>{scenario.label}</strong><span>{scenario.detail}</span></button>)}
+      {error && <div className="classroom-demo__alert" role="alert">Connection lost — displaying last known simulated state. {error}</div>}
+      
+      <div className="classroom-demo__layout">
+        <section className="classroom-demo__main" aria-label="Hospital power state">
+          
+          <div className="classroom-demo__metrics">
+            <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Hospital faults</span><span className="classroom-demo__metric-value">{faults}</span></div>
+            <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Unknowns</span><span className="classroom-demo__metric-value">{unknown}</span></div>
+            <div className="classroom-demo__metric" style={{ gridColumn: 'span 2' }}><span className="classroom-demo__metric-label">Diagnosis summary</span><span className="classroom-demo__metric-value" style={{ fontSize: '1rem', marginTop: '0.4rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{snapshot?.summary ?? 'Loading synthetic sensor readings…'}</span></div>
           </div>
-          {pending && <p className="hospital-pending" role="status">Applying virtual sensor readings…</p>}
+
+          {!snapshot ? <section className="classroom-demo__loading" aria-live="polite"><CircleHelp size={22} aria-hidden="true" />Loading transformer evidence…</section> : <>
+            <section aria-label="Hospital floor plans">
+              <p className="classroom-demo__blueprint-key">A shared supply feeds three hospital zones. Animated lines show voltage readings and energized outputs. A fault diagnosis does not trip a circuit in this demo.</p>
+              <HospitalBlueprint snapshot={snapshot} connected={!stale} />
+            </section>
+
+            <div className="hospital-detail-grid">{transformers.map((transformer) => <article className={`hospital-transformer-detail severity-${transformer.diagnosis.severity}`} key={transformer.id}>
+              <div className="hospital-transformer-heading"><div><p>{transformer.zone}</p><h2>{transformer.name}</h2></div><span className={`hospital-diagnosis-badge severity-${transformer.diagnosis.severity}`}>{transformer.diagnosis.code.replace(/_/g, ' ')}</span></div>
+              <TransformerReadings transformer={transformer} />
+              <div className="hospital-diagnosis-copy"><strong>{transformer.diagnosis.cause}</strong><ul>{transformer.diagnosis.evidence.map((item) => <li key={item}>{item}</li>)}</ul><p>{transformer.diagnosis.recommendation}</p></div>
+            </article>)}</div>
+
+            <CauseSummary transformers={transformers} />
+            <aside className="hospital-threshold-note"><CheckCircle2 size={18} aria-hidden="true" /><div><strong>Demonstration thresholds only</strong><p>Overload: above 110% of rating. High temp: 80°C or more. Upstream loss: input &lt; 180V and output &lt; 100V. These heuristics are not certified protection settings.</p></div></aside>
+          </>}
         </section>
 
-        {!snapshot ? <section className="hospital-loading" aria-live="polite"><CircleHelp size={22} aria-hidden="true" />Loading transformer evidence…</section> : <>
-          <section className="hospital-blueprint-panel" aria-label="Hospital floor plans">
-            <HospitalBlueprint snapshot={snapshot} connected={!stale} />
-          </section>
+        <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="hospital-controls-title" aria-busy={pending}>
+          <h2 id="hospital-controls-title">Demo controls</h2>
+          <p>Scenarios inject synthetic sensor evidence to trigger different hospital diagnoses.</p>
+          
+          <div className="classroom-demo__button-stack" aria-label="Apply hospital scenario">
+            <button className={`classroom-demo__button ${selected === 'normal' ? 'classroom-demo__button--primary' : ''}`} disabled={pending} onClick={() => void selectScenario('normal')}>Normal operation</button>
+          </div>
+          
+          <div className="classroom-demo__control-divider" />
+          
+          <div className="classroom-demo__button-stack">
+            <button className={`classroom-demo__button ${selected === 'overload' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('overload')}>Overload</button>
+            <button className={`classroom-demo__button ${selected === 'cooling_failure' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('cooling_failure')}>Cooling failure</button>
+            <button className={`classroom-demo__button ${selected === 'upstream_loss' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('upstream_loss')}>Upstream loss</button>
+            <button className={`classroom-demo__button ${selected === 'missing_sensor' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('missing_sensor')}>Missing sensor</button>
+          </div>
 
-          <div className="hospital-detail-grid">{transformers.map((transformer) => <article className={`hospital-transformer-detail severity-${transformer.diagnosis.severity}`} key={transformer.id}>
-            <div className="hospital-transformer-heading"><div><p>{transformer.zone}</p><h2>{transformer.name}</h2></div><span className={`hospital-diagnosis-badge severity-${transformer.diagnosis.severity}`}>{transformer.diagnosis.code.replace(/_/g, ' ')}</span></div>
-            <TransformerReadings transformer={transformer} />
-            <div className="hospital-diagnosis-copy"><strong>{transformer.diagnosis.cause}</strong><ul>{transformer.diagnosis.evidence.map((item) => <li key={item}>{item}</li>)}</ul><p>{transformer.diagnosis.recommendation}</p></div>
-          </article>)}</div>
-
-          <CauseSummary transformers={transformers} />
-          <aside className="hospital-threshold-note"><CheckCircle2 size={18} aria-hidden="true" /><div><strong>Demonstration thresholds only</strong><p>Overload: above 110% of rating. High temperature: 80 °C or more. Possible upstream loss: input below 180 V and output below 100 V. These heuristics are not certified protection settings.</p></div></aside>
-        </>}
+          <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Applying virtual sensor readings…' : ''}</p>
+          <p><strong>Note:</strong> Each choice changes synthetic readings. The backend recalculates its diagnosis based purely on these updated sensor values.</p>
+        </aside>
       </div>
     </main>
   );
