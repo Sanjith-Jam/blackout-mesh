@@ -88,3 +88,4 @@ Detailed two-person physical phases remain local at `/home/bread/blackout-mesh-l
 ## Updates for BM-17 and BM-19
 - **BM-19**: Unified session semantics across RFID and software routes. `GridState` now uses `active_sessions` instead of a single active room. RFID unscan is fully supported.
 - **BM-17**: Added support for simultaneous faults, hypothesis ranking, and diagnostic abstention. `diagnose` logic now correctly evaluates all hypotheses and ranks them by score. Ambiguous conditions explicitly return abstention.
+- **BM-12**: Added strict Pydantic response models for all remaining endpoints, implemented explicit OpenAPI schema generation (`backend/scripts/export_openapi.py`), integrated `openapi-typescript` for automated UI types, and added runtime JSON schema validation to the frontend WebSocket payload (`WebSocketMessageEnvelope`).

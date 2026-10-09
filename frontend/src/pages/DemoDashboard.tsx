@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
 import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
-import { Snapshot } from '../types';
+import { Snapshot, WebSocketEnvelope } from '../types';
 import TopologyGraph from '../components/TopologyGraph';
 import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
 import AllocationHistoryChart from '../components/AllocationHistoryChart';
@@ -43,21 +43,30 @@ export default function DemoDashboard() {
       };
 
 
+
       ws.onmessage = (event) => {
         try {
-          const data: Snapshot = JSON.parse(event.data);
+          const envelope: WebSocketEnvelope = JSON.parse(event.data);
           
-          if (runIdRef.current !== null && runIdRef.current !== data.contract.identity.run_id) {
+          if (!envelope || typeof envelope !== 'object' || envelope.type !== 'snapshot' || !envelope.payload) {
+             console.error("Invalid WebSocket envelope received:", envelope);
+             return;
+          }
+          
+          const data = envelope.payload;
+          
+          if (runIdRef.current !== null && runIdRef.current !== data.contract?.identity?.run_id) {
              // Run ID changed, reset history
              setHistory([]);
           }
-          runIdRef.current = data.contract.identity.run_id;
+          runIdRef.current = data.contract?.identity?.run_id;
 
           setSnapshot(data);
           setHealthOk(true);
 
           // Update history
           const now = new Date(data.generated_at).toLocaleTimeString();
+
 
           const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
           const servedCount = data.services.filter(s => s.modeled_served).length;
@@ -236,8 +245,8 @@ export default function DemoDashboard() {
             
             <div className="hospital-rooms-grid">
               {zones?.hospital.rooms.map(room => {
-                const cmdOn = checkBit(indicator_command_mask, room.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask, room.led_bit);
+                const cmdOn = checkBit(indicator_command_mask ?? null, room.led_bit);
+                const confOn = checkBit(indicator_confirmed_mask ?? null, room.led_bit);
                 return (
                   <div key={room.id} className="room-card">
                     <h3>{room.name}</h3>
@@ -284,8 +293,8 @@ export default function DemoDashboard() {
               {zones?.classroom.classrooms.map(cr => {
                 const isSelected = zones.classroom.active_classroom_id === cr.id;
                 const svc = getService(cr.service_id);
-                const cmdOn = checkBit(indicator_command_mask, cr.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask, cr.led_bit);
+                const cmdOn = checkBit(indicator_command_mask ?? null, cr.led_bit);
+                const confOn = checkBit(indicator_confirmed_mask ?? null, cr.led_bit);
 
                 return (
                   <div key={cr.id} className={`cr-card ${isSelected ? 'selected' : ''}`}>

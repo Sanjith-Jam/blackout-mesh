@@ -55,7 +55,7 @@ export default function ClassroomsDemo() {
     setError(null);
     setFeedback(null);
     try {
-      const next = await postClassroomDemo(action, classroomId);
+      const next = await postClassroomDemo(action, classroomId as "CR1" | "CR2" | "CR3" | undefined);
       if (mounted.current) {
         setSnapshot(next);
         setFeedback(action === 'scan' ? `Scanned ${classroomId}.` : action === 'unscan' ? `Unscanned ${classroomId}.` : `${action === 'normal' ? 'Normal 8,000 W' : action === 'overload' ? 'Overload 3,400 W' : 'Classroom demo reset'} applied.`);

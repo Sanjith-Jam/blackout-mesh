@@ -1,0 +1,2039 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PriorityGrid API",
+    "description": "Backend API for the PriorityGrid decision-and-control application.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "HealthCheck",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/snapshot": {
+      "get": {
+        "summary": "Get Snapshot",
+        "operationId": "GetSnapshot",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSnapshot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/model/status": {
+      "get": {
+        "summary": "Model Status",
+        "operationId": "ModelStatus",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/visualizers/classrooms": {
+      "get": {
+        "summary": "Get Classroom Demo",
+        "operationId": "GetClassroomDemo",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomDemoSnapshot"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Act Classroom Demo",
+        "operationId": "ActClassroomDemo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassroomDemoAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomDemoSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/visualizers/hospital": {
+      "get": {
+        "summary": "Get Hospital Demo",
+        "operationId": "GetHospitalDemo",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HospitalDemoSnapshot"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Act Hospital Demo",
+        "operationId": "ActHospitalDemo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HospitalDemoAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HospitalDemoSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/activity/observations": {
+      "post": {
+        "summary": "Post Activity Observation",
+        "operationId": "PostActivityObservation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityObservationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityObservationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay": {
+      "post": {
+        "summary": "Replay Action",
+        "operationId": "ReplayAction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayActionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rfid/scan": {
+      "post": {
+        "summary": "Process Rfid Scan",
+        "operationId": "ProcessRfidScan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RfidScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RfidScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/capacity": {
+      "post": {
+        "summary": "Change Capacity",
+        "operationId": "ChangeCapacity",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapacityChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacityChangeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/classroom-load": {
+      "post": {
+        "summary": "Change Classroom Load",
+        "operationId": "ChangeClassroomLoad",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassroomLoadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomLoadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/feeder": {
+      "post": {
+        "summary": "Change Feeder",
+        "operationId": "ChangeFeeder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeederChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeederChangeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActivityObservationRequest": {
+        "properties": {
+          "classroom_id": {
+            "type": "string",
+            "title": "Classroom Id"
+          },
+          "temperature_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature C"
+          },
+          "humidity_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Humidity Pct"
+          },
+          "co2_ppm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Co2 Ppm"
+          },
+          "humidity_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Humidity Ratio"
+          },
+          "observed_at": {
+            "type": "string",
+            "title": "Observed At"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "classroom_id",
+          "observed_at",
+          "source"
+        ],
+        "title": "ActivityObservationRequest"
+      },
+      "ActivityObservationResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "applied": {
+            "type": "boolean",
+            "title": "Applied"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "activity": {
+            "$ref": "#/components/schemas/ActivitySnapshot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "applied",
+          "revision",
+          "activity"
+        ],
+        "title": "ActivityObservationResponse"
+      },
+      "ActivitySnapshot": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "reason",
+          "model_version",
+          "priority"
+        ],
+        "title": "ActivitySnapshot"
+      },
+      "AllocationSnapshot": {
+        "properties": {
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "critical_shortfall_w": {
+            "type": "integer",
+            "title": "Critical Shortfall W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "baseline_mask": {
+            "type": "integer",
+            "title": "Baseline Mask"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective",
+          "critical_shortfall_w",
+          "served_w",
+          "baseline_mask"
+        ],
+        "title": "AllocationSnapshot"
+      },
+      "CapacityChangeRequest": {
+        "properties": {
+          "capacity_w": {
+            "type": "integer",
+            "maximum": 20000.0,
+            "minimum": 0.0,
+            "title": "Capacity W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "capacity_w"
+        ],
+        "title": "CapacityChangeRequest"
+      },
+      "CapacityChangeResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "new_capacity_w": {
+            "type": "integer",
+            "title": "New Capacity W"
+          },
+          "control_revision": {
+            "type": "integer",
+            "title": "Control Revision"
+          },
+          "config_hash": {
+            "type": "string",
+            "title": "Config Hash",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "new_capacity_w",
+          "control_revision"
+        ],
+        "title": "CapacityChangeResponse"
+      },
+      "ClassroomDemoAction": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "scan",
+              "unscan",
+              "normal",
+              "overload",
+              "reset"
+            ],
+            "title": "Action"
+          },
+          "classroom_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CR1",
+                  "CR2",
+                  "CR3"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classroom Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ClassroomDemoAction"
+      },
+      "ClassroomDemoLoad": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "watts": {
+            "type": "integer",
+            "title": "Watts"
+          },
+          "essential": {
+            "type": "boolean",
+            "title": "Essential"
+          },
+          "served": {
+            "type": "boolean",
+            "title": "Served"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "watts",
+          "essential",
+          "served",
+          "reason"
+        ],
+        "title": "ClassroomDemoLoad"
+      },
+      "ClassroomDemoRoom": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "rfid_active": {
+            "type": "boolean",
+            "title": "Rfid Active"
+          },
+          "loads": {
+            "items": {
+              "$ref": "#/components/schemas/ClassroomDemoLoad"
+            },
+            "type": "array",
+            "title": "Loads"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "rfid_active",
+          "loads"
+        ],
+        "title": "ClassroomDemoRoom"
+      },
+      "ClassroomDemoSnapshot": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/CrossRouteContract"
+          },
+          "capacity_w": {
+            "type": "integer",
+            "title": "Capacity W"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "shortfall_w": {
+            "type": "integer",
+            "title": "Shortfall W"
+          },
+          "selected_classroom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Classroom Id"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/ClassroomDemoRoom"
+            },
+            "type": "array",
+            "title": "Rooms"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "policy": {
+            "type": "string",
+            "title": "Policy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract",
+          "capacity_w",
+          "requested_w",
+          "served_w",
+          "shortfall_w",
+          "rooms",
+          "mode",
+          "policy"
+        ],
+        "title": "ClassroomDemoSnapshot"
+      },
+      "ClassroomInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "service_id": {
+            "type": "string",
+            "title": "Service Id"
+          },
+          "rfid_card_registered": {
+            "type": "boolean",
+            "title": "Rfid Card Registered"
+          },
+          "led_bit": {
+            "type": "integer",
+            "title": "Led Bit"
+          },
+          "load_event_active": {
+            "type": "boolean",
+            "title": "Load Event Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "service_id",
+          "rfid_card_registered",
+          "led_bit",
+          "load_event_active"
+        ],
+        "title": "ClassroomInfo"
+      },
+      "ClassroomLoadRequest": {
+        "properties": {
+          "classroom_id": {
+            "type": "string",
+            "title": "Classroom Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classroom_id",
+          "active"
+        ],
+        "title": "ClassroomLoadRequest"
+      },
+      "ClassroomLoadResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "classroom_id": {
+            "type": "string",
+            "title": "Classroom Id"
+          },
+          "load_event_active": {
+            "type": "boolean",
+            "title": "Load Event Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "classroom_id",
+          "load_event_active"
+        ],
+        "title": "ClassroomLoadResponse"
+      },
+      "ClassroomZone": {
+        "properties": {
+          "active_classroom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Classroom Id"
+          },
+          "recent_rfid_scan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recent Rfid Scan"
+          },
+          "rfid_reader_status": {
+            "$ref": "#/components/schemas/RfidReaderStatus",
+            "default": "NOT_CONNECTED"
+          },
+          "classrooms": {
+            "items": {
+              "$ref": "#/components/schemas/ClassroomInfo"
+            },
+            "type": "array",
+            "title": "Classrooms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classrooms"
+        ],
+        "title": "ClassroomZone"
+      },
+      "CrossRouteContract": {
+        "properties": {
+          "identity": {
+            "$ref": "#/components/schemas/RunIdentity"
+          },
+          "campus_totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeTotals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "zone_totals": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ScopeTotals"
+            },
+            "type": "object",
+            "title": "Zone Totals",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "identity"
+        ],
+        "title": "CrossRouteContract"
+      },
+      "FacilityZones": {
+        "properties": {
+          "hospital": {
+            "$ref": "#/components/schemas/HospitalZone"
+          },
+          "classroom": {
+            "$ref": "#/components/schemas/ClassroomZone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hospital",
+          "classroom"
+        ],
+        "title": "FacilityZones"
+      },
+      "FeederChangeRequest": {
+        "properties": {
+          "feeder": {
+            "type": "string",
+            "title": "Feeder"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feeder",
+          "available"
+        ],
+        "title": "FeederChangeRequest"
+      },
+      "FeederChangeResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "feeder": {
+            "type": "string",
+            "title": "Feeder"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "control_revision": {
+            "type": "integer",
+            "title": "Control Revision"
+          },
+          "config_hash": {
+            "type": "string",
+            "title": "Config Hash",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "feeder",
+          "available",
+          "control_revision"
+        ],
+        "title": "FeederChangeResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HardwareLinkStatus": {
+        "type": "string",
+        "enum": [
+          "NOT_CONNECTED",
+          "CONNECTED",
+          "ERROR"
+        ],
+        "title": "HardwareLinkStatus"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "application": {
+            "type": "string",
+            "title": "Application"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "application"
+        ],
+        "title": "HealthResponse"
+      },
+      "HospitalDemoAction": {
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "overload",
+              "cooling_failure",
+              "upstream_loss",
+              "missing_sensor"
+            ],
+            "title": "Scenario"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scenario"
+        ],
+        "title": "HospitalDemoAction"
+      },
+      "HospitalDemoDiagnosis": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "cause": {
+            "type": "string",
+            "title": "Cause"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation"
+          },
+          "hypotheses": {
+            "items": {
+              "$ref": "#/components/schemas/Hypothesis"
+            },
+            "type": "array",
+            "title": "Hypotheses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "cause",
+          "severity",
+          "evidence",
+          "recommendation",
+          "hypotheses"
+        ],
+        "title": "HospitalDemoDiagnosis"
+      },
+      "HospitalDemoSensors": {
+        "properties": {
+          "current_a": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current A"
+          },
+          "temperature_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature C"
+          },
+          "input_voltage_v": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Voltage V"
+          },
+          "output_voltage_v": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Voltage V"
+          },
+          "cooling_ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooling Ok"
+          }
+        },
+        "type": "object",
+        "title": "HospitalDemoSensors"
+      },
+      "HospitalDemoSnapshot": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/CrossRouteContract"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "transformers": {
+            "items": {
+              "$ref": "#/components/schemas/HospitalDemoTransformer"
+            },
+            "type": "array",
+            "title": "Transformers"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract",
+          "mode",
+          "transformers",
+          "summary"
+        ],
+        "title": "HospitalDemoSnapshot"
+      },
+      "HospitalDemoTransformer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "rated_current_a": {
+            "type": "number",
+            "title": "Rated Current A"
+          },
+          "sensors": {
+            "$ref": "#/components/schemas/HospitalDemoSensors"
+          },
+          "diagnosis": {
+            "$ref": "#/components/schemas/HospitalDemoDiagnosis"
+          },
+          "energized": {
+            "type": "boolean",
+            "title": "Energized"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "zone",
+          "rated_current_a",
+          "sensors",
+          "diagnosis",
+          "energized"
+        ],
+        "title": "HospitalDemoTransformer"
+      },
+      "HospitalRoom": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lighting_service": {
+            "type": "string",
+            "title": "Lighting Service"
+          },
+          "led_bit": {
+            "type": "integer",
+            "title": "Led Bit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "lighting_service",
+          "led_bit"
+        ],
+        "title": "HospitalRoom"
+      },
+      "HospitalZone": {
+        "properties": {
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/HospitalRoom"
+            },
+            "type": "array",
+            "title": "Rooms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rooms"
+        ],
+        "title": "HospitalZone"
+      },
+      "Hypothesis": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "cause": {
+            "type": "string",
+            "title": "Cause"
+          },
+          "asset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asset Id"
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence"
+          },
+          "contradicting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contradicting Evidence"
+          },
+          "time_window": {
+            "type": "string",
+            "title": "Time Window"
+          },
+          "sufficiency": {
+            "type": "string",
+            "title": "Sufficiency"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "cause",
+          "supporting_evidence",
+          "contradicting_evidence",
+          "time_window",
+          "sufficiency",
+          "score",
+          "severity",
+          "recommendation"
+        ],
+        "title": "Hypothesis"
+      },
+      "ModelStatusResponse": {
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "model_type": {
+            "type": "string",
+            "title": "Model Type"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Features"
+          },
+          "data_source": {
+            "type": "string",
+            "title": "Data Source"
+          },
+          "evaluation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evaluation"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ready",
+          "model_version",
+          "model_type",
+          "features",
+          "data_source"
+        ],
+        "title": "ModelStatusResponse"
+      },
+      "RankedDiagnosis": {
+        "properties": {
+          "is_fault": {
+            "type": "boolean",
+            "title": "Is Fault"
+          },
+          "hypotheses": {
+            "items": {
+              "$ref": "#/components/schemas/Hypothesis"
+            },
+            "type": "array",
+            "title": "Hypotheses"
+          },
+          "abstention_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_fault",
+          "hypotheses"
+        ],
+        "title": "RankedDiagnosis"
+      },
+      "ReplayActionRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ReplayActionRequest"
+      },
+      "ReplayActionResponse": {
+        "properties": {
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "length": {
+            "type": "integer",
+            "title": "Length"
+          }
+        },
+        "type": "object",
+        "required": [
+          "running",
+          "index",
+          "length"
+        ],
+        "title": "ReplayActionResponse"
+      },
+      "ReplaySnapshot": {
+        "properties": {
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "length": {
+            "type": "integer",
+            "title": "Length"
+          }
+        },
+        "type": "object",
+        "required": [
+          "running",
+          "index",
+          "length"
+        ],
+        "title": "ReplaySnapshot"
+      },
+      "RfidEventType": {
+        "type": "string",
+        "enum": [
+          "CARD_RECOGNIZED",
+          "UNKNOWN_CARD",
+          "DUPLICATE_SUPPRESSED",
+          "SESSION_ENDED"
+        ],
+        "title": "RfidEventType"
+      },
+      "RfidReaderStatus": {
+        "type": "string",
+        "enum": [
+          "NOT_CONNECTED",
+          "CONNECTED",
+          "ERROR"
+        ],
+        "title": "RfidReaderStatus"
+      },
+      "RfidScanRequest": {
+        "properties": {
+          "uid": {
+            "type": "string",
+            "title": "Uid"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uid"
+        ],
+        "title": "RfidScanRequest"
+      },
+      "RfidScanResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "active_classroom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Classroom Id"
+          },
+          "classroom_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classroom Name"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Id"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/RfidEventType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "event_type"
+        ],
+        "title": "RfidScanResponse"
+      },
+      "RunIdentity": {
+        "properties": {
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "server_epoch": {
+            "type": "integer",
+            "title": "Server Epoch"
+          },
+          "config_hash": {
+            "type": "string",
+            "title": "Config Hash"
+          },
+          "catalog_version": {
+            "type": "string",
+            "title": "Catalog Version"
+          },
+          "policy_version": {
+            "type": "string",
+            "title": "Policy Version"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "state_revision": {
+            "type": "integer",
+            "title": "State Revision"
+          },
+          "observation_time": {
+            "type": "string",
+            "title": "Observation Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "site_id",
+          "run_id",
+          "server_epoch",
+          "config_hash",
+          "catalog_version",
+          "policy_version",
+          "model_version",
+          "state_revision",
+          "observation_time"
+        ],
+        "title": "RunIdentity"
+      },
+      "ScopeTotals": {
+        "properties": {
+          "capacity_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity W"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requested_w",
+          "served_w"
+        ],
+        "title": "ScopeTotals"
+      },
+      "ServiceSnapshot": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
+          },
+          "feeder": {
+            "type": "string",
+            "title": "Feeder"
+          },
+          "watts": {
+            "type": "integer",
+            "title": "Watts"
+          },
+          "requested": {
+            "type": "boolean",
+            "title": "Requested"
+          },
+          "modeled_served": {
+            "type": "boolean",
+            "title": "Modeled Served"
+          },
+          "indicator_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indicator Confirmed"
+          },
+          "model_reason": {
+            "type": "string",
+            "title": "Model Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "tier",
+          "feeder",
+          "watts",
+          "requested",
+          "modeled_served",
+          "model_reason"
+        ],
+        "title": "ServiceSnapshot"
+      },
+      "SourceInfo": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "capacity_w": {
+            "type": "integer",
+            "title": "Capacity W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "capacity_w"
+        ],
+        "title": "SourceInfo"
+      },
+      "SourceKind": {
+        "type": "string",
+        "enum": [
+          "SIMULATED"
+        ],
+        "title": "SourceKind"
+      },
+      "SystemEvent": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "type",
+          "description"
+        ],
+        "title": "SystemEvent"
+      },
+      "SystemSnapshot": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/CrossRouteContract"
+          },
+          "control_revision": {
+            "type": "integer",
+            "title": "Control Revision"
+          },
+          "config_hash": {
+            "type": "string",
+            "title": "Config Hash",
+            "default": ""
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceInfo"
+          },
+          "feeder_limits_w": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Feeder Limits W"
+          },
+          "requested_mask": {
+            "type": "integer",
+            "title": "Requested Mask"
+          },
+          "modeled_mask": {
+            "type": "integer",
+            "title": "Modeled Mask"
+          },
+          "proposed_mask": {
+            "type": "integer",
+            "title": "Proposed Mask",
+            "default": 0
+          },
+          "indicator_command_mask": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indicator Command Mask"
+          },
+          "indicator_confirmed_mask": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indicator Confirmed Mask"
+          },
+          "indicator_mask": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indicator Mask"
+          },
+          "hardware_link": {
+            "$ref": "#/components/schemas/HardwareLinkStatus"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceSnapshot"
+            },
+            "type": "array",
+            "title": "Services"
+          },
+          "zones": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FacilityZones"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/SystemEvent"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          },
+          "fault_diagnosis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RankedDiagnosis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "activity": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActivitySnapshot"
+            },
+            "type": "object",
+            "title": "Activity"
+          },
+          "model": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Model"
+          },
+          "replay": {
+            "$ref": "#/components/schemas/ReplaySnapshot"
+          },
+          "allocation": {
+            "$ref": "#/components/schemas/AllocationSnapshot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract",
+          "control_revision",
+          "generated_at",
+          "source",
+          "feeder_limits_w",
+          "requested_mask",
+          "modeled_mask",
+          "hardware_link",
+          "services",
+          "replay",
+          "allocation"
+        ],
+        "title": "SystemSnapshot"
+      },
+      "Tier": {
+        "type": "string",
+        "enum": [
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "title": "Tier"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WebSocketMessageEnvelope": {
+        "properties": {
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/SystemSnapshot"
+          }
+        },
+        "required": [
+          "type",
+          "payload"
+        ],
+        "title": "WebSocketMessageEnvelope",
+        "type": "object"
+      }
+    }
+  }
+}

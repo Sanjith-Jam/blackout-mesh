@@ -132,7 +132,7 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
         hypotheses.append({
             "code": "UNKNOWN",
             "cause": "Insufficient sensor evidence",
-            "severity": "unknown",
+            "severity": "unknown", "time_window": "current",
             "score": 0.0,
             "supporting_evidence": ["Missing: " + ", ".join(missing)],
             "contradicting_evidence": [],
@@ -155,7 +155,7 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
         hypotheses.append({
             "code": "UPSTREAM_LOSS",
             "cause": "Possible upstream supply loss",
-            "severity": "critical",
+            "severity": "critical", "time_window": "current",
             "score": 0.8,
             "supporting_evidence": up_supp,
             "contradicting_evidence": up_contra,
@@ -174,7 +174,7 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
         hypotheses.append({
             "code": "OVERLOAD",
             "cause": "Current exceeds the configured rating threshold",
-            "severity": "high",
+            "severity": "high", "time_window": "current",
             "score": 0.9,
             "supporting_evidence": ov_supp,
             "contradicting_evidence": ov_contra,
@@ -197,7 +197,7 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
             hypotheses.append({
                 "code": "COOLING_FAILURE",
                 "cause": "Elevated temperature with cooling reported failed",
-                "severity": "high",
+                "severity": "high", "time_window": "current",
                 "score": 0.85,
                 "supporting_evidence": cf_supp,
                 "contradicting_evidence": cf_contra,
@@ -208,7 +208,7 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
             hypotheses.append({
                 "code": "AMBIGUOUS_THERMAL_FAULT",
                 "cause": "Elevated temperature but cooling status is unknown",
-                "severity": "unknown",
+                "severity": "unknown", "time_window": "current",
                 "score": 0.5,
                 "supporting_evidence": cf_supp,
                 "contradicting_evidence": cf_contra,
@@ -224,7 +224,7 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
         hypotheses.append({
             "code": "NORMAL",
             "cause": "No configured demo fault found",
-            "severity": "normal",
+            "severity": "normal", "time_window": "current",
             "score": 1.0,
             "supporting_evidence": ["All available sensors within normal limits"],
             "contradicting_evidence": [],
@@ -245,14 +245,14 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
     }
 
     if input_voltage_v < 180 and output_voltage_v < 100:
-        return {"code": "UPSTREAM_LOSS", "cause": "Possible upstream supply loss", "severity": "critical", "evidence": evidence, "recommendation": "Check the upstream supply and incoming connections."}
+        return {"code": "UPSTREAM_LOSS", "cause": "Possible upstream supply loss", "severity": "critical", "time_window": "current", "evidence": evidence, "recommendation": "Check the upstream supply and incoming connections."}
     if current_a > rated_current_a * 1.1:
-        return {"code": "OVERLOAD", "cause": "Current exceeds the configured rating threshold", "severity": "high", "evidence": evidence, "recommendation": "Review connected demand and verify with qualified protection equipment."}
+        return {"code": "OVERLOAD", "cause": "Current exceeds the configured rating threshold", "severity": "high", "time_window": "current", "evidence": evidence, "recommendation": "Review connected demand and verify with qualified protection equipment."}
     if temperature_c >= 80 and not cooling_ok:
-        return {"code": "COOLING_FAILURE", "cause": "Elevated temperature with cooling reported failed", "severity": "high", "evidence": evidence, "recommendation": "Inspect cooling equipment and temperature using approved procedures."}
+        return {"code": "COOLING_FAILURE", "cause": "Elevated temperature with cooling reported failed", "severity": "high", "time_window": "current", "evidence": evidence, "recommendation": "Inspect cooling equipment and temperature using approved procedures."}
     if temperature_c >= 80:
         return {"code": "HIGH_TEMPERATURE", "cause": "Elevated transformer temperature", "severity": "medium", "evidence": evidence, "recommendation": "Check loading, ventilation and sensor readings."}
-    return {"code": "NORMAL", "cause": "No configured demo threshold exceeded", "severity": "normal", "evidence": evidence, "recommendation": "Continue monitoring."}
+    return {"code": "NORMAL", "cause": "No configured demo threshold exceeded", "severity": "normal", "time_window": "current", "evidence": evidence, "recommendation": "Continue monitoring."}
 
 
 NORMAL_SENSORS = (45.0, 58.0, 230.0, 220.0, True)

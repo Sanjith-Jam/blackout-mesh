@@ -10,6 +10,8 @@ from typing import List, Literal
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.snapshot import (
+    HealthResponse, ModelStatusResponse, ClassroomDemoSnapshot, HospitalDemoSnapshot,
+    ActivityObservationResponse, ReplayActionResponse, WebSocketMessageEnvelope,
     SystemSnapshot,
     RfidScanRequest,
     RfidScanResponse,
@@ -79,7 +81,8 @@ async def broadcast_state():
         if manager.active_connections:
             try:
                 snapshot = grid.build_snapshot()
-                await manager.broadcast(snapshot.model_dump_json())
+                envelope = WebSocketMessageEnvelope(type="snapshot", payload=snapshot)
+                await manager.broadcast(envelope.model_dump_json())
             except Exception as e:
                 print(f"Broadcast error: {e}")
         await asyncio.sleep(0.25)
@@ -138,7 +141,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/api/v1/health")
+@app.get("/api/v1/health", response_model=HealthResponse)
 async def health_check():
     return {
         "status": "ok",
@@ -149,31 +152,31 @@ async def health_check():
 async def get_snapshot():
     return grid.build_snapshot()
 
-@app.get("/api/v1/model/status")
+@app.get("/api/v1/model/status", response_model=ModelStatusResponse)
 async def model_status():
     return grid.model.status()
 
-@app.get("/api/v1/visualizers/classrooms")
+@app.get("/api/v1/visualizers/classrooms", response_model=ClassroomDemoSnapshot)
 async def get_classroom_demo():
     return classroom_demo.snapshot()
 
-@app.post("/api/v1/visualizers/classrooms")
+@app.post("/api/v1/visualizers/classrooms", response_model=ClassroomDemoSnapshot)
 async def act_classroom_demo(req: ClassroomDemoAction):
     if (req.action in ("scan", "unscan")) != (req.classroom_id is not None):
         raise HTTPException(422, "classroom_id is required only for scan or unscan")
     return classroom_demo.act(req.action, req.classroom_id)
 
-@app.get("/api/v1/visualizers/hospital")
+@app.get("/api/v1/visualizers/hospital", response_model=HospitalDemoSnapshot)
 async def get_hospital_demo():
     return hospital_snapshot(hospital_scenario)
 
-@app.post("/api/v1/visualizers/hospital")
+@app.post("/api/v1/visualizers/hospital", response_model=HospitalDemoSnapshot)
 async def act_hospital_demo(req: HospitalDemoAction):
     global hospital_scenario
     hospital_scenario = req.scenario
     return hospital_snapshot(hospital_scenario)
 
-@app.post("/api/v1/activity/observations")
+@app.post("/api/v1/activity/observations", response_model=ActivityObservationResponse)
 async def post_activity_observation(req: ActivityObservationRequest):
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
@@ -203,7 +206,7 @@ async def post_activity_observation(req: ActivityObservationRequest):
     return {"accepted": True, "applied": applied, "revision": revision,
             "activity": grid.activity[req.classroom_id]}
 
-@app.post("/api/v1/replay")
+@app.post("/api/v1/replay", response_model=ReplayActionResponse)
 async def replay_action(req: ReplayActionRequest):
     global replay_task, replay_generation
     if req.action not in ("start", "pause", "reset"):

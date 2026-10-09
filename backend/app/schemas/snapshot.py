@@ -216,3 +216,87 @@ class FeederChangeResponse(BaseModel):
     available: bool
     control_revision: int
     config_hash: str = ""
+
+
+class HealthResponse(BaseModel):
+    status: str
+    application: str
+
+class ModelStatusResponse(BaseModel):
+    ready: bool
+    model_version: str
+    model_type: str
+    features: List[str]
+    data_source: str
+    evaluation: Dict[str, object] = Field(default_factory=dict)
+    fallback_reason: Optional[str] = None
+
+class ClassroomDemoLoad(BaseModel):
+    id: str
+    name: str
+    watts: int
+    essential: bool
+    served: bool
+    reason: str
+
+class ClassroomDemoRoom(BaseModel):
+    id: str
+    name: str
+    rfid_active: bool
+    loads: List[ClassroomDemoLoad]
+
+class ClassroomDemoSnapshot(BaseModel):
+    contract: CrossRouteContract
+    capacity_w: int
+    requested_w: int
+    served_w: int
+    shortfall_w: int
+    selected_classroom_id: Optional[str] = None
+    rooms: List[ClassroomDemoRoom]
+    mode: str
+    policy: str
+
+class HospitalDemoSensors(BaseModel):
+    current_a: Optional[float] = None
+    temperature_c: Optional[float] = None
+    input_voltage_v: Optional[float] = None
+    output_voltage_v: Optional[float] = None
+    cooling_ok: Optional[bool] = None
+
+class HospitalDemoDiagnosis(BaseModel):
+    code: str
+    cause: str
+    severity: str
+    evidence: List[str]
+    recommendation: str
+    hypotheses: List[Hypothesis]
+
+class HospitalDemoTransformer(BaseModel):
+    id: str
+    name: str
+    zone: str
+    rated_current_a: float
+    sensors: HospitalDemoSensors
+    diagnosis: HospitalDemoDiagnosis
+    energized: bool
+
+class HospitalDemoSnapshot(BaseModel):
+    contract: CrossRouteContract
+    mode: str
+    transformers: List[HospitalDemoTransformer]
+    summary: str
+
+class ActivityObservationResponse(BaseModel):
+    accepted: bool
+    applied: bool
+    revision: int
+    activity: ActivitySnapshot
+
+class ReplayActionResponse(BaseModel):
+    running: bool
+    index: int
+    length: int
+
+class WebSocketMessageEnvelope(BaseModel):
+    type: str
+    payload: SystemSnapshot

@@ -62,10 +62,10 @@ function CauseSummary({ transformers }: { transformers: HospitalDemoTransformer[
 function TransformerReadings({ transformer }: { transformer: HospitalDemoTransformer }) {
   const { sensors } = transformer;
   const readings: [string, string, string][] = [
-    ['Current', number(sensors.current_a, 'A'), 'current'],
-    ['Temperature', number(sensors.temperature_c, '°C'), 'temperature'],
-    ['Input voltage', number(sensors.input_voltage_v, 'V', 0), 'input-voltage'],
-    ['Output voltage', number(sensors.output_voltage_v, 'V', 0), 'output-voltage'],
+    ['Current', number(sensors.current_a ?? null, 'A'), 'current'],
+    ['Temperature', number(sensors.temperature_c ?? null, '°C'), 'temperature'],
+    ['Input voltage', number(sensors.input_voltage_v ?? null, 'V', 0), 'input-voltage'],
+    ['Output voltage', number(sensors.output_voltage_v ?? null, 'V', 0), 'output-voltage'],
     ['Cooling', sensors.cooling_ok == null ? 'Unknown' : sensors.cooling_ok ? 'Operating' : 'Failed', 'cooling'],
   ];
   return <dl className="hospital-reading-grid">{readings.map(([label, value, key]) => <div className="hospital-reading" key={key}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;

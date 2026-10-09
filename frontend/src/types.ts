@@ -1,263 +1,40 @@
+import { components } from './schema';
 
-export interface ScopeTotals {
-  capacity_w: number | null;
-  requested_w: number;
-  served_w: number;
-}
+export type ScopeTotals = components["schemas"]["ScopeTotals"];
+export type RunIdentity = components["schemas"]["RunIdentity"];
+export type CrossRouteContract = components["schemas"]["CrossRouteContract"];
+export type SourceInfo = components["schemas"]["SourceInfo"];
+export type FeederLimits = Record<string, number>;
+export type Service = components["schemas"]["ServiceSnapshot"];
+export type HospitalRoom = components["schemas"]["HospitalRoom"];
+export type HospitalZone = components["schemas"]["HospitalZone"];
+export type ClassroomInfo = components["schemas"]["ClassroomInfo"];
+export type ClassroomZone = components["schemas"]["ClassroomZone"];
+export type FacilityZones = components["schemas"]["FacilityZones"];
+export type SystemEvent = components["schemas"]["SystemEvent"];
 
-export interface RunIdentity {
-  site_id: string;
-  run_id: string;
-  server_epoch: number;
-  config_hash: string;
-  catalog_version: string;
-  policy_version: string;
-  model_version: string;
-  state_revision: number;
-  observation_time: string;
-}
+export type ActivityState = components["schemas"]["ActivitySnapshot"]["state"];
+export type ActivityPrediction = components["schemas"]["ActivitySnapshot"];
+export type ModelStatus = components["schemas"]["ModelStatusResponse"];
+export type ReplayStatus = components["schemas"]["ReplaySnapshot"];
+export type AllocationStatus = components["schemas"]["AllocationSnapshot"];
+export type ActivityObservation = components["schemas"]["ActivityObservationRequest"];
 
-export interface CrossRouteContract {
-  identity: RunIdentity;
-  campus_totals: ScopeTotals | null;
-  zone_totals: Record<string, ScopeTotals>;
-}
+export type Snapshot = components["schemas"]["SystemSnapshot"];
+export type HealthResponse = components["schemas"]["HealthResponse"];
+export type RfidScanResponse = components["schemas"]["RfidScanResponse"];
+export type CapacityChangeResponse = components["schemas"]["CapacityChangeResponse"];
+export type ClassroomLoadResponse = components["schemas"]["ClassroomLoadResponse"];
+export type FeederChangeResponse = components["schemas"]["FeederChangeResponse"];
 
-export interface SourceInfo {
-  kind: string;
-  capacity_w: number;
-}
-
-export interface FeederLimits {
-  A: number;
-  B: number;
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  tier: string;
-  feeder: "A" | "B";
-  watts: number;
-  requested: boolean;
-  modeled_served: boolean;
-  indicator_confirmed: boolean | null;
-  model_reason: string;
-}
-
-export interface HospitalRoom {
-  id: string;
-  name: string;
-  lighting_service: string;
-  led_bit: number;
-}
-
-export interface HospitalZone {
-  rooms: HospitalRoom[];
-}
-
-export interface ClassroomInfo {
-  id: string;
-  name: string;
-  service_id: string;
-  rfid_card_registered: boolean;
-  led_bit: number;
-  load_event_active: boolean;
-}
-
-export interface ClassroomZone {
-  active_classroom_id: string | null;
-  recent_rfid_scan: string | null;
-  rfid_reader_status: string;
-  classrooms: ClassroomInfo[];
-}
-
-export interface FacilityZones {
-  hospital: HospitalZone;
-  classroom: ClassroomZone;
-}
-
-export interface SystemEvent {
-  timestamp: string;
-  type: string;
-  description: string;
-}
-
-export type ActivityState = "ACTIVE" | "INACTIVE" | "UNKNOWN";
-
-export interface ActivityPrediction {
-  evidence?: {
-    temperature_c: number | null;
-    humidity_pct: number | null;
-    co2_ppm: number | null;
-    humidity_ratio: number | null;
-  };
-  state: ActivityState;
-  score: number | null;
-  reason: string;
-  source: string | null;
-  observed_at: string | null;
-  model_version: string;
-  priority: string;
-}
-
-export interface ModelStatus {
-  ready: boolean;
-  model_version: string;
-  model_type: string;
-  features: string[];
-  data_source: string;
-  evaluation: Record<string, unknown>;
-  fallback_reason: string | null;
-}
-
-export interface ReplayStatus {
-  running: boolean;
-  index: number;
-  length: number;
-}
-
-export interface AllocationStatus {
-  objective: string;
-  critical_shortfall_w: number;
-  served_w: number;
-  baseline_mask: number;
-}
-
-export interface ActivityObservation {
-  classroom_id: "CR1" | "CR2" | "CR3";
-  temperature_c: number | null;
-  humidity_pct: number | null;
-  co2_ppm: number | null;
-  humidity_ratio: number | null;
-  observed_at: string;
-  source: "RECORDED_REPLAY" | "SIMULATED";
-}
-
-export interface Snapshot {
-  contract: CrossRouteContract;
-  activity: Record<string, ActivityPrediction>;
-  model: ModelStatus;
-  replay: ReplayStatus;
-  allocation: AllocationStatus;
-  control_revision: number;
-  generated_at: string;
-  source: SourceInfo;
-  feeder_limits_w: FeederLimits;
-  requested_mask: number;
-  modeled_mask: number;
-  proposed_mask: number;
-  indicator_command_mask: number | null;
-  indicator_confirmed_mask: number | null;
-  indicator_mask: number | null;
-  hardware_link: string;
-  services: Service[];
-  zones?: FacilityZones;
-  events?: SystemEvent[];
-}
-
-export interface HealthResponse {
-  status: string;
-  application: string;
-}
-
-export interface RfidScanResponse {
-  accepted: boolean;
-  active_classroom_id: string | null;
-  classroom_name: string | null;
-  service_id: string | null;
-  event_type: string;
-}
-
-export interface CapacityChangeResponse {
-  accepted: boolean;
-  new_capacity_w: number;
-  control_revision: number;
-}
-
-export interface ClassroomLoadResponse {
-  accepted: boolean;
-  classroom_id: string;
-  load_event_active: boolean;
-}
-
-export interface FeederChangeResponse {
-  accepted: boolean;
-  feeder: string;
-  available: boolean;
-  control_revision: number;
-}
-
-export interface ClassroomDemoLoad {
-  id: string;
-  name: string;
-  watts: number;
-  essential: boolean;
-  served: boolean;
-  reason: string;
-}
-
-export interface ClassroomDemoRoom {
-  id: "CR1" | "CR2" | "CR3";
-  name: string;
-  rfid_active: boolean;
-  loads: ClassroomDemoLoad[];
-}
-
-export interface ClassroomDemoSnapshot {
-  contract: CrossRouteContract;
-  capacity_w: number;
-  requested_w: number;
-  served_w: number;
-  shortfall_w: number;
-  selected_classroom_id: "CR1" | "CR2" | "CR3" | null;
-  rooms: ClassroomDemoRoom[];
-  mode: "SIMULATED";
-  policy: string;
-}
+export type ClassroomDemoLoad = components["schemas"]["ClassroomDemoLoad"];
+export type ClassroomDemoRoom = components["schemas"]["ClassroomDemoRoom"];
+export type ClassroomDemoSnapshot = components["schemas"]["ClassroomDemoSnapshot"];
 
 export type HospitalDemoScenario = "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
+export type Hypothesis = components["schemas"]["Hypothesis"];
+export type HospitalDemoDiagnosis = components["schemas"]["HospitalDemoDiagnosis"];
+export type HospitalDemoTransformer = components["schemas"]["HospitalDemoTransformer"];
+export type HospitalDemoSnapshot = components["schemas"]["HospitalDemoSnapshot"];
 
-export interface Hypothesis {
-  code: string;
-  cause: string;
-  severity: string;
-  score: number;
-  supporting_evidence: string[];
-  contradicting_evidence: string[];
-  sufficiency: string;
-  recommendation: string;
-}
-
-export interface HospitalDemoDiagnosis {
-  code: string;
-  cause: string;
-  severity: string;
-  evidence: string[];
-  recommendation: string;
-  hypotheses: Hypothesis[];
-}
-
-
-export interface HospitalDemoTransformer {
-  id: string;
-  name: string;
-  zone: string;
-  rated_current_a: number;
-  sensors: {
-    current_a: number | null;
-    temperature_c: number | null;
-    input_voltage_v: number | null;
-    output_voltage_v: number | null;
-    cooling_ok: boolean | null;
-  };
-  diagnosis: HospitalDemoDiagnosis;
-  energized: boolean;
-}
-
-export interface HospitalDemoSnapshot {
-  contract: CrossRouteContract;
-  mode: "SIMULATED";
-  transformers: HospitalDemoTransformer[];
-  summary: string;
-}
+export type WebSocketEnvelope = components["schemas"]["WebSocketMessageEnvelope"];
