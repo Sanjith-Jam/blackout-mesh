@@ -13,7 +13,11 @@ A hackathon prototype combining ML-based lab-activity estimation, constrained po
 
 ## Status
 
-Planning only. Application code, firmware and prototype tests have not been implemented in this repository. No build or run commands exist yet.
+ESP32 A firmware is under implementation. Application/ML and physical integration remain pending.
+
+Commands:
+- `python3 tools/test_esp32_a.py` — run host assertions.
+- `pio run -d firmware -e esp32-a` — compile the gateway.
 
 The main demo has nine circuits with 84 kW total configured demand: three labs plus six other services. A required classifier estimates lab activity; a fixed policy prioritizes active labs below protected critical services, and the optimizer enforces capacity/feeder limits. Inputs are simulated or explicitly emulated; no real-campus occupancy accuracy is claimed. Two ESP32s handle Lab-ID RFID cards, four buttons and nine load indicators. Old seven/six-load examples remain separate regression fixtures.
 

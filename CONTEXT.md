@@ -25,3 +25,7 @@ Plan review checked allocation arithmetic, packet field widths, links and unchan
 Implement ML plan phases M0–M5 alongside the unified component gates: causal observation schema, grouped synthetic data, baselines/trained artifact, validated priority/allocator, then real card/LED integration. Model training/evaluation remain pending. Hardware cards identify labs rather than select a forced priority profile. Update this file and README with commands and actual results as implementation progresses.
 
 Historical plans and review records are outside the repository. The inherited blueprint reference was not independently available; do not treat it as separately verified evidence.
+
+## Person A implementation — first piece
+
+Added production input/button state machines and explicit 26-byte v2 codec. Host sanitizer assertions pass (`python3 tools/test_esp32_a.py`). Board carrier/reader unidentified; no wiring or flashing performed. Next: serial and radio lifecycle, Arduino adapters, compile and bring-up guide.
