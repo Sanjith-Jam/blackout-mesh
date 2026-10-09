@@ -28,3 +28,5 @@ Rehearse the software demo, gather independently labeled local room observations
 When hardware resumes, agree one A/B transport and physical mapping before linking the backend. Phase 0 remains complete; physical detailed plans stay local under `/home/bread/blackout-mesh-local/`.
 
 Issue #25 foundation: indexed SQLModel/SQLite ordered history, deduplication and explicit pruning added. Check: PYTHONPATH=backend python -m pytest backend/tests/test_history.py -q — 3 passed. Next: attach recording and read-only API; no history UI delivered yet.
+
+Windows check prerequisite: training metrics import now tolerates absent Unix resource module; peak memory remains null on Windows. Full suite reached 34 passed / 2 existing hospital visualizer failures (removed HOSPITAL_LOADS and obsolete scenario API), outside #25.

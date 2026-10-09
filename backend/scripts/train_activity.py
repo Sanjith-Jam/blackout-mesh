@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Download, split, compare, and package the local activity proxy model."""
 from __future__ import annotations
 
@@ -9,7 +9,10 @@ import io
 import json
 import math
 import platform
-import resource
+try:
+    import resource
+except ImportError:  # Windows has no Unix resource module.
+    resource = None
 import statistics
 import sys
 import time
@@ -175,7 +178,7 @@ def main():
                 if split == "test":
                     tabicl["warm_latency_batch_32"] = latency_ms(lambda: clf.predict_proba(X[split][ix[:32]]), n=10)
             tabicl["validation"]["operating_point_tuned_on_validation"] = tabicl_point
-            tabicl.update({"evaluated": True, "version": "official TabICL @ c91f00df184a5097e584cb376f7e699e9f3444c4", "weights_revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19", "checkpoint_sha256": hashlib.sha256(Path(checkpoint).read_bytes()).hexdigest(), "checkpoint_size_bytes": Path(checkpoint).stat().st_size, "checkpoint_license": "BSD-3-Clause (weight card)", "source_license": "BSD-3-Clause", "torch_version": torch.__version__, "peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024})
+            tabicl.update({"evaluated": True, "version": "official TabICL @ c91f00df184a5097e584cb376f7e699e9f3444c4", "weights_revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19", "checkpoint_sha256": hashlib.sha256(Path(checkpoint).read_bytes()).hexdigest(), "checkpoint_size_bytes": Path(checkpoint).stat().st_size, "checkpoint_license": "BSD-3-Clause (weight card)", "source_license": "BSD-3-Clause", "torch_version": torch.__version__, "peak_rss_mib": (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 if resource else None)})
         except Exception as exc:
             tabicl["reason"] = f"{type(exc).__name__}: {exc}"
     reports["tabicl"] = tabicl
@@ -204,7 +207,7 @@ def main():
         "tabicl_weights": {"repo": "jingang/TabICL", "revision": tabicl.get("weights_revision"), "filename": "tabicl-classifier-v2-20260212.ckpt", "sha256": tabicl.get("checkpoint_sha256"), "size_bytes": tabicl.get("checkpoint_size_bytes"), "license": tabicl.get("checkpoint_license")},
         "test_status": "time-disjoint dates, but exploratory draft metrics were inspected before this final model selection; do not describe as untouched final test",
         "models": reports,
-        "resource": {"peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024},
+        "resource": {"peak_rss_mib": (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 if resource else None)},
         "attribution": "Candanedo, L. M. and Feldheim, V. (2016), Accurate occupancy detection of an office room from light, temperature, humidity and CO2 measurements using statistical learning models, Energy and Buildings 112, 28-39. UCI dataset DOI 10.24432/C5X01N, CC BY 4.0.",
     }
     model_path = OUT / f"activity-{selected_name}.joblib"; joblib.dump(selected_model, model_path)
@@ -244,3 +247,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
