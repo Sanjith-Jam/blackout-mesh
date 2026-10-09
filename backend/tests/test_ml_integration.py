@@ -131,12 +131,13 @@ def test_activity_prediction_updates_allocation_policy(client, monkeypatch):
             return {"ready": True, "model_type": "test", "model_version": "test", "features": [],
                     "data_source": "test", "evaluation": {}, "fallback_reason": None}
 
+    import time
     app.dependency_overrides[get_grid_state] = lambda: grid
     with grid._lock:
         grid.source_capacity_w = 5000
         grid.feeder_available = {"A": True, "B": True}
         grid.feeder_limits_w = {"A": 6000, "B": 8000}
-        grid.active_sessions = {"CR1": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}, "CR2": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}, "CR3": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}}
+        grid.active_sessions = {"CR1": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}, "CR2": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}, "CR3": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}}
         grid.software_mode = True
         grid.model = StubModel("ACTIVE")
     features = {"temperature_c": 22.0, "humidity_pct": 40.0, "co2_ppm": 700.0, "humidity_ratio": 0.007}
@@ -171,6 +172,7 @@ def test_failed_inference_and_stale_evidence_become_unknown(clean_grid, client, 
             return {"ready": False, "model_type": "test", "model_version": "test", "features": [],
                     "data_source": "test", "evaluation": {}, "fallback_reason": "model failed"}
     grid = clean_grid
+    import time
     app.dependency_overrides[get_grid_state] = lambda: grid
     monkeypatch.setattr(grid, "model", BrokenModel())
     now = datetime.now(timezone.utc).isoformat()

@@ -69,19 +69,7 @@ RFID_SCAN_COOLDOWN_SECONDS = 2.0
 SESSION_EXPIRY_SECONDS = 7200
 
 class GridState:
-    _instance = None
-    _init_lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        with cls._init_lock:
-            if cls._instance is None:
-                cls._instance = super(GridState, cls).__new__(cls)
-                cls._instance._initialized = False
-        return cls._instance
-
     def __init__(self):
-        if getattr(self, '_initialized', False):
-            return
         self._lock = threading.RLock()
         self.source_capacity_w = 14000
         self.feeder_limits_w = {"A": 6000, "B": 8000}
@@ -129,7 +117,6 @@ class GridState:
         self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
                                                   tuple(sorted(self.feeder_available.items())),), range(6))
         self.last_allocation_mask = 0b111111
-        self._initialized = True
 
 
 
@@ -394,7 +381,6 @@ class GridState:
         for cid in expired:
             del self.active_sessions[cid]
             self.control_revision += 1
-            self.save_command('set_capacity', {'capacity_w': capacity_w})
             self.add_event("SESSION_EXPIRED", f"Session expired for {cid}")
 
 
