@@ -48,7 +48,7 @@ export default function DemoDashboard() {
           setHealthOk(true);
 
           // Update history
-          const now = new Date(data.generated_at).toLocaleTimeString();
+          const now = new Date(data.sent_at ?? data.generated_at).toLocaleTimeString();
           const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
           const servedCount = data.services.filter(s => s.modeled_served).length;
           const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
@@ -138,7 +138,7 @@ export default function DemoDashboard() {
           <Activity className="brand-icon" />
           <div>
             <span className="brand-name">PriorityGrid</span>
-            <span className="brand-badge">Live Console</span>
+            <span className="brand-badge">Live Console{snapshot?.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span>
           </div>
         </div>
         

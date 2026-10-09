@@ -57,7 +57,7 @@ export default function HospitalDemo() {
     set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
     normal: 'Full supply 7,000 W applied.',
     overload: 'Overload preset 3,000 W applied.',
-    reset: 'Classzone demo reset.',
+    reset: 'Hospital demo reset.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',
     replay_step: 'Moved to the next recorded reading.',
@@ -78,7 +78,7 @@ export default function HospitalDemo() {
         if (action === 'set_capacity' || action === 'normal' || action === 'overload' || action === 'reset') setCapacityDraft(null);
       }
     } catch (cause) {
-      if (mounted.current) setError(cause instanceof Error ? cause.message : 'The classzone action failed.');
+      if (mounted.current) setError(cause instanceof Error ? cause.message : 'The hospital action failed.');
     } finally {
       actionInFlight.current = false;
       if (mounted.current) setPending(false);
@@ -94,19 +94,19 @@ export default function HospitalDemo() {
   if (!snapshot) {
     return <main className="classroom-demo classroom-demo__loading" aria-busy={!error}>
       {error ? <AlertTriangle size={30} aria-hidden="true" /> : <Activity size={30} aria-hidden="true" />}
-      <h1>{error ? 'Classzone demo unavailable' : 'Connecting to classzone supply…'}</h1>
+      <h1>{error ? 'Hospital demo unavailable' : 'Connecting to hospital supply…'}</h1>
       {error && <><p role="alert">{error}</p><button className="classroom-demo__button" onClick={() => void refresh()}>Try again</button></>}
     </main>;
   }
 
   return <main className="classroom-demo">
     <header className="classroom-demo__header">
-      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Classzone power map</h1></div></div>
+      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated{snapshot.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span><h1 className="classroom-demo__title">Hospital power map</h1></div></div>
       <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/hospital">Hospital demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
     </header>
     {error && <div className="classroom-demo__alert" role="alert">Connection lost — displaying last known simulated state. {error}</div>}
     <div className="classroom-demo__layout">
-      <section className="classroom-demo__main" aria-label="Classzone power state">
+      <section className="classroom-demo__main" aria-label="Hospital power state">
         <div className="classroom-demo__metrics">
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Hospital-only supply</span><span className="classroom-demo__metric-value">{snapshot.capacity_w.toLocaleString()} W</span></div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Requested</span><span className="classroom-demo__metric-value">{snapshot.requested_w.toLocaleString()} W</span></div>
@@ -159,16 +159,16 @@ export default function HospitalDemo() {
 
             })}
           </div>
-          <p className="classroom-demo__ml-note">Only scanned zones are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the zone scanned first goes first. The model is an office-occupancy proxy, not a measurement of these classzones.</p>
+          <p className="classroom-demo__ml-note">Only scanned zones are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the zone scanned first goes first. The model is an office-occupancy proxy, not a measurement of these hospital zones.</p>
         </section>
-        <section aria-label="Classzone floor plans" aria-describedby="classzone-blueprint-key">
-          <p id="classzone-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three tiled classzones. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
+        <section aria-label="Hospital floor plans" aria-describedby="classzone-blueprint-key">
+          <p id="classzone-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three hospital zones. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
           <HospitalBlueprint snapshot={snapshot} connected={!error} />
         </section>
       </section>
       <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="classzone-controls-title" aria-busy={pending}>
         <h2 id="classzone-controls-title">Demo controls</h2>
-        <p>Scan any number of classzones, then lower the supply to see which zones keep their equipment.</p>
+        <p>Scan any number of zones, then lower the supply to see which zones keep their equipment.</p>
         <div className="classroom-demo__button-stack" role="group" aria-label="Scan hospital ward RFID cards">
           {(['ICU', 'Theatre', 'Wards'] as const).map(id => {
             const scanned = snapshot.scanned_zone_ids.includes(id);
