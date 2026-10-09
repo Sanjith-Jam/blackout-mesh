@@ -1,88 +1,64 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
-import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
+import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder, getWebSocketUrl } from '../api';
 import { Snapshot } from '../types';
 import TopologyGraph from '../components/TopologyGraph';
 import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
 import AllocationHistoryChart from '../components/AllocationHistoryChart';
 import IncidentTimeline from '../components/IncidentTimeline';
 import './DemoDashboard.css';
-
-interface TimeSeriesPoint {
-  time: string;
-  capacity: number;
-  demand: number;
-  servedCount: number;
-  shedCount: number;
-}
+import { useServerHistory } from '../history';
+import HistoryControls from '../components/HistoryControls';
 
 export default function DemoDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [liveSnapshot, setLiveSnapshot] = useState<Snapshot | null>(null);
   const [healthOk, setHealthOk] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<{msg: string, isError: boolean} | null>(null);
 
-  // Time series data for charts
-  const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
-  const MAX_HISTORY = 50;
+  const historyData = useServerHistory(liveSnapshot?.events || []);
+  const snapshot = historyData.selection.mode === 'HISTORY' ? historyData.snapshot : liveSnapshot;
+  const history = historyData.telemetry;
 
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    if (historyData.selection.mode !== 'LIVE') return;
+    let stopped = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const connectWs = () => {
-      const ws = new WebSocket('ws://127.0.0.1:8000/ws/live');
+      if (stopped) return;
+      const ws = new WebSocket(getWebSocketUrl());
       wsRef.current = ws;
-
-      ws.onopen = () => {
-        setHealthOk(true);
-        setError(null);
-      };
-
-      ws.onmessage = (event) => {
+      ws.onmessage = event => {
+        if (stopped) return;
         try {
           const data: Snapshot = JSON.parse(event.data);
-          setSnapshot(data);
+          setLiveSnapshot(data);
           setHealthOk(true);
-
-          // Update history
-          const now = new Date(data.generated_at).toLocaleTimeString();
-          const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
-          const servedCount = data.services.filter(s => s.modeled_served).length;
-          const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
-
-          setHistory(prev => {
-            const next = [...prev, { time: now, capacity: data.source.capacity_w, demand, servedCount, shedCount }];
-            if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
-            return next;
-          });
-
-        } catch (e) {
-          console.error("Failed to parse websocket message", e);
-        }
+          setError(null);
+        } catch { setError('Invalid live snapshot received.'); }
       };
-
-      ws.onerror = (e) => {
-        console.error("Websocket error", e);
-      };
-
       ws.onclose = () => {
+        if (stopped) return;
         setHealthOk(false);
-        setError("WebSocket disconnected. Reconnecting...");
-        setTimeout(connectWs, 3000);
+        setError('WebSocket disconnected. Backfilling server history on reconnect…');
+        retryTimer = setTimeout(connectWs, 3000);
       };
     };
-
     connectWs();
     return () => {
-      if (wsRef.current) wsRef.current.close();
+      stopped = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      wsRef.current?.close();
     };
-  }, []);
+  }, [historyData.selection.mode]);
 
   const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
-    if (actionPending) return;
+    if (actionPending || historyData.selection.mode === 'HISTORY') return;
     setActionPending(true);
     setActionFeedback(null);
     try {
@@ -108,8 +84,9 @@ export default function DemoDashboard() {
   if (!snapshot) {
     return (
       <div className="dashboard-container loading">
-        <Activity className="spin" size={48} />
-        <h2>Connecting to Live Feed...</h2>
+        <HistoryControls history={historyData} />
+<Activity className="spin" size={48} />
+        <h2>{historyData.selection.mode === 'HISTORY' ? 'Select a recorded run and range' : 'Connecting to Live Feed...'}</h2>
         {error && <p className="text-err">{error}</p>}
       </div>
     );
@@ -138,16 +115,16 @@ export default function DemoDashboard() {
           <Activity className="brand-icon" />
           <div>
             <span className="brand-name">PriorityGrid</span>
-            <span className="brand-badge">Live Console</span>
+            <span className="brand-badge">{historyData.selection.mode} Console</span>
           </div>
         </div>
         
         <div className="dash-status-indicators">
           <div className={`status-pill ${healthOk ? 'ok' : 'error'}`}>
-            <Server size={14} /> Backend {healthOk ? 'Live' : 'Disconnected'}
+            <Server size={14} /> Backend {historyData.selection.mode === 'HISTORY' ? 'Recorded evidence' : healthOk ? 'Live' : 'Disconnected'}
           </div>
           <div className="status-pill warn">
-            <Wifi size={14} /> HW: {snapshot.hardware_link.replace('_', ' ')}
+            <Wifi size={14} /> {historyData.selection.mode === 'HISTORY' ? 'Recorded HW:' : 'HW:'} {snapshot.hardware_link.replace('_', ' ')}
           </div>
         </div>
 
@@ -156,12 +133,13 @@ export default function DemoDashboard() {
         </div>
       </header>
 
-      {error && (
+      {error && historyData.selection.mode === 'LIVE' && (
         <div className="dash-alert error">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
 
+      <HistoryControls history={historyData} />
       {/* OVERVIEW STRIP */}
       <section className="overview-strip">
         <div className="metric-box">
@@ -193,7 +171,7 @@ export default function DemoDashboard() {
           <AllocationHistoryChart data={history} />
         </div>
         <div className="vis-panel" style={{ flex: '1 1 300px' }}>
-          <IncidentTimeline events={snapshot.events} />
+          <IncidentTimeline events={historyData.events} />
         </div>
       </section>
 
@@ -334,10 +312,10 @@ export default function DemoDashboard() {
             <div className="control-group">
               <h3>RFID Selection</h3>
               <p className="control-desc">Simulate a physical card scan.</p>
-              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_1_UID')}>Scan Classroom 1</button>
-              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_2_UID')}>Scan Classroom 2</button>
-              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_3_UID')}>Scan Classroom 3</button>
-              <button className="btn-outline err" disabled={actionPending} onClick={() => doRfidScan('UNKNOWN_CARD_UID')}>Scan Unknown Card</button>
+              <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doRfidScan('CARD_1_UID')}>Scan Classroom 1</button>
+              <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doRfidScan('CARD_2_UID')}>Scan Classroom 2</button>
+              <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doRfidScan('CARD_3_UID')}>Scan Classroom 3</button>
+              <button className="btn-outline err" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doRfidScan('UNKNOWN_CARD_UID')}>Scan Unknown Card</button>
             </div>
 
             <div className="control-group">
@@ -345,8 +323,8 @@ export default function DemoDashboard() {
               <p className="control-desc">Simulate electrical demand for the selected classroom.</p>
               {zones?.classroom.active_classroom_id ? (
                 <div className="flex-buttons">
-                  <button className="btn-outline" disabled={actionPending} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, true)}>Activate Load</button>
-                  <button className="btn-outline" disabled={actionPending} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, false)}>Deactivate Load</button>
+                  <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, true)}>Activate Load</button>
+                  <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, false)}>Deactivate Load</button>
                 </div>
               ) : (
                 <div className="text-err text-small">Select a classroom first.</div>
@@ -356,15 +334,15 @@ export default function DemoDashboard() {
             <div className="control-group">
               <h3>Power Scenarios</h3>
               <p className="control-desc">Test fault detection and constrained optimization.</p>
-              <button className="btn-outline" disabled={actionPending} onClick={() => {
+              <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => {
                 doCapacity(14000);
                 doFeeder('A', true);
                 doFeeder('B', true);
               }}>Normal Conditions</button>
               
-              <button className="btn-outline warn" disabled={actionPending} onClick={() => doCapacity(6000)}>Shortage (6000W)</button>
-              <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('A', false)}>Feeder A Loss</button>
-              <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('B', false)}>Feeder B Loss</button>
+              <button className="btn-outline warn" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doCapacity(6000)}>Shortage (6000W)</button>
+              <button className="btn-outline err" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doFeeder('A', false)}>Feeder A Loss</button>
+              <button className="btn-outline err" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doFeeder('B', false)}>Feeder B Loss</button>
             </div>
 
           </div>

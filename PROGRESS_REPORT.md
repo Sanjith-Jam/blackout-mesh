@@ -83,3 +83,14 @@ Initial backend test attempts lacked system pytest, then lacked `app` on the imp
 - Train and integrate required ML, validate constrained decisions and recovery, then rehearse the judge demo.
 
 Detailed two-person physical phases remain local at `/home/bread/blackout-mesh-local/HARDWARE_IMPLEMENTATION_PLAN.md`. Reuse research, judge critique, notice drafts, device credentials and historical plan archives remain outside the uploaded document set. No connected-device queries, flashing, browser QA or fresh physical tests were performed during this sync.
+
+## Issue #25 server history delivery - 2026-10-10
+Replaced browser-only chart buffers with indexed SQLite history, stable event IDs,
+1-Hz telemetry and state-change decisions. Added UTC cursor/range APIs, TanStack
+pagination/cancellation/backfill, saved run/range selection and read-only recorded
+playback. Preserved the approved theme. Hardware command/ACK links remain unknown.
+Checks: 5 backend history tests and 4 frontend history tests pass; production build
+passes with existing bundle warning. Full backend suite: 35 passed, 2 failures in
+unchanged hospital code/tests. This is a working independent slice, not completion
+of the blocking #12/#13/#14 gates. See docs/ISSUE_25_DELIVERY.md for exact commands,
+versions, full limitations and handoff. No push or issue closure.
