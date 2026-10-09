@@ -1,6 +1,6 @@
 # Blackout Mesh — Unified Implementation Blueprint
 
-**Version:** 1.2 (required lab-activity ML; nine-load primary catalog)  
+**Version:** 1.2 (required lab-activity ML; nine-load primary catalog)
 **Updated:** 9 October 2026 · **Execution:** component tasks; human staffing assignments removed  
 **Time box:** 24 working hours · **Incremental hardware budget:** ideally ₹0–₹300, ceiling approximately ₹1,500  
 **Chosen direction:** intelligent fault-aware power-management product; lightweight digital twin is its supporting simulation/evaluation environment.  
@@ -660,7 +660,7 @@ Third board, knobs/displays, richer charts, recommend-only mode, active probing 
 | Critical load physically cannot be kept alive | High / pitch mismatch | Explicit `CRITICAL_INFEASIBLE`; no guarantees during disconnected feeders |
 
 ### Priority labels
-**P0** — required trained lab-activity classifier and priority integration (see ML plan); realistic-enough graph connectivity and capacity model; deterministic scenarios; integrity/provenance; source/feeder incident inference; trust gating; CP-SAT+enumeration allocation; React Flow control room; FastAPI WebSocket; ESP-NOW ↔ LED command ↔ app ACK; event log; basic suite.  
+**P0** — required trained lab-activity classifier and priority integration (see ML plan); realistic-enough graph connectivity and capacity model; deterministic scenarios; integrity/provenance; source/feeder incident inference; trust gating; CP-SAT+enumeration allocation; React Flow control room; FastAPI WebSocket; ESP-NOW ↔ LED command ↔ app ACK; event log; basic suite.
 **P1** — richer evidence/abstain, phased restoration, greedy comparison and charts, replay/history, second remote ESP32/OLED.  
 **P2** — Isolation Forest advisory with real heldout benefit, first-order thermal model, active measurement request, genuine deterministic re-execution of historical states, LCD polish.  
 **P3 / DEFER** — pandapower/AC flow integration, LoRa, actual mains sensor/relay control, multi-hop mesh, secure field rollout, Convex, separate microservices, blockchain, solar-energy trading, LLM assistant, sensor hardware replica of original BLACKOUT MESH.
