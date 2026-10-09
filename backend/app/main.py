@@ -1,16 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 from typing import Dict
 
 from app.schemas.snapshot import (
     SystemSnapshot,
-    ServiceSnapshot,
-    SourceInfo,
-    SourceKind,
-    HardwareLinkStatus,
-    Tier
+    RfidScanRequest,
+    RfidScanResponse,
+    RfidEventType,
+    CapacityChangeRequest,
+    CapacityChangeResponse,
+    ClassroomLoadRequest,
+    ClassroomLoadResponse,
+    FeederChangeRequest,
+    FeederChangeResponse
 )
+from app.core.state import GridState
 
 app = FastAPI(
     title="PriorityGrid API",
@@ -32,6 +37,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+grid = GridState()
+
 @app.get("/api/v1/health")
 async def health_check():
     return {
@@ -41,90 +48,43 @@ async def health_check():
 
 @app.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot():
-    # Constructing the 6 services exactly as specified
-    services = [
-        ServiceSnapshot(
-            id="L0",
-            name="Clinic Essential Circuit",
-            tier=Tier.T1,
-            feeder="A",
-            watts=2000,
-            requested=True,
-            modeled_served=True,
-            indicator_confirmed=None,
-            model_reason="Initial nominal demonstration state."
-        ),
-        ServiceSnapshot(
-            id="L1",
-            name="Emergency Lighting",
-            tier=Tier.T1,
-            feeder="A",
-            watts=1000,
-            requested=True,
-            modeled_served=True,
-            indicator_confirmed=None,
-            model_reason="Initial nominal demonstration state."
-        ),
-        ServiceSnapshot(
-            id="L2",
-            name="Water Pump",
-            tier=Tier.T2,
-            feeder="A",
-            watts=3000,
-            requested=True,
-            modeled_served=True,
-            indicator_confirmed=None,
-            model_reason="Initial nominal demonstration state."
-        ),
-        ServiceSnapshot(
-            id="L3",
-            name="Communications Room",
-            tier=Tier.T2,
-            feeder="B",
-            watts=2000,
-            requested=True,
-            modeled_served=True,
-            indicator_confirmed=None,
-            model_reason="Initial nominal demonstration state."
-        ),
-        ServiceSnapshot(
-            id="L4",
-            name="Cold Storage",
-            tier=Tier.T2,
-            feeder="B",
-            watts=2000,
-            requested=True,
-            modeled_served=True,
-            indicator_confirmed=None,
-            model_reason="Initial nominal demonstration state."
-        ),
-        ServiceSnapshot(
-            id="L5",
-            name="Comfort Cooling",
-            tier=Tier.T3,
-            feeder="B",
-            watts=4000,
-            requested=True,
-            modeled_served=True,
-            indicator_confirmed=None,
-            model_reason="Initial nominal demonstration state."
-        ),
-    ]
+    return grid.build_snapshot()
 
-    return SystemSnapshot(
-        control_revision=0,
-        generated_at=datetime.now(timezone.utc),
-        source=SourceInfo(
-            kind=SourceKind.SIMULATED,
-            capacity_w=14000
-        ),
-        feeder_limits_w={
-            "A": 6000,
-            "B": 8000
-        },
-        requested_mask=63,
-        modeled_mask=63,
-        indicator_mask=None,
-        hardware_link=HardwareLinkStatus.NOT_CONNECTED,
-        services=services
+@app.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
+async def process_rfid_scan(req: RfidScanRequest):
+    evt_type, class_id, class_name, service_id = grid.process_rfid_scan(req.uid)
+    return RfidScanResponse(
+        accepted=True if evt_type != RfidEventType.DUPLICATE_SUPPRESSED.value else False,
+        active_classroom_id=class_id,
+        classroom_name=class_name,
+        service_id=service_id,
+        event_type=evt_type
+    )
+
+@app.post("/api/v1/simulation/capacity", response_model=CapacityChangeResponse)
+async def change_capacity(req: CapacityChangeRequest):
+    grid.set_capacity(req.capacity_w)
+    return CapacityChangeResponse(
+        accepted=True,
+        new_capacity_w=req.capacity_w,
+        control_revision=grid.control_revision
+    )
+
+@app.post("/api/v1/simulation/classroom-load", response_model=ClassroomLoadResponse)
+async def change_classroom_load(req: ClassroomLoadRequest):
+    grid.set_classroom_load(req.classroom_id, req.active)
+    return ClassroomLoadResponse(
+        accepted=True,
+        classroom_id=req.classroom_id,
+        load_event_active=req.active
+    )
+
+@app.post("/api/v1/simulation/feeder", response_model=FeederChangeResponse)
+async def change_feeder(req: FeederChangeRequest):
+    grid.set_feeder(req.feeder, req.available)
+    return FeederChangeResponse(
+        accepted=True,
+        feeder=req.feeder,
+        available=req.available,
+        control_revision=grid.control_revision
     )
