@@ -37,3 +37,5 @@ Serial lifecycle piece: bounded 512-byte frames, strict host fields, reconnect e
 Recovery checks: RESET now raises the persisted session floor; old B boot reports cannot overwrite a newer boot; CR is accepted only as a terminal frame delimiter. Native sanitizer assertions pass, including all 512 mask projections. The two firmware targets compile with the reported RC522 pins.
 
 Arduino adapter piece: RC522 pins use the user-reported wiring, buttons use the new 25/26/27/32 guide (not wired yet), UID/peer credentials stay local. Reader task isolates synchronous driver waits. Both normal and enrollment targets compiled successfully; encrypted-radio path also linked successfully using temporary synthetic peer provisioning (never flashed; removed afterward).
+
+Gateway loop piece: compiled the nonblocking Arduino event loop, persisted boot/session counters, host acknowledgments, two-second reset and bounded serial/radio queues. Reader errors are distinct from unknown UIDs. Both PlatformIO environments pass; physical checks are blocked by serial permissions.
