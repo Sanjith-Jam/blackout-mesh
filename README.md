@@ -10,6 +10,9 @@ A hackathon prototype combining ML-based lab-activity estimation, constrained po
 - [Required lab activity ML plan](LAB_ACTIVITY_ML_PLAN.md): model, data, nine-load catalog, priority policy and phased implementation.
 - [Agent instructions](AGENTS.md): implementation workflow and invariants.
 - [Context](CONTEXT.md): project status and next action.
+- [Person A wiring and flashing](docs/ESP32_A_WIRING.md): RC522 and four buttons.
+- [ESP32 A status](ESP32_A_STATUS.md): actual builds/tests and remaining physical checks.
+- [Shared serial/radio v2 contract](contracts/serial_protocol.md): agreement for Person B.
 
 ## Status
 
@@ -31,6 +34,6 @@ Commands:
 For utility dependencies: `python3 -m venv .venv`, then `.venv/bin/python -m pip install pyserial`.
 Run `pio pkg install -d firmware` before host C++ checks on a fresh checkout.
 
-The main demo has nine circuits with 84 kW total configured demand: three labs plus six other services. A required classifier estimates lab activity; a fixed policy prioritizes active labs below protected critical services, and the optimizer enforces capacity/feeder limits. Inputs are simulated or explicitly emulated; no real-campus occupancy accuracy is claimed. Two ESP32s handle Lab-ID RFID cards, four buttons and nine load indicators. Old seven/six-load examples remain separate regression fixtures.
+The main demo has nine circuits with 84 kW total configured demand: three labs plus six other services. A required classifier estimates lab activity; a fixed policy prioritizes active labs below protected critical services, and the optimizer enforces capacity/feeder limits. Inputs are simulated or explicitly emulated; no real-campus occupancy accuracy is claimed. The full design uses two ESP32s for Lab-ID cards, four buttons and nine indicators; the current hardware bench projects only the three lab bits onto B’s LEDs. Old seven/six-load examples remain separate regression fixtures.
 
 Review notes, reuse research, notices drafts and historical plans are maintained locally outside this repository. Preserve applicable third-party license notices whenever code is incorporated.

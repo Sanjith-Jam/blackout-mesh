@@ -1,10 +1,10 @@
 # Blackout Mesh — implementation context
 
-Updated 2026-10-09. Planning only; targets are not measured results.
+Updated 2026-10-09. ESP32 A software is built/tested; physical and application/ML gates remain pending.
 
 ## Authority
 
-Follow [unified implementation plan v1.2](PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md) and [AGENTS.md](AGENTS.md). The plan merges the newer seven-load blueprint with earlier reliability and validation requirements. Active tasks have no team-role allocations.
+Follow [unified implementation plan v1.2](PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md) and [AGENTS.md](AGENTS.md). The plan merges the newer seven-load blueprint with earlier reliability and validation requirements. Current user scope: Person A input gateway. Person B output/controller integration remains pending.
 
 The latest user instruction requires an ML classifier for which labs are in use. [LAB_ACTIVITY_ML_PLAN.md](LAB_ACTIVITY_ML_PLAN.md) takes precedence for catalog/model/objective/hardware. Random Forest is the first candidate, with rules/logistic-regression comparison; no specific JEV/JEPA architecture was requested.
 
@@ -43,3 +43,27 @@ Gateway loop piece: compiled the nonblocking Arduino event loop, persisted boot/
 Contract fixtures piece: explicit serial/radio v2 agreement, Python codec and six golden wire fixtures added. `python3 tools/test_radio_protocol.py` passes one test including all 512 masks; production C++ golden fixture matches. Person B must adopt this previously unimplemented contract before integration.
 
 Host utilities piece: local exclusive-create UID enrollment and synchronized input-only console added. `python3 tools/test_host_tools.py`: 3 tests pass (fake serial, no hardware); registration preserves A+B and repeated events are deduplicated. No allocation/output claims from this console.
+
+## Person A handoff
+
+Done: firmware, private UID/peer templates, RC522 task, four button state machines,
+bounded JSONL, host sync/event ACK, encrypted radio adapter, strict v2 codec,
+retries/projection/boot guards, enrollment/input-only console and bring-up docs.
+`python3 tools/test_esp32_a.py`: C++ sanitizer assertions pass, including all 512
+mask projections. `python3 tools/test_radio_protocol.py`: 1 test passes with all
+512 round trips. `python3 tools/test_host_tools.py`: 3 tests pass using fake serial.
+`pio run -d firmware -e esp32-a -e esp32-a-enroll`: both SUCCESS (7.061s / 3.543s).
+Encrypted-radio code path also compiled with temporary synthetic provisioning,
+removed afterward; no flashing or real radio test. Versions pinned after builds.
+
+Failure remaining: `/dev/ttyUSB0` root:uucp 0660 denies this process access. No chip
+query/flash succeeded. User supplied RC522 wiring SS21/SCK18/MOSI23/MISO19/RST22
+and reports it powered; board carrier and actual reader operation remain unverified.
+User has not wired buttons; guide uses 25/26/27/32 to GND, internal pull-ups.
+
+Next: user resolves serial membership and restarts the app; verify board labels,
+wire buttons with USB removed, flash enrollment, capture cards locally, flash
+normal firmware and run input console. Then agree contract/provision peers with
+Person B and record physical acceptance. Never run input console alongside the
+real controller. Classifier, allocator, UI and B firmware remain unimplemented
+in this repository. See ESP32_A_STATUS.md for outputs, limits and exact commands.
