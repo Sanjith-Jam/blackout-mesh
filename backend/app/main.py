@@ -25,7 +25,7 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.activity.model import FEATURES
-from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
+from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo, hospital_snapshot
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -36,9 +36,11 @@ class ClassroomDemoAction(BaseModel):
 
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"]
+    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"] | None = None
     zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
     capacity_w: StrictInt | None = None
+    scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"] | None = None
+
 
 class ConnectionManager:
     def __init__(self):
@@ -178,11 +180,16 @@ async def get_hospital_demo():
 
 @app.post("/api/v1/visualizers/hospital")
 async def act_hospital_demo(req: HospitalDemoAction):
+    if req.scenario is not None:
+        return hospital_snapshot(req.scenario)
+    if req.action is None:
+        raise HTTPException(422, "either action or scenario must be provided")
     if req.capacity_w is not None:
         low, high = hospital_demo.snapshot()["capacity_range_w"]
         if not (low <= req.capacity_w <= high):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
     return hospital_demo.act(req.action, req.zone_id, req.capacity_w)
+
 
 @app.post("/api/v1/activity/observations")
 async def post_activity_observation(req: ActivityObservationRequest):

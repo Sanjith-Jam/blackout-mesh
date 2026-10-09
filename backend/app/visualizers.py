@@ -203,7 +203,9 @@ HOSP_LOADS = {
     "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 800, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 1400, False)],
     "Wards": [("bed_lights", "Bed Lights", 200, False), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 500, False), ("tv", "Patient TV", 200, False), ("ac", "Air Conditioning", 2000, False)],
 }
+HOSPITAL_LOADS = {zone: [(item[0], item[3]) for item in loads] for zone, loads in HOSP_LOADS.items()}
 HOSP_LOAD_KEYS = tuple((zone, item[0]) for zone in HOSP_ZONES for item in HOSP_LOADS[zone])
+
 
 class HospitalPriorityDemo(ClassroomDemo):
     def __init__(self, clock=None, model=None, replay=None):
