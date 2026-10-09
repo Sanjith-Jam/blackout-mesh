@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
-import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
+import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder, getWebSocketUrl } from '../api';
 import { Snapshot } from '../types';
 import TopologyGraph from '../components/TopologyGraph';
 import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
@@ -32,8 +32,13 @@ export default function DemoDashboard() {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    // Unmount must stop reconnects; late frames from an older revision of the same run are dropped.
+    let disposed = false;
+    let retry: number | undefined;
+    let last: { run?: string; revision: number } | null = null;
     const connectWs = () => {
-      const ws = new WebSocket('ws://127.0.0.1:8000/ws/live');
+      if (disposed) return;
+      const ws = new WebSocket(getWebSocketUrl());
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -43,7 +48,11 @@ export default function DemoDashboard() {
 
       ws.onmessage = (event) => {
         try {
+          if (disposed) return;
           const data: Snapshot = JSON.parse(event.data);
+          const run = data.site?.run_id;
+          if (last && run === last.run && data.published_revision < last.revision) return;
+          last = { run, revision: data.published_revision };
           setSnapshot(data);
           setHealthOk(true);
 
@@ -69,14 +78,17 @@ export default function DemoDashboard() {
       };
 
       ws.onclose = () => {
+        if (disposed) return;
         setHealthOk(false);
         setError("WebSocket disconnected. Reconnecting...");
-        setTimeout(connectWs, 3000);
+        retry = window.setTimeout(connectWs, 3000);
       };
     };
 
     connectWs();
     return () => {
+      disposed = true;
+      window.clearTimeout(retry);
       if (wsRef.current) wsRef.current.close();
     };
   }, []);
