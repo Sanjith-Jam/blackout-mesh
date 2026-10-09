@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Activity, AlertTriangle, ArrowLeft, CheckCircle2, CircleHelp, RefreshCw, Thermometer, Zap } from 'lucide-react';
 import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoScenario, HospitalDemoSnapshot, HospitalDemoTransformer } from '../types';
-import HospitalTopologyGraph from './HospitalTopologyGraph';
+import HospitalBlueprint from './HospitalBlueprint';
 import './HospitalDemo.css';
 
 const scenarios: { id: HospitalDemoScenario; label: string; detail: string }[] = [
@@ -158,10 +158,8 @@ export default function HospitalDemo() {
         </section>
 
         {!snapshot ? <section className="hospital-loading" aria-live="polite"><CircleHelp size={22} aria-hidden="true" />Loading transformer evidence…</section> : <>
-          <section className="hospital-graph-panel" aria-labelledby="network-heading">
-            <div className="hospital-panel-heading"><span className="hospital-heading-icon"><Zap size={17} aria-hidden="true" /></span><div><h2 id="network-heading">Supply path and transformer evidence</h2><p>Animated lines show voltage readings and energized outputs. A fault diagnosis does not trip a circuit in this demo.</p></div></div>
-            <HospitalTopologyGraph transformers={transformers} stale={stale} />
-            <div className="hospital-legend" aria-label="Path legend"><span><i className="energized" /> Energized path</span><span><i className="deenergized" /> Output not energized</span><span><i className="unknown" /> Reading unavailable</span></div>
+          <section className="hospital-blueprint-panel" aria-label="Hospital floor plans">
+            <HospitalBlueprint snapshot={snapshot} connected={!stale} />
           </section>
 
           <div className="hospital-detail-grid">{transformers.map((transformer) => <article className={`hospital-transformer-detail severity-${transformer.diagnosis.severity}`} key={transformer.id}>
