@@ -1,29 +1,20 @@
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Activity, ShieldCheck, HeartPulse, Cpu, Wifi, BookOpen } from 'lucide-react';
+import { ShieldAlert, Zap, Activity, ShieldCheck, HeartPulse, Cpu, Wifi, BookOpen, Home, Settings, Grid } from 'lucide-react';
+import { HeroSection } from '@/components/ui/hero-section';
+import { Dock, DockItem } from '@/components/ui/dock';
+import { SlideTabs } from '@/components/ui/slide-tabs';
+import { BenchmarkCard } from '@/components/ui/benchmark-card';
+import { CircuitBoard } from '@/components/ui/circuit-board';
 import './LandingPage.css';
 
 export default function LandingPage() {
   return (
-    <div className="landing-container">
-      {/* HEADER */}
-      <header className="landing-header">
-        <div className="landing-brand">
-          <Activity className="brand-icon" />
-          <span className="brand-name">PriorityGrid</span>
-        </div>
-        <nav className="landing-nav">
-          <Link to="/">Overview</Link>
-          <Link to="/hospital">Hospital</Link>
-          <Link to="/classrooms">Classrooms</Link>
-          <a href="#architecture">Architecture</a>
-        </nav>
-        <div className="landing-actions">
-          <Link to="/demo" className="btn-primary">Launch Demo</Link>
-        </div>
-      </header>
-
+    <div className="landing-container relative min-h-screen">
+      <CircuitBoard className="opacity-10" />
+      
       {/* HERO SECTION */}
-      <section className="hero-section">
+      <HeroSection />
+      <div className="hidden">
         <div className="hero-content">
           <h1 className="hero-title">
             Intelligent, Fault-Aware and Resilient<br />Power Management Network.
@@ -66,9 +57,8 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+          </div>
         </div>
-      </section>
-
       {/* WHY PRIORITYGRID */}
       <section id="problem" className="content-section alternate">
         <div className="container">
@@ -113,45 +103,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TECHNOLOGY & ARCHITECTURE */}
-      <section id="architecture" className="content-section alternate">
-        <div className="container">
-          <div className="split-layout">
-            <div className="tech-stack">
-              <h2 className="section-heading">Technology Stack</h2>
-              <ul className="tech-list">
-                <li><Cpu /> React + TypeScript</li>
-                <li><Activity /> FastAPI + Python</li>
-                <li><ShieldCheck /> OR-Tools CP-SAT</li>
-                <li><Activity /> NumPy + NetworkX</li>
-                <li><ShieldCheck /> SQLite</li>
-                <li><Wifi /> ESP32 + ESP-NOW + USB Serial</li>
-              </ul>
-            </div>
-            
-            <div className="architecture-flow">
-              <h2 className="section-heading">System Architecture</h2>
-              <div className="flow-diagram">
-                <div className="flow-box">RFID Reader / Physical Inputs</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box">ESP32 Hardware Layer</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box highlight">FastAPI Backend (Authoritative)</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box">Simulator → Detection → Diagnosis</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box">Evidence Constraints → CP-SAT</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box">Modeled State + Indicator Commands</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box">ESP32 LED Indicators</div>
-                <div className="flow-arrow">↓</div>
-                <div className="flow-box">React Demo Dashboard</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* LIMITATIONS */}
       <section className="content-section limitations-section">
@@ -170,30 +122,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="final-cta">
-        <div className="container">
-          <h2>Ready to see it in action?</h2>
-          <Link to="/demo" className="btn-primary btn-massive">Launch Interactive Demo</Link>
+      {/* PERFORMANCE BENCHMARK */}
+      <section className="content-section alternate relative z-10 p-12">
+        <div className="container mx-auto max-w-4xl">
+          <BenchmarkCard 
+            title="Algorithm Decision Speed (ms)" 
+            stats={[
+              { label: "Rule-Based", value: 45 },
+              { label: "Logistic Regression", value: 12 },
+              { label: "PriorityGrid Engine", value: 95 }
+            ]} 
+          />
         </div>
       </section>
 
+
+
       {/* FOOTER */}
-      <footer className="landing-footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-brand">
-              <Activity size={20} /> PriorityGrid
-            </div>
-            <div className="footer-disclaimer">
-              Offline decision console demonstration. Not for production life-safety use.
-            </div>
-            <div className="footer-links">
-              <Link to="/demo">Interactive Demo</Link>
-            </div>
+      <footer className="landing-footer relative z-10 p-8 border-t border-border bg-muted/50 backdrop-blur-md">
+        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
+          <div className="footer-brand flex items-center gap-2 font-bold">
+            <Activity size={20} /> PriorityGrid
+          </div>
+          <div className="footer-disclaimer text-sm text-center">
+            Offline decision console demonstration. Not for production life-safety use.
+          </div>
+          <div className="footer-links">
+            <Link to="/demo" className="hover:text-primary">Interactive Demo</Link>
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

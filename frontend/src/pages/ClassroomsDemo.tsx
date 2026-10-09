@@ -100,10 +100,7 @@ export default function ClassroomsDemo() {
   }
 
   return <main className="classroom-demo">
-    <header className="classroom-demo__header">
-      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated{snapshot.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span><h1 className="classroom-demo__title">Classroom power map</h1></div></div>
-      <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/hospital">Hospital demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
-    </header>
+
     {error && <div className="classroom-demo__alert" role="alert">Connection lost — displaying last known simulated state. {error}</div>}
     <div className="classroom-demo__layout">
       <section className="classroom-demo__main" aria-label="Classroom power state">

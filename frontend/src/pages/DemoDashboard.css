@@ -50,7 +50,22 @@
 
 .dash-status-indicators {
   display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 1rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dash-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--surface-border-strong);
 }
 .status-pill {
   display: flex;

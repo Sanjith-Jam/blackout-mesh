@@ -127,7 +127,6 @@ export default function DemoDashboard() {
         </div>
 
         <div className="dash-actions">
-          <Link to="/" className="btn-secondary">Back to Home</Link>
         </div>
       </header>
 
