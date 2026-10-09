@@ -15,6 +15,10 @@ int main() {
   assert(frame.feed('\n') == -1);
   assert(!frame.feed('{')); assert(!frame.feed('}')); assert(frame.feed('\n') == 1);
   assert(!parseHost(frame.data, message));
+  frame.feed('{'); frame.feed('\r'); frame.feed('}');
+  assert(frame.feed('\n') == -1);
+  frame.feed('{'); frame.feed('}'); frame.feed('\r');
+  assert(frame.feed('\n') == 1);
   assert(parseHost("{\"v\":2,\"type\":\"sync\",\"boot\":99,\"epoch\":1,\"session\":10,\"selected\":\"B\"}", message));
   Session host(99, 9);
   assert(host.sync(message, 0) && host.input.selected == 'B');
@@ -27,5 +31,8 @@ int main() {
   assert(!host.sync(message, 1501)); message.epoch = 2;
   assert(host.sync(message, 1502)); assert(!host.acknowledge(event));
   assert(host.event(1503) > event);
+  host.reset(); message.epoch = host.epoch;
+  assert(!host.sync(message, 1600));
+  ++message.session; assert(host.sync(message, 1601));
   puts("serial/session assertions passed");
 }

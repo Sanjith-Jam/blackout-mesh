@@ -7,20 +7,21 @@ constexpr size_t LINE_LIMIT = 512;
 struct Framer {
   char data[LINE_LIMIT + 1] = {};
   size_t used = 0;
-  bool bad = false;
+  bool bad = false, carriage = false;
   // 1 = complete frame, -1 = rejected frame, 0 = incomplete.
   int feed(char c) {
     if (c == '\n') {
       data[used] = 0;
       const int result = bad || !used ? -1 : 1;
-      used = 0; bad = false; return result;
+      used = 0; bad = carriage = false; return result;
     }
-    if (c == '\r') return 0;
+    if (c == '\r') { if (carriage) bad = true; carriage = true; return 0; }
+    if (carriage) bad = true;
     if (uint8_t(c) < 32 || uint8_t(c) > 126 || used == LINE_LIMIT) bad = true;
     if (!bad) data[used++] = c;
     return 0;
   }
-  void clear() { used = 0; bad = false; }
+  void clear() { used = 0; bad = carriage = false; }
 };
 enum class HostKind { HELLO, SYNC, PING, RADIO_SYNC, SET_LOADS, EVENT_ACK };
 struct HostMessage {

@@ -12,6 +12,11 @@ struct Session {
     for (auto& event : pending) event = 0;
     if (epoch != UINT32_MAX) ++epoch;
   }
+  void reset() {
+    if (floor == UINT32_MAX) epoch = UINT32_MAX;
+    else ++floor;
+    disconnect();
+  }
   bool context(const HostMessage& msg) const {
     return input.synced && msg.boot == boot && msg.epoch == epoch && msg.session == session;
   }

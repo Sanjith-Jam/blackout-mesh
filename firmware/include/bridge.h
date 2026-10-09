@@ -43,7 +43,11 @@ struct Bridge {
   }
   RadioResult receive(const Packet& p, uint32_t now) {
     if (p.kind == HELLO || p.kind == HEARTBEAT) {
+      if (p.boot < boot) return RadioResult::NONE;
       if (p.mask & ~CLASSROOM_MASK) return RadioResult::BAD_ACK;
+      if (p.boot == boot && ready && p.session != session) {
+        ready = active = queued = false; return RadioResult::STALE;
+      }
       const bool reboot = boot != p.boot;
       boot = p.boot; seen = now; online = true;
       if (reboot) { ready = active = queued = completed = false; return RadioResult::REBOOT; }

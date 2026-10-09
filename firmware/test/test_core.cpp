@@ -41,6 +41,9 @@ int main() {
     assert(!decode(bytes, 25, decoded));
     bytes[20] ^= 1; assert(!decode(bytes, 26, decoded));
   }
+  const uint8_t golden[] = {0xa5, 0x02, 0x03, 0x02, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x01, 0x00, 0x00, 0xeb, 0xb1};
+  Packet goldenPacket; assert(decode(golden, sizeof(golden), goldenPacket));
+  assert(goldenPacket.mask == 511 && goldenPacket.session == 10 && goldenPacket.seq == 2 && goldenPacket.boot == 20);
   Bridge bridge; bridge.bind(10);
   Packet hello; hello.boot = 20;
   assert(bridge.receive(hello, 0) == RadioResult::REBOOT);
@@ -85,7 +88,20 @@ int main() {
   hello.boot = 21;
   assert(bridge.receive(hello, 614) == RadioResult::REBOOT && !bridge.ready);
   assert(!bridge.submit(SYNC, 8, 0, 20, 615));
+  hello.boot = 20;
+  assert(bridge.receive(hello, 615) == RadioResult::NONE && bridge.boot == 21);
   assert(bridge.tick(2114) == RadioResult::STALE);
   bridge.disconnect(); assert(!bridge.active && !bridge.session);
-  puts("input/buttons/packet/radio assertions passed");
+  for (uint16_t mask = 0; mask <= VALID_MASK; ++mask) {
+    Bridge fixture; fixture.bind(10);
+    Packet report; report.boot = 20; fixture.receive(report, 0);
+    assert(fixture.submit(SYNC, 1, 0, 20, 0));
+    Packet response; response.kind = ACK; response.boot = 20; response.session = 10; response.ack = 1;
+    assert(fixture.receive(response, 1) == RadioResult::SYNCED);
+    assert(fixture.submit(SET_LOADS, 2, mask, 20, 2));
+    assert(fixture.next(2, sent) && sent.mask == mask);
+    response.ack = 2; response.mask = mask & CLASSROOM_MASK;
+    assert(fixture.receive(response, 3) == RadioResult::CONFIRMED);
+  }
+  puts("input/buttons/packet/radio assertions passed (all 512 mask projections)");
 }

@@ -33,3 +33,5 @@ Added production input/button state machines and explicit 26-byte v2 codec. Host
 Radio lifecycle piece: host assertions cover one in-flight packet, latest-unsent coalescing, 200/400-ms retries, 600-ms timeout, boot/session/ACK identity and physical projection. `python3 tools/test_esp32_a.py` passes. Actual B integration remains pending.
 
 Serial lifecycle piece: bounded 512-byte frames, strict host fields, reconnect epochs, persistent-session floor, event acknowledgments and freshness checks added. Host assertions including malformed/oversized/trailing data and stale events pass. Connected `/dev/ttyUSB0` is inaccessible to current process (permission denied); no chip query or flash succeeded.
+
+Recovery checks: RESET now raises the persisted session floor; old B boot reports cannot overwrite a newer boot; CR is accepted only as a terminal frame delimiter. Native sanitizer assertions pass, including all 512 mask projections. The two firmware targets compile with the reported RC522 pins.
