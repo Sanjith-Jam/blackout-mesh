@@ -7,6 +7,8 @@ import {
   FeederChangeResponse,
   ModelStatus,
   ClassroomDemoSnapshot,
+  ClassroomDemoActionName,
+  ClassroomDemoRoom,
   HospitalDemoSnapshot,
   HospitalDemoScenario
 } from './types';
@@ -100,9 +102,9 @@ export async function getClassroomDemo(signal?: AbortSignal): Promise<ClassroomD
   return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', { signal });
 }
 
-export async function postClassroomDemo(action: 'scan' | 'normal' | 'overload' | 'reset', classroom_id?: 'CR1' | 'CR2' | 'CR3'): Promise<ClassroomDemoSnapshot> {
+export async function postClassroomDemo(action: ClassroomDemoActionName, classroom_id?: ClassroomDemoRoom['id'], capacity_w?: number): Promise<ClassroomDemoSnapshot> {
   return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', {
-    method: 'POST', body: JSON.stringify({ action, ...(classroom_id ? { classroom_id } : {}) })
+    method: 'POST', body: JSON.stringify({ action, ...(classroom_id ? { classroom_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}) })
   });
 }
 
