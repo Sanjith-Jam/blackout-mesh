@@ -146,6 +146,7 @@ class SafetySnapshot(BaseModel):
 
 
 class AllocationSnapshot(BaseModel):
+    explanation: dict = Field(default_factory=dict)
     objective: str
     critical_shortfall_w: int
     served_w: int

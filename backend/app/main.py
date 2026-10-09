@@ -26,6 +26,7 @@ from app.schemas.snapshot import (
 from app.core.state import GridState
 from app.core.control_loop import ControlLoop
 from app.core.site import SiteAuthority
+from app.core.policy import AllocationPolicy
 from app.activity.model import FEATURES
 from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo, hospital_snapshot
 
@@ -359,3 +360,19 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+@app.get("/api/v1/allocation/policy")
+async def read_allocation_policy():
+    return site.read(lambda: grid.policy.model_dump())[0]
+
+
+@app.put("/api/v1/allocation/policy")
+async def change_allocation_policy(policy: AllocationPolicy):
+    def apply():
+        with grid._lock:
+            grid.policy = policy
+            grid.control_revision += 1
+            grid.add_event("POLICY_CHANGE", policy.model_dump_json())
+    _, receipt = site.command("allocation_policy", apply)
+    return {"policy": policy.model_dump(), "receipt": receipt}

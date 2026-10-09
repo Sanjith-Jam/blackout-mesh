@@ -9,8 +9,9 @@ from app.schemas.snapshot import (
     ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType,
     SystemEvent, FaultDiagnosis
 )
-from app.core.allocator import allocate, fixed_priority_mask
+from app.core.allocator import allocate, fixed_priority_mask, explain
 from app.core.restoration import RestorationGate
+from app.core.policy import AllocationPolicy
 from app.activity.model import ActivityModel, FEATURES
 from app.diagnosis.infer import FeederRating, ObservationWindow, diagnose_campus
 from app.diagnosis.observations import validate as validate_observation
@@ -91,6 +92,10 @@ class GridState:
         self.activity_guard = ActivityGuard()
         self.activity_tokens = {c["id"]: 0 for c in CLASSROOMS}
         self.activity_received_monotonic = {c["id"]: None for c in CLASSROOMS}
+        self.policy = AllocationPolicy()
+        self.waiting_s = {}
+        self.last_policy_tick = self.clock()
+        self.allocation_explanation = {}
         self.last_allocation_mask = 0
         self.last_allocation_key = None
         self.proposed_mask = 0
@@ -241,26 +246,46 @@ class GridState:
             now = self.clock()
             freshness = tuple(received is not None and now - received > 600
                               for received in self.activity_received_monotonic.values())
-            cache_key = (self.control_revision, freshness)
+            requested = 0b111111
+            if self.software_mode:
+                requested = 0b111
+                for c in CLASSROOMS:
+                    if self.classroom_load_events[c["id"]]:
+                        requested |= 1 << int(c["service_id"][1:])
+            elapsed = max(0, now - self.last_policy_tick)
+            self.last_policy_tick = now
+            for bit, svc in enumerate(SERVICE_CATALOG):
+                self.waiting_s[svc["id"]] = (self.waiting_s.get(svc["id"], 0) + elapsed
+                    if requested & (1 << bit) and not self.last_allocation_mask & (1 << bit) else 0)
+            cache_key = (self.control_revision, freshness, tuple(int(v) for v in self.waiting_s.values()) if self.policy.fairness_weight else ())
             if cache_key != self.last_allocation_key:
-                requested = 0b111111
-                if self.software_mode:
-                    requested = 0b111
-                    for c in CLASSROOMS:
-                        if self.classroom_load_events[c["id"]]:
-                            requested |= 1 << int(c["service_id"][1:])
                 self.proposed_mask = allocate(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
                                               self.feeder_available, requested, self.current_activity(),
-                                              self.last_allocation_mask)
+                                              self.last_allocation_mask, self.policy, self.waiting_s)
+                self.decision_previous_mask = self.last_allocation_mask
+                self.decision_waiting_s = {key: int(value) for key, value in self.waiting_s.items()}
+                self.decision_requested_mask = requested
+                self.decision_activity = {cid: {"state": value["state"]} for cid, value in self.current_activity().items()}
                 self.last_allocation_key = cache_key
             order = sorted(range(len(SERVICE_CATALOG)), key=lambda bit: (
                 0 if bit == 0 else 1 if bit == 1 else
                 2 if SERVICE_CATALOG[bit]["zone"] == "classroom" and self.current_activity()[CLASSROOMS[bit - 3]["id"]]["state"] == "ACTIVE" else
                 3 if SERVICE_CATALOG[bit]["zone"] == "classroom" and self.current_activity()[CLASSROOMS[bit - 3]["id"]]["state"] == "UNKNOWN" else
-                4 if bit == 2 else 5, bit))
-            signature = (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
+                (2 if self.policy.name == "water_first" else 4) if bit == 2 else 5, bit))
+            signature = (self.policy.model_dump_json(), self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
                          tuple(sorted(self.feeder_available.items())))
-            self.last_allocation_mask = self.restoration_gate.update(self.proposed_mask, signature, order)
+            gate_before = {k: v for k, v in vars(self.restoration_gate).items() if k != "clock"}
+            self.last_allocation_mask = self.restoration_gate.update(self.proposed_mask, signature, order, now=now)
+            explanation = explain(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
+                self.feeder_available, self.decision_requested_mask,
+                self.decision_activity, self.decision_previous_mask, self.policy, self.decision_waiting_s,
+                self.proposed_mask, self.last_allocation_mask)
+            if (self.allocation_explanation.get("decision_id") != explanation["decision_id"] or
+                    self.allocation_explanation.get("control_revision") != self.control_revision):
+                explanation["restoration_replay"] = {"before": gate_before, "now_s": now,
+                    "signature": signature, "order": order}
+                explanation["control_revision"] = self.control_revision
+                self.allocation_explanation = explanation
             return self.last_allocation_mask
 
     def compute_indicator_command_mask(self, modeled_mask: int) -> int:
@@ -400,7 +425,8 @@ class GridState:
                 activity=activity,
                 model=self.model.status(),
                 replay={"running": self.replay_running, "index": self.replay_index, "length": self.replay_length},
-                allocation={"objective": "critical, ACTIVE, UNKNOWN, water pump, minimize idle/switching",
+                allocation={"objective": ", ".join(self.policy.objective_order),
+                            "explanation": self.allocation_explanation,
                             "critical_shortfall_w": max(0, sum(s["watts"] for s in SERVICE_CATALOG[:2]) -
                                                          sum(SERVICE_CATALOG[i]["watts"] for i in range(2) if modeled_mask & (1 << i))),
                             "served_w": sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i)),

@@ -92,7 +92,20 @@ export interface ReplayStatus {
   length: number;
 }
 
+export interface AllocationExplanation {
+  decision_id: string;
+  control_revision: number;
+  restoration_replay: { before: Record<string, unknown>; now_s: number; signature: unknown[]; order: number[] };
+  policy: { name: 'activity_first' | 'water_first'; version: 'allocation-v1'; fairness_weight: number; switching_penalty: number };
+  objective_order: string[];
+  score_terms: Record<string, number | number[]>;
+  replay_inputs: Record<string, unknown>;
+  decisions: { service_id: string; requested: boolean; proposed: boolean; applied: boolean;
+    binding_constraints: string[]; reason: string; score_terms: Record<string, number | number[]>; shortfall_w: number; counterfactual: string }[];
+}
+
 export interface AllocationStatus {
+  explanation: AllocationExplanation;
   objective: string;
   critical_shortfall_w: number;
   served_w: number;
@@ -354,4 +367,3 @@ export interface HospitalDemoSnapshot {
   replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
 }
-
