@@ -1,370 +1,179 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
-import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
-import { Snapshot } from '../types';
-import TopologyGraph from '../components/TopologyGraph';
-import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
-import AllocationHistoryChart from '../components/AllocationHistoryChart';
-import IncidentTimeline from '../components/IncidentTimeline';
-import './DemoDashboard.css';
+import { Activity, AlertTriangle, ArrowLeft, CheckCircle2, CircleHelp, RefreshCw, Thermometer, Zap } from 'lucide-react';
+import { getHospitalDemo, postHospitalDemo } from '../api';
+import { HospitalDemoScenario, HospitalDemoSnapshot, HospitalDemoTransformer } from '../types';
+import HospitalTopologyGraph from './HospitalTopologyGraph';
+import './HospitalDemo.css';
 
-interface TimeSeriesPoint {
-  time: string;
-  capacity: number;
-  demand: number;
-  servedCount: number;
-  shedCount: number;
+const scenarios: { id: HospitalDemoScenario; label: string; detail: string }[] = [
+  { id: 'normal', label: 'Normal operation', detail: 'All transformers within demo ranges' },
+  { id: 'overload', label: 'Overload', detail: 'TX2 current above its rated threshold' },
+  { id: 'cooling_failure', label: 'Cooling failure', detail: 'TX2 is hot while cooling is reported failed' },
+  { id: 'upstream_loss', label: 'Upstream loss', detail: 'Low input and output voltage readings' },
+  { id: 'missing_sensor', label: 'Missing sensor', detail: 'TX2 current reading is unavailable' },
+];
+
+function scenarioFromEvidence(snapshot: HospitalDemoSnapshot): HospitalDemoScenario {
+  const codes = snapshot.transformers.map((transformer) => transformer.diagnosis.code);
+  if (codes.includes('UPSTREAM_LOSS')) return 'upstream_loss';
+  if (codes.includes('OVERLOAD')) return 'overload';
+  if (codes.includes('COOLING_FAILURE')) return 'cooling_failure';
+  if (codes.includes('UNKNOWN')) return 'missing_sensor';
+  return 'normal';
+}
+
+function number(value: number | null, unit: string, digits = 1) {
+  return value == null ? 'Unavailable' : `${value.toFixed(digits)} ${unit}`;
+}
+
+function CauseSummary({ transformers }: { transformers: HospitalDemoTransformer[] }) {
+  const evidence = useMemo(() => transformers.map((transformer) => {
+    const explanations: Record<string, [string, string]> = {
+      UNKNOWN: ['Insufficient evidence', 'Missing sensor readings prevent a supported diagnosis.'],
+      UPSTREAM_LOSS: ['Upstream supply is a plausible cause', 'Incoming and outgoing voltage are low across the monitored zones.'],
+      OVERLOAD: ['Excess load is a plausible cause', 'Current exceeds the configured rating threshold while supply and cooling remain available. These readings do not exclude an internal fault.'],
+      COOLING_FAILURE: ['Cooling fault is a plausible cause', 'The transformer is hot at normal current, and cooling is reported failed.'],
+      HIGH_TEMPERATURE: ['Elevated temperature', 'The available readings do not isolate the thermal fault.'],
+      NORMAL: ['No configured demo fault found', 'The backend found no exceeded demonstration threshold.'],
+    };
+    const [title, detail] = explanations[transformer.diagnosis.code] ?? ['Unclassified condition', transformer.diagnosis.cause];
+    return { transformer, title, detail };
+  }), [transformers]);
+
+  return (
+    <section className="hospital-cause-panel" aria-labelledby="hospital-cause-heading">
+      <div className="hospital-panel-heading">
+        <span className="hospital-heading-icon"><Activity size={17} aria-hidden="true" /></span>
+        <div><h2 id="hospital-cause-heading">Likely cause from sensor evidence</h2><p>Threshold-based demonstration diagnosis; not a protection system.</p></div>
+      </div>
+      <div className="hospital-cause-list">
+        {evidence.map(({ transformer, title, detail }) => (
+          <article className="hospital-cause-row" key={transformer.id}>
+            <span className={`hospital-cause-dot is-${transformer.diagnosis.severity}`} aria-hidden="true" />
+            <div><strong>{transformer.id} · {title}</strong><p>{detail}</p></div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TransformerReadings({ transformer }: { transformer: HospitalDemoTransformer }) {
+  const { sensors } = transformer;
+  const readings: [string, string, string][] = [
+    ['Current', number(sensors.current_a, 'A'), 'current'],
+    ['Temperature', number(sensors.temperature_c, '°C'), 'temperature'],
+    ['Input voltage', number(sensors.input_voltage_v, 'V', 0), 'input-voltage'],
+    ['Output voltage', number(sensors.output_voltage_v, 'V', 0), 'output-voltage'],
+    ['Cooling', sensors.cooling_ok == null ? 'Unknown' : sensors.cooling_ok ? 'Operating' : 'Failed', 'cooling'],
+  ];
+  return <dl className="hospital-reading-grid">{readings.map(([label, value, key]) => <div className="hospital-reading" key={key}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
 }
 
 export default function HospitalDemo() {
-    const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [healthOk, setHealthOk] = useState<boolean>(false);
+  const [snapshot, setSnapshot] = useState<HospitalDemoSnapshot | null>(null);
+  const [selected, setSelected] = useState<HospitalDemoScenario | null>(null);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [actionPending, setActionPending] = useState<boolean>(false);
-  const [actionFeedback, setActionFeedback] = useState<{msg: string, isError: boolean} | null>(null);
+  const [stale, setStale] = useState(false);
+  const requestVersion = useRef(0);
+  const actionBusy = useRef(false);
+  const pollBusy = useRef(false);
+  const mounted = useRef(false);
 
-  // Time series data for charts
-  const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
-  const MAX_HISTORY = 50;
-
-  const wsRef = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    const connectWs = () => {
-      const ws = new WebSocket('ws://127.0.0.1:8000/ws/live');
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        setHealthOk(true);
+  const refresh = useCallback(async (signal?: AbortSignal) => {
+    if (actionBusy.current || pollBusy.current) return;
+    pollBusy.current = true;
+    const version = requestVersion.current;
+    try {
+      const next = await getHospitalDemo(signal);
+      if (mounted.current && version === requestVersion.current && !signal?.aborted) {
+        setSnapshot(next);
+        setSelected(scenarioFromEvidence(next));
         setError(null);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data: Snapshot = JSON.parse(event.data);
-          setSnapshot(data);
-          setHealthOk(true);
-
-          // Update history
-          const now = new Date(data.generated_at).toLocaleTimeString();
-          const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
-          const servedCount = data.services.filter(s => s.modeled_served).length;
-          const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
-
-          setHistory(prev => {
-            const next = [...prev, { time: now, capacity: data.source.capacity_w, demand, servedCount, shedCount }];
-            if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
-            return next;
-          });
-
-        } catch (e) {
-          console.error("Failed to parse websocket message", e);
-        }
-      };
-
-      ws.onerror = (e) => {
-        console.error("Websocket error", e);
-      };
-
-      ws.onclose = () => {
-        setHealthOk(false);
-        setError("WebSocket disconnected. Reconnecting...");
-        setTimeout(connectWs, 3000);
-      };
-    };
-
-    connectWs();
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-    };
+        setStale(false);
+      }
+    } catch {
+      if (mounted.current && version === requestVersion.current && !signal?.aborted) {
+        setError('The hospital sensor demo is unavailable. Check the backend connection and retry.');
+        setStale(true);
+      }
+    } finally { pollBusy.current = false; }
   }, []);
 
-  const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
-    if (actionPending) return;
-    setActionPending(true);
-    setActionFeedback(null);
+  useEffect(() => {
+    mounted.current = true;
+    const controller = new AbortController();
+    void refresh(controller.signal);
+    const timer = window.setInterval(() => void refresh(controller.signal), 1000);
+    return () => { mounted.current = false; controller.abort(); window.clearInterval(timer); };
+  }, [refresh]);
+
+  const selectScenario = async (scenario: HospitalDemoScenario) => {
+    if (actionBusy.current) return;
+    actionBusy.current = true;
+    requestVersion.current += 1;
+    setPending(true);
+    setSelected(scenario);
+    setError(null);
     try {
-      const res = await actionFn();
-      if (res.accepted) {
-        setActionFeedback({ msg: successMsg, isError: false });
-      } else {
-        setActionFeedback({ msg: `Action rejected: ${res.event_type || 'Constraints violated'}`, isError: true });
-      }
-    } catch (err: any) {
-      setActionFeedback({ msg: `Failed: ${err.message}`, isError: true });
+      const next = await postHospitalDemo(scenario);
+      if (mounted.current) { setSnapshot(next); setSelected(scenarioFromEvidence(next)); setStale(false); }
+    } catch {
+      if (mounted.current) { setError('That scenario could not be applied. The displayed readings may be out of date.'); setStale(true); }
     } finally {
-      setActionPending(false);
-      setTimeout(() => setActionFeedback(null), 3000);
+      actionBusy.current = false;
+      if (mounted.current) setPending(false);
     }
   };
 
-  const doRfidScan = (uid: string) => handleAction(() => processRfidScan(uid), `RFID Scan processed for ${uid}`);
-  const doClassroomLoad = (cid: string, active: boolean) => handleAction(() => changeClassroomLoad(cid, active), `Classroom ${cid} load set to ${active}`);
-  const doCapacity = (watts: number) => handleAction(() => changeCapacity(watts), `Capacity set to ${watts}W`);
-  const doFeeder = (feeder: string, available: boolean) => handleAction(() => changeFeeder(feeder, available), `Feeder ${feeder} available: ${available}`);
-
-  if (!snapshot) {
-    return (
-      <div className="dashboard-container loading">
-        <Activity className="spin" size={48} />
-        <h2>Connecting to Live Feed...</h2>
-        {error && <p className="text-err">{error}</p>}
-      </div>
-    );
-  }
-
-  const { services, zones, source, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
-  
-  const servedWatts = services.filter(s => s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
-  const servedCount = services.filter(s => s.modeled_served).length;
-
-  const getService = (id: string) => services.find(s => s.id === id);
-  const l0 = getService('L0');
-  const l1 = getService('L1');
-  const l2 = getService('L2');
-
-  const checkBit = (mask: number | null, bit: number) => {
-    if (mask === null) return null;
-    return Boolean((mask >> bit) & 1);
-  };
+  const transformers = snapshot?.transformers ?? [];
+  const faults = transformers.filter((transformer) => !['NORMAL', 'UNKNOWN'].includes(transformer.diagnosis.code)).length;
+  const unknown = transformers.filter((transformer) => transformer.diagnosis.code === 'UNKNOWN').length;
 
   return (
-    <div className="dashboard-container">
-      {/* HEADER */}
-      <header className="dash-header">
-        <div className="dash-brand">
-          <Activity className="brand-icon" />
-          <div>
-            <span className="brand-name">PriorityGrid</span>
-            <span className="brand-badge">Live Console</span>
-          </div>
-        </div>
-        
-        <div className="dash-status-indicators">
-          <div className={`status-pill ${healthOk ? 'ok' : 'error'}`}>
-            <Server size={14} /> Backend {healthOk ? 'Live' : 'Disconnected'}
-          </div>
-          <div className="status-pill warn">
-            <Wifi size={14} /> HW: {snapshot.hardware_link.replace('_', ' ')}
-          </div>
-        </div>
-
-        <div className="dash-actions">
-          <Link to="/" className="btn-secondary">Back to Home</Link>
-        </div>
+    <main className="hospital-demo">
+      <header className="hospital-header">
+        <Link to="/" className="hospital-back"><ArrowLeft size={17} aria-hidden="true" /> Home</Link>
+        <div className="hospital-brand"><span className="hospital-brand-mark"><Activity size={19} aria-hidden="true" /></span><span>PriorityGrid <small>Virtual hospital diagnostics</small></span></div>
+        <div className="hospital-header-actions"><nav className="hospital-route-links" aria-label="Demo navigation"><Link to="/classrooms">Classroom demo</Link><Link to="/demo">Live dashboard</Link></nav><span className="hospital-mode"><span /> SIMULATED</span></div>
       </header>
 
-      {error && (
-        <div className="dash-alert error">
-          <AlertTriangle size={16} /> {error}
-        </div>
-      )}
+      <div className="hospital-content">
+        <section className="hospital-title-row">
+          <div><p className="hospital-eyebrow">Electrical monitoring · three virtual transformers</p><h1>Hospital power overview</h1><p className="hospital-subtitle">Follow sensor readings from the upstream supply through each transformer to its hospital zone.</p></div>
+          <div className="hospital-summary" aria-live="polite"><div className="hospital-summary-icon"><Zap size={18} aria-hidden="true" /></div><div><strong>{unknown ? `${unknown} diagnosis${unknown > 1 ? 'es' : ''} unknown` : faults ? `${faults} transformer alert${faults > 1 ? 's' : ''}` : 'Readings within demo limits'}</strong><span>{snapshot?.summary ?? 'Loading synthetic sensor readings…'}</span></div></div>
+        </section>
 
-      {/* OVERVIEW STRIP */}
-      <section className="overview-strip">
-        <div className="metric-box">
-          <div className="metric-label">Live Capacity</div>
-          <div className="metric-value">{source.capacity_w} <small>W</small></div>
-        </div>
-        <div className="metric-box">
-          <div className="metric-label">Modeled Services</div>
-          <div className="metric-value">{servedCount} <small>/ {services.length}</small></div>
-        </div>
-        <div className="metric-box">
-          <div className="metric-label">Modeled Demand</div>
-          <div className="metric-value">{servedWatts} <small>W</small></div>
-        </div>
-        <div className="metric-box">
-          <div className="metric-label">Control Revision</div>
-          <div className="metric-value">{control_revision}</div>
-        </div>
-      </section>
+        {error && <div className="hospital-error" role="alert"><AlertTriangle size={18} aria-hidden="true" />{error}<button type="button" onClick={() => void refresh()}><RefreshCw size={15} aria-hidden="true" /> Retry</button></div>}
+        {snapshot && stale && <div className="hospital-stale" role="status"><CircleHelp size={16} aria-hidden="true" /> Showing the last sensor snapshot. Flow animation is paused until updates resume.</div>}
 
-      {/* VISUALIZATIONS ROW */}
-      <section className="visualizations-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        <div className="vis-panel" style={{ flex: '1 1 300px', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Source vs Demand</h3>
-          <SourceCapacityDemandChart data={history} />
-        </div>
-        <div className="vis-panel" style={{ flex: '1 1 300px', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Allocation History</h3>
-          <AllocationHistoryChart data={history} />
-        </div>
-        <div className="vis-panel" style={{ flex: '1 1 300px' }}>
-          <IncidentTimeline events={snapshot.events} />
-        </div>
-      </section>
-
-      {/* TOPOLOGY & ZONES ROW */}
-      
-      
-
-      <div className="zones-layout">
-        <div className="main-zones">
-          
-          {/* NETWORK TOPOLOGY */}
-          <section className="zone-section" style={{display:"none"}}>
-            <div className="zone-header">
-              <h2>Network Topology</h2>
-              <p>Real-time physical modeled connections.</p>
-            </div>
-            <TopologyGraph snapshot={snapshot} />
-          </section>
-
-          {/* HOSPITAL ZONE */}
-          <section className="zone-section">
-            <div className="zone-header">
-              <h2>Hospital Zone</h2>
-              <p>Three rooms with shared essential lighting and priority-aware support services.</p>
-            </div>
-            
-            <div className="hospital-rooms-grid">
-              {zones?.hospital.rooms.map(room => {
-                const cmdOn = checkBit(indicator_command_mask, room.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask, room.led_bit);
-                return (
-                  <div key={room.id} className="room-card">
-                    <h3>{room.name}</h3>
-                    <div className="room-tag">Follows L0</div>
-                    <div className="led-states">
-                      <div className="led-row">
-                        <span>Cmd:</span>
-                        <span className={`led-badge ${cmdOn ? 'on' : 'off'}`}>{cmdOn ? 'ON' : 'OFF'}</span>
-                      </div>
-                      <div className="led-row">
-                        <span>HW:</span>
-                        <span className="led-badge unknown">{confOn === null ? 'Unknown' : (confOn ? 'ON' : 'OFF')}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="hospital-services">
-              {[l0, l1, l2].map(svc => svc && (
-                <div key={svc.id} className={`service-row ${svc.modeled_served ? 'served' : 'shed'}`}>
-                  <div className="svc-info">
-                    <strong>{svc.id} - {svc.name}</strong>
-                    <span className="svc-meta">{svc.tier} | {svc.watts}W | Feeder {svc.feeder}</span>
-                  </div>
-                  <div className="svc-status">
-                    {svc.modeled_served ? <span className="text-ok">Served</span> : <span className="text-err">Shed</span>}
-                  </div>
-                  <div className="svc-reason">{svc.model_reason}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* CLASSROOM ZONE */}
-          <section className="zone-section" style={{display:"none"}}>
-            <div className="zone-header">
-              <h2>RFID Classroom Zone</h2>
-              <p>Select a classroom, activate a simulated load event, and observe the backend's allocation decision and indicator state.</p>
-            </div>
-            
-            <div className="classrooms-grid">
-              {zones?.classroom.classrooms.map(cr => {
-                const isSelected = zones.classroom.active_classroom_id === cr.id;
-                const svc = getService(cr.service_id);
-                const cmdOn = checkBit(indicator_command_mask, cr.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask, cr.led_bit);
-
-                return (
-                  <div key={cr.id} className={`cr-card ${isSelected ? 'selected' : ''}`}>
-                    <div className="cr-header">
-                      <h3>{cr.name}</h3>
-                      {isSelected && <span className="cr-active-badge">Active Selection</span>}
-                    </div>
-                    
-                    <div className="cr-props">
-                      <span>Service {cr.service_id}</span>
-                      <span>Priority {svc?.tier}</span>
-                      <span>{svc?.watts} W</span>
-                    </div>
-
-                    <div className="cr-states">
-                      <div className="state-line">
-                        <span className="label">Simulated Load:</span>
-                        <span className={`value ${cr.load_event_active ? 'text-ok' : 'text-off'}`}>
-                          {cr.load_event_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <div className="state-line">
-                        <span className="label">Modeled Service:</span>
-                        <span className={`value ${svc?.modeled_served ? 'text-ok' : 'text-err'}`}>
-                          {svc?.modeled_served ? 'Served' : 'Shed'}
-                        </span>
-                      </div>
-                      <div className="state-line">
-                        <span className="label">Indicator Cmd:</span>
-                        <span className={`led-badge ${cmdOn ? 'on' : 'off'}`}>{cmdOn ? 'ON' : 'OFF'}</span>
-                      </div>
-                      <div className="state-line">
-                        <span className="label">Hardware Conf:</span>
-                        <span className="led-badge unknown">{confOn === null ? 'Unknown' : (confOn ? 'ON' : 'OFF')}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-          
-        </div>
-
-        {/* DEMO CONTROLS SIDEBAR */}
-        <aside className="demo-controls-sidebar">
-          <div className="controls-panel">
-            <h2>Demo Controls</h2>
-            
-            {actionFeedback && (
-              <div className={`feedback-toast ${actionFeedback.isError ? 'error' : 'success'}`}>
-                {actionFeedback.msg}
-              </div>
-            )}
-
-            <div className="control-group">
-              <h3>RFID Selection</h3>
-              <p className="control-desc">Simulate a physical card scan.</p>
-              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_1_UID')}>Scan Classroom 1</button>
-              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_2_UID')}>Scan Classroom 2</button>
-              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_3_UID')}>Scan Classroom 3</button>
-              <button className="btn-outline err" disabled={actionPending} onClick={() => doRfidScan('UNKNOWN_CARD_UID')}>Scan Unknown Card</button>
-            </div>
-
-            <div className="control-group">
-              <h3>Classroom Load Control</h3>
-              <p className="control-desc">Simulate electrical demand for the selected classroom.</p>
-              {zones?.classroom.active_classroom_id ? (
-                <div className="flex-buttons">
-                  <button className="btn-outline" disabled={actionPending} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, true)}>Activate Load</button>
-                  <button className="btn-outline" disabled={actionPending} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, false)}>Deactivate Load</button>
-                </div>
-              ) : (
-                <div className="text-err text-small">Select a classroom first.</div>
-              )}
-            </div>
-
-            <div className="control-group">
-              <h3>Power Scenarios</h3>
-              <p className="control-desc">Test fault detection and constrained optimization.</p>
-              <button className="btn-outline" disabled={actionPending} onClick={() => {
-                doCapacity(14000);
-                doFeeder('A', true);
-                doFeeder('B', true);
-              }}>Normal Conditions</button>
-              
-              <button className="btn-outline warn" disabled={actionPending} onClick={() => doCapacity(6000)}>Shortage (6000W)</button>
-              <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('A', false)}>Feeder A Loss</button>
-              <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('B', false)}>Feeder B Loss</button>
-            </div>
-
+        <section className="hospital-scenario-panel" aria-labelledby="scenario-heading">
+          <div className="hospital-panel-heading"><span className="hospital-heading-icon"><Thermometer size={17} aria-hidden="true" /></span><div><h2 id="scenario-heading">Choose a sensor scenario</h2><p>Each choice changes synthetic readings; the diagnosis is computed from those readings.</p></div></div>
+          <div className="hospital-scenario-grid" role="group" aria-label="Sensor scenarios">
+            {scenarios.map((scenario) => <button key={scenario.id} type="button" className={`hospital-scenario ${selected === scenario.id ? 'selected' : ''}`} aria-pressed={selected === scenario.id} disabled={pending} onClick={() => void selectScenario(scenario.id)}><strong>{scenario.label}</strong><span>{scenario.detail}</span></button>)}
           </div>
-        </aside>
+          {pending && <p className="hospital-pending" role="status">Applying virtual sensor readings…</p>}
+        </section>
+
+        {!snapshot ? <section className="hospital-loading" aria-live="polite"><CircleHelp size={22} aria-hidden="true" />Loading transformer evidence…</section> : <>
+          <section className="hospital-graph-panel" aria-labelledby="network-heading">
+            <div className="hospital-panel-heading"><span className="hospital-heading-icon"><Zap size={17} aria-hidden="true" /></span><div><h2 id="network-heading">Supply path and transformer evidence</h2><p>Animated lines show voltage readings and energized outputs. A fault diagnosis does not trip a circuit in this demo.</p></div></div>
+            <HospitalTopologyGraph transformers={transformers} stale={stale} />
+            <div className="hospital-legend" aria-label="Path legend"><span><i className="energized" /> Energized path</span><span><i className="deenergized" /> Output not energized</span><span><i className="unknown" /> Reading unavailable</span></div>
+          </section>
+
+          <div className="hospital-detail-grid">{transformers.map((transformer) => <article className={`hospital-transformer-detail severity-${transformer.diagnosis.severity}`} key={transformer.id}>
+            <div className="hospital-transformer-heading"><div><p>{transformer.zone}</p><h2>{transformer.name}</h2></div><span className={`hospital-diagnosis-badge severity-${transformer.diagnosis.severity}`}>{transformer.diagnosis.code.replace(/_/g, ' ')}</span></div>
+            <TransformerReadings transformer={transformer} />
+            <div className="hospital-diagnosis-copy"><strong>{transformer.diagnosis.cause}</strong><ul>{transformer.diagnosis.evidence.map((item) => <li key={item}>{item}</li>)}</ul><p>{transformer.diagnosis.recommendation}</p></div>
+          </article>)}</div>
+
+          <CauseSummary transformers={transformers} />
+          <aside className="hospital-threshold-note"><CheckCircle2 size={18} aria-hidden="true" /><div><strong>Demonstration thresholds only</strong><p>Overload: above 110% of rating. High temperature: 80 °C or more. Possible upstream loss: input below 180 V and output below 100 V. These heuristics are not certified protection settings.</p></div></aside>
+        </>}
       </div>
-    </div>
+    </main>
   );
 }

@@ -5,7 +5,10 @@ import {
   CapacityChangeResponse, 
   ClassroomLoadResponse, 
   FeederChangeResponse,
-  ModelStatus
+  ModelStatus,
+  ClassroomDemoSnapshot,
+  HospitalDemoSnapshot,
+  HospitalDemoScenario
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -90,5 +93,25 @@ export async function changeFeeder(feeder: string, available: boolean): Promise<
   return fetchJson<FeederChangeResponse>('/api/v1/simulation/feeder', {
     method: 'POST',
     body: JSON.stringify({ feeder, available })
+  });
+}
+
+export async function getClassroomDemo(signal?: AbortSignal): Promise<ClassroomDemoSnapshot> {
+  return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', { signal });
+}
+
+export async function postClassroomDemo(action: 'scan' | 'normal' | 'overload' | 'reset', classroom_id?: 'CR1' | 'CR2' | 'CR3'): Promise<ClassroomDemoSnapshot> {
+  return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', {
+    method: 'POST', body: JSON.stringify({ action, ...(classroom_id ? { classroom_id } : {}) })
+  });
+}
+
+export async function getHospitalDemo(signal?: AbortSignal): Promise<HospitalDemoSnapshot> {
+  return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', { signal });
+}
+
+export async function postHospitalDemo(scenario: HospitalDemoScenario): Promise<HospitalDemoSnapshot> {
+  return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', {
+    method: 'POST', body: JSON.stringify({ scenario })
   });
 }

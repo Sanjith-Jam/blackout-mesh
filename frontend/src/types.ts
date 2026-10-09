@@ -161,3 +161,62 @@ export interface FeederChangeResponse {
   available: boolean;
   control_revision: number;
 }
+
+export interface ClassroomDemoLoad {
+  id: string;
+  name: string;
+  watts: number;
+  essential: boolean;
+  served: boolean;
+  reason: string;
+}
+
+export interface ClassroomDemoRoom {
+  id: "CR1" | "CR2" | "CR3";
+  name: string;
+  rfid_active: boolean;
+  loads: ClassroomDemoLoad[];
+}
+
+export interface ClassroomDemoSnapshot {
+  capacity_w: number;
+  requested_w: number;
+  served_w: number;
+  shortfall_w: number;
+  selected_classroom_id: "CR1" | "CR2" | "CR3" | null;
+  rooms: ClassroomDemoRoom[];
+  mode: "SIMULATED";
+  policy: string;
+}
+
+export type HospitalDemoScenario = "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
+
+export interface HospitalDemoDiagnosis {
+  code: string;
+  cause: string;
+  severity: string;
+  evidence: string[];
+  recommendation: string;
+}
+
+export interface HospitalDemoTransformer {
+  id: string;
+  name: string;
+  zone: string;
+  rated_current_a: number;
+  sensors: {
+    current_a: number | null;
+    temperature_c: number | null;
+    input_voltage_v: number | null;
+    output_voltage_v: number | null;
+    cooling_ok: boolean | null;
+  };
+  diagnosis: HospitalDemoDiagnosis;
+  energized: boolean;
+}
+
+export interface HospitalDemoSnapshot {
+  mode: "SIMULATED";
+  transformers: HospitalDemoTransformer[];
+  summary: string;
+}

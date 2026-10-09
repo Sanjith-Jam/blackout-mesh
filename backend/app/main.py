@@ -6,7 +6,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Literal
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.snapshot import (
     SystemSnapshot,
@@ -24,6 +25,16 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.activity.model import FEATURES
+from app.visualizers import ClassroomDemo, hospital_snapshot
+
+class ClassroomDemoAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["scan", "normal", "overload", "reset"]
+    classroom_id: Literal["CR1", "CR2", "CR3"] | None = None
+
+class HospitalDemoAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"]
 
 class ConnectionManager:
     def __init__(self):
@@ -60,6 +71,8 @@ def load_replay():
 replay_data = load_replay()
 grid = GridState()
 grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
+classroom_demo = ClassroomDemo()
+hospital_scenario = "normal"
 
 async def broadcast_state():
     while True:
@@ -139,6 +152,26 @@ async def get_snapshot():
 @app.get("/api/v1/model/status")
 async def model_status():
     return grid.model.status()
+
+@app.get("/api/v1/visualizers/classrooms")
+async def get_classroom_demo():
+    return classroom_demo.snapshot()
+
+@app.post("/api/v1/visualizers/classrooms")
+async def act_classroom_demo(req: ClassroomDemoAction):
+    if (req.action == "scan") != (req.classroom_id is not None):
+        raise HTTPException(422, "classroom_id is required only for scan")
+    return classroom_demo.act(req.action, req.classroom_id)
+
+@app.get("/api/v1/visualizers/hospital")
+async def get_hospital_demo():
+    return hospital_snapshot(hospital_scenario)
+
+@app.post("/api/v1/visualizers/hospital")
+async def act_hospital_demo(req: HospitalDemoAction):
+    global hospital_scenario
+    hospital_scenario = req.scenario
+    return hospital_snapshot(hospital_scenario)
 
 @app.post("/api/v1/activity/observations")
 async def post_activity_observation(req: ActivityObservationRequest):
