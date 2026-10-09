@@ -1,9 +1,12 @@
 import asyncio
+import json
+import math
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timezone
-from typing import Dict, List
+from typing import List
 
 from app.schemas.snapshot import (
     SystemSnapshot,
@@ -15,9 +18,12 @@ from app.schemas.snapshot import (
     ClassroomLoadRequest,
     ClassroomLoadResponse,
     FeederChangeRequest,
-    FeederChangeResponse
+    FeederChangeResponse,
+    ActivityObservationRequest,
+    ReplayActionRequest,
 )
 from app.core.state import GridState
+from app.activity.model import FEATURES
 
 class ConnectionManager:
     def __init__(self):
@@ -39,6 +45,21 @@ class ConnectionManager:
                 self.disconnect(connection)
 
 manager = ConnectionManager()
+replay_task = None
+replay_generation = 0
+
+REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
+
+def load_replay():
+    try:
+        data = json.loads(REPLAY_PATH.read_text())
+        return {cid: rows for cid, rows in data.items() if cid in ("CR1", "CR2", "CR3") and isinstance(rows, list)}
+    except (OSError, ValueError):
+        return {}
+
+replay_data = load_replay()
+grid = GridState()
+grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
 
 async def broadcast_state():
     while True:
@@ -50,11 +71,38 @@ async def broadcast_state():
                 print(f"Broadcast error: {e}")
         await asyncio.sleep(0.25)
 
+async def run_replay(generation):
+    while grid.replay_running and generation == replay_generation:
+        max_len = max((len(rows) for rows in replay_data.values()), default=0)
+        if not max_len:
+            grid.replay_running = False
+            return
+        index = grid.replay_index % max_len
+        for cid in ("CR1", "CR2", "CR3"):
+            rows = replay_data.get(cid, [])
+            if not rows:
+                continue
+            row = rows[index % len(rows)]
+            features = {key: row.get(key) for key in FEATURES}
+            observed_at = datetime.now(timezone.utc)
+            rev = grid.record_activity(cid, features, observed_at, "RECORDED_REPLAY", row.get("observed_at"))
+            try:
+                pred = await asyncio.to_thread(grid.model.predict, features)
+            except Exception as exc:
+                pred = {"state": "UNKNOWN", "score": None, "reason": f"inference failed: {type(exc).__name__}", "model_version": "unavailable"}
+            if generation != replay_generation or not grid.replay_running:
+                return
+            grid.apply_prediction(cid, rev, pred)
+        grid.replay_index = (index + 1) % max_len
+        await asyncio.sleep(1)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = asyncio.create_task(broadcast_state())
     yield
     task.cancel()
+    if replay_task:
+        replay_task.cancel()
 
 app = FastAPI(
     title="PriorityGrid API",
@@ -77,8 +125,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-grid = GridState()
-
 @app.get("/api/v1/health")
 async def health_check():
     return {
@@ -89,6 +135,74 @@ async def health_check():
 @app.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot():
     return grid.build_snapshot()
+
+@app.get("/api/v1/model/status")
+async def model_status():
+    return grid.model.status()
+
+@app.post("/api/v1/activity/observations")
+async def post_activity_observation(req: ActivityObservationRequest):
+    if req.classroom_id not in ("CR1", "CR2", "CR3"):
+        raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
+    if req.source not in ("RECORDED_REPLAY", "SIMULATED"):
+        raise HTTPException(422, "source must be RECORDED_REPLAY or SIMULATED")
+    try:
+        observed_at = datetime.fromisoformat(req.observed_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(422, "observed_at must be an ISO timestamp")
+    if observed_at.tzinfo is None:
+        raise HTTPException(422, "observed_at must include a UTC offset")
+    now = datetime.now(timezone.utc)
+    observed_at = observed_at.astimezone(timezone.utc)
+    if observed_at < now - timedelta(minutes=10) or observed_at > now + timedelta(seconds=30):
+        raise HTTPException(422, "observed_at must be within the last 10 minutes and no more than 30 seconds ahead")
+    bounds = {"temperature_c": (-10, 60), "humidity_pct": (0, 100), "co2_ppm": (250, 10000), "humidity_ratio": (0, 0.05)}
+    features = {key: getattr(req, key) for key in FEATURES}
+    for key, value in features.items():
+        if value is not None and (isinstance(value, bool) or not math.isfinite(value) or not bounds[key][0] <= value <= bounds[key][1]):
+            raise HTTPException(422, f"{key} is outside its accepted range")
+    revision = grid.record_activity(req.classroom_id, features, observed_at, req.source)
+    try:
+        prediction = await asyncio.to_thread(grid.model.predict, features)
+    except Exception as exc:
+        prediction = {"state": "UNKNOWN", "score": None, "reason": f"inference failed: {type(exc).__name__}", "model_version": "unavailable"}
+    applied = grid.apply_prediction(req.classroom_id, revision, prediction)
+    return {"accepted": True, "applied": applied, "revision": revision,
+            "activity": grid.activity[req.classroom_id]}
+
+@app.post("/api/v1/replay")
+async def replay_action(req: ReplayActionRequest):
+    global replay_task, replay_generation
+    if req.action not in ("start", "pause", "reset"):
+        raise HTTPException(422, "action must be start, pause, or reset")
+    max_len = max((len(rows) for rows in replay_data.values()), default=0)
+    if req.action == "start" and not max_len:
+        raise HTTPException(409, "recorded replay data is unavailable")
+    if req.action == "reset":
+        replay_generation += 1
+        if replay_task and not replay_task.done():
+            replay_task.cancel()
+        grid.replay_index = 0
+        grid.replay_running = False
+        for cid in ("CR1", "CR2", "CR3"):
+            grid.set_classroom_load(cid, True)
+            grid.activity_tokens[cid] += 1
+            grid.activity_received_monotonic[cid] = None
+            grid.activity[cid] = {"state": "UNKNOWN", "score": None, "reason": "replay reset; awaiting evidence",
+                                  "source": None, "observed_at": None, "recorded_at": None,
+                                  "model_version": "unavailable", "priority": "UNKNOWN",
+                                  "evidence": {key: None for key in FEATURES}}
+    elif req.action == "pause":
+        replay_generation += 1
+        grid.replay_running = False
+    elif not grid.replay_running:
+        for cid in ("CR1", "CR2", "CR3"):
+            grid.set_classroom_load(cid, True)
+        grid.replay_running = True
+        replay_generation += 1
+        replay_task = asyncio.create_task(run_replay(replay_generation))
+    grid.replay_length = max_len
+    return {"running": grid.replay_running, "index": grid.replay_index, "length": max_len}
 
 @app.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
 async def process_rfid_scan(req: RfidScanRequest):
@@ -112,6 +226,8 @@ async def change_capacity(req: CapacityChangeRequest):
 
 @app.post("/api/v1/simulation/classroom-load", response_model=ClassroomLoadResponse)
 async def change_classroom_load(req: ClassroomLoadRequest):
+    if req.classroom_id not in ("CR1", "CR2", "CR3"):
+        raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
     grid.set_classroom_load(req.classroom_id, req.active)
     return ClassroomLoadResponse(
         accepted=True,
@@ -121,6 +237,8 @@ async def change_classroom_load(req: ClassroomLoadRequest):
 
 @app.post("/api/v1/simulation/feeder", response_model=FeederChangeResponse)
 async def change_feeder(req: FeederChangeRequest):
+    if req.feeder not in ("A", "B"):
+        raise HTTPException(422, "feeder must be A or B")
     grid.set_feeder(req.feeder, req.available)
     return FeederChangeResponse(
         accepted=True,

@@ -9,6 +9,9 @@ from app.schemas.snapshot import (
     ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType,
     SystemEvent, FaultDiagnosis
 )
+from app.core.allocator import allocate, fixed_priority_mask
+from app.core.restoration import RestorationGate
+from app.activity.model import ActivityModel, FEATURES
 
 SERVICE_CATALOG = [
     {"id": "L0", "name": "Hospital Essential Circuit", "tier": "T1", "feeder": "A", "watts": 2000, "zone": "hospital"},
@@ -39,7 +42,6 @@ DEFAULT_RFID_MAP = {
 }
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
-TIER_PRIORITY = {"T1": 0, "T2": 1, "T3": 2}
 
 class GridState:
     _instance = None
@@ -67,9 +69,28 @@ class GridState:
         self.classroom_load_events = {"CR1": False, "CR2": False, "CR3": False}
         self.rfid_map = DEFAULT_RFID_MAP.copy()
         self.indicator_confirmed_mask = None
+        self.model = ActivityModel()
+        self.activity = {c["id"]: {"state": "UNKNOWN", "score": None, "reason": "no sensor observation",
+                                    "source": None, "observed_at": None, "recorded_at": None,
+                                    "model_version": "unavailable", "priority": "UNKNOWN",
+                                    "evidence": {key: None for key in FEATURES}}
+                         for c in CLASSROOMS}
+        self.software_mode = False
+        self.replay_running = False
+        self.replay_index = 0
+        self.replay_length = 0
+        self.activity_tokens = {c["id"]: 0 for c in CLASSROOMS}
+        self.activity_received_monotonic = {c["id"]: None for c in CLASSROOMS}
+        self.last_allocation_mask = 0
+        self.last_allocation_key = None
+        self.proposed_mask = 0
+        self.restoration_gate = RestorationGate(time.monotonic)
         self.events = []
         self.fault_diagnosis = None
         self.compute_fault_diagnosis()
+        self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
+                                                  tuple(sorted(self.feeder_available.items())),), range(6))
+        self.last_allocation_mask = 0b111111
         self._initialized = True
 
     def add_event(self, event_type: str, desc: str):
@@ -162,32 +183,66 @@ class GridState:
                 status = "active" if active else "inactive"
                 self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
 
+    def record_activity(self, classroom_id, features, observed_at, source, recorded_at=None):
+        """Store evidence and apply only the inference matching its current revision."""
+        with self._lock:
+            self.software_mode = True
+            self.control_revision += 1
+            self.activity_tokens[classroom_id] += 1
+            current_revision = self.activity_tokens[classroom_id]
+            self.activity[classroom_id] = {"state": "UNKNOWN", "score": None, "reason": "inference pending",
+                                           "source": source, "observed_at": observed_at,
+                                           "recorded_at": recorded_at, "model_version": "unavailable",
+                                           "priority": "UNKNOWN", "evidence": dict(features)}
+            age = max(0.0, (datetime.now(timezone.utc) - observed_at).total_seconds())
+            self.activity_received_monotonic[classroom_id] = time.monotonic() - age
+        return current_revision
+
+    def apply_prediction(self, classroom_id, revision, prediction):
+        with self._lock:
+            if revision != self.activity_tokens[classroom_id]:
+                return False
+            pred = prediction or {"state": "UNKNOWN", "score": None, "reason": "inference failed", "model_version": "unavailable"}
+            state = pred.get("state") if pred.get("state") in ("ACTIVE", "INACTIVE", "UNKNOWN") else "UNKNOWN"
+            priority = {"ACTIVE": "HIGH", "UNKNOWN": "MEDIUM", "INACTIVE": "LOW"}[state]
+            self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason", "inference failed"),
+                                                model_version=pred.get("model_version", "unavailable"), priority=priority)
+            self.control_revision += 1
+            return True
+
+    def current_activity(self):
+        activity = {cid: dict(value) for cid, value in self.activity.items()}
+        now = time.monotonic()
+        for cid, received in self.activity_received_monotonic.items():
+            if received is not None and now - received > 600:
+                activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN")
+        return activity
+
     def compute_allocation(self) -> int:
         with self._lock:
-            sorted_services = sorted(SERVICE_CATALOG, key=lambda s: (TIER_PRIORITY[s["tier"]], s["watts"]))
-            modeled_mask = 0
-            used_source = 0
-            used_feeder = {"A": 0, "B": 0}
-            
-            for svc in sorted_services:
-                f = svc["feeder"]
-                w = svc["watts"]
-                
-                # Check constraints
-                if not self.feeder_available.get(f, False):
-                    continue
-                if used_source + w > self.source_capacity_w:
-                    continue
-                if used_feeder[f] + w > self.feeder_limits_w.get(f, 0):
-                    continue
-                    
-                # Allocate
-                used_source += w
-                used_feeder[f] += w
-                bit = int(svc["id"][1:])
-                modeled_mask |= (1 << bit)
-                
-            return modeled_mask
+            freshness = tuple(received is not None and time.monotonic() - received > 600
+                              for received in self.activity_received_monotonic.values())
+            cache_key = (self.control_revision, freshness)
+            if cache_key != self.last_allocation_key:
+                requested = 0b111111
+                if self.software_mode:
+                    requested = 0b111
+                    for c in CLASSROOMS:
+                        if self.classroom_load_events[c["id"]]:
+                            requested |= 1 << int(c["service_id"][1:])
+                self.proposed_mask = allocate(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
+                                              self.feeder_available, requested, self.current_activity(),
+                                              self.last_allocation_mask)
+                self.last_allocation_key = cache_key
+            order = sorted(range(len(SERVICE_CATALOG)), key=lambda bit: (
+                0 if bit == 0 else 1 if bit == 1 else
+                2 if SERVICE_CATALOG[bit]["zone"] == "classroom" and self.current_activity()[CLASSROOMS[bit - 3]["id"]]["state"] == "ACTIVE" else
+                3 if SERVICE_CATALOG[bit]["zone"] == "classroom" and self.current_activity()[CLASSROOMS[bit - 3]["id"]]["state"] == "UNKNOWN" else
+                4 if bit == 2 else 5, bit))
+            signature = (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
+                         tuple(sorted(self.feeder_available.items())))
+            self.last_allocation_mask = self.restoration_gate.update(self.proposed_mask, signature, order)
+            return self.last_allocation_mask
 
     def compute_indicator_command_mask(self, modeled_mask: int) -> int:
         with self._lock:
@@ -221,21 +276,35 @@ class GridState:
         with self._lock:
             modeled_mask = self.compute_allocation()
             indicator_command = self.compute_indicator_command_mask(modeled_mask)
-            requested_mask = 0b111111 # Assuming all connected services are implicitly requesting
+            requested_mask = 0b111111
+            if self.software_mode:
+                requested_mask = 0b111
+                for c in CLASSROOMS:
+                    if self.classroom_load_events[c["id"]]:
+                        requested_mask |= 1 << int(c["service_id"][1:])
             
             services_out = []
             for svc in SERVICE_CATALOG:
                 bit = int(svc["id"][1:])
                 served = bool((modeled_mask >> bit) & 1)
                 
-                reason = "Served (Priority/Capacity Match)" if served else "Capacity or Feeder Limit Exceeded"
+                if served:
+                    reason = "Served by allocation policy"
+                elif self.proposed_mask & (1 << bit):
+                    reason = "Waiting for simulated restoration delay"
+                elif not requested_mask & (1 << bit):
+                    reason = "No active load request"
+                elif not self.feeder_available.get(svc["feeder"], False):
+                    reason = f"Feeder {svc['feeder']} unavailable"
+                else:
+                    reason = "Excluded by priority or capacity limits"
                 services_out.append(ServiceSnapshot(
                     id=svc["id"],
                     name=svc["name"],
                     tier=Tier(svc["tier"]),
                     feeder=svc["feeder"],
                     watts=svc["watts"],
-                    requested=True,
+                    requested=bool(requested_mask & (1 << bit)),
                     modeled_served=served,
                     indicator_confirmed=None,
                     model_reason=reason
@@ -270,6 +339,8 @@ class GridState:
                 )
             )
 
+            activity = self.current_activity()
+
             return SystemSnapshot(
                 control_revision=self.control_revision,
                 generated_at=datetime.now(timezone.utc),
@@ -277,6 +348,7 @@ class GridState:
                 feeder_limits_w=self.feeder_limits_w.copy(),
                 requested_mask=requested_mask,
                 modeled_mask=modeled_mask,
+                proposed_mask=self.proposed_mask,
                 indicator_mask=None,
                 indicator_command_mask=indicator_command,
                 indicator_confirmed_mask=self.indicator_confirmed_mask,
@@ -284,5 +356,14 @@ class GridState:
                 hardware_link=HardwareLinkStatus.NOT_CONNECTED,
                 services=services_out,
                 events=self.events.copy(),
-                fault_diagnosis=self.fault_diagnosis
+                fault_diagnosis=self.fault_diagnosis,
+                activity=activity,
+                model=self.model.status(),
+                replay={"running": self.replay_running, "index": self.replay_index, "length": self.replay_length},
+                allocation={"objective": "critical, ACTIVE, UNKNOWN, water pump, minimize idle/switching",
+                            "critical_shortfall_w": max(0, sum(s["watts"] for s in SERVICE_CATALOG[:2]) -
+                                                         sum(SERVICE_CATALOG[i]["watts"] for i in range(2) if modeled_mask & (1 << i))),
+                            "served_w": sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i)),
+                            "baseline_mask": fixed_priority_mask(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
+                                                                 self.feeder_available, requested_mask)}
             )

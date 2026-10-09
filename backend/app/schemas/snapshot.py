@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
 from typing import List, Optional, Dict
 from datetime import datetime
@@ -86,6 +86,7 @@ class SystemSnapshot(BaseModel):
     feeder_limits_w: Dict[str, int]
     requested_mask: int
     modeled_mask: int
+    proposed_mask: int = 0
     indicator_command_mask: Optional[int] = None
     indicator_confirmed_mask: Optional[int] = None
     indicator_mask: Optional[int] = None
@@ -94,6 +95,50 @@ class SystemSnapshot(BaseModel):
     zones: Optional[FacilityZones] = None
     events: List[SystemEvent] = []
     fault_diagnosis: Optional[FaultDiagnosis] = None
+    activity: Dict[str, "ActivitySnapshot"] = Field(default_factory=dict)
+    model: Dict[str, object] = Field(default_factory=dict)
+    replay: "ReplaySnapshot"
+    allocation: "AllocationSnapshot"
+
+
+class ActivityObservationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    classroom_id: StrictStr
+    temperature_c: Optional[StrictFloat | StrictInt] = None
+    humidity_pct: Optional[StrictFloat | StrictInt] = None
+    co2_ppm: Optional[StrictFloat | StrictInt] = None
+    humidity_ratio: Optional[StrictFloat | StrictInt] = None
+    observed_at: StrictStr
+    source: StrictStr
+
+
+class ActivitySnapshot(BaseModel):
+    state: str
+    score: Optional[float] = None
+    reason: str
+    source: Optional[str] = None
+    observed_at: Optional[datetime] = None
+    model_version: str
+    priority: str
+    evidence: Optional[Dict[str, Optional[float]]] = None
+
+
+class ReplaySnapshot(BaseModel):
+    running: bool
+    index: int
+    length: int
+
+
+class AllocationSnapshot(BaseModel):
+    objective: str
+    critical_shortfall_w: int
+    served_w: int
+    baseline_mask: int
+
+
+class ReplayActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    action: StrictStr
 
 class RfidScanRequest(BaseModel):
     uid: str
@@ -107,7 +152,7 @@ class RfidScanResponse(BaseModel):
     event_type: RfidEventType
 
 class CapacityChangeRequest(BaseModel):
-    capacity_w: int = Field(gt=0, le=20000)
+    capacity_w: StrictInt = Field(ge=0, le=20000)
 
 class CapacityChangeResponse(BaseModel):
     accepted: bool
@@ -115,8 +160,8 @@ class CapacityChangeResponse(BaseModel):
     control_revision: int
 
 class ClassroomLoadRequest(BaseModel):
-    classroom_id: str
-    active: bool
+    classroom_id: StrictStr
+    active: StrictBool
 
 class ClassroomLoadResponse(BaseModel):
     accepted: bool
@@ -124,8 +169,8 @@ class ClassroomLoadResponse(BaseModel):
     load_event_active: bool
 
 class FeederChangeRequest(BaseModel):
-    feeder: str
-    available: bool
+    feeder: StrictStr
+    available: StrictBool
 
 class FeederChangeResponse(BaseModel):
     accepted: bool

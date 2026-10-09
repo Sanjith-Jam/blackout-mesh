@@ -4,10 +4,19 @@ import {
   RfidScanResponse, 
   CapacityChangeResponse, 
   ClassroomLoadResponse, 
-  FeederChangeResponse 
+  FeederChangeResponse,
+  ModelStatus
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+export function getWebSocketUrl(path = '/ws/live'): string {
+  const url = new URL(API_BASE_URL);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.pathname = path;
+  url.search = '';
+  return url.toString();
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -46,6 +55,14 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
 
 export async function fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
   return fetchJson<Snapshot>('/api/v1/snapshot', { signal });
+}
+
+export async function fetchModelStatus(signal?: AbortSignal): Promise<ModelStatus> {
+  return fetchJson<ModelStatus>('/api/v1/model/status', { signal });
+}
+
+export async function setReplayAction(action: 'start' | 'pause' | 'reset'): Promise<void> {
+  await fetchJson('/api/v1/replay', { method: 'POST', body: JSON.stringify({ action }) });
 }
 
 export async function processRfidScan(uid: string): Promise<RfidScanResponse> {

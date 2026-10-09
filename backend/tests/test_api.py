@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.state import GridState
+from app.core.restoration import RestorationGate
 import time
 
 client = TestClient(app)
@@ -21,6 +22,16 @@ def reset_state():
         grid.last_rfid_uid = None
         grid.classroom_load_events = {"CR1": False, "CR2": False, "CR3": False}
         grid.indicator_confirmed_mask = None
+        grid.software_mode = False
+        grid.replay_running = False
+        grid.replay_index = 0
+        grid.activity_tokens = {"CR1": 0, "CR2": 0, "CR3": 0}
+        grid.activity_received_monotonic = {"CR1": None, "CR2": None, "CR3": None}
+        grid.last_allocation_mask = 0
+        grid.last_allocation_key = None
+        grid.proposed_mask = 0
+        grid.restoration_gate = RestorationGate(time.monotonic)
+        grid.restoration_gate.update(0b111111, (14000, (("A", 6000), ("B", 8000)), (("A", True), ("B", True))), range(6))
     yield
 
 def test_health_endpoint():

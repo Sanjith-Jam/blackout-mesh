@@ -58,13 +58,69 @@ export interface SystemEvent {
   description: string;
 }
 
+export type ActivityState = "ACTIVE" | "INACTIVE" | "UNKNOWN";
+
+export interface ActivityPrediction {
+  evidence?: {
+    temperature_c: number | null;
+    humidity_pct: number | null;
+    co2_ppm: number | null;
+    humidity_ratio: number | null;
+  };
+  state: ActivityState;
+  score: number | null;
+  reason: string;
+  source: string | null;
+  observed_at: string | null;
+  model_version: string;
+  priority: string;
+}
+
+export interface ModelStatus {
+  ready: boolean;
+  model_version: string;
+  model_type: string;
+  features: string[];
+  data_source: string;
+  evaluation: Record<string, unknown>;
+  fallback_reason: string | null;
+}
+
+export interface ReplayStatus {
+  running: boolean;
+  index: number;
+  length: number;
+}
+
+export interface AllocationStatus {
+  objective: string;
+  critical_shortfall_w: number;
+  served_w: number;
+  baseline_mask: number;
+}
+
+export interface ActivityObservation {
+  classroom_id: "CR1" | "CR2" | "CR3";
+  temperature_c: number | null;
+  humidity_pct: number | null;
+  co2_ppm: number | null;
+  humidity_ratio: number | null;
+  observed_at: string;
+  source: "RECORDED_REPLAY" | "SIMULATED";
+}
+
 export interface Snapshot {
+  activity: Record<string, ActivityPrediction>;
+  model: ModelStatus;
+  replay: ReplayStatus;
+  allocation: AllocationStatus;
   control_revision: number;
   generated_at: string;
   source: SourceInfo;
   feeder_limits_w: FeederLimits;
   requested_mask: number;
   modeled_mask: number;
+  proposed_mask: number;
   indicator_command_mask: number | null;
   indicator_confirmed_mask: number | null;
   indicator_mask: number | null;
