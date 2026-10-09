@@ -130,7 +130,7 @@ def test_activity_prediction_updates_allocation_policy(monkeypatch):
         grid.source_capacity_w = 5000
         grid.feeder_available = {"A": True, "B": True}
         grid.feeder_limits_w = {"A": 6000, "B": 8000}
-        grid.classroom_load_events = {"CR1": True, "CR2": True, "CR3": True}
+        grid.active_sessions = {"CR1": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}, "CR2": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}, "CR3": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}}
         grid.software_mode = True
         grid.model = StubModel("ACTIVE")
     now = datetime.now(timezone.utc).isoformat()

@@ -29,7 +29,7 @@ from app.visualizers import ClassroomDemo, hospital_snapshot
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["scan", "normal", "overload", "reset"]
+    action: Literal["scan", "unscan", "normal", "overload", "reset"]
     classroom_id: Literal["CR1", "CR2", "CR3"] | None = None
 
 class HospitalDemoAction(BaseModel):
@@ -159,8 +159,8 @@ async def get_classroom_demo():
 
 @app.post("/api/v1/visualizers/classrooms")
 async def act_classroom_demo(req: ClassroomDemoAction):
-    if (req.action == "scan") != (req.classroom_id is not None):
-        raise HTTPException(422, "classroom_id is required only for scan")
+    if (req.action in ("scan", "unscan")) != (req.classroom_id is not None):
+        raise HTTPException(422, "classroom_id is required only for scan or unscan")
     return classroom_demo.act(req.action, req.classroom_id)
 
 @app.get("/api/v1/visualizers/hospital")

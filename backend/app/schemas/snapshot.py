@@ -40,6 +40,7 @@ class RfidEventType(str, Enum):
     CARD_RECOGNIZED = "CARD_RECOGNIZED"
     UNKNOWN_CARD = "UNKNOWN_CARD"
     DUPLICATE_SUPPRESSED = "DUPLICATE_SUPPRESSED"
+    SESSION_ENDED = "SESSION_ENDED"
 
 class HospitalRoom(BaseModel):
     id: str

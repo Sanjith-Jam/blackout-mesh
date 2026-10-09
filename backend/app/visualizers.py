@@ -46,19 +46,22 @@ LOAD_KEYS = tuple((room, item[0]) for room in ROOMS for item in LOADS[room])
 class ClassroomDemo:
     def __init__(self, clock=time.monotonic):
         self.capacity = 8000
-        self.selected: str | None = None
-        self.rfid: str | None = None
+        self.active_rooms = set()
         self.gate = RestorationGate(clock)
         initial = (1 << len(LOAD_KEYS)) - 1
-        self.gate.update(initial, (self.capacity, self.selected), range(len(LOAD_KEYS)))
+        self.gate.update(initial, (self.capacity, tuple(sorted(self.active_rooms))), range(len(LOAD_KEYS)))
 
     def _priority(self):
-        selected = self.selected
-        # Essential loads in every room come first; the scanned room leads ties.
-        order = ([selected] if selected else []) + [r for r in ROOMS if r != selected]
+        # Essential loads in every room come first; scanned rooms lead ties.
+        active = sorted(list(self.active_rooms))
+        inactive = [r for r in ROOMS if r not in active]
+        order = active + inactive
+        
         result = [(r, item) for r in order for item in LOADS[r] if item[3]]
-        result += [(r, item) for r in order for item in LOADS[r] if not item[3] and r == selected]
-        result += [(r, item) for r in ROOMS for item in LOADS[r] if not item[3] and r != selected]
+        for a in active:
+            result += [(a, item) for item in LOADS[a] if not item[3]]
+        for i in inactive:
+            result += [(i, item) for item in LOADS[i] if not item[3]]
         return result
 
     def snapshot(self):
@@ -71,7 +74,7 @@ class ClassroomDemo:
                 target.add(key)
                 remaining -= item[2]
         proposed = sum(1 << LOAD_KEYS.index(key) for key in target)
-        applied = self.gate.update(proposed, (self.capacity, self.selected), range(len(LOAD_KEYS)))
+        applied = self.gate.update(proposed, (self.capacity, tuple(sorted(self.active_rooms))), range(len(LOAD_KEYS)))
         current = {key for bit, key in enumerate(LOAD_KEYS) if applied & (1 << bit)}
         rooms = []
         for cid in ROOMS:
@@ -85,7 +88,7 @@ class ClassroomDemo:
                           "Shed by classroom demo policy")
                 loads.append({"id": lid, "name": name, "watts": watts, "essential": essential,
                               "served": on, "reason": reason})
-            rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": self.rfid == cid, "loads": loads})
+            rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": cid in self.active_rooms, "loads": loads})
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
 
@@ -101,12 +104,14 @@ class ClassroomDemo:
             }
         }
         return {"contract": contract, "capacity_w": self.capacity, "requested_w": requested, "served_w": served_w,
-                "shortfall_w": requested-served_w, "selected_classroom_id": self.selected,
+                "shortfall_w": requested-served_w, "selected_classroom_id": next(iter(self.active_rooms)) if self.active_rooms else None,
                 "rooms": rooms, "mode": "SIMULATED", "policy": "Classroom-only: essential lighting and computers first, selected room next, then deterministic optional loads."}
 
     def act(self, action: str, classroom_id: str | None):
-        if action == "scan":
-            self.selected = self.rfid = classroom_id
+        if action == "scan" and classroom_id:
+            self.active_rooms.add(classroom_id)
+        elif action == "unscan" and classroom_id:
+            self.active_rooms.discard(classroom_id)
         elif action == "normal":
             self.capacity = 8000
         elif action == "overload":

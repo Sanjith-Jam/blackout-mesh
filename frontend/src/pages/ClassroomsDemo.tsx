@@ -47,7 +47,7 @@ export default function ClassroomsDemo() {
     };
   }, [refresh]);
 
-  const runAction = async (action: 'scan' | 'normal' | 'overload' | 'reset', classroomId?: ClassroomDemoRoom['id']) => {
+  const runAction = async (action: 'scan' | 'unscan' | 'normal' | 'overload' | 'reset', classroomId?: ClassroomDemoRoom['id']) => {
     if (actionInFlight.current) return;
     actionInFlight.current = true;
     requestVersion.current += 1;
@@ -58,7 +58,7 @@ export default function ClassroomsDemo() {
       const next = await postClassroomDemo(action, classroomId);
       if (mounted.current) {
         setSnapshot(next);
-        setFeedback(action === 'scan' ? `Scanned ${classroomId}.` : `${action === 'normal' ? 'Normal 8,000 W' : action === 'overload' ? 'Overload 3,400 W' : 'Classroom demo reset'} applied.`);
+        setFeedback(action === 'scan' ? `Scanned ${classroomId}.` : action === 'unscan' ? `Unscanned ${classroomId}.` : `${action === 'normal' ? 'Normal 8,000 W' : action === 'overload' ? 'Overload 3,400 W' : 'Classroom demo reset'} applied.`);
       }
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : 'The classroom action failed.');
@@ -99,7 +99,10 @@ export default function ClassroomsDemo() {
         <h2 id="classroom-controls-title">Demo controls</h2>
         <p>Scans and power presets update the simulated classroom allocator.</p>
         <div className="classroom-demo__button-stack" aria-label="Scan a classroom RFID card">
-          {(['CR1', 'CR2', 'CR3'] as const).map(id => <button key={id} className={`classroom-demo__button ${snapshot.selected_classroom_id === id ? 'classroom-demo__button--primary' : ''}`} aria-pressed={snapshot.selected_classroom_id === id} disabled={pending} onClick={() => void runAction('scan', id)}>Scan {id}{snapshot.rooms.find(room => room.id === id)?.rfid_active ? ' · scanned' : ''}</button>)}
+          {(['CR1', 'CR2', 'CR3'] as const).map(id => {
+            const isActive = snapshot.rooms.find(room => room.id === id)?.rfid_active;
+            return <button key={id} className={`classroom-demo__button ${isActive ? 'classroom-demo__button--primary' : ''}`} aria-pressed={isActive} disabled={pending} onClick={() => void runAction(isActive ? 'unscan' : 'scan', id)}>{isActive ? `Unscan ${id}` : `Scan ${id}`}{isActive ? ' · active' : ''}</button>
+          })}
         </div>
         <div className="classroom-demo__control-divider" />
         <div className="classroom-demo__button-stack">

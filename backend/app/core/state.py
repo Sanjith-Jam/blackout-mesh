@@ -60,6 +60,7 @@ DEFAULT_RFID_MAP = rfid_enrollment.tag_to_room
 SITE_CONFIG_HASH = get_config_hash(site_profile)
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
+SESSION_EXPIRY_SECONDS = 7200
 
 class GridState:
     _instance = None
@@ -80,11 +81,7 @@ class GridState:
         self.feeder_limits_w = {"A": 6000, "B": 8000}
         self.feeder_available = {"A": True, "B": True}
         self.control_revision = 0
-        self.active_classroom_id = None
-        self.recent_rfid_scan = None
-        self.last_rfid_scan_time = None
-        self.last_rfid_uid = None
-        self.classroom_load_events = {"CR1": False, "CR2": False, "CR3": False}
+        self.active_sessions = {}
         self.rfid_map = DEFAULT_RFID_MAP.copy()
         self.indicator_confirmed_mask = None
         self.model = ActivityModel()
@@ -150,29 +147,29 @@ class GridState:
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:
             now = time.time()
-            if self.last_rfid_uid == uid and self.last_rfid_scan_time is not None:
-                if now - self.last_rfid_scan_time < RFID_SCAN_COOLDOWN_SECONDS:
-                    self.last_rfid_scan_time = now
-                    return RfidEventType.DUPLICATE_SUPPRESSED.value, None, None, None
             
-            self.last_rfid_uid = uid
-            self.last_rfid_scan_time = now
-            self.recent_rfid_scan = uid
-
             classroom_id = self.rfid_map.get(uid)
             if not classroom_id:
-                self.active_classroom_id = None
                 self.control_revision += 1
                 self.add_event("RFID_SCAN", f"Unknown RFID card scanned: {uid}")
                 return RfidEventType.UNKNOWN_CARD.value, None, None, None
-
-            self.active_classroom_id = classroom_id
-            self.control_revision += 1
             
-            classroom = next((c for c in CLASSROOMS if c["id"] == classroom_id), None)
-            if classroom:
-                self.add_event("RFID_SCAN", f"RFID scan recognized for {classroom['name']}")
-                return RfidEventType.CARD_RECOGNIZED.value, classroom_id, classroom["name"], classroom["service_id"]
+            if classroom_id in self.active_sessions:
+                session = self.active_sessions[classroom_id]
+                if now - session["last_scan"] < RFID_SCAN_COOLDOWN_SECONDS:
+                    session["last_scan"] = now
+                    return RfidEventType.DUPLICATE_SUPPRESSED.value, None, None, None
+                else:
+                    del self.active_sessions[classroom_id]
+                    self.control_revision += 1
+                    self.add_event("SESSION_END", f"Session ended for {classroom_id} via RFID")
+                    return "SESSION_ENDED", classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
+            else:
+                self.active_sessions[classroom_id] = {"source": "RFID", "started_at": now, "last_scan": now}
+                self.control_revision += 1
+                self.add_event("SESSION_START", f"Session started for {classroom_id} via RFID")
+                return RfidEventType.CARD_RECOGNIZED.value, classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
+
             
             self.add_event("RFID_SCAN", f"RFID scan recognized for unknown classroom ID: {classroom_id}")
             return RfidEventType.CARD_RECOGNIZED.value, classroom_id, None, None
@@ -195,11 +192,15 @@ class GridState:
 
     def set_classroom_load(self, classroom_id: str, active: bool):
         with self._lock:
-            if classroom_id in self.classroom_load_events:
-                self.classroom_load_events[classroom_id] = active
-                self.control_revision += 1
-                status = "active" if active else "inactive"
-                self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
+            now = time.time()
+            if active:
+                self.active_sessions[classroom_id] = {"source": "UI", "started_at": now, "last_scan": now}
+            else:
+                if classroom_id in self.active_sessions:
+                    del self.active_sessions[classroom_id]
+            self.control_revision += 1
+            status = "active" if active else "inactive"
+            self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
 
     def record_activity(self, classroom_id, features, observed_at, source, recorded_at=None):
         """Store evidence and apply only the inference matching its current revision."""
@@ -236,8 +237,27 @@ class GridState:
                 activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN")
         return activity
 
+
+    def expire_sessions(self):
+        now = time.time()
+        expired = [cid for cid, session in self.active_sessions.items() if now - session["last_scan"] > SESSION_EXPIRY_SECONDS]
+        for cid in expired:
+            del self.active_sessions[cid]
+            self.control_revision += 1
+            self.add_event("SESSION_EXPIRED", f"Session expired for {cid}")
+
+
     def compute_allocation(self) -> int:
+        """
+        Compute allocation based on priority and capacity constraints.
+        - Essential loads (bits 0, 1, 2) are requested independent of a session by default.
+        - Uncertainty protects essentials: even without clear occupancy evidence, they are never silently cut.
+        - Session evidence (RFID/UI) explicitly adds optional equipment demand (bits 3, 4, 5).
+        - Occupancy prediction (from sensors) can further rank active/unknown ties, but does NOT override the safety of essentials.
+        """
         with self._lock:
+            self.expire_sessions()
+
             freshness = tuple(received is not None and time.monotonic() - received > 600
                               for received in self.activity_received_monotonic.values())
             cache_key = (self.control_revision, freshness)
@@ -246,7 +266,7 @@ class GridState:
                 if self.software_mode:
                     requested = 0b111
                     for c in CLASSROOMS:
-                        if self.classroom_load_events[c["id"]]:
+                        if c["id"] in self.active_sessions:
                             requested |= 1 << int(c["service_id"][1:])
                 self.proposed_mask = allocate(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
                                               self.feeder_available, requested, self.current_activity(),
@@ -272,20 +292,19 @@ class GridState:
                     mask |= (1 << room["led_bit"])
                     
             # Classroom logic
-            if self.active_classroom_id:
-                classroom = next((c for c in CLASSROOMS if c["id"] == self.active_classroom_id), None)
+            for cid, session in self.active_sessions.items():
+                classroom = next((c for c in CLASSROOMS if c["id"] == cid), None)
                 if classroom:
                     cr_svc = classroom["service_id"]
                     svc_bit = int(cr_svc[1:])
                     svc_served = bool((modeled_mask >> svc_bit) & 1)
-                    load_active = self.classroom_load_events.get(self.active_classroom_id, False)
                     
                     cr_svc_obj = next((s for s in SERVICE_CATALOG if s["id"] == cr_svc), None)
                     feeder_avail = False
                     if cr_svc_obj:
                         feeder_avail = self.feeder_available.get(cr_svc_obj["feeder"], False)
                     
-                    if svc_served and load_active and feeder_avail:
+                    if svc_served and feeder_avail:
                         mask |= (1 << classroom["led_bit"])
                         
             return mask
@@ -298,7 +317,7 @@ class GridState:
             if self.software_mode:
                 requested_mask = 0b111
                 for c in CLASSROOMS:
-                    if self.classroom_load_events[c["id"]]:
+                    if c["id"] in self.active_sessions:
                         requested_mask |= 1 << int(c["service_id"][1:])
             
             services_out = []
@@ -343,15 +362,15 @@ class GridState:
                     service_id=c["service_id"],
                     rfid_card_registered=is_registered,
                     led_bit=c["led_bit"],
-                    load_event_active=self.classroom_load_events.get(cid, False)
+                    load_event_active=(cid in self.active_sessions)
                 )
                 classroom_infos.append(cinfo)
             
             zones = FacilityZones(
                 hospital=HospitalZone(rooms=hospital_rooms),
                 classroom=ClassroomZone(
-                    active_classroom_id=self.active_classroom_id,
-                    recent_rfid_scan=self.recent_rfid_scan,
+                    active_classroom_id=next(iter(self.active_sessions.keys()), None) if self.active_sessions else None,
+                    recent_rfid_scan=None,
                     rfid_reader_status=RfidReaderStatus.NOT_CONNECTED,
                     classrooms=classroom_infos
                 )
