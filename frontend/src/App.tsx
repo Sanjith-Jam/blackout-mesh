@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import DemoDashboard from './pages/DemoDashboard';
-import HospitalPage from './pages/HospitalPage';
-import ClassroomsPage from './pages/ClassroomsPage';
+import HospitalPage from './pages/HospitalDemo';
+import ClassroomsPage from './pages/ClassroomsDemo';
 import './App.css';
 
 function App() {

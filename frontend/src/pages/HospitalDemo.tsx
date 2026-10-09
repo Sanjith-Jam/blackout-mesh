@@ -17,9 +17,8 @@ interface TimeSeriesPoint {
   shedCount: number;
 }
 
-export default function DemoDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+export default function HospitalDemo() {
+    const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [healthOk, setHealthOk] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<boolean>(false);
@@ -199,26 +198,22 @@ export default function DemoDashboard() {
 
       {/* TOPOLOGY & ZONES ROW */}
       
-      <div className="demo-tabs" style={{ display: 'flex', gap: '1rem', padding: '0 0', borderBottom: '1px solid #e2e8f0', background: 'transparent', marginBottom: '1.5rem' }}>
-        <button className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'overview' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Overview</button>
-        <button className={`tab-btn ${activeTab === 'hospital' ? 'active' : ''}`} onClick={() => setActiveTab('hospital')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'hospital' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Hospital Zone</button>
-        <button className={`tab-btn ${activeTab === 'classrooms' ? 'active' : ''}`} onClick={() => setActiveTab('classrooms')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'classrooms' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Classroom Zone</button>
-      </div>
+      
 
       <div className="zones-layout">
         <div className="main-zones">
           
           {/* NETWORK TOPOLOGY */}
-          {activeTab === "overview" && <section className="zone-section">
+          <section className="zone-section" style={{display:"none"}}>
             <div className="zone-header">
               <h2>Network Topology</h2>
               <p>Real-time physical modeled connections.</p>
             </div>
             <TopologyGraph snapshot={snapshot} />
-          </section>}
+          </section>
 
           {/* HOSPITAL ZONE */}
-          {activeTab === "hospital" && <section className="zone-section">
+          <section className="zone-section">
             <div className="zone-header">
               <h2>Hospital Zone</h2>
               <p>Three rooms with shared essential lighting and priority-aware support services.</p>
@@ -261,10 +256,10 @@ export default function DemoDashboard() {
                 </div>
               ))}
             </div>
-          </section>}
+          </section>
 
           {/* CLASSROOM ZONE */}
-          {activeTab === "classrooms" && <section className="zone-section">
+          <section className="zone-section" style={{display:"none"}}>
             <div className="zone-header">
               <h2>RFID Classroom Zone</h2>
               <p>Select a classroom, activate a simulated load event, and observe the backend's allocation decision and indicator state.</p>
@@ -316,7 +311,7 @@ export default function DemoDashboard() {
                 );
               })}
             </div>
-          </section>}
+          </section>
           
         </div>
 
