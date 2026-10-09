@@ -41,6 +41,7 @@ Application checks (from repo root):
 
 - `PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with pytest --with httpx python -m pytest backend/tests -q`
 - `cd frontend && npm ci --no-audit --no-fund && npm run build`
+- `PYTHONPATH=backend python -m benchmarks.run_allocation` — allocation benchmark; writes `backend/benchmarks/results/allocation_report.{json,md}`, exits non-zero on any constraint violation.
 
 A and B currently use incompatible v2 codecs and serial envelopes. Do not claim a functioning bridge until a coordinated contract change passes both suites and physical acceptance.
 
