@@ -122,6 +122,8 @@ class ActivitySnapshot(BaseModel):
     model_version: str
     priority: str
     evidence: Optional[Dict[str, Optional[float]]] = None
+    raw_state: Optional[str] = None
+    guard: Optional[str] = None
 
 
 class ReplaySnapshot(BaseModel):
@@ -130,11 +132,21 @@ class ReplaySnapshot(BaseModel):
     length: int
 
 
+class SafetySnapshot(BaseModel):
+    policy_version: str
+    status: str
+    protected_requested_w: int
+    protected_served_w: int
+    protected_shortfall_w: int
+    fallback_order: List[str]
+
+
 class AllocationSnapshot(BaseModel):
     objective: str
     critical_shortfall_w: int
     served_w: int
     baseline_mask: int
+    safety: Optional[SafetySnapshot] = None
 
 
 class ReplayActionRequest(BaseModel):
