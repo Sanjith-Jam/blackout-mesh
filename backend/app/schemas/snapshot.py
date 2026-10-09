@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
-from datetime import datetime
 from enum import Enum
+from typing import List, Optional, Dict
+from datetime import datetime
 
 class HardwareLinkStatus(str, Enum):
     NOT_CONNECTED = "NOT_CONNECTED"
@@ -10,7 +10,6 @@ class HardwareLinkStatus(str, Enum):
 
 class SourceKind(str, Enum):
     SIMULATED = "SIMULATED"
-    PHYSICAL = "PHYSICAL"
 
 class Tier(str, Enum):
     T1 = "T1"
@@ -45,7 +44,7 @@ class RfidEventType(str, Enum):
 class HospitalRoom(BaseModel):
     id: str
     name: str
-    lighting_service: str  # always "L0"
+    lighting_service: str
     led_bit: int
 
 class ClassroomInfo(BaseModel):
@@ -69,19 +68,32 @@ class FacilityZones(BaseModel):
     hospital: HospitalZone
     classroom: ClassroomZone
 
+class SystemEvent(BaseModel):
+    timestamp: str
+    type: str
+    description: str
+
+class FaultDiagnosis(BaseModel):
+    has_fault: bool
+    diagnosis: str
+    severity: str
+    status: str
+
 class SystemSnapshot(BaseModel):
     control_revision: int
     generated_at: datetime
     source: SourceInfo
-    feeder_limits_w: dict[str, int]
+    feeder_limits_w: Dict[str, int]
     requested_mask: int
     modeled_mask: int
-    indicator_mask: Optional[int] = None
     indicator_command_mask: Optional[int] = None
     indicator_confirmed_mask: Optional[int] = None
-    zones: Optional[FacilityZones] = None
+    indicator_mask: Optional[int] = None
     hardware_link: HardwareLinkStatus
     services: List[ServiceSnapshot]
+    zones: Optional[FacilityZones] = None
+    events: List[SystemEvent] = []
+    fault_diagnosis: Optional[FaultDiagnosis] = None
 
 class RfidScanRequest(BaseModel):
     uid: str
