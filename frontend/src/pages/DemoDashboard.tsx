@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSnapshot } from '../useServerState';
+import { useAppStore } from '../store';
 import { Link } from 'react-router-dom';
 import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
 import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
-import { Snapshot, WebSocketEnvelope } from '../types';
+
 import TopologyGraph from '../components/TopologyGraph';
 import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
 import AllocationHistoryChart from '../components/AllocationHistoryChart';
@@ -18,87 +20,41 @@ interface TimeSeriesPoint {
 }
 
 export default function DemoDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [healthOk, setHealthOk] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data: snapshot } = useSnapshot();
+  const isConnected = useAppStore(s => s.isConnected);
+  const isStale = useAppStore(s => s.isStale);
+  const activeTab = useAppStore(s => s.activeTab);
+  const setActiveTab = useAppStore(s => s.setActiveTab);
+
   const [actionPending, setActionPending] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<{msg: string, isError: boolean} | null>(null);
 
-  // Time series data for charts
   const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
   const MAX_HISTORY = 50;
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const runIdRef = useRef<string | null>(null);
+  
+  const lastRunId = useRef<string | null>(null);
 
   useEffect(() => {
-    const connectWs = () => {
-      const ws = new WebSocket('ws://127.0.0.1:8000/ws/live');
-      wsRef.current = ws;
+    if (!snapshot) return;
+    const runId = snapshot.contract?.identity?.run_id;
+    if (lastRunId.current !== null && lastRunId.current !== runId) {
+      setHistory([]);
+    }
+    lastRunId.current = runId;
 
-      ws.onopen = () => {
-        setHealthOk(true);
-        setError(null);
-      };
+    const now = new Date(snapshot.generated_at).toLocaleTimeString();
+    const demand = snapshot.services.filter((s: any) => s.requested).reduce((sum: number, s: any) => sum + s.watts, 0);
+    const servedCount = snapshot.services.filter((s: any) => s.modeled_served).length;
+    const shedCount = snapshot.services.filter((s: any) => !s.modeled_served && s.requested).length;
 
-
-
-      ws.onmessage = (event) => {
-        try {
-          const envelope: WebSocketEnvelope = JSON.parse(event.data);
-          
-          if (!envelope || typeof envelope !== 'object' || envelope.type !== 'snapshot' || !envelope.payload) {
-             console.error("Invalid WebSocket envelope received:", envelope);
-             return;
-          }
-          
-          const data = envelope.payload;
-          
-          if (runIdRef.current !== null && runIdRef.current !== data.contract?.identity?.run_id) {
-             // Run ID changed, reset history
-             setHistory([]);
-          }
-          runIdRef.current = data.contract?.identity?.run_id;
-
-          setSnapshot(data);
-          setHealthOk(true);
-
-          // Update history
-          const now = new Date(data.generated_at).toLocaleTimeString();
-
-
-          const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
-          const servedCount = data.services.filter(s => s.modeled_served).length;
-          const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
-
-          setHistory(prev => {
-            const next = [...prev, { time: now, capacity: data.source.capacity_w, demand, servedCount, shedCount }];
-            if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
-            return next;
-          });
-
-        } catch (e) {
-          console.error("Failed to parse websocket message", e);
-        }
-      };
-
-      ws.onerror = (e) => {
-        console.error("Websocket error", e);
-      };
-
-      ws.onclose = () => {
-        setHealthOk(false);
-        setError("WebSocket disconnected. Reconnecting...");
-        setTimeout(connectWs, 3000);
-      };
-    };
-
-    connectWs();
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-    };
-  }, []);
+    setHistory(prev => {
+      // prevent exact duplicates if control_revision hasn't changed (though the time might)
+      // actually we just append
+      const next = [...prev, { time: now, capacity: snapshot.source.capacity_w, demand, servedCount, shedCount }];
+      if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
+      return next;
+    });
+  }, [snapshot?.control_revision]); // only append when revision changes
 
   const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
     if (actionPending) return;
@@ -129,7 +85,7 @@ export default function DemoDashboard() {
       <div className="dashboard-container loading">
         <Activity className="spin" size={48} />
         <h2>Connecting to Live Feed...</h2>
-        {error && <p className="text-err">{error}</p>}
+        {isStale && <p className="text-err">Reconnecting...</p>}
       </div>
     );
   }
@@ -162,8 +118,8 @@ export default function DemoDashboard() {
         </div>
         
         <div className="dash-status-indicators">
-          <div className={`status-pill ${healthOk ? 'ok' : 'error'}`}>
-            <Server size={14} /> Backend {healthOk ? 'Live' : 'Disconnected'}
+          <div className={`status-pill ${isConnected && !isStale ? 'ok' : 'error'}`}>
+            <Server size={14} /> Backend {isConnected && !isStale ? 'Live' : 'Stale/Disconnected'}
           </div>
           <div className="status-pill warn">
             <Wifi size={14} /> HW: {snapshot.hardware_link.replace('_', ' ')}
@@ -175,9 +131,9 @@ export default function DemoDashboard() {
         </div>
       </header>
 
-      {error && (
+      {isStale && (
         <div className="dash-alert error">
-          <AlertTriangle size={16} /> {error}
+          <AlertTriangle size={16} /> Reconnecting to backend...
         </div>
       )}
 
