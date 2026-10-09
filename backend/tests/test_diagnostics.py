@@ -87,3 +87,99 @@ def test_rule_evaluators_independent():
     assert hypo_br is not None
     assert hypo_br.code == "BRANCH_INTERRUPTED"
 
+from app.diagnostics.engine import diagnose_transformer
+
+def test_simultaneous_faults_overload_and_cooling():
+    res = diagnose_transformer(
+        rated_current_a=100.0,
+        current_a=130.0,
+        temperature_c=91.0,
+        input_voltage_v=230.0,
+        output_voltage_v=218.0,
+        cooling_ok=False,
+        asset_id="TX2",
+    )
+    assert res.status == "FAULT_DETECTED"
+    codes = [h.code for h in res.hypotheses]
+    assert "OVERLOAD" in codes
+    assert "COOLING_FAILURE" in codes
+    assert len(res.hypotheses) >= 2
+    # Check shared cause annotation
+    assert any("compounds" in " ".join(h.supporting_evidence).lower() or "thermal" in " ".join(h.supporting_evidence).lower() for h in res.hypotheses)
+
+def test_contradictory_evidence_abstention():
+    # Powerless current: 0V input/output but 120A current
+    res = diagnose_transformer(
+        rated_current_a=100.0,
+        current_a=120.0,
+        temperature_c=50.0,
+        input_voltage_v=0.0,
+        output_voltage_v=0.0,
+        cooling_ok=True,
+        asset_id="TX1",
+    )
+    assert res.status == "ABSTAINED"
+    assert res.abstention is not None
+    assert res.abstention.reason == AbstentionReason.CONTRADICTORY_EVIDENCE
+    assert "calibration" in res.abstention.next_check_needed.lower()
+
+def test_scoped_missing_telemetry():
+    # Current is missing, but cooling is failed and hot
+    res = diagnose_transformer(
+        rated_current_a=100.0,
+        current_a=None,
+        temperature_c=92.0,
+        input_voltage_v=230.0,
+        output_voltage_v=220.0,
+        cooling_ok=False,
+        asset_id="TX2",
+    )
+    assert res.status == "FAULT_DETECTED"
+    assert any(h.code == "COOLING_FAILURE" for h in res.hypotheses)
+
+def test_total_missing_telemetry_abstention():
+    res = diagnose_transformer(
+        rated_current_a=100.0,
+        current_a=None,
+        temperature_c=None,
+        input_voltage_v=None,
+        output_voltage_v=None,
+        cooling_ok=None,
+        asset_id="TX3",
+    )
+    assert res.status == "ABSTAINED"
+    assert res.abstention is not None
+    assert res.abstention.reason == AbstentionReason.INSUFFICIENT_TELEMETRY
+
+def test_indistinguishable_causes_abstention():
+    # Normal input voltage 230V, but 0V output and 0A current without breaker telemetry
+    res = diagnose_transformer(
+        rated_current_a=100.0,
+        current_a=0.0,
+        temperature_c=40.0,
+        input_voltage_v=230.0,
+        output_voltage_v=0.0,
+        cooling_ok=True,
+        asset_id="TX1",
+    )
+    assert res.status == "ABSTAINED"
+    assert res.abstention is not None
+    assert res.abstention.reason == AbstentionReason.INDISTINGUISHABLE_CAUSES
+    assert len(res.abstention.indistinguishable_candidates) >= 2
+
+def test_deterministic_ranking_by_severity_and_score():
+    # Upstream loss (CRITICAL) vs Thermal stress (MEDIUM)
+    res = diagnose_transformer(
+        rated_current_a=100.0,
+        current_a=0.0,
+        temperature_c=85.0,
+        input_voltage_v=90.0,
+        output_voltage_v=20.0,
+        cooling_ok=True,
+        asset_id="TX1",
+    )
+    assert res.status == "FAULT_DETECTED"
+    assert res.hypotheses[0].code == "UPSTREAM_LOSS"
+    assert res.hypotheses[0].severity == Severity.CRITICAL
+
+
