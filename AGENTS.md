@@ -3,14 +3,14 @@
 Offline campus-power decision demo: simulated electrical model, Python authority, real ESP32 radio/LED feedback.
 Spec: `PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md`; `LAB_ACTIVITY_ML_PLAN.md` preserves the user-required classifier scope. Catalog and transport conflicts are tracked in `PROGRESS_REPORT.md`; do not mix variants silently. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
 
-**Status:** frontend/backend and both hardware implementations exist. A/B transport compatibility, trained ML and end-to-end physical integration remain pending. See `PROGRESS_REPORT.md` for current evidence.
+**Status:** software classifier, recorded replay, exact allocation and command center are delivered. Hardware is paused; A/B transport compatibility and physical integration remain pending. See `PROGRESS_REPORT.md` for current evidence.
 
 ## Stack
 
 - `backend/` Python + FastAPI, single worker, the only owner of modeled state.
 - `frontend/` React + TypeScript + Vite, renders full snapshots.
 - `firmware/` Arduino C++ + ESP-NOW.
-- Allocation: current web app uses six services; older required-ML plan specifies nine. Resolve the catalog explicitly before integration; exact enumeration is the planned oracle, not a verified implementation claim.
+- Allocation: current web app uses six services; older required-ML plan specifies nine. The software demo explicitly retains the six-service 14-kW catalog and enumerates all 64 masks. The nine-service catalog is deferred; physical catalog reconciliation is still pending.
 - Pin versions only after a successful local install/compile. Never invent pins.
 
 ## Commands
@@ -39,7 +39,7 @@ Hardware B commands (run from `hardware/host/`; current USB bench only):
 
 Application checks (from repo root):
 
-- `PYTHONPATH=backend uv run --no-project --with-requirements backend/requirements.txt --with pytest --with httpx python -m pytest backend/tests -q`
+- `PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with pytest --with httpx python -m pytest backend/tests -q`
 - `cd frontend && npm ci --no-audit --no-fund && npm run build`
 
 A and B currently use incompatible v2 codecs and serial envelopes. Do not claim a functioning bridge until a coordinated contract change passes both suites and physical acceptance.
@@ -75,6 +75,8 @@ Keep commits under ~200 changed lines where possible. Split refactors from behav
 Implement the required small lab-activity classifier and evaluation plan. Do not add deep vision models, a broker, a second backend, cloud storage, real power electronics or mesh routing. Prefer stdlib and native browser features. Follow the component layout in plan §6; create modules only as needed.
 
 ## Lab activity ML
+
+Current inference uses the checked-in sklearn logistic pipeline and pinned runtime requirements. See `backend/models/MODEL_REPORT.md`; office occupancy is a proxy, scores are uncalibrated and later-day evaluation is exploratory. The replay contains validation observations mapped to virtual rooms, with no truth-label inputs.
 
 Use only causal observations; never truth labels, future samples, scenario IDs, card UID, allocator masks or post-shedding power as classifier inputs. Keep complete sessions disjoint across train/validation/test. Classifier uncertainty becomes UNKNOWN; critical tiers and hard constraints remain fixed. RFID identifies Lab A/B/C and sends observed session requests, never a direct priority assignment.
 

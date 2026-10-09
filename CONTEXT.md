@@ -4,9 +4,11 @@ Updated 2026-10-09. Remote application/Board B work and local ESP32 A work are m
 
 ## Current state
 
-Frontend production build, 10 backend API tests, 16 B simulation tests, A native assertions, Python fixtures/tools and both A firmware builds pass. The repository includes a prior B USB log reporting 15/15 checks; it was not rerun during synchronization. No new physical tests or device flashing occurred.
+Software work is active and hardware work is paused. A trained four-feature local occupancy proxy, observation/model/replay APIs, exact 64-mask allocator, restoration gate and responsive command center are now integrated. The software freezes the existing six-service 14-kW catalog; the historical nine-load catalog remains deferred. No paid keys are required.
 
-The prototype is not integrated: A/B serial/radio contracts differ; backend and bench use different state owners, catalogs and RFID semantics. No trained classifier exists. Backend ACK fields remain unconfirmed. Do not label individual passing suites as end-to-end success.
+The selected logistic pipeline beat Random Forest on validation; the tested CPU TabICL configuration was too slow for live inference. Later-day exploratory performance is much weaker than validation; do not claim real campus accuracy or untouched test results. Full measurements and data attribution are in `backend/models/MODEL_REPORT.md` and `evaluation.json`.
+
+Hardware is not integrated: A/B serial/radio contracts differ, physical ACK fields stay null and the link stays NOT_CONNECTED. No device flashing or fresh physical testing occurred during this software delivery.
 
 ## Scope and authority
 
@@ -19,6 +21,6 @@ The prototype is not integrated: A/B serial/radio contracts differ; backend and 
 
 ## Next action
 
-Agree and implement one A/B host/radio contract with shared golden fixtures. Resolve catalog and RFID behavior, then integrate the single backend authority, required classifier and actual card/LED ACK flow. Fix incompatibility before attempting an unchanged A-to-B radio demo. Commands and precise results are in PROGRESS_REPORT.md and AGENTS.md.
+Rehearse the software demo, gather independently labeled local room observations, and evaluate on new sessions before making accuracy claims. Use `/demo` for replay, shortage and feeder-fault controls; inspect the API at port 8000 `/docs`. Train only when updating evidence/model, not on every start. Detailed current checks are in PROGRESS_REPORT.md.
 
-The old unified implementation plan was removed upstream; its prior local revision is preserved in the local archive. Historical details in the A handoff describe its original scope and should be read with the new progress report.
+When hardware resumes, agree one A/B transport and physical mapping before linking the backend. Phase 0 remains complete; physical detailed plans stay local under `/home/bread/blackout-mesh-local/`.

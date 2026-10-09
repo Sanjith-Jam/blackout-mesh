@@ -4,8 +4,7 @@ A hackathon prototype for simulated power allocation, RFID classroom interaction
 
 ## Current progress
 
-Frontend, backend, ESP32 A firmware and ESP32 B bench implementation exist. Component builds/tests pass. **A/B protocols, catalogs and RFID semantics still differ; the complete hardware demo and required trained ML are pending.**
-
+Software demo now includes a trained local occupancy classifier, recorded-data replay, exact six-service allocation and a responsive command center. Hardware work is paused; ESP32 A/B contracts still conflict and physical ACKs remain unconfirmed. The model uses office observations as a proxy and does not establish campus accuracy.
 See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations and next steps.
 
 ## Documents
@@ -21,7 +20,7 @@ See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations 
 From repository root:
 
 ```sh
-uv run --no-project --with-requirements backend/requirements.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
 In another terminal:
@@ -32,7 +31,9 @@ npm ci --no-audit --no-fund
 npm run dev
 ```
 
-Routes: `/`, `/demo`, `/hospital`, `/classrooms`. Power values and RFID API inputs are simulated; the backend currently reports hardware disconnected.
+Routes: `/`, `/demo`, `/hospital`, `/classrooms`. Open `/demo`, start the recorded replay, reduce source capacity, then trip/restore a feeder. The backend reports hardware disconnected. Inactive rooms can be deliberately left unserved; a lower served-watt total is not measured energy savings. Restore waits for five seconds of stable capacity/feeders and three seconds after shedding, then adds at most one service per second.
+
+No API key, paid service, GPU or training step is needed to run the checked-in classifier. For model provenance, training commands, measured benchmark and limits, see [model report](backend/models/MODEL_REPORT.md). API documentation is at `http://127.0.0.1:8000/docs`. Keep the demo bound to localhost; deployment/authentication is outside this delivery.
 
 ## Verified checks
 
@@ -41,7 +42,7 @@ python3 tools/test_esp32_a.py
 python3 tools/test_radio_protocol.py
 python3 tools/test_host_tools.py
 pio run -d firmware -e esp32-a -e esp32-a-enroll
-PYTHONPATH=backend uv run --no-project --with-requirements backend/requirements.txt --with pytest --with httpx python -m pytest backend/tests -q
+PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with pytest --with httpx python -m pytest backend/tests -q
 ```
 
 From `hardware/host/`: `python3 -m unittest test_person_b`. From `frontend/`: `npm run build` after installing dependencies. Detailed results are in the progress report.

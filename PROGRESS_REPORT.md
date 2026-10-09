@@ -2,6 +2,25 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## Software delivery update — 2026-10-09
+
+Hardware is paused at the user's request. This update supersedes the historical software status below; historical firmware evidence is retained and has not been rerun.
+
+| Area | Delivered | Limit |
+|---|---|---|
+| Classifier | Trained StandardScaler/logistic model, manifest hash, independent date groups, RF/TabICL/rule comparison, measured CPU latency | Office occupancy proxy; later-day test exploratory and generalization weak |
+| API | Validated observations, model status, start/pause/reset replay, live snapshots | Local single-worker demo; no production authentication |
+| Allocation | All 64 masks searched for six services; critical protection, feeder/source limits, UNKNOWN handling | Explicit software policy places ACTIVE/UNKNOWN classrooms before water pump |
+| Restoration | Immediate shedding; stable capacity/feeders for 5s, 3s off dwell, at most one new ON/sec | Simulated only |
+| Website | Landing page, animated topology, sensor evidence, priority trace, model metrics, policy comparison and fault controls | Three virtual rooms reuse observations from a single office dataset |
+| Physical hardware | NOT_CONNECTED and null confirmed outputs | A/B transport and physical acceptance remain unresolved |
+
+The six-service catalog remains L0/L1 critical 2/1 kW, L2 water 3 kW, L3/L4 classrooms 2/2 kW, L5 classroom 4 kW, 14-kW source and 6/8-kW feeders. Historical nine-load and bench catalogs are separate configurations.
+
+Current software verification: **21 backend/model tests passed**, frontend production build passed (217.42-kB JS / 70.07-kB gzip), real-model HTTP/WebSocket flow, 5-kW active-room allocation, feeder trip/recovery, zero-capacity shortfall and responsive browser checks at 375/1440 pixels passed. Full evidence is documented in the local delivery report. See `backend/models/MODEL_REPORT.md` for exact ML denominators and reproducible commands. No hardware commands were run for this update.
+
+## Historical synchronization evidence
+
 ## Progress so far
 
 | Area | Delivered | Evidence and remaining limits |
@@ -35,9 +54,9 @@ Initial backend test attempts lacked system pytest, then lacked `app` on the imp
 ## Integration blockers, in order
 
 1. **A and B do not share a wire contract.** A uses JSONL host handshake/events and magic `0xa5`, kind at offset 2, sequence at 8, persisted B boot at 12, encrypted unicast and a 1500-ms stale policy. B expects `F <hex>` / `EV ...` serial lines and magic `0xa7`, node at 2, boot at 8, sequence at 12, unencrypted radio and a 3-second stale policy. A treats boot IDs as monotonic; B uses random boot IDs. Both call their protocol v2, but they cannot interoperate unchanged. Coordinate one codec, host adapter, lifecycle and provisioning policy; update firmware, fixtures, tools and docs together. See [A contract](contracts/serial_protocol.md) and [B contract](hardware/PROTOCOL.md).
-2. **The catalogs and masks are different configurations.** Web backend: six services, 14 kW source, 6/8-kW feeders, separate hospital/classroom indicator mapping. B classroom bench: 6/6/4-kW rooms, 16-kW normal / 6-kW shortage. Earlier required-ML plan: nine services, 84-kW demand, 100-kW normal. Do not combine their arithmetic or service masks. Agree one application catalog and explicit physical projection before connecting the controller. The web allocator is greedy; planned exact enumeration/CP-SAT parity is not implemented evidence.
+2. **The catalogs and masks are different configurations.** Web backend: six services, 14 kW source, 6/8-kW feeders, separate hospital/classroom indicator mapping. B classroom bench: 6/6/4-kW rooms, 16-kW normal / 6-kW shortage. Earlier required-ML plan: nine services, 84-kW demand, 100-kW normal. Do not combine their arithmetic or service masks. Agree one application catalog and explicit physical projection before connecting the controller. The software update now implements exact enumeration for the six-service catalog; physical catalog reconciliation remains pending.
 3. **RFID semantics differ.** Web app tracks one selected classroom plus a separate load event; unknown cards clear selection (covered by current API tests). Hardware bench retains multiple registered rooms and ignores unknown cards. Neither behavior should be silently substituted for the other. Align selection, registration and simulated load-event behavior with the intended judge script, then update shared tests.
-4. **Required ML is pending.** Train/evaluate the small tabular classifier with independent labels and grouped splits; expose ACTIVE/INACTIVE/UNKNOWN and provenance. Preserve fixed critical priorities and hard constraints. The remote remaining plan does not remove the user's explicit trained-ML requirement. Adapt features/catalog IDs after item 2; do not describe the prediction-file hook as a trained classifier.
+4. **Historical ML blocker (software implementation now delivered).** Train/evaluate the small tabular classifier with independent labels and grouped splits; expose ACTIVE/INACTIVE/UNKNOWN and provenance. Preserve fixed critical priorities and hard constraints. The remote remaining plan does not remove the user's explicit trained-ML requirement. Adapt features/catalog IDs after item 2; do not describe the prediction-file hook as a trained classifier.
 5. **One live authority is still missing.** The web GridState and B bench controller own separate state. Connect hardware events and confirmed ACKs to the backend rather than running competing controllers. Backend currently reports hardware NOT_CONNECTED and unconfirmed outputs honestly.
 6. **Physical acceptance remains.** Verify A flashing, reader/cards/buttons, B LED wiring, paired radio, boot/reconnect/loss recovery and current-session ACK identity. The prior B USB log verifies reported masks, not visible light output. Then perform three mounted end-to-end rehearsals.
 
