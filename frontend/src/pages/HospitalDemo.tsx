@@ -104,15 +104,17 @@ export default function HospitalDemo() {
     return () => { mounted.current = false; controller.abort(); window.clearInterval(timer); };
   }, [refresh]);
 
-  const selectScenario = async (scenario: HospitalDemoScenario) => {
+  const selectScenario = async (scenario: HospitalDemoScenario, zoneOverride?: string | null) => {
     if (actionBusy.current) return;
     actionBusy.current = true;
     requestVersion.current += 1;
     setPending(true);
     setSelected(scenario);
+    if (zoneOverride !== undefined) setScannedZone(zoneOverride);
+    const effectiveZone = zoneOverride !== undefined ? zoneOverride : scannedZone;
     setError(null);
     try {
-      const next = await postHospitalDemo(scenario);
+      const next = await postHospitalDemo(scenario, effectiveZone);
       if (mounted.current) { setSnapshot(next); setSelected(scenarioFromEvidence(next)); setStale(false); }
     } catch {
       if (mounted.current) { setError('That scenario could not be applied. The displayed readings may be out of date.'); setStale(true); }
@@ -171,7 +173,7 @@ export default function HospitalDemo() {
                 key={zone} 
                 className={`classroom-demo__button ${scannedZone === zone ? 'classroom-demo__button--primary' : ''}`} 
                 disabled={pending} 
-                onClick={() => setScannedZone(zone)}
+                onClick={() => void selectScenario(selected ?? 'normal', zone)}
               >
                 Scan {zone}{scannedZone === zone ? ' · scanned' : ''}
               </button>
@@ -196,7 +198,7 @@ export default function HospitalDemo() {
           <div className="classroom-demo__control-divider" />
           
           <div className="classroom-demo__button-stack">
-            <button className="classroom-demo__button" disabled={pending} onClick={() => { setScannedZone(null); void selectScenario('normal'); }}>Reset demo</button>
+            <button className="classroom-demo__button" disabled={pending} onClick={() => void selectScenario('normal', null)}>Reset demo</button>
           </div>
 
           <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Applying virtual sensor readings…' : ''}</p>

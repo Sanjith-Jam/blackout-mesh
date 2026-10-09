@@ -205,11 +205,17 @@ HOSPITAL_FAULT_FIXTURES = {
 }
 
 
-def hospital_snapshot(scenario="normal"):
+def hospital_snapshot(scenario="normal", zone="Theatre"):
+    target_i = 2
+    if zone == "ICU":
+        target_i = 1
+    elif zone == "Wards":
+        target_i = 3
+
     transformers = []
     for i in range(1, 4):
         fixture = ((0.0, 40.0, 90.0, 20.0, True) if scenario == "upstream_loss"
-                   else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS) if i == 2
+                   else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS) if i == target_i
                    else NORMAL_SENSORS)
         current, temp, vin, vout, cooling = fixture
         sensors = {"current_a": current, "temperature_c": temp, "input_voltage_v": vin,

@@ -37,6 +37,7 @@ class ClassroomDemoAction(BaseModel):
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"]
+    zone: Literal["ICU", "Theatre", "Wards"] | None = None
 
 class ConnectionManager:
     def __init__(self):
