@@ -253,6 +253,7 @@ async def replay_action(req: ReplayActionRequest):
             grid.set_classroom_load(cid, True)
             grid.activity_tokens[cid] += 1
             grid.activity_received_monotonic[cid] = None
+            grid.activity_guard.reset(cid)
             grid.activity[cid] = {"state": "UNKNOWN", "score": None, "reason": "replay reset; awaiting evidence",
                                   "source": None, "observed_at": None, "recorded_at": None,
                                   "model_version": "unavailable", "priority": "UNKNOWN",

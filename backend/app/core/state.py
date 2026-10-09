@@ -12,6 +12,7 @@ from app.schemas.snapshot import (
 from app.core.allocator import allocate, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
+from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, normalize_prediction, shortfall_status
 
 SERVICE_CATALOG = [
     {"id": "L0", "name": "Hospital Essential Circuit", "tier": "T1", "feeder": "A", "watts": 2000, "zone": "hospital"},
@@ -83,6 +84,7 @@ class GridState:
         self.replay_running = False
         self.replay_index = 0
         self.replay_length = 0
+        self.activity_guard = ActivityGuard()
         self.activity_tokens = {c["id"]: 0 for c in CLASSROOMS}
         self.activity_received_monotonic = {c["id"]: None for c in CLASSROOMS}
         self.last_allocation_mask = 0
@@ -207,11 +209,12 @@ class GridState:
         with self._lock:
             if revision != self.activity_tokens[classroom_id]:
                 return False
-            pred = prediction or {"state": "UNKNOWN", "score": None, "reason": "inference failed", "model_version": "unavailable"}
-            state = pred.get("state") if pred.get("state") in ("ACTIVE", "INACTIVE", "UNKNOWN") else "UNKNOWN"
+            pred = self.activity_guard.update(classroom_id, normalize_prediction(prediction), revision)
+            state = pred["state"]
             priority = {"ACTIVE": "HIGH", "UNKNOWN": "MEDIUM", "INACTIVE": "LOW"}[state]
-            self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason", "inference failed"),
-                                                model_version=pred.get("model_version", "unavailable"), priority=priority)
+            self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason") or "inference failed",
+                                                model_version=pred.get("model_version", "unavailable"), priority=priority,
+                                                raw_state=pred["raw_state"], guard=pred["guard"])
             self.control_revision += 1
             return True
 
@@ -220,7 +223,8 @@ class GridState:
         now = self.clock()
         for cid, received in self.activity_received_monotonic.items():
             if received is not None and now - received > 600:
-                activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN")
+                activity[cid].update(state="UNKNOWN", score=None, reason="sensor evidence stale", priority="UNKNOWN",
+                                     guard="conservative fallback: evidence older than 600 s")
         return activity
 
     def compute_allocation(self) -> int:
@@ -391,7 +395,12 @@ class GridState:
                                                          sum(SERVICE_CATALOG[i]["watts"] for i in range(2) if modeled_mask & (1 << i))),
                             "served_w": sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i)),
                             "baseline_mask": fixed_priority_mask(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
-                                                                 self.feeder_available, requested_mask)}
+                                                                 self.feeder_available, requested_mask),
+                            "safety": shortfall_status(
+                                sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+                                    if s["id"] in CAMPUS_PROTECTED_SERVICES and requested_mask & (1 << i)),
+                                sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+                                    if s["id"] in CAMPUS_PROTECTED_SERVICES and modeled_mask & (1 << i)))}
             )
 
 

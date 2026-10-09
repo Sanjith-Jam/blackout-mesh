@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from app.core.restoration import RestorationGate
+from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
 
 ROOMS = ("CR1", "CR2", "CR3")
 LOADS = {
@@ -54,6 +55,7 @@ class ClassroomDemo:
         self._predictions: dict[tuple[str, int], dict] = {}
         self._replay_index = 0
         self._activity: dict[str, dict] = {}
+        self.guard = ActivityGuard()
         self.published: dict | None = None
         self.published_revision = 0
         self._advance_evidence()
@@ -75,7 +77,8 @@ class ClassroomDemo:
     def _advance_evidence(self):
         """Move the replay cursor to the current time and run (cached) inference. Tick-only."""
         self._replay_index = self._clock_replay_index()
-        self._activity = {cid: self._infer(cid) for cid in ROOMS}
+        # Each replay row is one reading; the guard confirms INACTIVE before it can lower a rank.
+        self._activity = {cid: self.guard.update(cid, self._infer(cid), self._replay_index) for cid in ROOMS}
 
     def activity(self, cid):
         """Model evidence for a room as of the last tick (read-only)."""
@@ -161,24 +164,30 @@ class ClassroomDemo:
             act = self.activity(cid)
             rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": cid in self.scanned,
                           "priority_rank": order.index(cid) + 1 if cid in self.scanned else None,
-                          "activity": {key: act.get(key) for key in ("state", "score", "reason", "model_version", "evidence")},
+                          "activity": {key: act.get(key) for key in ("state", "raw_state", "guard", "score", "reason",
+                                                                       "model_version", "evidence")},
                           "loads": loads})
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
+        essential = [(r, x) for r in ROOMS for x in LOADS[r] if x[0] in ROOM_ESSENTIAL_LOADS]
+        safety = shortfall_status(sum(x[2] for _, x in essential),
+                                  sum(x[2] for r, x in essential if (r, x[0]) in current))
         status = self.model.status() if hasattr(self.model, "status") else {}
         return {"capacity_w": self.capacity, "capacity_range_w": list(CAPACITY_RANGE_W),
                 "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
                 "selected_classroom_id": self.scanned[-1] if self.scanned else None,
                 "scanned_classroom_ids": [r for r in ROOMS if r in self.scanned],
                 "priority_order": [r for r in order if r in self.scanned],
-                "rooms": rooms, "mode": "SIMULATED",
+                "rooms": rooms, "mode": "SIMULATED", "safety": safety,
                 "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"),
                           "fallback_reason": status.get("fallback_reason")},
                 "replay": {"running": self.replay_running, "index": self.replay_index(),
                            "length": self.replay_length, "step_s": REPLAY_STEP_S},
-                "policy": "Classroom-only: lighting and computers in every room first. Scanned rooms' other "
-                          "equipment next, ranked by the activity model (ACTIVE, then UNKNOWN, then INACTIVE; "
-                          "earlier scan first within a state). Unscanned rooms' optional loads last."}
+                "policy": "Classroom-only: lighting and computers in every room are protected and served first, "
+                          "whatever the model says. Scanned rooms' other equipment next, ranked by the activity "
+                          "model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE "
+                          f"counts only after {self.guard.confirmations} consecutive readings. Unscanned rooms' "
+                          f"optional loads last. Safety policy {SAFETY_POLICY_VERSION}."}
 
     def act(self, action: str, classroom_id: str | None = None, capacity_w: int | None = None):
         if action == "scan":

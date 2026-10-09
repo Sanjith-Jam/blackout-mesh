@@ -27,12 +27,13 @@ def allocate(services, capacity_w, feeder_limits, feeder_available, requested_ma
                      if activity.get(cid, {}).get("state") == "ACTIVE")
         unknown = sum(served(bit) for bit, cid in ((3, "CR1"), (4, "CR2"), (5, "CR3"))
                       if activity.get(cid, {}).get("state") == "UNKNOWN")
-        inactive_w = sum(services[bit]["watts"] for bit, cid in ((3, "CR1"), (4, "CR2"), (5, "CR3"))
-                         if activity.get(cid, {}).get("state") == "INACTIVE" and served(bit))
+        inactive = sum(served(bit) for bit, cid in ((3, "CR1"), (4, "CR2"), (5, "CR3"))
+                       if activity.get(cid, {}).get("state") == "INACTIVE")
         watts = sum(s["watts"] for bit, s in enumerate(services) if served(bit))
-        # L0/L1 remain fixed critical priorities; evidence ranks requested classrooms;
-        # the water pump follows ACTIVE and UNKNOWN rooms by explicit policy.
-        score = (served(0), served(1), active, unknown, served(2), -inactive_w,
+        # L0/L1 are protected critical circuits (app.core.safety); evidence only orders requested
+        # classrooms; the water pump follows ACTIVE and UNKNOWN rooms by explicit policy.
+        # An INACTIVE prediction lowers a room's rank but never sheds it while capacity allows (#22).
+        score = (served(0), served(1), active, unknown, served(2), inactive,
                  -((mask ^ previous_mask).bit_count()), watts, -mask)
         if best_score is None or score > best_score:
             best, best_score = mask, score
