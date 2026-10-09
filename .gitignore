@@ -30,3 +30,8 @@ dist/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+
+# Private hardware identity and provisioning
+firmware/include/cards.local.h
+firmware/include/hardware.local.h
+firmware/.local/

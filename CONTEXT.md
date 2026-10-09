@@ -35,3 +35,5 @@ Radio lifecycle piece: host assertions cover one in-flight packet, latest-unsent
 Serial lifecycle piece: bounded 512-byte frames, strict host fields, reconnect epochs, persistent-session floor, event acknowledgments and freshness checks added. Host assertions including malformed/oversized/trailing data and stale events pass. Connected `/dev/ttyUSB0` is inaccessible to current process (permission denied); no chip query or flash succeeded.
 
 Recovery checks: RESET now raises the persisted session floor; old B boot reports cannot overwrite a newer boot; CR is accepted only as a terminal frame delimiter. Native sanitizer assertions pass, including all 512 mask projections. The two firmware targets compile with the reported RC522 pins.
+
+Arduino adapter piece: RC522 pins use the user-reported wiring, buttons use the new 25/26/27/32 guide (not wired yet), UID/peer credentials stay local. Reader task isolates synchronous driver waits. Both normal and enrollment targets compiled successfully; encrypted-radio path also linked successfully using temporary synthetic peer provisioning (never flashed; removed afterward).
