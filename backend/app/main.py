@@ -37,6 +37,7 @@ class ClassroomDemoAction(BaseModel):
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"]
+    zone: Literal["ICU", "Theatre", "Wards"] | None = None
 
 class ConnectionManager:
     def __init__(self):
@@ -75,6 +76,7 @@ grid = GridState()
 grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
 classroom_demo = ClassroomDemo(model=grid.model, replay=replay_data)
 hospital_scenario = "normal"
+hospital_zone = "Theatre"
 
 async def broadcast_state():
     while True:
@@ -172,13 +174,15 @@ async def act_classroom_demo(req: ClassroomDemoAction):
 
 @app.get("/api/v1/visualizers/hospital")
 async def get_hospital_demo():
-    return hospital_snapshot(hospital_scenario)
+    return hospital_snapshot(hospital_scenario, hospital_zone)
 
 @app.post("/api/v1/visualizers/hospital")
 async def act_hospital_demo(req: HospitalDemoAction):
-    global hospital_scenario
+    global hospital_scenario, hospital_zone
     hospital_scenario = req.scenario
-    return hospital_snapshot(hospital_scenario)
+    if req.zone is not None:
+        hospital_zone = req.zone
+    return hospital_snapshot(hospital_scenario, hospital_zone)
 
 @app.post("/api/v1/activity/observations")
 async def post_activity_observation(req: ActivityObservationRequest):

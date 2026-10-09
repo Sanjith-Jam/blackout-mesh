@@ -112,8 +112,8 @@ export async function getHospitalDemo(signal?: AbortSignal): Promise<HospitalDem
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', { signal });
 }
 
-export async function postHospitalDemo(scenario: HospitalDemoScenario): Promise<HospitalDemoSnapshot> {
+export async function postHospitalDemo(scenario: HospitalDemoScenario, zone?: string | null): Promise<HospitalDemoSnapshot> {
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', {
-    method: 'POST', body: JSON.stringify({ scenario })
+    method: 'POST', body: JSON.stringify(zone ? { scenario, zone } : { scenario })
   });
 }
