@@ -13,33 +13,49 @@ from app.core.allocator import allocate, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
 
-SERVICE_CATALOG = [
-    {"id": "L0", "name": "Hospital Essential Circuit", "tier": "T1", "feeder": "A", "watts": 2000, "zone": "hospital"},
-    {"id": "L1", "name": "Emergency Lighting", "tier": "T1", "feeder": "A", "watts": 1000, "zone": "hospital"},
-    {"id": "L2", "name": "Water Pump", "tier": "T2", "feeder": "A", "watts": 3000, "zone": "hospital"},
-    {"id": "L3", "name": "Classroom 1", "tier": "T2", "feeder": "B", "watts": 2000, "zone": "classroom"},
-    {"id": "L4", "name": "Classroom 2", "tier": "T2", "feeder": "B", "watts": 2000, "zone": "classroom"},
-    {"id": "L5", "name": "Classroom 3", "tier": "T3", "feeder": "B", "watts": 4000, "zone": "classroom"},
-]
+from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
+import os
 
-HOSPITAL_ROOMS = [
-    {"id": "HR1", "name": "Hospital Room 1", "lighting_service": "L0", "led_bit": 0},
-    {"id": "HR2", "name": "Hospital Room 2", "lighting_service": "L0", "led_bit": 1},
-    {"id": "HR3", "name": "Hospital Room 3", "lighting_service": "L0", "led_bit": 2},
-]
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DEFAULT_SITE_PATH = os.environ.get("SITE_PROFILE", os.path.join(_BASE_DIR, "sites", "default_campus.json"))
+RFID_ENROLLMENT_PATH = os.environ.get("RFID_ENROLLMENT", os.path.join(_BASE_DIR, "sites", "rfid_enrollment.json"))
+RFID_ENROLLMENT_PATH = os.path.join(_BASE_DIR, "sites", "rfid_enrollment.json")
 
-CLASSROOMS = [
-    {"id": "CR1", "name": "Classroom 1", "service_id": "L3", "led_bit": 3},
-    {"id": "CR2", "name": "Classroom 2", "service_id": "L4", "led_bit": 4},
-    {"id": "CR3", "name": "Classroom 3", "service_id": "L5", "led_bit": 5},
-]
+site_profile = load_site_profile(DEFAULT_SITE_PATH)
+rfid_enrollment = load_rfid_enrollment(RFID_ENROLLMENT_PATH)
 
-# Configurable RFID UID mapping. Replace with real UIDs during hardware registration.
-DEFAULT_RFID_MAP = {
-    "CARD_1_UID": "CR1",
-    "CARD_2_UID": "CR2",
-    "CARD_3_UID": "CR3",
-}
+SERVICE_CATALOG = []
+HOSPITAL_ROOMS = []
+CLASSROOMS = []
+
+for asset in site_profile.assets:
+    if asset.type == AssetType.SERVICE:
+        SERVICE_CATALOG.append({
+            "id": asset.id,
+            "name": asset.name,
+            "tier": asset.tier.value if asset.tier else "T3",
+            "feeder": asset.parent_id,
+            "watts": asset.rating_w or 0,
+            "zone": asset.zone
+        })
+    elif asset.type == AssetType.HOSPITAL_ROOM:
+        HOSPITAL_ROOMS.append({
+            "id": asset.id,
+            "name": asset.name,
+            "lighting_service": asset.parent_id,
+            "led_bit": asset.led_bit
+        })
+    elif asset.type == AssetType.CLASSROOM:
+        CLASSROOMS.append({
+            "id": asset.id,
+            "name": asset.name,
+            "service_id": asset.parent_id,
+            "led_bit": asset.led_bit
+        })
+
+
+DEFAULT_RFID_MAP = rfid_enrollment.tag_to_room
+SITE_CONFIG_HASH = get_config_hash(site_profile)
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
 

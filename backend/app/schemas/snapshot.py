@@ -81,6 +81,7 @@ class FaultDiagnosis(BaseModel):
 
 class SystemSnapshot(BaseModel):
     control_revision: int
+    config_hash: str = ""
     generated_at: datetime
     source: SourceInfo
     feeder_limits_w: Dict[str, int]
@@ -158,6 +159,7 @@ class CapacityChangeResponse(BaseModel):
     accepted: bool
     new_capacity_w: int
     control_revision: int
+    config_hash: str = ""
 
 class ClassroomLoadRequest(BaseModel):
     classroom_id: StrictStr
@@ -177,3 +179,4 @@ class FeederChangeResponse(BaseModel):
     feeder: str
     available: bool
     control_revision: int
+    config_hash: str = ""

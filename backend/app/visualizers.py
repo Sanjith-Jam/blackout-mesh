@@ -4,14 +4,41 @@ from __future__ import annotations
 import time
 from app.core.restoration import RestorationGate
 
-ROOMS = ("CR1", "CR2", "CR3")
-LOADS = {
-    "CR1": [("lighting", "Lighting", 100, True), ("computers", "Computers", 600, True), ("fans", "Fans", 100, False), ("projector", "Projector", 200, False), ("ac", "Air conditioning", 1000, False)],
-    "CR2": [("lighting", "Lighting", 100, True), ("computers", "Computers", 600, True), ("fans", "Fans", 100, False), ("projector", "Projector", 200, False), ("ac", "Air conditioning", 1000, False)],
-    "CR3": [("lighting", "Lighting", 100, True), ("computers", "Computers", 600, True), ("fans", "Fans", 100, False), ("projector", "Projector", 200, False), ("ac", "Air conditioning", 1000, False), ("instruments", "Instruments", 2000, False)],
-}
+from app.core.config import load_site_profile, AssetType
+import os
+
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_SITE_PATH = os.environ.get("SITE_PROFILE", os.path.join(_BASE_DIR, "sites", "default_campus.json"))
+site_profile = load_site_profile(DEFAULT_SITE_PATH)
+
+ROOMS = []
+LOADS = {}
+ZONES = []
+TRANSFORMERS_CONFIG = []
+
+for asset in site_profile.assets:
+    if asset.type == AssetType.CLASSROOM:
+        ROOMS.append(asset.id)
+        LOADS[asset.id] = []
+    elif asset.type == AssetType.TRANSFORMER:
+        ZONES.append(asset.zone)
+        TRANSFORMERS_CONFIG.append({
+            "id": asset.id,
+            "name": asset.name,
+            "zone": asset.zone,
+            "rated_current_a": float(asset.rating_w or 100.0)
+        })
+
+for asset in site_profile.assets:
+    if asset.type == AssetType.LOAD and asset.parent_id in LOADS:
+        # id like L_CR1_lighting -> strip L_CR1_ to get 'lighting'
+        short_id = asset.id.split("_", 2)[-1]
+        LOADS[asset.parent_id].append((short_id, asset.name, asset.rating_w, asset.essential))
+
+ROOMS = tuple(ROOMS)
+ZONES = tuple(ZONES)
 LOAD_KEYS = tuple((room, item[0]) for room in ROOMS for item in LOADS[room])
-ZONES = ("ICU", "Theatre", "Wards")
+
 
 
 class ClassroomDemo:
@@ -112,16 +139,16 @@ HOSPITAL_FAULT_FIXTURES = {
 
 def hospital_snapshot(scenario="normal"):
     transformers = []
-    for i in range(1, 4):
+    for i, tx in enumerate(TRANSFORMERS_CONFIG):
         fixture = ((0.0, 40.0, 90.0, 20.0, True) if scenario == "upstream_loss"
-                   else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS) if i == 2
+                   else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS) if i == 1
                    else NORMAL_SENSORS)
         current, temp, vin, vout, cooling = fixture
         sensors = {"current_a": current, "temperature_c": temp, "input_voltage_v": vin,
                    "output_voltage_v": vout, "cooling_ok": cooling}
-        diagnosis = diagnose(100.0, **sensors)
-        transformers.append({"id": f"TX{i}", "name": f"Transformer {i}", "zone": ZONES[i - 1],
-                             "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnosis,
+        diagnosis = diagnose(tx["rated_current_a"], **sensors)
+        transformers.append({"id": tx["id"], "name": tx["name"], "zone": tx["zone"],
+                             "rated_current_a": tx["rated_current_a"], "sensors": sensors, "diagnosis": diagnosis,
                              "energized": vout is not None and vout >= 100.0})
     return {"mode": "SIMULATED", "transformers": transformers,
             "summary": "Synthetic sensor diagnosis for demonstration; thresholds are not certified protection settings."}
