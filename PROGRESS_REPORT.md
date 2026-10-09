@@ -2,6 +2,18 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## Background control loop and read-only reads (#9, #10) — 2026-10-10
+
+- One `ControlLoop` (`backend/app/core/control_loop.py`), started and awaited in the FastAPI lifespan, ticks the campus `GridState` and the classroom demo every 250 ms whether or not any browser is connected. It counts overrun (skipped, not replayed) ticks and errors; `GET /api/v1/health` reports `control_loop` health.
+- `GridState.tick()` and `ClassroomDemo.tick()` are the only places where evidence freshness, replay cursor, inference cache, allocation and staged restoration advance. `build_snapshot()` / `snapshot()` return a copy of the last published state. Unchanged state keeps the same `generated_at` and `published_revision`; socket messages add a separate `sent_at`.
+- Commands tick immediately, so protective shedding appears in the same response; restoration still waits for the 5 s stability / 3 s dwell / one-load-per-second gate.
+- Validation: 35 backend tests pass (`PYTHONPATH=backend .venv/Scripts/python -m pytest backend/tests -q --ignore=backend/tests/test_activity_model.py`; that file imports the Unix-only `resource` module and is not collectable on Windows). New tests fingerprint domain state across 100 reads of every route, compare a 10-second virtual-time shortage/recovery timeline with 0 and 100 readers per tick, check loop single-ownership, overrun counting, error survival and lifespan shutdown. Frontend production build passes with the existing large-bundle warning.
+- Limits: `GridState` is still a process-wide singleton (#11), and campus, classroom and hospital remain separate authorities (#3). The hospital route is a pure function of its selected scenario, so it has no time-based state to tick.
+
+## Pending implementation backlog — 2026-10-10
+
+Created an exhaustive [implementation plan](PENDING_IMPLEMENTATION_PLAN.md) for the 24 requested software problems: 7 P0, 14 P1 and 3 P2. It records the inspected baseline `d1c58d7`, six delivery phases, a checked acyclic dependency graph, acceptance criteria and verification instructions. Library roles cover SQLModel/SQLite, NetworkX, TanStack Query, Zustand and an evidence-based pandapower/Power Grid Model comparison; OR-Tools is conditional on allocator scale. GitHub issue links are in the plan. This documentation update does not resolve those issues or add physical hardware evidence.
+
 ## Classroom and hospital visualizers — 2026-10-09
 
 This update preserves the original light graph-paper theme and supersedes earlier descriptions of the demo routes. Three Luna workers implemented the initial endpoints/views; a further Luna worker replaced the rejected classroom node graph with a physical floor-plan renderer under parent review.

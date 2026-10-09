@@ -115,7 +115,10 @@ export interface Snapshot {
   replay: ReplayStatus;
   allocation: AllocationStatus;
   control_revision: number;
+  published_revision: number;
   generated_at: string;
+  /** Socket messages only: when this copy was sent. generated_at is when the state last changed. */
+  sent_at?: string;
   source: SourceInfo;
   feeder_limits_w: FeederLimits;
   requested_mask: number;
@@ -192,6 +195,7 @@ export type ClassroomDemoActionName = "scan" | "unscan" | "set_capacity" | "norm
   | "replay_pause" | "replay_resume" | "replay_step";
 
 export interface ClassroomDemoSnapshot {
+  published_revision: number;
   capacity_w: number;
   capacity_range_w: [number, number];
   requested_w: number;

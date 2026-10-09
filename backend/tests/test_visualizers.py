@@ -64,19 +64,22 @@ def test_classroom_restoration_uses_time_not_snapshot_count():
     assert demo.snapshot()["served_w"] == 3400
     demo.act("normal", None)
     for _ in range(100):
-        waiting = demo.snapshot()
+        waiting = demo.tick()
         assert waiting["served_w"] == 3400
     assert any(load["reason"] == "Waiting for simulated restoration delay"
                for room in waiting["rooms"] for load in room["loads"] if not load["served"])
     now[0] = 2.99
-    assert demo.snapshot()["served_w"] == 3400
+    assert demo.tick()["served_w"] == 3400
+    now[0] = 4.99
+    assert demo.tick()["served_w"] == 3400
     now[0] = 5.0
-    first = demo.snapshot()["served_w"]
+    assert demo.snapshot()["served_w"] == 3400  # reads never advance restoration
+    first = demo.tick()["served_w"]
     assert first > 3400
     for _ in range(100):
-        assert demo.snapshot()["served_w"] == first
+        assert demo.tick()["served_w"] == first  # at most one restored load per second
     now[0] = 6.0
-    assert demo.snapshot()["served_w"] > first
+    assert demo.tick()["served_w"] > first
 
 
 def test_hospital_faults_are_local_except_upstream_loss():

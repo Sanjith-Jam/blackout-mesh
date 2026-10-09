@@ -1,6 +1,7 @@
 """Independent synthetic classroom and hospital demos."""
 from __future__ import annotations
 
+import copy
 import json
 import time
 from pathlib import Path
@@ -51,21 +52,41 @@ class ClassroomDemo:
         self.replay_base = 0
         self.replay_anchor = clock()
         self._predictions: dict[tuple[str, int], dict] = {}
+        self._replay_index = 0
+        self._activity: dict[str, dict] = {}
+        self.published: dict | None = None
+        self.published_revision = 0
+        self._advance_evidence()
         initial = (1 << len(LOAD_KEYS)) - 1
         self.gate.update(initial, self._signature(self._room_order()), range(len(LOAD_KEYS)))
+        self.tick()
 
     # ---- recorded sensor replay and model evidence ----
     def replay_index(self):
+        """Replay cursor as of the last tick (read-only)."""
+        return self._replay_index
+
+    def _clock_replay_index(self):
         if not self.replay_length:
             return 0
         steps = int((self.gate.clock() - self.replay_anchor) // REPLAY_STEP_S) if self.replay_running else 0
         return (self.replay_base + steps) % self.replay_length
 
+    def _advance_evidence(self):
+        """Move the replay cursor to the current time and run (cached) inference. Tick-only."""
+        self._replay_index = self._clock_replay_index()
+        self._activity = {cid: self._infer(cid) for cid in ROOMS}
+
     def activity(self, cid):
+        """Model evidence for a room as of the last tick (read-only)."""
+        return self._activity.get(cid) or {"state": "UNKNOWN", "score": None, "reason": "awaiting first tick",
+                                           "model_version": "unavailable", "evidence": {}}
+
+    def _infer(self, cid):
         if not self.replay_length or cid not in self.replay:
             return {"state": "UNKNOWN", "score": None, "reason": "no recorded sensor evidence",
                     "model_version": "unavailable", "evidence": {}}
-        index = self.replay_index()
+        index = self._replay_index
         cached = self._predictions.get((cid, index))
         if cached is None:
             row = self.replay[cid][index]
@@ -98,6 +119,20 @@ class ClassroomDemo:
         return result
 
     def snapshot(self):
+        """Read-only: a copy of the last published state. Never advances replay or restoration."""
+        return copy.deepcopy(self.published)
+
+    def tick(self):
+        """Advance replay evidence, allocation and staged restoration, then publish."""
+        self._advance_evidence()
+        candidate = self._project()
+        if self.published is None or candidate != {k: v for k, v in self.published.items() if k != "published_revision"}:
+            self.published_revision += 1
+            candidate["published_revision"] = self.published_revision
+            self.published = candidate
+        return self.snapshot()
+
+    def _project(self):
         order = self._room_order()
         priority = self._priority(order)
         target: set[tuple[str, str]] = set()
@@ -159,16 +194,16 @@ class ClassroomDemo:
         elif action == "overload":
             self.capacity = OVERLOAD_CAPACITY_W
         elif action == "replay_pause":
-            self.replay_base, self.replay_running = self.replay_index(), False
+            self.replay_base, self.replay_running = self._clock_replay_index(), False
         elif action == "replay_resume":
             if self.replay_length:
-                self.replay_base, self.replay_anchor, self.replay_running = self.replay_index(), self.gate.clock(), True
+                self.replay_base, self.replay_anchor, self.replay_running = self._clock_replay_index(), self.gate.clock(), True
         elif action == "replay_step":
             if self.replay_length:
-                self.replay_base, self.replay_anchor = (self.replay_index() + 1) % self.replay_length, self.gate.clock()
+                self.replay_base, self.replay_anchor = (self._clock_replay_index() + 1) % self.replay_length, self.gate.clock()
         elif action == "reset":
             self.__init__(self.gate.clock, self.model, self.replay)
-        return self.snapshot()
+        return self.tick()  # a command wakes control immediately
 
 
 def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok):
