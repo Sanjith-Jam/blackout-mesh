@@ -26,6 +26,8 @@ from app.schemas.snapshot import (
 from app.core.state import GridState
 from app.core.control_loop import ControlLoop
 from app.core.site import SiteAuthority
+from app.core.policy import AllocationPolicy
+from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
 from app.activity.model import FEATURES
 from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo, hospital_snapshot
 
@@ -359,3 +361,45 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+@app.get("/api/v1/allocation/policy")
+async def read_allocation_policy():
+    return site.read(lambda: grid.policy.model_dump())[0]
+
+
+@app.put("/api/v1/allocation/policy")
+async def change_allocation_policy(policy: AllocationPolicy):
+    def apply():
+        with grid._lock:
+            grid.policy = policy
+            grid.control_revision += 1
+            grid.add_event("POLICY_CHANGE", policy.model_dump_json())
+    _, receipt = site.command("allocation_policy", apply)
+    return {"policy": policy.model_dump(), "receipt": receipt}
+
+
+# Optional studies serialize independently of the control loop. Timed-out work keeps the lock until done.
+ELECTRICAL_TIMEOUT_S = 5
+electrical_study_lock = asyncio.Lock()
+
+
+@app.post("/api/v1/studies/electrical", response_model=ElectricalStudyResponse)
+async def electrical_study(inputs: ElectricalInput):
+    if electrical_study_lock.locked():
+        raise HTTPException(503, "Electrical study busy; retry later")
+    await electrical_study_lock.acquire()
+    identity = site.identity()
+    async def work():
+        try:
+            return await asyncio.to_thread(solve_electrical, inputs)
+        finally:
+            electrical_study_lock.release()
+    task = asyncio.create_task(work())
+    try:
+        result = await asyncio.wait_for(asyncio.shield(task), timeout=ELECTRICAL_TIMEOUT_S)
+    except TimeoutError:
+        raise HTTPException(504, "Electrical study timed out; no control or restoration applied")
+    if site.identity() != identity:
+        raise HTTPException(409, "Site run/revision changed during study; discard and retry")
+    return {"site": identity, "result": result.model_dump(), "diagnosis": diagnose_study(result)}

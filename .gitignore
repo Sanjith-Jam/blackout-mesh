@@ -38,3 +38,6 @@ firmware/.local/
 
 # Isolated ML benchmark environment
 .venv-ml/
+
+# Optional isolated electrical studies
+.venv-electrical/

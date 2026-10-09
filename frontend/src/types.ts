@@ -1,4 +1,6 @@
 export interface SourceInfo {
+  model: "watt_budget";
+  limitations: string;
   kind: string;
   capacity_w: number;
 }
@@ -92,7 +94,20 @@ export interface ReplayStatus {
   length: number;
 }
 
+export interface AllocationExplanation {
+  decision_id: string;
+  control_revision: number;
+  restoration_replay: { before: Record<string, unknown>; now_s: number; signature: unknown[]; order: number[] };
+  policy: { name: 'activity_first' | 'water_first'; version: 'allocation-v1'; fairness_weight: number; switching_penalty: number };
+  objective_order: string[];
+  score_terms: Record<string, number | number[]>;
+  replay_inputs: Record<string, unknown>;
+  decisions: { service_id: string; requested: boolean; proposed: boolean; applied: boolean;
+    binding_constraints: string[]; reason: string; score_terms: Record<string, number | number[]>; shortfall_w: number; counterfactual: string }[];
+}
+
 export interface AllocationStatus {
+  explanation: AllocationExplanation;
   objective: string;
   critical_shortfall_w: number;
   served_w: number;
@@ -380,3 +395,24 @@ export interface HospitalDemoSnapshot {
   policy: string;
 }
 
+
+
+/** Optional study inputs; separate from watt-budget allocation and hardware commands. */
+export interface ElectricalStudyInput {
+  topology_version?: 'radial-400v-v1'; balanced?: true;
+  load_a_w?: number; load_b_w?: number; source_on?: boolean;
+  feeder_a_closed?: boolean; feeder_b_closed?: boolean;
+  power_factor?: number; resistance_ohm?: number; reactance_ohm?: number;
+}
+export interface ElectricalStudyResponse {
+  site: SiteIdentity;
+  result: {
+    mode: 'balanced_ac_study'; topology_version: string; engine: string; engine_version: string | null;
+    status: 'converged' | 'deenergized' | 'failed' | 'unavailable'; converged: boolean; restoration_authorized: false;
+    observed_at: string; inputs: Required<ElectricalStudyInput>; units: Record<string, string>;
+    buses: Record<string, { energized: boolean; voltage_v: number | null }>;
+    branches: Record<string, { energized: boolean; current_a: number | null; p_w: number | null; q_var: number | null; loading_pct: number | null }>;
+    source_p_w: number | null; source_q_var: number | null; loss_w: number | null; power_balance_residual_w: number | null; reason: string | null; provenance: string;
+  };
+  diagnosis: Record<string, unknown>;
+}

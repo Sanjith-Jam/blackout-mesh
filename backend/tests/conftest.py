@@ -35,6 +35,10 @@ def reset_campus(grid):
                                "evidence": {key: None for key in FEATURES}}
                          for cid in ("CR1", "CR2", "CR3")}
         grid.activity_guard.reset()
+        from app.core.policy import AllocationPolicy
+        grid.policy = AllocationPolicy()
+        grid.waiting_s = {}
+        grid.last_policy_tick = grid.clock()
         grid.last_allocation_key = None
         grid.proposed_mask = 0
         grid.restoration_gate = RestorationGate(lambda: grid.clock())
