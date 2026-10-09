@@ -29,3 +29,5 @@ Historical plans and review records are outside the repository. The inherited bl
 ## Person A implementation — first piece
 
 Added production input/button state machines and explicit 26-byte v2 codec. Host sanitizer assertions pass (`python3 tools/test_esp32_a.py`). Board carrier/reader unidentified; no wiring or flashing performed. Next: serial and radio lifecycle, Arduino adapters, compile and bring-up guide.
+
+Radio lifecycle piece: host assertions cover one in-flight packet, latest-unsent coalescing, 200/400-ms retries, 600-ms timeout, boot/session/ACK identity and physical projection. `python3 tools/test_esp32_a.py` passes. Actual B integration remains pending.

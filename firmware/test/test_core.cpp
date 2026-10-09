@@ -1,4 +1,5 @@
 #include "buttons.h"
+#include "bridge.h"
 #include "inputs.h"
 #include "protocol.h"
 #include <assert.h>
@@ -40,5 +41,51 @@ int main() {
     assert(!decode(bytes, 25, decoded));
     bytes[20] ^= 1; assert(!decode(bytes, 26, decoded));
   }
-  puts("input/buttons/packet assertions passed");
+  Bridge bridge; bridge.bind(10);
+  Packet hello; hello.boot = 20;
+  assert(bridge.receive(hello, 0) == RadioResult::REBOOT);
+  assert(!bridge.submit(SET_LOADS, 1, 511, 20, 0));
+  assert(bridge.submit(SYNC, 1, 0, 20, 0));
+  Packet sent;
+  assert(bridge.next(0, sent) && sent.kind == SYNC);
+  Packet ack; ack.kind = ACK; ack.boot = 20; ack.session = 10; ack.ack = 1;
+  assert(bridge.receive(ack, 1) == RadioResult::SYNCED);
+  assert(bridge.submit(SET_LOADS, 2, 511, 20, 2));
+  assert(bridge.next(2, sent) && sent.mask == 511);
+  assert(!bridge.next(100, sent));
+  assert(!bridge.submit(SET_LOADS, 2, 8, 20, 3));
+  assert(bridge.submit(SET_LOADS, 2, 511, 20, 3));
+  assert(!bridge.next(3, sent));
+  ack.ack = 2; ack.mask = 56; ack.boot = 19;
+  assert(bridge.receive(ack, 4) == RadioResult::NONE);
+  ack.boot = 20; ack.session = 9;
+  assert(bridge.receive(ack, 4) == RadioResult::NONE);
+  ack.session = 10;
+  assert(bridge.receive(ack, 4) == RadioResult::CONFIRMED);
+  assert(bridge.receive(ack, 5) == RadioResult::NONE);
+  assert(bridge.submit(SET_LOADS, 2, 511, 20, 5) && !bridge.active);
+  assert(!bridge.submit(SET_LOADS, 3, 512, 20, 6));
+  assert(bridge.submit(SET_LOADS, 3, 8, 20, 6));
+  assert(bridge.submit(SET_LOADS, 4, 16, 20, 7));
+  assert(bridge.submit(SET_LOADS, 5, 32, 20, 8));
+  ack.ack = 3; ack.mask = 8;
+  assert(bridge.receive(ack, 9) == RadioResult::CONFIRMED);
+  assert(bridge.next(9, sent) && sent.seq == 5 && sent.mask == 32);
+  assert(bridge.next(209, sent) && sent.seq == 5);
+  assert(bridge.next(409, sent) && sent.seq == 5);
+  assert(!bridge.next(609, sent));
+  assert(bridge.tick(609) == RadioResult::TIMEOUT && !bridge.ready);
+  assert(bridge.submit(SYNC, 6, 0, 20, 610));
+  assert(bridge.next(610, sent));
+  ack.ack = 6; ack.mask = 0;
+  assert(bridge.receive(ack, 611) == RadioResult::SYNCED);
+  assert(bridge.submit(SET_LOADS, 7, 8, 20, 612));
+  ack.ack = 7; ack.mask = 16;
+  assert(bridge.receive(ack, 613) == RadioResult::BAD_ACK && !bridge.ready);
+  hello.boot = 21;
+  assert(bridge.receive(hello, 614) == RadioResult::REBOOT && !bridge.ready);
+  assert(!bridge.submit(SYNC, 8, 0, 20, 615));
+  assert(bridge.tick(2114) == RadioResult::STALE);
+  bridge.disconnect(); assert(!bridge.active && !bridge.session);
+  puts("input/buttons/packet/radio assertions passed");
 }
