@@ -133,6 +133,7 @@ export interface Snapshot {
   control_revision: number;
   published_revision: number;
   site?: SiteIdentity;
+  edges?: PowerEdge[];
   generated_at: string;
   /** Socket messages only: when this copy was sent. generated_at is when the state last changed. */
   sent_at?: string;
@@ -189,6 +190,26 @@ export interface ClassroomDemoLoad {
   essential: boolean;
   served: boolean;
   reason: string;
+}
+
+export type PowerEdgeState = "ENERGIZED" | "PENDING_RESTORATION" | "SHED" | "OPEN" | "UNKNOWN";
+
+/** Canonical power path behind one drawn wire (#23). Watts are modeled, never measured current. */
+export interface PowerEdge {
+  id: string;
+  from: string;
+  to: string;
+  state: PowerEdgeState;
+  connected: boolean;
+  commanded: boolean;
+  applied: boolean;
+  requested_w: number;
+  served_w: number;
+  unit: "W";
+  provenance: "MODELED";
+  physical: "NOT_CONNECTED" | "CONFIRMED";
+  reason: string;
+  observed?: { output_voltage_v: number | null; energized: boolean | null; provenance: string; diagnosis_status?: string; note: string };
 }
 
 /** One site authority: every projection carries the same run and revision (#3). */
@@ -255,6 +276,8 @@ export interface ClassroomDemoSnapshot {
   campus_limit_w: number | null;
   effective_capacity_w: number;
   limited_by: "classroom limit" | "campus feeder B";
+  edges: PowerEdge[];
+  generated_at?: string;
   site?: SiteIdentity;
   command?: CommandReceipt;
   model: { ready: boolean; model_version: string; fallback_reason: string | null };
@@ -353,6 +376,8 @@ export interface HospitalDemoTransformer {
 }
 
 export interface HospitalDemoSnapshot {
+  edges?: PowerEdge[];
+  generated_at?: string;
   capacity_w: number;
   capacity_range_w: [number, number];
   requested_w: number;

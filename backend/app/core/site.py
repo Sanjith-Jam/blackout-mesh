@@ -66,6 +66,7 @@ class SiteAuthority:
         with self._lock:
             self.grid.tick()
             self.classroom.campus_limit_w = classroom_headroom_w(self.grid)
+            self.classroom.campus_feeder_closed = bool(self.grid.feeder_available.get("B", False))
             self.classroom.tick()
             self.hospital.tick()
             seen = self._part_revisions()
