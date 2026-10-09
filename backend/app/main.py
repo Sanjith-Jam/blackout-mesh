@@ -249,9 +249,9 @@ async def replay_action(req: ReplayActionRequest, request: Request, grid: GridSt
         if request.app.state.replay_task and not request.app.state.replay_task.done():
             request.app.state.replay_task.cancel()
         grid.replay_index = 0
-        app.state.grid.replay_running = False
+        grid.replay_running = False
         for cid in ("CR1", "CR2", "CR3"):
-            app.state.grid.set_classroom_load(cid, True)
+            grid.set_classroom_load(cid, True)
             grid.activity_tokens[cid] += 1
             grid.activity_received_monotonic[cid] = None
             grid.activity[cid] = {"state": "UNKNOWN", "score": None, "reason": "replay reset; awaiting evidence",
@@ -260,10 +260,10 @@ async def replay_action(req: ReplayActionRequest, request: Request, grid: GridSt
                                   "evidence": {key: None for key in FEATURES}}
     elif req.action == "pause":
         request.app.state.replay_generation += 1
-        app.state.grid.replay_running = False
-    elif not app.state.grid.replay_running:
+        grid.replay_running = False
+    elif not grid.replay_running:
         for cid in ("CR1", "CR2", "CR3"):
-            app.state.grid.set_classroom_load(cid, True)
+            grid.set_classroom_load(cid, True)
         grid.replay_running = True
         request.app.state.replay_generation += 1
         request.app.state.replay_task = asyncio.create_task(run_replay(request.app, request.app.state.replay_generation))
@@ -294,7 +294,7 @@ async def change_capacity(req: CapacityChangeRequest, grid: GridState = Depends(
 async def change_classroom_load(req: ClassroomLoadRequest, grid: GridState = Depends(get_grid_state)):
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
-    app.state.grid.set_classroom_load(req.classroom_id, req.active)
+    grid.set_classroom_load(req.classroom_id, req.active)
     return ClassroomLoadResponse(
         accepted=True,
         classroom_id=req.classroom_id,
@@ -320,7 +320,8 @@ async def hardware_ack(req: HardwareAckRequest, grid: GridState = Depends(get_gr
     return HardwareAckResponse(accepted=True)
 
 @app.websocket("/ws/live")
-async def websocket_endpoint(websocket: WebSocket, manager: ConnectionManager = Depends(get_manager)):
+async def websocket_endpoint(websocket: WebSocket):
+    manager = websocket.app.state.manager
     await manager.connect(websocket)
     try:
         while True:
