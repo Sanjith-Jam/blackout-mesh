@@ -15,7 +15,14 @@ Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.1). State/handoff: `CONT
 
 ## Commands
 
-None yet. When you add one, add it here and to README in the same commit.
+Hardware (board B + laptop bench controller, see `hardware/README.md`), run from `hardware/host/`:
+
+- `python -m unittest test_person_b`: protocol, allocator and fault tests with a simulated board B.
+- `python controller.py --sim` or `--port COMx`: laptop bench controller (needs `pyserial` for a real port).
+- `python hw_check.py COMx`: scripted bench and fault-injection run against a connected board B.
+- Flash `hardware/firmware/BoardB_Output` with Arduino ESP32 core 3.3.12, board `esp32:esp32:esp32`, upload speed 115200.
+
+When you add a command, add it here and to README in the same commit.
 
 ## Workflow: small commits
 
