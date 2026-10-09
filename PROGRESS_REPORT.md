@@ -159,3 +159,7 @@ Initial backend test attempts lacked system pytest, then lacked `app` on the imp
 - Train and integrate required ML, validate constrained decisions and recovery, then rehearse the judge demo.
 
 Detailed two-person physical phases remain local at `/home/bread/blackout-mesh-local/HARDWARE_IMPLEMENTATION_PLAN.md`. Reuse research, judge critique, notice drafts, device credentials and historical plan archives remain outside the uploaded document set. No connected-device queries, flashing, browser QA or fresh physical tests were performed during this sync.
+
+## Issue #5 — temporal occupancy evidence (2026-10-10)
+
+Delivered `backend/scripts/evaluate_temporal.py`, frozen `backend/benchmarks/occupancy/PROTOCOL.md`, machine-readable results and REPORT.md. Four rolling origins hold out complete days; data have no true room-session IDs. Validation-only gates, training-only preprocessing, duplicate/conflict checks and feature/artifact fingerprints are tested. Majority/rule/logistic/tree comparisons count UNKNOWN explicitly. Four-sensor logistic covered 40.0% overall with 121/2,094 false-INACTIVE occupied rows; its first evaluation block alone had 121/268 (45.1%). No candidate adopted, no calibration or campus-validation claim. Original model, manifest and replay retained; fresh independently labeled campus data remain unavailable. Reproduce with `.venv-ml/bin/python backend/scripts/evaluate_temporal.py --data /path/to/occupancy.zip`; see the report for full denominators, provenance, versions and resources.
