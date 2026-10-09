@@ -6,6 +6,7 @@ import json
 import time
 from pathlib import Path
 
+from app.core.edges import edge as power_edge
 from app.core.restoration import RestorationGate
 from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
 from app.diagnosis.observations import validate as validate_observation
@@ -51,6 +52,7 @@ class ClassroomDemo:
         self.replay_length = min((len(rows) for rows in self.replay.values()), default=0)
         self.capacity = NORMAL_CAPACITY_W  # classroom limit (the slider): a named sub-budget
         self.campus_limit_w: int | None = None  # set by the site authority from campus feeder B headroom
+        self.campus_feeder_closed: bool | None = None  # set by the site authority: is campus feeder B available?
         self.scanned: list[str] = []   # scan order; the last entry is the most recent card
         self.gate = RestorationGate(clock)
         self.replay_running = self.replay_length > 0
@@ -136,9 +138,12 @@ class ClassroomDemo:
         """Advance replay evidence, allocation and staged restoration, then publish."""
         self._advance_evidence()
         candidate = self._project()
-        if self.published is None or candidate != {k: v for k, v in self.published.items() if k != "published_revision"}:
+        volatile = ("published_revision", "generated_at")
+        if self.published is None or candidate != {k: v for k, v in self.published.items() if k not in volatile}:
+            from datetime import datetime, timezone
             self.published_revision += 1
             candidate["published_revision"] = self.published_revision
+            candidate["generated_at"] = datetime.now(timezone.utc).isoformat()
             self.published = candidate
         return self.snapshot()
 
@@ -148,11 +153,14 @@ class ClassroomDemo:
         target: set[tuple[str, str]] = set()
         effective = self.effective_capacity()
         remaining = effective
+        shortfall_note: dict[tuple[str, str], str] = {}
         for room, item in priority:
             key = (room, item[0])
             if item[2] <= remaining:
                 target.add(key)
                 remaining -= item[2]
+            else:
+                shortfall_note[key] = f"{item[2]:,} W did not fit in the {remaining:,} W left after higher-priority loads"
         proposed = sum(1 << LOAD_KEYS.index(key) for key in target)
         bit_order = [LOAD_KEYS.index((room, item[0])) for room, item in priority]
         applied = self.gate.update(proposed, self._signature(order), bit_order)
@@ -177,6 +185,7 @@ class ClassroomDemo:
                           "loads": loads})
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
+        edges = self._edges(target, current, shortfall_note)
         essential = [(r, x) for r in ROOMS for x in LOADS[r] if x[0] in ROOM_ESSENTIAL_LOADS]
         safety = shortfall_status(sum(x[2] for _, x in essential),
                                   sum(x[2] for r, x in essential if (r, x[0]) in current))
@@ -190,7 +199,7 @@ class ClassroomDemo:
                 "selected_classroom_id": self.scanned[-1] if self.scanned else None,
                 "scanned_classroom_ids": [r for r in ROOMS if r in self.scanned],
                 "priority_order": [r for r in order if r in self.scanned],
-                "rooms": rooms, "mode": "SIMULATED", "safety": safety,
+                "rooms": rooms, "mode": "SIMULATED", "safety": safety, "edges": edges,
                 "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"),
                           "fallback_reason": status.get("fallback_reason")},
                 "replay": {"running": self.replay_running, "index": self.replay_index(),
@@ -200,6 +209,37 @@ class ClassroomDemo:
                           "model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE "
                           f"counts only after {self.guard.confirmations} consecutive readings. Unscanned rooms' "
                           f"optional loads last. Safety policy {SAFETY_POLICY_VERSION}."}
+
+    def _edges(self, target, current, shortfall_note):
+        """Supply -> bus -> room -> appliance edges for the classroom drawing (#23)."""
+        closed = self.campus_feeder_closed is not False
+        open_reason = "Open: campus feeder B is unavailable"
+        any_cmd, any_on = bool(target), bool(current)
+        edges = [power_edge("classroom:SUPPLY>BUS", "SUPPLY", "BUS", connected=closed, commanded=any_cmd, applied=any_on,
+                            requested_w=sum(x[2] for rows in LOADS.values() for x in rows),
+                            served_w=sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current),
+                            reason=open_reason if not closed else f"Shared bus; {self.effective_capacity():,} W available")]
+        for cid in ROOMS:
+            room_cmd = any((cid, x[0]) in target for x in LOADS[cid])
+            room_on = any((cid, x[0]) in current for x in LOADS[cid])
+            room_served = sum(x[2] for x in LOADS[cid] if (cid, x[0]) in current)
+            edges.append(power_edge(f"classroom:BUS>{cid}", "BUS", cid, connected=closed, commanded=room_cmd, applied=room_on,
+                                    requested_w=sum(x[2] for x in LOADS[cid]), served_w=room_served,
+                                    reason=open_reason if not closed else f"{room_served:,} W of this room's loads served"))
+            for lid, name, watts, essential in LOADS[cid]:
+                key = (cid, lid)
+                if not closed:
+                    reason = open_reason
+                elif key in current:
+                    reason = f"{name}: served ({'protected essential' if essential else 'optional'})"
+                elif key in target:
+                    reason = f"{name}: commanded on, waiting for the restoration delay"
+                else:
+                    reason = f"{name}: shed by the allocator; {shortfall_note.get(key, 'not selected')}"
+                edges.append(power_edge(f"classroom:{cid}>{lid}", cid, f"{cid}.{lid}", connected=closed,
+                                        commanded=key in target, applied=key in current,
+                                        requested_w=watts, served_w=watts if key in current else 0, reason=reason))
+        return edges
 
     def act(self, action: str, classroom_id: str | None = None, capacity_w: int | None = None):
         if action == "scan":
@@ -328,6 +368,7 @@ class HospitalPriorityDemo(ClassroomDemo):
         applied = self.gate.update(proposed, self._signature(order), bit_order)
         current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
         readings, diagnoses = self._sense_and_diagnose(current)
+        edges = self._hospital_edges(target, current, readings, diagnoses)
 
         transformers = []
         for i, z in enumerate(HOSP_ZONES):
@@ -360,11 +401,43 @@ class HospitalPriorityDemo(ClassroomDemo):
             "selected_zone_id": self.scanned[-1] if self.scanned else None,
             "scanned_zone_ids": [z for z in HOSP_ZONES if z in self.scanned],
             "priority_order": [z for z in order if z in self.scanned],
-            "transformers": transformers, "mode": "SIMULATED", "safety": safety,
+            "transformers": transformers, "mode": "SIMULATED", "safety": safety, "edges": edges,
             "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"), "fallback_reason": status.get("fallback_reason")},
             "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": REPLAY_STEP_S},
             "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next."
         }
+
+    def _hospital_edges(self, target, current, readings, diagnoses):
+        """Supply -> bus -> transformer -> equipment edges for the hospital drawing (#23)."""
+        edges = [power_edge("hospital:SUPPLY>BUS", "UTILITY", "BUS", connected=True, commanded=bool(target),
+                            applied=bool(current), requested_w=sum(x[2] for rows in HOSP_LOADS.values() for x in rows),
+                            served_w=sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current),
+                            reason=f"Utility supply; {self.effective_capacity():,} W hospital limit")]
+        for i, z in enumerate(HOSP_ZONES):
+            tx = f"TX{i+1}"
+            vout = readings[tx].get("output_voltage_v")
+            diagnosis = diagnoses[tx]
+            observed = {"output_voltage_v": vout, "energized": None if vout is None else vout >= 100.0,
+                        "provenance": "SIMULATED_SENSOR", "diagnosis_status": diagnosis.get("status"),
+                        "note": "Voltage presence only; no measured branch current."}
+            unknown = diagnosis.get("status") == "ABSTAINED" or vout is None
+            zone_served = sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current)
+            edges.append(power_edge(f"hospital:BUS>{tx}", "BUS", tx, connected=True,
+                                    commanded=any((z, x[0]) in target for x in HOSP_LOADS[z]),
+                                    applied=any((z, x[0]) in current for x in HOSP_LOADS[z]),
+                                    requested_w=sum(x[2] for x in HOSP_LOADS[z]), served_w=zone_served, observed=observed,
+                                    evidence_unknown=unknown,
+                                    reason=(f"Diagnosis abstained: {diagnosis.get('cause')}" if unknown
+                                            else f"{zone_served:,} W of {z} equipment served")))
+            for lid, name, watts, essential in HOSP_LOADS[z]:
+                key = (z, lid)
+                reason = (f"{name}: served ({'essential' if essential else 'optional'})" if key in current else
+                          f"{name}: commanded on, waiting for the restoration delay" if key in target else
+                          f"{name}: shed by the allocator")
+                edges.append(power_edge(f"hospital:{tx}>{lid}", tx, f"{tx}.{lid}", connected=True,
+                                        commanded=key in target, applied=key in current, requested_w=watts,
+                                        served_w=watts if key in current else 0, reason=reason))
+        return edges
 
     @staticmethod
     def _rating(zone):

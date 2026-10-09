@@ -10,6 +10,7 @@ from app.schemas.snapshot import (
     SystemEvent, FaultDiagnosis
 )
 from app.core.allocator import allocate, fixed_priority_mask
+from app.core.edges import edge as power_edge
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
 from app.diagnosis.infer import FeederRating, ObservationWindow, diagnose_campus
@@ -381,7 +382,24 @@ class GridState:
 
             activity = self.current_activity()
 
+            edges = [power_edge(f"campus:SRC>{f}", "SRC", f, connected=self.source_capacity_w > 0,
+                                commanded=any(self.proposed_mask & (1 << i) for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
+                                applied=any(modeled_mask & (1 << i) for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
+                                requested_w=sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f and requested_mask & (1 << i)),
+                                served_w=sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f and modeled_mask & (1 << i)),
+                                reason="Source has no capacity" if self.source_capacity_w <= 0 else f"Feeder {f} head")
+                     for f in ("A", "B")]
+            for i, svc in enumerate(SERVICE_CATALOG):
+                closed = self.source_capacity_w > 0 and self.feeder_available.get(svc["feeder"], False)
+                edges.append(power_edge(f"campus:{svc['feeder']}>{svc['id']}", svc["feeder"], svc["id"], connected=closed,
+                                        commanded=bool(self.proposed_mask & (1 << i)), applied=bool(modeled_mask & (1 << i)),
+                                        requested_w=svc["watts"] if requested_mask & (1 << i) else 0,
+                                        served_w=svc["watts"] if modeled_mask & (1 << i) else 0,
+                                        reason=(f"Open: feeder {svc['feeder']} unavailable" if not closed
+                                                else services_out[i].model_reason)))
+
             return SystemSnapshot(
+                edges=edges,
                 control_revision=self.control_revision,
                 generated_at=datetime.now(timezone.utc),
                 source=SourceInfo(kind=SourceKind.SIMULATED, capacity_w=self.source_capacity_w),
