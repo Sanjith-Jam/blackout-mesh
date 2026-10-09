@@ -123,20 +123,127 @@ class ClassroomDemo:
 
 
 def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok):
-    """Classify only provided synthetic sensor observations and configured rating."""
     missing = [name for name, value in (("current", current_a), ("temperature", temperature_c),
                ("input voltage", input_voltage_v), ("output voltage", output_voltage_v), ("cooling", cooling_ok)) if value is None]
-    evidence = []
-    if current_a is not None:
-        evidence.append(f"Current {current_a:.1f} A; overload threshold {rated_current_a * 1.1:.1f} A (110% of rating).")
-    if temperature_c is not None:
-        evidence.append(f"Temperature {temperature_c:.1f} °C; hot threshold 80 °C.")
-    if cooling_ok is not None:
-        evidence.append(f"Cooling {'operational' if cooling_ok else 'failed'}.")
-    if input_voltage_v is not None and output_voltage_v is not None:
-        evidence.append(f"Input {input_voltage_v:.1f} V; output {output_voltage_v:.1f} V; low-input threshold 180 V.")
+    
+    hypotheses = []
+    
     if missing:
-        return {"code": "UNKNOWN", "cause": "Insufficient sensor evidence", "severity": "unknown", "evidence": evidence + ["Missing: " + ", ".join(missing)], "recommendation": "Restore sensor telemetry before diagnosing."}
+        hypotheses.append({
+            "code": "UNKNOWN",
+            "cause": "Insufficient sensor evidence",
+            "severity": "unknown",
+            "score": 0.0,
+            "supporting_evidence": ["Missing: " + ", ".join(missing)],
+            "contradicting_evidence": [],
+            "sufficiency": "insufficient",
+            "recommendation": "Restore sensor telemetry before diagnosing."
+        })
+        # If missing critical things, maybe we abstain. But let's evaluate others if possible.
+    
+    # 1. UPSTREAM_LOSS
+    up_supp = []
+    up_contra = []
+    if input_voltage_v is not None:
+        if input_voltage_v < 180: up_supp.append(f"Input {input_voltage_v:.1f} V is below 180 V")
+        else: up_contra.append(f"Input {input_voltage_v:.1f} V is normal")
+    if output_voltage_v is not None:
+        if output_voltage_v < 100: up_supp.append(f"Output {output_voltage_v:.1f} V is below 100 V")
+        else: up_contra.append(f"Output {output_voltage_v:.1f} V is normal")
+        
+    if up_supp and not up_contra:
+        hypotheses.append({
+            "code": "UPSTREAM_LOSS",
+            "cause": "Possible upstream supply loss",
+            "severity": "critical",
+            "score": 0.8,
+            "supporting_evidence": up_supp,
+            "contradicting_evidence": up_contra,
+            "sufficiency": "sufficient",
+            "recommendation": "Check the upstream supply and incoming connections."
+        })
+        
+    # 2. OVERLOAD
+    ov_supp = []
+    ov_contra = []
+    if current_a is not None:
+        if current_a > rated_current_a * 1.1: ov_supp.append(f"Current {current_a:.1f} A exceeds overload threshold {rated_current_a * 1.1:.1f} A")
+        else: ov_contra.append(f"Current {current_a:.1f} A is within limits")
+        
+    if ov_supp:
+        hypotheses.append({
+            "code": "OVERLOAD",
+            "cause": "Current exceeds the configured rating threshold",
+            "severity": "high",
+            "score": 0.9,
+            "supporting_evidence": ov_supp,
+            "contradicting_evidence": ov_contra,
+            "sufficiency": "sufficient",
+            "recommendation": "Review connected demand and verify with qualified protection equipment."
+        })
+        
+    # 3. COOLING_FAILURE
+    cf_supp = []
+    cf_contra = []
+    if temperature_c is not None:
+        if temperature_c >= 80: cf_supp.append(f"Temperature {temperature_c:.1f} °C exceeds hot threshold 80 °C")
+        else: cf_contra.append(f"Temperature {temperature_c:.1f} °C is normal")
+    if cooling_ok is not None:
+        if not cooling_ok: cf_supp.append("Cooling reported failed")
+        else: cf_contra.append("Cooling reported operational")
+        
+    if temperature_c is not None and temperature_c >= 80:
+        if cooling_ok is False:
+            hypotheses.append({
+                "code": "COOLING_FAILURE",
+                "cause": "Elevated temperature with cooling reported failed",
+                "severity": "high",
+                "score": 0.85,
+                "supporting_evidence": cf_supp,
+                "contradicting_evidence": cf_contra,
+                "sufficiency": "sufficient",
+                "recommendation": "Inspect cooling equipment and temperature using approved procedures."
+            })
+        elif cooling_ok is None:
+            hypotheses.append({
+                "code": "AMBIGUOUS_THERMAL_FAULT",
+                "cause": "Elevated temperature but cooling status is unknown",
+                "severity": "unknown",
+                "score": 0.5,
+                "supporting_evidence": cf_supp,
+                "contradicting_evidence": cf_contra,
+                "sufficiency": "ambiguous",
+                "recommendation": "Check cooling system status."
+            })
+        
+    # Sort hypotheses by score descending
+    hypotheses.sort(key=lambda x: x["score"], reverse=True)
+    
+    # If no hypotheses and not missing, it's NORMAL
+    if not hypotheses:
+        hypotheses.append({
+            "code": "NORMAL",
+            "cause": "No configured demo fault found",
+            "severity": "normal",
+            "score": 1.0,
+            "supporting_evidence": ["All available sensors within normal limits"],
+            "contradicting_evidence": [],
+            "sufficiency": "sufficient",
+            "recommendation": "No action required."
+        })
+        
+    # We now return the full ranked array of hypotheses.
+    # To maintain backward compatibility with old `diagnosis` for now, we can wrap it.
+    # The requirement asks to Expose the ranked result. Let's return a dict with hypotheses.
+    return {
+        "code": hypotheses[0]["code"],
+        "cause": hypotheses[0]["cause"],
+        "severity": hypotheses[0]["severity"],
+        "evidence": hypotheses[0]["supporting_evidence"],
+        "recommendation": hypotheses[0]["recommendation"],
+        "hypotheses": hypotheses
+    }
+
     if input_voltage_v < 180 and output_voltage_v < 100:
         return {"code": "UPSTREAM_LOSS", "cause": "Possible upstream supply loss", "severity": "critical", "evidence": evidence, "recommendation": "Check the upstream supply and incoming connections."}
     if current_a > rated_current_a * 1.1:

@@ -74,11 +74,23 @@ class SystemEvent(BaseModel):
     type: str
     description: str
 
-class FaultDiagnosis(BaseModel):
-    has_fault: bool
-    diagnosis: str
+
+class Hypothesis(BaseModel):
+    code: str
+    cause: str
+    asset_id: Optional[str] = None
+    supporting_evidence: List[str]
+    contradicting_evidence: List[str]
+    time_window: str
+    sufficiency: str
+    score: float
     severity: str
-    status: str
+    recommendation: str
+
+class RankedDiagnosis(BaseModel):
+    is_fault: bool
+    hypotheses: List[Hypothesis]
+    abstention_reason: Optional[str] = None
 
 
 class ScopeTotals(BaseModel):
@@ -119,7 +131,7 @@ class SystemSnapshot(BaseModel):
     services: List[ServiceSnapshot]
     zones: Optional[FacilityZones] = None
     events: List[SystemEvent] = []
-    fault_diagnosis: Optional[FaultDiagnosis] = None
+    fault_diagnosis: Optional[RankedDiagnosis] = None
     activity: Dict[str, "ActivitySnapshot"] = Field(default_factory=dict)
     model: Dict[str, object] = Field(default_factory=dict)
     replay: "ReplaySnapshot"

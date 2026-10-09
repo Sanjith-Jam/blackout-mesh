@@ -83,3 +83,8 @@ Initial backend test attempts lacked system pytest, then lacked `app` on the imp
 - Train and integrate required ML, validate constrained decisions and recovery, then rehearse the judge demo.
 
 Detailed two-person physical phases remain local at `/home/bread/blackout-mesh-local/HARDWARE_IMPLEMENTATION_PLAN.md`. Reuse research, judge critique, notice drafts, device credentials and historical plan archives remain outside the uploaded document set. No connected-device queries, flashing, browser QA or fresh physical tests were performed during this sync.
+
+
+## Updates for BM-17 and BM-19
+- **BM-19**: Unified session semantics across RFID and software routes. `GridState` now uses `active_sessions` instead of a single active room. RFID unscan is fully supported.
+- **BM-17**: Added support for simultaneous faults, hypothesis ranking, and diagnostic abstention. `diagnose` logic now correctly evaluates all hypotheses and ranks them by score. Ambiguous conditions explicitly return abstention.

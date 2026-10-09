@@ -7,14 +7,14 @@ from app.schemas.snapshot import (
     SystemSnapshot, SourceInfo, SourceKind, HardwareLinkStatus,
     ServiceSnapshot, Tier, FacilityZones, HospitalZone, HospitalRoom,
     ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType,
-    SystemEvent, FaultDiagnosis
+    SystemEvent, 
 )
 from app.core.allocator import allocate, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.activity.model import ActivityModel, FEATURES
 
 from app.core.identity import get_run_identity
-from app.schemas.snapshot import CrossRouteContract, RunIdentity, ScopeTotals
+from app.schemas.snapshot import CrossRouteContract, RunIdentity, ScopeTotals, RankedDiagnosis, Hypothesis
 from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
 import os
 
@@ -121,28 +121,74 @@ class GridState:
 
     def compute_fault_diagnosis(self):
         with self._lock:
-            has_fault = False
-            diagnosis_msgs = []
+            hypotheses = []
             
+            # 1. Grid capacity reduction
+            cap_supp = []
+            cap_contra = []
             if self.source_capacity_w < 14000:
-                has_fault = True
-                diagnosis_msgs.append(f"Grid capacity reduced ({self.source_capacity_w}W).")
-                
-            for f, avail in self.feeder_available.items():
-                if not avail:
-                    has_fault = True
-                    diagnosis_msgs.append(f"Feeder {f} disconnected.")
-                    
-            if has_fault:
-                severity = "HIGH" if not all(self.feeder_available.values()) else "MEDIUM"
-                self.fault_diagnosis = FaultDiagnosis(
-                    has_fault=True,
-                    diagnosis=" ".join(diagnosis_msgs),
-                    severity=severity,
-                    status="ACTIVE"
-                )
+                cap_supp.append(f"Grid capacity reduced ({self.source_capacity_w}W).")
             else:
-                self.fault_diagnosis = None
+                cap_contra.append(f"Grid capacity is normal ({self.source_capacity_w}W).")
+            
+            if cap_supp:
+                hypotheses.append(Hypothesis(
+                    code="REDUCED_CAPACITY",
+                    cause="Source capacity is below normal threshold",
+                    asset_id="simulated_source",
+                    supporting_evidence=cap_supp,
+                    contradicting_evidence=cap_contra,
+                    time_window="current",
+                    sufficiency="sufficient",
+                    score=0.8,
+                    severity="high",
+                    recommendation="Wait for grid restoration."
+                ))
+                
+            # 2. Feeder loss
+            for f, avail in self.feeder_available.items():
+                f_supp = []
+                f_contra = []
+                if not avail:
+                    f_supp.append(f"Feeder {f} disconnected.")
+                else:
+                    f_contra.append(f"Feeder {f} connected.")
+                
+                if f_supp:
+                    hypotheses.append(Hypothesis(
+                        code="FEEDER_LOSS",
+                        cause=f"Feeder {f} is disconnected",
+                        asset_id=f,
+                        supporting_evidence=f_supp,
+                        contradicting_evidence=f_contra,
+                        time_window="current",
+                        sufficiency="sufficient",
+                        score=0.9,
+                        severity="critical",
+                        recommendation="Check physical connections."
+                    ))
+
+            hypotheses.sort(key=lambda h: h.score, reverse=True)
+            
+            if not hypotheses:
+                hypotheses.append(Hypothesis(
+                    code="NORMAL",
+                    cause="No campus faults detected",
+                    asset_id=None,
+                    supporting_evidence=["Capacity and feeders normal"],
+                    contradicting_evidence=[],
+                    time_window="current",
+                    sufficiency="sufficient",
+                    score=1.0,
+                    severity="normal",
+                    recommendation="No action needed."
+                ))
+            
+            self.fault_diagnosis = RankedDiagnosis(
+                is_fault=any(h.code != "NORMAL" for h in hypotheses),
+                hypotheses=hypotheses,
+                abstention_reason=None
+            )
 
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:

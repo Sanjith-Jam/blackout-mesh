@@ -167,7 +167,19 @@ export default function HospitalDemo() {
           <div className="hospital-detail-grid">{transformers.map((transformer) => <article className={`hospital-transformer-detail severity-${transformer.diagnosis.severity}`} key={transformer.id}>
             <div className="hospital-transformer-heading"><div><p>{transformer.zone}</p><h2>{transformer.name}</h2></div><span className={`hospital-diagnosis-badge severity-${transformer.diagnosis.severity}`}>{transformer.diagnosis.code.replace(/_/g, ' ')}</span></div>
             <TransformerReadings transformer={transformer} />
-            <div className="hospital-diagnosis-copy"><strong>{transformer.diagnosis.cause}</strong><ul>{transformer.diagnosis.evidence.map((item) => <li key={item}>{item}</li>)}</ul><p>{transformer.diagnosis.recommendation}</p></div>
+            <div className="hospital-diagnosis-copy">
+              {transformer.diagnosis.hypotheses?.map((h, i) => (
+                <div key={i} style={{marginBottom: '10px', paddingBottom: '10px', borderBottom: i < transformer.diagnosis.hypotheses.length - 1 ? '1px dashed #ccc' : 'none'}}>
+                  <strong style={{display: 'block', fontSize: '0.8rem'}}>{h.cause} (Score: {h.score.toFixed(2)})</strong>
+                  <span className={`hospital-diagnosis-badge severity-${h.severity}`} style={{marginTop: '4px', marginBottom: '4px'}}>{h.code.replace(/_/g, ' ')}</span>
+                  <ul style={{marginTop: '4px'}}>
+                    {h.supporting_evidence.map((item, j) => <li key={'s'+j} className="text-ok">✓ {item}</li>)}
+                    {h.contradicting_evidence.map((item, j) => <li key={'c'+j} className="text-off">✗ {item}</li>)}
+                  </ul>
+                  <p style={{marginTop: '4px'}}><em>{h.sufficiency.toUpperCase()}</em>: {h.recommendation}</p>
+                </div>
+              ))}
+            </div>
           </article>)}</div>
 
           <CauseSummary transformers={transformers} />

@@ -218,13 +218,26 @@ export interface ClassroomDemoSnapshot {
 
 export type HospitalDemoScenario = "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
 
+export interface Hypothesis {
+  code: string;
+  cause: string;
+  severity: string;
+  score: number;
+  supporting_evidence: string[];
+  contradicting_evidence: string[];
+  sufficiency: string;
+  recommendation: string;
+}
+
 export interface HospitalDemoDiagnosis {
   code: string;
   cause: string;
   severity: string;
   evidence: string[];
   recommendation: string;
+  hypotheses: Hypothesis[];
 }
+
 
 export interface HospitalDemoTransformer {
   id: string;
