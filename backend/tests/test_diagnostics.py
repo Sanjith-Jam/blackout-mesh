@@ -182,4 +182,21 @@ def test_deterministic_ranking_by_severity_and_score():
     assert res.hypotheses[0].code == "UPSTREAM_LOSS"
     assert res.hypotheses[0].severity == Severity.CRITICAL
 
+from app.core.state import GridState
+
+def test_campus_state_fault_diagnosis_structured():
+    state = GridState()
+    state.set_capacity(7000)
+    state.set_feeder("A", False)
+    diag = state.fault_diagnosis
+    assert diag is not None
+    assert diag.has_fault is True
+    assert diag.severity == "HIGH"
+    assert hasattr(diag, "hypotheses")
+    codes = [h["code"] if isinstance(h, dict) else h.code for h in diag.hypotheses]
+    assert "GRID_CAPACITY_SHORTFALL" in codes
+    assert "FEEDER_DISCONNECTED" in codes
+
+
+
 

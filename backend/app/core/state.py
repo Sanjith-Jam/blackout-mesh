@@ -108,15 +108,40 @@ class GridState:
         with self._lock:
             has_fault = False
             diagnosis_msgs = []
+            hypotheses_list = []
             
             if self.source_capacity_w < 14000:
                 has_fault = True
                 diagnosis_msgs.append(f"Grid capacity reduced ({self.source_capacity_w}W).")
+                hypotheses_list.append({
+                    "id": "CAMPUS:SUPPLY_SHORTFALL",
+                    "code": "GRID_CAPACITY_SHORTFALL",
+                    "asset_id": "MAIN_SUPPLY",
+                    "cause": f"Observed grid capacity ({self.source_capacity_w} W) below 14 kW normal supply",
+                    "severity": "medium",
+                    "evidence_score": 0.85,
+                    "sufficiency": "SUFFICIENT",
+                    "supporting_evidence": [f"Grid capacity observed at {self.source_capacity_w} W."],
+                    "contradicting_evidence": [],
+                    "recommendation": "Initiate automated load shedding to protect critical services.",
+                })
                 
             for f, avail in self.feeder_available.items():
                 if not avail:
                     has_fault = True
                     diagnosis_msgs.append(f"Feeder {f} disconnected.")
+                    hypotheses_list.append({
+                        "id": f"FEEDER:{f}:DISCONNECTED",
+                        "code": "FEEDER_DISCONNECTED",
+                        "asset_id": f"FEEDER_{f}",
+                        "cause": f"Feeder {f} interruption detected",
+                        "severity": "high",
+                        "evidence_score": 0.95,
+                        "sufficiency": "SUFFICIENT",
+                        "supporting_evidence": [f"Feeder line telemetry reports feeder {f} open."],
+                        "contradicting_evidence": [],
+                        "recommendation": f"Inspect breaker and feeder line {f}.",
+                    })
                     
             if has_fault:
                 severity = "HIGH" if not all(self.feeder_available.values()) else "MEDIUM"
@@ -124,10 +149,12 @@ class GridState:
                     has_fault=True,
                     diagnosis=" ".join(diagnosis_msgs),
                     severity=severity,
-                    status="ACTIVE"
+                    status="ACTIVE",
+                    hypotheses=hypotheses_list,
                 )
             else:
                 self.fault_diagnosis = None
+
 
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:

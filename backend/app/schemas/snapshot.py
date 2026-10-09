@@ -78,6 +78,8 @@ class FaultDiagnosis(BaseModel):
     diagnosis: str
     severity: str
     status: str
+    hypotheses: List[Dict[str, object]] = Field(default_factory=list)
+
 
 class SystemSnapshot(BaseModel):
     control_revision: int
