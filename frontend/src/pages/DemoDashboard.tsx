@@ -1,49 +1,84 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, RefreshCw, Server, Wifi, AlertTriangle } from 'lucide-react';
-import { fetchHealth, fetchSnapshot, processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
+import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
+import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
 import { Snapshot } from '../types';
+import TopologyGraph from '../components/TopologyGraph';
+import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
+import AllocationHistoryChart from '../components/AllocationHistoryChart';
+import IncidentTimeline from '../components/IncidentTimeline';
 import './DemoDashboard.css';
+
+interface TimeSeriesPoint {
+  time: string;
+  capacity: number;
+  demand: number;
+  servedCount: number;
+  shedCount: number;
+}
 
 export default function DemoDashboard() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [healthOk, setHealthOk] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<{msg: string, isError: boolean} | null>(null);
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
-    
-    try {
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 10000);
-      
-      const [health, snap] = await Promise.all([
-        fetchHealth(abortController.signal).catch(() => ({ status: 'error', application: '' })),
-        fetchSnapshot(abortController.signal)
-      ]);
-      
-      clearTimeout(timeoutId);
-      
-      setHealthOk(health.status === 'ok');
-      setSnapshot(snap);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard data');
-      setHealthOk(false);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  // Time series data for charts
+  const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
+  const MAX_HISTORY = 50;
+
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    const connectWs = () => {
+      const ws = new WebSocket('ws://localhost:8000/ws/live');
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setHealthOk(true);
+        setError(null);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data: Snapshot = JSON.parse(event.data);
+          setSnapshot(data);
+          setHealthOk(true);
+
+          // Update history
+          const now = new Date(data.generated_at).toLocaleTimeString();
+          const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
+          const servedCount = data.services.filter(s => s.modeled_served).length;
+          const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
+
+          setHistory(prev => {
+            const next = [...prev, { time: now, capacity: data.source.capacity_w, demand, servedCount, shedCount }];
+            if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
+            return next;
+          });
+
+        } catch (e) {
+          console.error("Failed to parse websocket message", e);
+        }
+      };
+
+      ws.onerror = (e) => {
+        console.error("Websocket error", e);
+      };
+
+      ws.onclose = () => {
+        setHealthOk(false);
+        setError("WebSocket disconnected. Reconnecting...");
+        setTimeout(connectWs, 3000);
+      };
+    };
+
+    connectWs();
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, []);
 
   const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
     if (actionPending) return;
@@ -56,12 +91,10 @@ export default function DemoDashboard() {
       } else {
         setActionFeedback({ msg: `Action rejected: ${res.event_type || 'Constraints violated'}`, isError: true });
       }
-      await loadData(true);
     } catch (err: any) {
       setActionFeedback({ msg: `Failed: ${err.message}`, isError: true });
     } finally {
       setActionPending(false);
-      // clear feedback after 3s
       setTimeout(() => setActionFeedback(null), 3000);
     }
   };
@@ -71,34 +104,20 @@ export default function DemoDashboard() {
   const doCapacity = (watts: number) => handleAction(() => changeCapacity(watts), `Capacity set to ${watts}W`);
   const doFeeder = (feeder: string, available: boolean) => handleAction(() => changeFeeder(feeder, available), `Feeder ${feeder} available: ${available}`);
 
-  if (loading && !snapshot) {
+  if (!snapshot) {
     return (
       <div className="dashboard-container loading">
         <Activity className="spin" size={48} />
-        <h2>Loading Control Room...</h2>
+        <h2>Connecting to Live Feed...</h2>
+        {error && <p className="text-err">{error}</p>}
       </div>
     );
   }
 
-  if (error && !snapshot) {
-    return (
-      <div className="dashboard-container error-state">
-        <AlertTriangle size={48} color="#ef4444" />
-        <h2>Connection Lost</h2>
-        <p>{error}</p>
-        <button className="btn-primary" onClick={() => loadData()}>Retry Connection</button>
-      </div>
-    );
-  }
-
-  if (!snapshot) return null;
-
-  const { services, zones, source, feeder_limits_w, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
+  const { services, zones, source, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
   
   const servedWatts = services.filter(s => s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
   const servedCount = services.filter(s => s.modeled_served).length;
-  const feederAWatts = services.filter(s => s.modeled_served && s.feeder === 'A').reduce((sum, s) => sum + s.watts, 0);
-  const feederBWatts = services.filter(s => s.modeled_served && s.feeder === 'B').reduce((sum, s) => sum + s.watts, 0);
 
   const getService = (id: string) => services.find(s => s.id === id);
   const l0 = getService('L0');
@@ -118,13 +137,13 @@ export default function DemoDashboard() {
           <Activity className="brand-icon" />
           <div>
             <span className="brand-name">PriorityGrid</span>
-            <span className="brand-badge">Interactive Demo</span>
+            <span className="brand-badge">Live Console</span>
           </div>
         </div>
         
         <div className="dash-status-indicators">
           <div className={`status-pill ${healthOk ? 'ok' : 'error'}`}>
-            <Server size={14} /> Backend {healthOk ? 'Connected' : 'Stale'}
+            <Server size={14} /> Backend {healthOk ? 'Live' : 'Disconnected'}
           </div>
           <div className="status-pill warn">
             <Wifi size={14} /> HW: {snapshot.hardware_link.replace('_', ' ')}
@@ -133,22 +152,19 @@ export default function DemoDashboard() {
 
         <div className="dash-actions">
           <Link to="/" className="btn-secondary">Back to Home</Link>
-          <button className="btn-primary icon-btn" onClick={() => loadData(true)} disabled={refreshing}>
-            <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-          </button>
         </div>
       </header>
 
       {error && (
         <div className="dash-alert error">
-          <AlertTriangle size={16} /> Backend disconnected. Displaying stale snapshot.
+          <AlertTriangle size={16} /> {error}
         </div>
       )}
 
       {/* OVERVIEW STRIP */}
       <section className="overview-strip">
         <div className="metric-box">
-          <div className="metric-label">Simulated Capacity</div>
+          <div className="metric-label">Live Capacity</div>
           <div className="metric-value">{source.capacity_w} <small>W</small></div>
         </div>
         <div className="metric-box">
@@ -165,31 +181,34 @@ export default function DemoDashboard() {
         </div>
       </section>
 
-      {/* FEEDER BARS */}
-      <section className="feeders-strip">
-        <div className="feeder-bar-container">
-          <div className="feeder-header">
-            <span>Feeder A (Hospital)</span>
-            <span>{feederAWatts} / {feeder_limits_w.A} W</span>
-          </div>
-          <div className="progress-bg">
-            <div className={`progress-fill ${feederAWatts > feeder_limits_w.A ? 'over' : ''}`} style={{width: `${Math.min(100, (feederAWatts / feeder_limits_w.A) * 100)}%`}}></div>
-          </div>
+      {/* VISUALIZATIONS ROW */}
+      <section className="visualizations-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <div className="vis-panel" style={{ flex: '1 1 300px', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Source vs Demand</h3>
+          <SourceCapacityDemandChart data={history} />
         </div>
-        <div className="feeder-bar-container">
-          <div className="feeder-header">
-            <span>Feeder B (Classrooms)</span>
-            <span>{feederBWatts} / {feeder_limits_w.B} W</span>
-          </div>
-          <div className="progress-bg">
-            <div className={`progress-fill ${feederBWatts > feeder_limits_w.B ? 'over' : ''}`} style={{width: `${Math.min(100, (feederBWatts / feeder_limits_w.B) * 100)}%`}}></div>
-          </div>
+        <div className="vis-panel" style={{ flex: '1 1 300px', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Allocation History</h3>
+          <AllocationHistoryChart data={history} />
+        </div>
+        <div className="vis-panel" style={{ flex: '1 1 300px' }}>
+          <IncidentTimeline events={snapshot.events} />
         </div>
       </section>
 
+      {/* TOPOLOGY & ZONES ROW */}
       <div className="zones-layout">
         <div className="main-zones">
           
+          {/* NETWORK TOPOLOGY */}
+          <section className="zone-section">
+            <div className="zone-header">
+              <h2>Network Topology</h2>
+              <p>Real-time physical modeled connections.</p>
+            </div>
+            <TopologyGraph snapshot={snapshot} />
+          </section>
+
           {/* HOSPITAL ZONE */}
           <section className="zone-section">
             <div className="zone-header">

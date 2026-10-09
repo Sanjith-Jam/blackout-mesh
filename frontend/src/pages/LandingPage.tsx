@@ -12,9 +12,9 @@ export default function LandingPage() {
           <span className="brand-name">PriorityGrid</span>
         </div>
         <nav className="landing-nav">
-          <a href="#problem">Overview</a>
-          <a href="#hospital">Hospital</a>
-          <a href="#classrooms">Classrooms</a>
+          <Link to="/">Overview</Link>
+          <Link to="/hospital">Hospital</Link>
+          <Link to="/classrooms">Classrooms</Link>
           <a href="#architecture">Architecture</a>
         </nav>
         <div className="landing-actions">

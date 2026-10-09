@@ -6,7 +6,8 @@ from typing import Dict, Optional, Tuple, Any
 from app.schemas.snapshot import (
     SystemSnapshot, SourceInfo, SourceKind, HardwareLinkStatus,
     ServiceSnapshot, Tier, FacilityZones, HospitalZone, HospitalRoom,
-    ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType
+    ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType,
+    SystemEvent, FaultDiagnosis
 )
 
 SERVICE_CATALOG = [
@@ -66,7 +67,46 @@ class GridState:
         self.classroom_load_events = {"CR1": False, "CR2": False, "CR3": False}
         self.rfid_map = DEFAULT_RFID_MAP.copy()
         self.indicator_confirmed_mask = None
+        self.events = []
+        self.fault_diagnosis = None
+        self.compute_fault_diagnosis()
         self._initialized = True
+
+    def add_event(self, event_type: str, desc: str):
+        with self._lock:
+            event = SystemEvent(
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                type=event_type,
+                description=desc
+            )
+            self.events.append(event)
+            if len(self.events) > 50:
+                self.events.pop(0)
+
+    def compute_fault_diagnosis(self):
+        with self._lock:
+            has_fault = False
+            diagnosis_msgs = []
+            
+            if self.source_capacity_w < 14000:
+                has_fault = True
+                diagnosis_msgs.append(f"Grid capacity reduced ({self.source_capacity_w}W).")
+                
+            for f, avail in self.feeder_available.items():
+                if not avail:
+                    has_fault = True
+                    diagnosis_msgs.append(f"Feeder {f} disconnected.")
+                    
+            if has_fault:
+                severity = "HIGH" if not all(self.feeder_available.values()) else "MEDIUM"
+                self.fault_diagnosis = FaultDiagnosis(
+                    has_fault=True,
+                    diagnosis=" ".join(diagnosis_msgs),
+                    severity=severity,
+                    status="ACTIVE"
+                )
+            else:
+                self.fault_diagnosis = None
 
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:
@@ -84,6 +124,7 @@ class GridState:
             if not classroom_id:
                 self.active_classroom_id = None
                 self.control_revision += 1
+                self.add_event("RFID_SCAN", f"Unknown RFID card scanned: {uid}")
                 return RfidEventType.UNKNOWN_CARD.value, None, None, None
 
             self.active_classroom_id = classroom_id
@@ -91,25 +132,35 @@ class GridState:
             
             classroom = next((c for c in CLASSROOMS if c["id"] == classroom_id), None)
             if classroom:
+                self.add_event("RFID_SCAN", f"RFID scan recognized for {classroom['name']}")
                 return RfidEventType.CARD_RECOGNIZED.value, classroom_id, classroom["name"], classroom["service_id"]
+            
+            self.add_event("RFID_SCAN", f"RFID scan recognized for unknown classroom ID: {classroom_id}")
             return RfidEventType.CARD_RECOGNIZED.value, classroom_id, None, None
 
     def set_capacity(self, capacity_w: int):
         with self._lock:
             self.source_capacity_w = capacity_w
             self.control_revision += 1
+            self.add_event("CAPACITY_CHANGE", f"Source capacity set to {capacity_w}W")
+            self.compute_fault_diagnosis()
 
     def set_feeder(self, feeder: str, available: bool):
         with self._lock:
             if feeder in self.feeder_available:
                 self.feeder_available[feeder] = available
                 self.control_revision += 1
+                status = "connected" if available else "disconnected"
+                self.add_event("FEEDER_CHANGE", f"Feeder {feeder} {status}")
+                self.compute_fault_diagnosis()
 
     def set_classroom_load(self, classroom_id: str, active: bool):
         with self._lock:
             if classroom_id in self.classroom_load_events:
                 self.classroom_load_events[classroom_id] = active
                 self.control_revision += 1
+                status = "active" if active else "inactive"
+                self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
 
     def compute_allocation(self) -> int:
         with self._lock:
@@ -231,5 +282,7 @@ class GridState:
                 indicator_confirmed_mask=self.indicator_confirmed_mask,
                 zones=zones,
                 hardware_link=HardwareLinkStatus.NOT_CONNECTED,
-                services=services_out
+                services=services_out,
+                events=self.events.copy(),
+                fault_diagnosis=self.fault_diagnosis
             )

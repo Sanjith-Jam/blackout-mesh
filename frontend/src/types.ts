@@ -52,6 +52,12 @@ export interface FacilityZones {
   classroom: ClassroomZone;
 }
 
+export interface SystemEvent {
+  timestamp: string;
+  type: string;
+  description: string;
+}
+
 export interface Snapshot {
   control_revision: number;
   generated_at: string;
@@ -65,6 +71,7 @@ export interface Snapshot {
   hardware_link: string;
   services: Service[];
   zones?: FacilityZones;
+  events?: SystemEvent[];
 }
 
 export interface HealthResponse {

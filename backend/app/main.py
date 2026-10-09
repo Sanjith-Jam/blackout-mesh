@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+import asyncio
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Dict, List
 
 from app.schemas.snapshot import (
     SystemSnapshot,
@@ -17,10 +19,48 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_text(message)
+            except Exception:
+                self.disconnect(connection)
+
+manager = ConnectionManager()
+
+async def broadcast_state():
+    while True:
+        if manager.active_connections:
+            try:
+                snapshot = grid.build_snapshot()
+                await manager.broadcast(snapshot.model_dump_json())
+            except Exception as e:
+                print(f"Broadcast error: {e}")
+        await asyncio.sleep(0.25)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(broadcast_state())
+    yield
+    task.cancel()
+
 app = FastAPI(
     title="PriorityGrid API",
     description="Backend API for the PriorityGrid decision-and-control application.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS Configuration
@@ -88,3 +128,12 @@ async def change_feeder(req: FeederChangeRequest):
         available=req.available,
         control_revision=grid.control_revision
     )
+
+@app.websocket("/ws/live")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
