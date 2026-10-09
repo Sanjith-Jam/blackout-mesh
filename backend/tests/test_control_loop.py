@@ -43,6 +43,7 @@ def grid_clock(monkeypatch):
     demo = ClassroomDemo(FakeClock(0.0))
     monkeypatch.setattr(main, "grid", grid)
     monkeypatch.setattr(main, "classroom_demo", demo)
+    monkeypatch.setattr(main.site, "classroom", demo)
     yield grid, clock, demo
     grid.clock = time.monotonic
     grid.restoration_gate = RestorationGate(time.monotonic)
