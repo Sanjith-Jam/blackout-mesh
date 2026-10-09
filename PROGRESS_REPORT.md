@@ -2,6 +2,17 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## Classroom and hospital visualizers — 2026-10-09
+
+This update preserves the original light graph-paper theme and supersedes earlier descriptions of the demo routes. Three Luna workers implemented the initial endpoints/views; a further Luna worker replaced the rejected classroom node graph with a physical floor-plan renderer under parent review.
+
+- Classroom: three rooms, physical appliances and wiring. The separate catalog requests 8,000 W. After scanning CR1 and applying the 3,400-W preset, CR1 receives all 2,000 W and each other room receives 700 W of essential computers/lighting. Optional devices are shed with stopped paths. Restoration uses the existing time gate; unmet demand stays visible.
+- Hospital: separate three-transformer topology, current/temperature/input/output/cooling readings and evidence-based likely-cause explanations. Overload/cooling/missing-sensor fixtures affect TX2; upstream loss affects all three. No invented transformer model accuracy; diagnosis is threshold-based and reads only sensor observations.
+- Original dashboard: explicit React Flow dimensions fix hidden nodes; browser inspection confirms 9 visible nodes and 8 edges.
+- Validation: 26 backend tests pass, including request validation, allocation behavior, diagnosis, isolation and time-based restoration. Production build passes with the existing large-bundle warning (~1.54 MB JS). Browser scenario checks and responsive-verification limits are recorded locally under `/home/bread/blackout-mesh-local/visualizers/`.
+
+No new physical hardware evidence or transport integration. Local plans/reuse recommendations remain private and unchanged.
+
 ## UI correction — 2026-10-09
 
 The user rejected the visual redesign. Restored the original landing page, dashboard, routes and styles from `aafaebc`. ML training artifacts, APIs, allocation and tests remain intact; model/replay presentation is available through the API, pending user-defined classifier visuals. The frontend build passes with the original large-bundle warning. The software delivery UI descriptions below are historical.

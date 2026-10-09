@@ -4,7 +4,7 @@ Updated 2026-10-09. Remote application/Board B work and local ESP32 A work are m
 
 ## Current state
 
-UI correction: restored frontend pages, styles, routes and HTML to pre-redesign commit `aafaebc` at the user’s request. ML/backend work and typed API support remain. The restored UI does not expose the new replay/model panels; classifier visuals await user direction. Frontend production build passes with its original large-bundle warning.
+UI: the original light graph-paper theme remains. `/classrooms` now presents three physical classroom floor plans with animated wiring and appliance states; `/hospital` independently shows three transformers, sensors and likely-cause evidence. The original `/demo` React Flow nodes now have explicit dimensions and render visibly. Model/replay presentation remains available through the API. Frontend production build passes with its existing large-bundle warning.
 
 Software work is active and hardware work is paused. A trained four-feature local occupancy proxy, observation/model/replay APIs, exact 64-mask allocator, restoration gate and responsive command center are now integrated. The software freezes the existing six-service 14-kW catalog; the historical nine-load catalog remains deferred. No paid keys are required.
 
@@ -23,6 +23,6 @@ Hardware is not integrated: A/B serial/radio contracts differ, physical ACK fiel
 
 ## Next action
 
-Rehearse the software demo, gather independently labeled local room observations, and evaluate on new sessions before making accuracy claims. Use `/demo` for replay, shortage and feeder-fault controls; inspect the API at port 8000 `/docs`. Train only when updating evidence/model, not on every start. Detailed current checks are in PROGRESS_REPORT.md.
+Rehearse the software demo, gather independently labeled local room observations, and evaluate on new sessions before making accuracy claims. Use `/classrooms`: reset, scan CR1, then overload (3,400 W). CR1 retains 2,000 W; CR2 and CR3 each retain 700 W essential computers/lighting. This separate 8,000-W classroom catalog does not change the six-service campus catalog. Use `/hospital` for overload, cooling failure, upstream loss and missing-sensor scenarios. Diagnosis reads sensor values, uses transparent demonstration thresholds and is not a trained transformer model. Use `/demo` for original shortage and feeder-fault controls; inspect the API at port 8000 `/docs`. Train only when updating evidence/model, not on every start. Detailed current checks are in PROGRESS_REPORT.md.
 
 When hardware resumes, agree one A/B transport and physical mapping before linking the backend. Phase 0 remains complete; physical detailed plans stay local under `/home/bread/blackout-mesh-local/`.
