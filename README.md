@@ -20,6 +20,17 @@ Commands:
 - `pio run -d firmware -e esp32-a` — compile the gateway (radio requires private provisioning).
 - `python3 tools/test_radio_protocol.py` — synthetic wire fixtures and all 512 mask round trips.
 
+- `pio run -d firmware -e esp32-a -e esp32-a-enroll` — build normal/enrollment firmware.
+- `pio run -d firmware -e esp32-a-enroll -t upload --upload-port /dev/ttyUSB0` — flash local enrollment mode.
+- `pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0` — flash normal gateway.
+- `pio device monitor --port /dev/ttyUSB0 --baud 115200` — raw JSON output (no host sync).
+- `python3 tools/test_host_tools.py` — simulated console/enrollment checks.
+- `.venv/bin/python tools/enroll_cards.py --port /dev/ttyUSB0` — capture A/B/C to an ignored map.
+- `.venv/bin/python tools/gateway_console.py --port /dev/ttyUSB0` — input-only synchronized acceptance console.
+
+For utility dependencies: `python3 -m venv .venv`, then `.venv/bin/python -m pip install pyserial`.
+Run `pio pkg install -d firmware` before host C++ checks on a fresh checkout.
+
 The main demo has nine circuits with 84 kW total configured demand: three labs plus six other services. A required classifier estimates lab activity; a fixed policy prioritizes active labs below protected critical services, and the optimizer enforces capacity/feeder limits. Inputs are simulated or explicitly emulated; no real-campus occupancy accuracy is claimed. Two ESP32s handle Lab-ID RFID cards, four buttons and nine load indicators. Old seven/six-load examples remain separate regression fixtures.
 
 Review notes, reuse research, notices drafts and historical plans are maintained locally outside this repository. Preserve applicable third-party license notices whenever code is incorporated.

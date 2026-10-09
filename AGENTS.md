@@ -19,6 +19,17 @@ Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.2) plus `LAB_ACTIVITY_ML
 - `pio run -d firmware -e esp32-a` — compile gateway; RC522/button guide pins enabled, radio disabled until provisioned.
 - `python3 tools/test_radio_protocol.py` — synthetic wire fixtures and all 512 mask round trips.
 
+- `pio run -d firmware -e esp32-a -e esp32-a-enroll` — build normal/enrollment firmware.
+- `pio run -d firmware -e esp32-a-enroll -t upload --upload-port /dev/ttyUSB0` — flash local enrollment mode.
+- `pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0` — flash normal gateway.
+- `pio device monitor --port /dev/ttyUSB0 --baud 115200` — raw JSON output (no host sync).
+- `python3 tools/test_host_tools.py` — simulated console/enrollment checks.
+- `.venv/bin/python tools/enroll_cards.py --port /dev/ttyUSB0` — capture A/B/C to an ignored map.
+- `.venv/bin/python tools/gateway_console.py --port /dev/ttyUSB0` — input-only synchronized acceptance console.
+
+For utility dependencies: `python3 -m venv .venv`, then `.venv/bin/python -m pip install pyserial`.
+Run `pio pkg install -d firmware` before host C++ checks on a fresh checkout.
+
 ## Workflow: small commits
 
 1. Pick the next unfinished step from `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` dependencies and delivery gates (§14, §15). Break it into commit-sized pieces; one piece = one commit.

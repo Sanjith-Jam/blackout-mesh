@@ -41,3 +41,5 @@ Arduino adapter piece: RC522 pins use the user-reported wiring, buttons use the 
 Gateway loop piece: compiled the nonblocking Arduino event loop, persisted boot/session counters, host acknowledgments, two-second reset and bounded serial/radio queues. Reader errors are distinct from unknown UIDs. Both PlatformIO environments pass; physical checks are blocked by serial permissions.
 
 Contract fixtures piece: explicit serial/radio v2 agreement, Python codec and six golden wire fixtures added. `python3 tools/test_radio_protocol.py` passes one test including all 512 masks; production C++ golden fixture matches. Person B must adopt this previously unimplemented contract before integration.
+
+Host utilities piece: local exclusive-create UID enrollment and synchronized input-only console added. `python3 tools/test_host_tools.py`: 3 tests pass (fake serial, no hardware); registration preserves A+B and repeated events are deduplicated. No allocation/output claims from this console.
