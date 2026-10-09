@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 from datetime import datetime
 
 class HardwareLinkStatus(str, Enum):
@@ -17,6 +17,8 @@ class Tier(str, Enum):
     T3 = "T3"
 
 class SourceInfo(BaseModel):
+    model: Literal["watt_budget"] = "watt_budget"
+    limitations: str = "Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics"
     kind: SourceKind
     capacity_w: int
 

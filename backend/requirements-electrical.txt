@@ -1,0 +1,3 @@
+# Optional balanced AC studies; verified together on CPython 3.12.15.
+power-grid-model==1.13.193
+networkx==3.7
