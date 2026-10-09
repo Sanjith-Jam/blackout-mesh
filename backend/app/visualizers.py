@@ -171,30 +171,21 @@ class ClassroomDemo:
         return self.snapshot()
 
 
-def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok):
-    """Classify only provided synthetic sensor observations and configured rating."""
-    missing = [name for name, value in (("current", current_a), ("temperature", temperature_c),
-               ("input voltage", input_voltage_v), ("output voltage", output_voltage_v), ("cooling", cooling_ok)) if value is None]
-    evidence = []
-    if current_a is not None:
-        evidence.append(f"Current {current_a:.1f} A; overload threshold {rated_current_a * 1.1:.1f} A (110% of rating).")
-    if temperature_c is not None:
-        evidence.append(f"Temperature {temperature_c:.1f} °C; hot threshold 80 °C.")
-    if cooling_ok is not None:
-        evidence.append(f"Cooling {'operational' if cooling_ok else 'failed'}.")
-    if input_voltage_v is not None and output_voltage_v is not None:
-        evidence.append(f"Input {input_voltage_v:.1f} V; output {output_voltage_v:.1f} V; low-input threshold 180 V.")
-    if missing:
-        return {"code": "UNKNOWN", "cause": "Insufficient sensor evidence", "severity": "unknown", "evidence": evidence + ["Missing: " + ", ".join(missing)], "recommendation": "Restore sensor telemetry before diagnosing."}
-    if input_voltage_v < 180 and output_voltage_v < 100:
-        return {"code": "UPSTREAM_LOSS", "cause": "Possible upstream supply loss", "severity": "critical", "evidence": evidence, "recommendation": "Check the upstream supply and incoming connections."}
-    if current_a > rated_current_a * 1.1:
-        return {"code": "OVERLOAD", "cause": "Current exceeds the configured rating threshold", "severity": "high", "evidence": evidence, "recommendation": "Review connected demand and verify with qualified protection equipment."}
-    if temperature_c >= 80 and not cooling_ok:
-        return {"code": "COOLING_FAILURE", "cause": "Elevated temperature with cooling reported failed", "severity": "high", "evidence": evidence, "recommendation": "Inspect cooling equipment and temperature using approved procedures."}
-    if temperature_c >= 80:
-        return {"code": "HIGH_TEMPERATURE", "cause": "Elevated transformer temperature", "severity": "medium", "evidence": evidence, "recommendation": "Check loading, ventilation and sensor readings."}
-    return {"code": "NORMAL", "cause": "No configured demo threshold exceeded", "severity": "normal", "evidence": evidence, "recommendation": "Continue monitoring."}
+from app.diagnostics import diagnose_transformer
+
+
+def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok, asset_id="TX"):
+    """Classify provided synthetic sensor observations using telemetry-derived hypothesis engine."""
+    result = diagnose_transformer(
+        rated_current_a=rated_current_a,
+        current_a=current_a,
+        temperature_c=temperature_c,
+        input_voltage_v=input_voltage_v,
+        output_voltage_v=output_voltage_v,
+        cooling_ok=cooling_ok,
+        asset_id=asset_id,
+    )
+    return result.model_dump()
 
 
 NORMAL_SENSORS = (45.0, 58.0, 230.0, 220.0, True)
@@ -319,7 +310,7 @@ def hospital_snapshot(scenario="normal", zone="Theatre"):
         current, temp, vin, vout, cooling = fixture
         sensors = {"current_a": current, "temperature_c": temp, "input_voltage_v": vin,
                    "output_voltage_v": vout, "cooling_ok": cooling}
-        diagnosis = diagnose(100.0, **sensors)
+        diagnosis = diagnose(100.0, **sensors, asset_id=f"TX{i}")
         zname = ZONES[i - 1]
         energized = vout is not None and vout >= 100.0
         

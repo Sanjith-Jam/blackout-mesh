@@ -53,6 +53,20 @@ def test_hospital_diagnosis_uses_sensor_values_only():
         assert client.post("/api/v1/visualizers/hospital", json={"scenario": "normal", "code": "OVERLOAD"}).status_code == 422
 
 
+def test_hospital_diagnosis_multi_hypothesis_and_backward_compatibility():
+    # Multi-fault simultaneous scenario
+    simul = diagnose(100.0, current_a=130.0, temperature_c=91.0, input_voltage_v=230.0, output_voltage_v=218.0, cooling_ok=False)
+    assert "hypotheses" in simul
+    assert len(simul["hypotheses"]) >= 2
+    assert simul["severity"] == "high"
+    # Backward compatible fields exist
+    assert "code" in simul
+    assert "cause" in simul
+    assert "evidence" in simul
+    assert "recommendation" in simul
+
+
+
 def test_classroom_restoration_uses_time_not_snapshot_count():
     now = [0.0]
     demo = ClassroomDemo(lambda: now[0])
