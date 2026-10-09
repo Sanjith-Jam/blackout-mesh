@@ -2,6 +2,10 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## Pending implementation backlog — 2026-10-10
+
+Created an exhaustive [implementation plan](PENDING_IMPLEMENTATION_PLAN.md) for the 24 requested software problems: 7 P0, 14 P1 and 3 P2. It records the inspected baseline `d1c58d7`, six delivery phases, a checked acyclic dependency graph, acceptance criteria and verification instructions. Library roles cover SQLModel/SQLite, NetworkX, TanStack Query, Zustand and an evidence-based pandapower/Power Grid Model comparison; OR-Tools is conditional on allocator scale. GitHub issue links are in the plan. This documentation update does not resolve those issues or add physical hardware evidence.
+
 ## Classroom and hospital visualizers — 2026-10-09
 
 This update preserves the original light graph-paper theme and supersedes earlier descriptions of the demo routes. Three Luna workers implemented the initial endpoints/views; a further Luna worker replaced the rejected classroom node graph with a physical floor-plan renderer under parent review.

@@ -9,6 +9,7 @@ See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations 
 
 ## Documents
 
+- [Exhaustive pending implementation plan](PENDING_IMPLEMENTATION_PLAN.md): 24 issues, dependency order, technology choices and release gates.
 - [Remaining application plan v2.0](PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
 - [Required ML plan](LAB_ACTIVITY_ML_PLAN.md): training/evaluation requirement; catalog must be reconciled with the current application.
 - [Context](CONTEXT.md) and [agent instructions](AGENTS.md).
