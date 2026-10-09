@@ -45,3 +45,6 @@ firmware/.local/
 .venv-electrical/
 
 venv/
+# Playwright output
+/frontend/test-results/
+/frontend/playwright-report/
