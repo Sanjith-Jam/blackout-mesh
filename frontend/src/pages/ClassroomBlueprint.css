@@ -1,88 +1,45 @@
-.blueprint { overflow: hidden; border: 1px solid var(--surface-border-strong); border-radius: var(--radius-md); background: #fffefa; box-shadow: 0 3px 12px rgba(36, 45, 39, .055); }
-.blueprint + .blueprint { margin-top: 18px; }
-.blueprint--selected { border-color: #b48234; box-shadow: 0 0 0 2px rgba(180,130,52,.14), 0 4px 14px rgba(36,45,39,.07); }
-.blueprint__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 18px; border-bottom: 1px solid #e5e0d5; background: #faf8f1; }
-.blueprint__heading h3 { margin: 2px 0 0; color: #29342e; font-size: 1.12rem; }
-.blueprint__eyebrow { color: #7c776b; font-size: .67rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
-.blueprint__room-state { display: inline-flex; align-items: center; gap: 7px; color: #777568; font-size: .77rem; font-weight: 650; }
-.blueprint__room-state.is-selected { color: #865d18; }
-.blueprint__status-dot { display: inline-block; width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: #a8a69d; }
-.blueprint__room-state.is-selected .blueprint__status-dot { background: #d29a2e; box-shadow: 0 0 0 3px rgba(210,154,46,.17); }
-.blueprint__drawing-wrap { width: 100%; overflow: hidden; background-color: #fffefa; background-image: linear-gradient(rgba(75,85,75,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(75,85,75,.035) 1px, transparent 1px); background-size: 20px 20px; }
-.blueprint__drawing { display: block; width: 100%; height: auto; min-height: 310px; }
-.blueprint__wall { fill: none; stroke: #38413c; stroke-width: 8; stroke-linecap: square; stroke-linejoin: round; }
-.blueprint__window { fill: none; stroke: #fffefa; stroke-width: 11; }
-.blueprint__window-line { fill: none; stroke: #6e9d9b; stroke-width: 3; }
-.blueprint__door { fill: none; stroke: #68766f; stroke-width: 2; stroke-dasharray: 4 4; }
-.blueprint__board { fill: #607872; stroke: #394c46; stroke-width: 2; }
-.blueprint__board-line { fill: none; stroke: #e9efe9; stroke-width: 1.5; opacity: .75; }
-.blueprint__panel-box { fill: #eee9db; stroke: #58645d; stroke-width: 2; }
-.blueprint__panel-title { fill: #35423a; font: 750 12px ui-sans-serif, sans-serif; }
-.blueprint__panel-mark { fill: #a88739; }
-.blueprint__micro-label { fill: #716d61; font: 650 8px ui-sans-serif, sans-serif; letter-spacing: .05em; }
-.blueprint__tiny-label { fill: #747165; font: 750 9px ui-sans-serif, sans-serif; letter-spacing: .12em; }
-.blueprint__label { fill: #4e554d; font: 750 9px ui-sans-serif, sans-serif; letter-spacing: .06em; }
-.blueprint__wire { fill: none; stroke: #a6a69c; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: none; opacity: .76; }
-.blueprint__wire.is-served { stroke: #638276; opacity: .88; }
-.blueprint__wire.is-shed { stroke: #aaa79f; stroke-dasharray: 5 5; opacity: .56; }
-.blueprint__wire.is-live { stroke: #178451; stroke-dasharray: 9 9; animation: blueprint-current 1.15s linear infinite; filter: drop-shadow(0 0 2px rgba(23,132,81,.55)); }
-.blueprint__fixture { stroke: #6d7469; stroke-width: 1.5; }
-.blueprint__light { fill: #d5d2c7; }
-.blueprint__drawing g.is-served > .blueprint__light { fill: #ffdc75; stroke: #c58d28; filter: drop-shadow(0 0 6px rgba(255,190,54,.82)); }
-.blueprint__light-pool { pointer-events: none; }
-.blueprint__device > rect { fill: #ebe8dd; stroke: #646c64; stroke-width: 1.5; }
-.blueprint__device.is-served > rect { fill: #e2eadf; stroke: #4d8064; }
-.blueprint__mount { stroke: #59645c; stroke-width: 2; }
-.blueprint__lens { fill: #81877c; }
-.blueprint__device.is-served .blueprint__lens { fill: #7cc8de; filter: drop-shadow(0 0 5px #69c8e5); }
-.blueprint__projection { fill: rgba(114, 177, 187, .11); stroke: rgba(95, 157, 169, .6); stroke-width: 1; stroke-dasharray: 4 5; }
-.blueprint__fan-hub { fill: #74796f; stroke: #525b53; stroke-width: 1; }
-.blueprint__fan-blades { fill: #d3d1c8; stroke: #76786f; stroke-width: 1.3; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; }
-.blueprint__fan.is-served .blueprint__fan-blades { fill: #a8c1ad; stroke: #518063; }
-.blueprint__fan-blades.is-turning { animation: blueprint-spin 1.8s linear infinite; }
-.blueprint__computer > rect:first-child { fill: #e7e3d7; stroke: #7f8176; stroke-width: 1; }
-.blueprint__computer.is-served > rect:first-child { fill: #e3eae0; stroke: #788e77; }
-.blueprint__screen { fill: #777d77; stroke: #5c645c; stroke-width: 1; }
-.blueprint__computer.is-served .blueprint__screen { fill: #54aebd; stroke: #377c86; filter: drop-shadow(0 0 5px rgba(63,190,205,.72)); }
-.blueprint__computer > path { fill: none; stroke: #85877d; stroke-width: 1.5; }
-.blueprint__keyboard { fill: #c9c5b9; stroke: #8c8b80; stroke-width: .7; }
-.blueprint__chair { fill: #d6d2c8; stroke: #929085; stroke-width: 1.4; }
-.blueprint__vent { fill: none; stroke: #82877d; stroke-width: 2; }
-.blueprint__device.is-served .blueprint__vent { stroke: #4f8968; }
-.blueprint__air { fill: none; stroke: #70aeb7; stroke-width: 2; stroke-dasharray: 3 4; animation: blueprint-air 1.6s linear infinite; }
-.blueprint__bench { fill: #dcd8cb; stroke: #73766e; stroke-width: 1.2; }
-.blueprint__device.is-served .blueprint__bench { fill: #e0e9df; stroke: #60836a; }
-.blueprint__scope { fill: #d1d0c5; stroke: #777a71; stroke-width: 1; }
-.blueprint__trace { fill: none; stroke: #909286; stroke-width: 1.5; }
-.blueprint__device.is-served .blueprint__trace { stroke: #31a2ad; filter: drop-shadow(0 0 2px #5ac6cf); }
-.blueprint__knob { fill: #86877d; }
-.blueprint__reader rect { fill: #e5e1d6; stroke: #76786e; stroke-width: 1.5; }
-.blueprint__reader circle { fill: #7d8075; }
-.blueprint__reader path { fill: none; stroke: #777a70; stroke-width: 1.4; }
-.blueprint__reader.is-active rect { fill: #fff1c6; stroke: #bd8624; filter: drop-shadow(0 0 5px rgba(221,160,45,.64)); }
-.blueprint__reader.is-active circle { fill: #dc9c29; }
-.blueprint__reader.is-active path { stroke: #bd8624; }
-.blueprint__tag { font: 700 9px ui-sans-serif, sans-serif; letter-spacing: .035em; }
-.blueprint__tag text { fill: #60665d; }
-.blueprint__tag circle { fill: #9b9a8d; }
-.blueprint__tag.is-served circle { fill: #43825e; }
-.blueprint__tag.is-shed circle { fill: #aaa79f; }
-.blueprint__tag.is-served text { fill: #39724f; }
-.blueprint__tag.is-shed text { fill: #77756e; }
-.blueprint__load-list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border-top: 1px solid #e6e1d5; background: #fbfaf5; }
-.blueprint__load { display: grid; grid-template-columns: 10px minmax(0,1fr) auto auto; align-items: center; gap: 7px; min-height: 40px; padding: 8px 13px; border-bottom: 1px solid #ede9df; color: #545b53; font-size: .76rem; }
-.blueprint__load:nth-child(3n + 2), .blueprint__load:nth-child(3n + 3) { border-left: 1px solid #ede9df; }
-.blueprint__load.is-served .blueprint__status-dot { background: #43825e; }
-.blueprint__load-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.blueprint__load strong { color: #73776f; font-variant-numeric: tabular-nums; font-size: .72rem; }
-.blueprint__load b { min-width: 30px; color: #39724f; font-size: .67rem; text-align: right; }
-.blueprint__load.is-shed b { color: #77756e; }
-.blueprint__load-reason { grid-column: 2 / -1; color: #88857a; font-size: .67rem; line-height: 1.25; }
-@keyframes blueprint-current { to { stroke-dashoffset: -36; } }
-@keyframes blueprint-spin { to { transform: rotate(360deg); } }
-@keyframes blueprint-air { to { stroke-dashoffset: -28; } }
-@media (max-width: 740px) { .blueprint__drawing { min-width: 720px; } .blueprint__drawing-wrap { overflow-x: auto; overscroll-behavior-x: contain; } .blueprint__load-list { grid-template-columns: repeat(2, minmax(0,1fr)); } .blueprint__load:nth-child(3n + 2), .blueprint__load:nth-child(3n + 3) { border-left: 0; } .blueprint__load:nth-child(even) { border-left: 1px solid #ede9df; } }
-@media (max-width: 430px) { .blueprint__load { grid-template-columns: 9px minmax(0,1fr) auto; gap: 5px; padding-inline: 8px; font-size: .7rem; } .blueprint__load strong { grid-column: 2; grid-row: 2; } .blueprint__load b { grid-column: 3; grid-row: 1; } .blueprint__load-reason { grid-column: 2 / -1; } .blueprint__heading { align-items: flex-start; flex-direction: column; } }
-@media (prefers-reduced-motion: reduce) { .blueprint *, .blueprint *::before, .blueprint *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
-
-.blueprint--paused * { animation-play-state: paused !important; }
+.power-map { border: 1px solid var(--surface-border-strong); border-radius: var(--radius-md); overflow: hidden; background: var(--surface-color); }
+.power-map__toolbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; border-bottom:1px solid var(--surface-border); }
+.power-map__eyebrow { font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); font-weight:700; }
+.power-map h2 { margin:3px 0 0; font-size:1.15rem; }
+.power-map__legend { display:flex; flex-wrap:wrap; gap:14px; color:var(--text-muted); font-size:.75rem; }
+.power-map__legend span { display:flex; align-items:center; gap:6px; }
+.power-map__legend i { width:18px; border-top:3px dashed #9da59c; }
+.power-map__legend .live { border-top:3px solid #d99518; box-shadow:0 0 5px #ffc14f; }
+.power-map__viewport { overflow-x:auto; overscroll-behavior-x:contain; }
+.power-map__viewport:focus-visible { outline:3px solid #2563eb; outline-offset:-3px; }
+.power-map__drawing { display:block; width:100%; min-width:800px; }
+.power-map__map-note { fill:#6c776b; font:600 9px ui-monospace,monospace; letter-spacing:.6px; }
+.power-map__room-name { fill:#36453c; font:800 16px ui-monospace,monospace; }
+.power-map__fixture-label { fill:#59665b; font:700 8px ui-monospace,monospace; letter-spacing:.3px; }
+.power-map__feed-label { fill:#59665b; font:600 10px ui-monospace,monospace; }
+.power-map__source-text { fill:#f4f2df; font:700 12px ui-monospace,monospace; }
+.power-map__circuit path { fill:none; stroke-linejoin:miter; stroke-linecap:square; }
+.power-map__cable-bed { stroke:#f9f8ed; stroke-width:9; opacity:.85; }
+.power-map__cable { stroke:#c29a48; stroke-width:5; }
+.power-map__current { stroke:#fff6bc; stroke-width:3; stroke-dasharray:3 17; animation:power-travel .85s linear infinite; filter:drop-shadow(0 0 3px #ffb100); }
+.power-map__circuit.is-main .power-map__cable-bed { stroke:#b4aa8c; stroke-width:13; }
+.power-map__circuit.is-main .power-map__cable { stroke:#da9a28; stroke-width:8; }
+.power-map__circuit.is-main .power-map__current { stroke-width:4; }
+.power-map__circuit.is-off .power-map__cable { stroke:#a5ada4; stroke-width:3; stroke-dasharray:4 5; opacity:.65; }
+.power-map__circuit.is-off .power-map__cable-bed { stroke-width:5; opacity:.5; }
+.power-map__fan { transform-box:fill-box; transform-origin:center; }
+.power-map__fan.is-spinning { animation:power-fan 2s linear infinite; }
+.power-map__air { fill:none; stroke:#6ea7b6; stroke-width:2; stroke-dasharray:3 5; animation:power-travel 1s linear infinite; }
+.power-map.is-stale * { animation-play-state:paused !important; }
+.power-map__room-ledger { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-top:1px solid var(--surface-border); }
+.power-map__room-ledger article { padding:14px; min-width:0; }
+.power-map__room-ledger article + article { border-left:1px solid var(--surface-border); }
+.power-map__room-ledger article.is-selected { background:#fcf8e9; }
+.power-map__room-ledger header { display:flex; justify-content:space-between; gap:6px; margin-bottom:10px; font-size:.83rem; }
+.power-map__room-ledger header span { color:var(--text-muted); font-size:.7rem; }
+.power-map__loads { display:grid; gap:7px; }
+.power-map__loads > span { display:flex; align-items:center; gap:6px; font-size:.75rem; color:var(--text-muted); }
+.power-map__loads i { width:6px; height:6px; background:#c39031; }
+.power-map__loads b { margin-left:auto; font:700 .65rem ui-monospace,monospace; color:#966616; }
+.power-map__loads .is-off i { background:#9ca59c; }
+.power-map__loads .is-off b { color:#7c857d; }
+@keyframes power-travel { to { stroke-dashoffset:-40; } }
+@keyframes power-fan { to { transform:rotate(360deg); } }
+@media(max-width:640px) { .power-map__toolbar { align-items:flex-start; flex-direction:column; } .power-map__room-ledger { grid-template-columns:1fr; } .power-map__room-ledger article + article { border-left:0; border-top:1px solid var(--surface-border); } .power-map__viewport::after { content:'Scroll sideways to follow all three room circuits'; display:block; font-size:.75rem; color:var(--text-muted); padding:9px 14px; } }
+@media(prefers-reduced-motion:reduce) { .power-map * { animation:none !important; } }

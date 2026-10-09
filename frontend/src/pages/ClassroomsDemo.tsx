@@ -78,7 +78,7 @@ export default function ClassroomsDemo() {
 
   return <main className="classroom-demo">
     <header className="classroom-demo__header">
-      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Classroom electrical blueprint</h1></div></div>
+      <div className="classroom-demo__brand"><span className="classroom-demo__brand-icon"><Zap size={22} aria-hidden="true" /></span><div><span className="classroom-demo__eyebrow">PriorityGrid · Simulated</span><h1 className="classroom-demo__title">Classroom power map</h1></div></div>
       <nav className="classroom-demo__nav" aria-label="Visualizer navigation"><Link className="classroom-demo__back" to="/hospital">Hospital demo</Link><Link className="classroom-demo__back" to="/">Back to overview</Link></nav>
     </header>
     {error && <div className="classroom-demo__alert" role="alert">Connection lost — displaying last known simulated state. {error}</div>}
@@ -91,8 +91,8 @@ export default function ClassroomsDemo() {
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Unmet</span><span className="classroom-demo__metric-value">{snapshot.shortfall_w.toLocaleString()} W</span></div>
         </div>
         <section aria-label="Classroom floor plans" aria-describedby="classroom-blueprint-key">
-          <p id="classroom-blueprint-key" className="classroom-demo__blueprint-key">Room plans show equipment and routed conduit. Green moving dashes mark energized paths; gray dashed runs and dark fixtures are shed. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
-          {snapshot.rooms.map(room => <ClassroomBlueprint key={room.id} room={room} selected={snapshot.selected_classroom_id === room.id} energized={!error} />)}
+          <p id="classroom-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three tiled classrooms. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
+          <ClassroomBlueprint snapshot={snapshot} connected={!error} />
         </section>
       </section>
       <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="classroom-controls-title" aria-busy={pending}>

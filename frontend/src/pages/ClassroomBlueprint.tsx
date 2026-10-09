@@ -1,129 +1,93 @@
-import { ClassroomDemoRoom } from '../types';
+import { ClassroomDemoLoad, ClassroomDemoSnapshot } from '../types';
 import './ClassroomBlueprint.css';
 
-type Props = { room: ClassroomDemoRoom; selected: boolean; energized: boolean };
+type Props = { snapshot: ClassroomDemoSnapshot; connected: boolean };
 
-export default function ClassroomBlueprint({ room, selected, energized }: Props) {
-  const load = (id: string) => room.loads.find(item => item.id === id);
-  const lights = load('lighting');
-  const computers = load('computers');
-  const fans = load('fans');
-  const projector = load('projector');
-  const ac = load('ac');
-  const instruments = load('instruments');
-  const stateClass = (served?: boolean) => served ? 'is-served' : 'is-shed';
-  const conduit = (d: string, served?: boolean) => <path d={d} className={`blueprint__wire ${stateClass(served)} ${energized && served ? 'is-live' : ''}`} />;
-  const deskRows = [0, 1, 2].map(row => (room.id === 'CR3' ? [0, 1, 2] : [0, 1, 2, 3]).map(col => {
-    const x = 308 + col * 146;
-    const y = 166 + row * 54;
-    return <g key={`${row}-${col}`} className={`blueprint__computer ${stateClass(computers?.served)}`}>
-      <rect x={x} y={y} width="104" height="34" rx="3" />
-      <rect className="blueprint__screen" x={x + 35} y={y + 4} width="27" height="18" rx="2" />
-      <path d={`M${x + 48} ${y + 22}v4m-7 0h14`} />
-      <rect className="blueprint__keyboard" x={x + 68} y={y + 22} width="23" height="5" rx="1" />
-      <circle className="blueprint__chair" cx={x + 51} cy={y + 42} r="7" />
-    </g>;
-  }));
+export default function ClassroomBlueprint({ snapshot, connected }: Props) {
+  const wire = (id: string, d: string, on: boolean, main = false) => <g key={id} data-circuit={id} className={`power-map__circuit ${on ? 'is-on' : 'is-off'} ${main ? 'is-main' : ''}`}>
+    <path className="power-map__cable-bed" d={d} />
+    <path className="power-map__cable" d={d} />
+    {on && connected && <path className="power-map__current" d={d} />}
+  </g>;
+  const status = (load: ClassroomDemoLoad) => load.served ? 'ON' : /restor/i.test(load.reason) ? 'WAIT' : 'OFF';
 
-  return <article className={`blueprint ${selected ? 'blueprint--selected' : ''} ${energized ? '' : 'blueprint--paused'}`} aria-labelledby={`${room.id}-blueprint-title`}>
-    <div className="blueprint__heading">
-      <div><span className="blueprint__eyebrow">Overhead electrical plan · simulated</span><h3 id={`${room.id}-blueprint-title`}>{room.name}</h3></div>
-      <div className={`blueprint__room-state ${selected ? 'is-selected' : ''}`}><span className="blueprint__status-dot" />{selected ? 'RFID entry selected' : room.rfid_active ? 'RFID session active' : 'Standby'}</div>
-    </div>
-    <div className="blueprint__drawing-wrap">
-      <svg className="blueprint__drawing" viewBox="0 0 1160 410" role="img" aria-label={`${room.name} overhead floor plan. ${room.loads.map(item => `${item.name} ${item.served ? 'on' : 'off'}, ${item.watts} watts`).join('. ')}.`}>
+  return <section className={`power-map ${connected ? '' : 'is-stale'}`} aria-label="Classroom electricity map">
+    <header className="power-map__toolbar"><div><span className="power-map__eyebrow">Campus / electrical layer</span><h2>Follow the current</h2></div><div className="power-map__legend"><span><i className="live" />Live current</span><span><i />Cut circuit</span></div></header>
+    <div className="power-map__viewport" tabIndex={0} role="region" aria-label="Scrollable campus power map">
+      <svg className="power-map__drawing" viewBox="0 0 1080 460" role="img" aria-label={`Three classrooms connected to a shared simulated supply. ${snapshot.rooms.map(room => `${room.name}: ${room.loads.map(load => `${load.name} ${status(load)}`).join(', ')}`).join('. ')}`}>
         <defs>
-          <pattern id={`${room.id}-grid`} width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#817d70" strokeOpacity=".11" strokeWidth=".7" /></pattern>
-          <radialGradient id={`${room.id}-light-pool`}><stop stopColor="#ffe08a" stopOpacity=".58" /><stop offset="1" stopColor="#ffe08a" stopOpacity="0" /></radialGradient>
-          <filter id={`${room.id}-glow`} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          <pattern id="campus-tiles" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#edece5" /><path d="M20 0H0V20" fill="none" stroke="#d9dad2" strokeWidth=".7" /></pattern>
+          <pattern id="classroom-tiles" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#f5efdd" /><path d="M20 0H0V20" fill="none" stroke="#e6dfcb" strokeWidth=".8" /></pattern>
         </defs>
-        <rect width="1160" height="410" fill={`url(#${room.id}-grid)`} />
-        {/* perimeter walls, with a doorway on the south side and two glazed windows */}
-        <path className="blueprint__wall" d="M70 72H278m90 0h277m90 0h305M70 72v258m0 22v24h53m100 0h882v-24m0-22V72" />
-        <path className="blueprint__window" d="M278 67v10m90-10v10m277-10v10m90-10v10m305-10v10" />
-        <path className="blueprint__window-line" d="M278 72h90m277 0h90m305 0h78" />
-        {/* entrance opening, door leaf and swing arc */}
-        <path className="blueprint__door" d="M123 376v-100m0 100a100 100 0 0 1 100-100" />
-        <text className="blueprint__tiny-label" x="128" y="393">ENTRY</text>
-        {/* front teaching wall and board */}
-        <rect className="blueprint__board" x="394" y="82" width="410" height="18" rx="2" />
-        <path className="blueprint__board-line" d="M406 91h210m220 0h26" />
-        <text className="blueprint__label" x="574" y="116" textAnchor="middle">TEACHING BOARD</text>
-        {/* electrical subpanel and wall conduit trunk */}
-        <rect className="blueprint__panel-box" x="88" y="112" width="48" height="63" rx="3" />
-        <text className="blueprint__panel-title" x="112" y="132" textAnchor="middle">DB</text>
-        <path className="blueprint__panel-mark" d="m113 138-8 13h8l-3 10 10-14h-8z" />
-        <text className="blueprint__micro-label" x="112" y="187" textAnchor="middle">ROOM PANEL</text>
-        {conduit('M136 143H173V108H1080V346H158V175', true)}
-        {/* branch conduits follow the ceiling/perimeter before dropping to each fixture */}
-        {conduit('M285 108V144M488 108V144M691 108V144M894 108V144M285 108H1080', lights?.served)}
-        {conduit('M386 108V128H822V108', fans?.served)}
-        {conduit('M1080 196H1037', ac?.served)}
-        {conduit('M490 108V126H610V111', projector?.served)}
-        {room.id === 'CR3' && conduit('M158 346V311H1015V304', instruments?.served)}
-        {conduit('M165 346H281V183M281 183H905M281 237H905M281 291H905M281 183V291', computers?.served)}
-        {/* lighting pools and ceiling fixtures */}
-        {[285, 488, 691, 894].map((x, i) => <g key={x} className={stateClass(lights?.served)}>
-          {lights?.served && <ellipse className="blueprint__light-pool" cx={x} cy="224" rx="130" ry="108" fill={`url(#${room.id}-light-pool)`} />}
-          <rect className="blueprint__fixture blueprint__light" x={x - 29} y="134" width="58" height="12" rx="5" />
-          <text className="blueprint__micro-label" x={x} y="129" textAnchor="middle">L{i + 1}</text>
-        </g>)}
-        {/* projector suspended over the teaching area */}
-        <g className={`blueprint__device ${stateClass(projector?.served)}`}>
-          <path className="blueprint__mount" d="M610 108v22" /><rect x="592" y="130" width="36" height="24" rx="4" />
-          <circle className="blueprint__lens" cx="610" cy="142" r="4" />
-          {projector?.served && <path className="blueprint__projection" d="M605 130 541 101H679L615 130Z" />}
-          <text className="blueprint__label" x="610" y="173" textAnchor="middle">PROJECTOR · {projector?.watts ?? 0} W</text>
-        </g>
-        {/* four ceiling fans */}
-        {[386, 532, 678, 824].map((x, i) => <g key={x} className={`blueprint__fan ${stateClass(fans?.served)}`} transform={`translate(${x} 146)`}>
-          <circle className="blueprint__fan-hub" r="6" />
-          <g className={energized && fans?.served ? 'blueprint__fan-blades is-turning' : 'blueprint__fan-blades'}>
-            <path d="M0-5c-5-16-2-32 3-35 8 12 8 23 4 37M5 0c16-5 32-2 35 3C28 11 17 11 3 5M0 5c5 16 2 32-3 35C-11 28-11 17-5 3M-5 0c-16 5-32 2-35-3C-28-11-17-11-3-5" />
-          </g>
-          <text className="blueprint__micro-label" x="0" y="51" textAnchor="middle">F{i + 1}</text>
-        </g>)}
-        {/* three rows of computer desks */}
-        {deskRows}
-        <text className="blueprint__label" x="585" y="350" textAnchor="middle">COMPUTER DESKS · {computers?.watts ?? 0} W TOTAL</text>
-        {/* wall mounted AC with airflow */}
-        <g className={`blueprint__device ${stateClass(ac?.served)}`}>
-          <rect x="1038" y="160" width="72" height="38" rx="5" />
-          <path className="blueprint__vent" d="M1048 188h52m-47-8h42" />
-          {ac?.served && <path className="blueprint__air" d="M1043 203q-24 17 0 30t0 29m19-59q-24 17 0 30t0 29m19-59q-24 17 0 30t0 29" />}
-          <text className="blueprint__label" x="1074" y="151" textAnchor="middle">WALL AC</text>
-          <text className="blueprint__micro-label" x="1074" y="218" textAnchor="middle">{ac?.watts ?? 0} W</text>
-        </g>
-        {/* CR3 instrument benches */}
-        {room.id === 'CR3' && <g className={`blueprint__device ${stateClass(instruments?.served)}`}>
-          {[0, 1, 2].map(i => <g key={i} transform={`translate(${884 + i * 74} 258)`}>
-            <rect className="blueprint__bench" width="62" height="46" rx="3" />
-            <rect className="blueprint__scope" x="8" y="8" width="23" height="19" rx="2" />
-            <path className="blueprint__trace" d="M11 19h4l4-7 4 12 4-8h3" />
-            <circle className="blueprint__knob" cx="46" cy="14" r="4" />
-            <text className="blueprint__micro-label" x="31" y="41" textAnchor="middle">SCOPE</text>
-          </g>)}
-          <text className="blueprint__label" x="976" y="325" textAnchor="middle">LAB INSTRUMENTS · {instruments?.watts ?? 0} W</text>
-        </g>}
-        {/* entry reader is the visual RFID selection point */}
-        <g className={`blueprint__reader ${selected ? 'is-active' : ''}`} transform="translate(157 291)">
-          <rect width="25" height="32" rx="4" />
-          <circle cx="12.5" cy="10" r="3" />
-          <path d="M7 17q5-5 11 0m-14 4q8-8 16 0" />
-          <text className="blueprint__micro-label" x="12" y="45" textAnchor="middle">RFID</text>
-        </g>
-        {/* load state and served wattage legend */}
-        <g className={`blueprint__tag ${lights?.served ? 'is-served' : 'is-shed'}`} transform="translate(208 120)"><circle r="5" /><text x="10" y="4">LIGHTS · {lights?.watts ?? 0} W · {lights?.served ? 'ON' : 'OFF'}</text></g>
-        <g className={`blueprint__tag ${computers?.served ? 'is-served' : 'is-shed'}`} transform="translate(208 142)"><circle r="5" /><text x="10" y="4">COMPUTERS · {computers?.watts ?? 0} W · {computers?.served ? 'ON' : 'OFF'}</text></g>
-        <g className={`blueprint__tag ${fans?.served ? 'is-served' : 'is-shed'}`} transform="translate(208 164)"><circle r="5" /><text x="10" y="4">FANS · {fans?.watts ?? 0} W · {fans?.served ? 'ON' : 'OFF'}</text></g>
+        <rect width="1080" height="460" fill="url(#campus-tiles)" />
+        <text x="30" y="26" className="power-map__map-note">CLASSROOM BLOCK / POWER DISTRIBUTION</text>
+        {snapshot.rooms.map((room, index) => {
+          const x = 30 + index * 350;
+          return <g key={`${room.id}-structure`}>
+            <rect x={x + 4} y="51" width="320" height="280" fill="#c6c6bc" />
+            <rect x={x} y="46" width="320" height="280" fill="url(#classroom-tiles)" stroke="#747c76" strokeWidth="8" />
+            <path d={`M${x + 104} 46h80M${x + 320} 106v65`} stroke="#a4c7cf" strokeWidth="7" />
+            <path d={`M${x + 14} 326h40`} stroke="#edece5" strokeWidth="12" />
+            <path d={`M${x + 14} 326v-35h36`} fill="none" stroke="#9e8b6c" strokeWidth="4" />
+            <rect x={x + 120} y="56" width="90" height="12" fill="#52786a" stroke="#365346" strokeWidth="2" />
+            <text x={x + 12} y="72" className="power-map__room-name">{room.id}</text>
+            <text x={x + 12} y="88" className="power-map__map-note">{room.rfid_active ? 'RFID ACTIVE' : 'NO RECENT SCAN'}</text>
+          </g>;
+        })}
+        {wire('supply-bus', 'M150 408H1040', snapshot.served_w > 0, true)}
+        {snapshot.rooms.map((room, index) => {
+          const x = 30 + index * 350;
+          const loads = Object.fromEntries(room.loads.map(load => [load.id, load]));
+          const on = (id: string) => !!loads[id]?.served;
+          const roomOn = room.loads.some(load => load.served);
+          return <g key={room.id} data-room={room.id}>
+            {wire(`${room.id}-feed`, `M${x + 32} 408V96`, roomOn, true)}
+            {wire(`${room.id}-lighting`, `M${x + 32} 112H${x + 95}`, on('lighting'))}
+            {wire(`${room.id}-computers`, `M${x + 32} 290H${x + 132}V152H${x + 270}M${x + 132} 222H${x + 270}`, on('computers'))}
+            {wire(`${room.id}-fans`, `M${x + 32} 192H${x + 88}`, on('fans'))}
+            {wire(`${room.id}-projector`, `M${x + 32} 96H${x + 238}V112`, on('projector'))}
+            {wire(`${room.id}-ac`, `M${x + 32} 298H${x + 288}V270`, on('ac'))}
+            {loads.instruments && wire(`${room.id}-instruments`, `M${x + 32} 306H${x + 88}V264`, on('instruments'))}
+            <g className={`power-map__lamp ${on('lighting') ? 'is-on' : ''}`} transform={`translate(${x + 95} 112)`}>
+              {on('lighting') && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#ffe295" opacity=".45" />}
+              <rect x="-18" y="-6" width="36" height="12" fill={on('lighting') ? '#ffdc64' : '#a6aaa2'} stroke="#797762" strokeWidth="2" />
+              <text y="29" textAnchor="middle" className="power-map__fixture-label">LIGHTS</text>
+            </g>
+            {[152, 222].map(y => [170, 250].map(dx => <g key={`${y}-${dx}`} className={`power-map__pc ${on('computers') ? 'is-on' : ''}`} transform={`translate(${x + dx} ${y})`}>
+              <rect x="-28" y="-15" width="56" height="33" fill="#c7ac82" stroke="#8a775d" strokeWidth="2" />
+              <rect x="-14" y="-11" width="28" height="19" fill={on('computers') ? '#68b6c2' : '#6c797b'} stroke="#3c585b" strokeWidth="3" />
+              <path d="M-15 12h24" stroke="#e8ddc4" strokeWidth="3" />
+              <rect x="-9" y="23" width="18" height="13" fill="#8b9c8f" stroke="#617367" strokeWidth="2" />
+            </g>))}
+            <text x={x + 210} y="281" textAnchor="middle" className="power-map__fixture-label">COMPUTERS</text>
+            <g transform={`translate(${x + 88} 192)`}>
+              <circle r="20" fill="#deded0" stroke="#8d978c" strokeWidth="2" />
+              <g className={on('fans') && connected ? 'power-map__fan is-spinning' : 'power-map__fan'} fill={on('fans') ? '#5d8e79' : '#969c92'}><path d="M-3-3-6-16 2-18 5-4 16-6 18 2 4 5 6 16-2 18-5 4-16 6-18-2Z" /></g>
+              <circle r="4" fill="#58675d" /><text y="34" textAnchor="middle" className="power-map__fixture-label">FAN</text>
+            </g>
+            <g transform={`translate(${x + 238} 112)`}>
+              {on('projector') && <path d="M-7-9-36-39H36L7-9Z" fill="#b1dce2" opacity=".6" />}
+              <rect x="-18" y="-10" width="36" height="20" fill="#d1d3c8" stroke="#7b857c" strokeWidth="2" /><rect x="-6" y="-10" width="12" height="6" fill={on('projector') ? '#78c5d1' : '#7c8581'} />
+              <text y="28" textAnchor="middle" className="power-map__fixture-label">PROJECTOR</text>
+            </g>
+            <g transform={`translate(${x + 288} 260)`}>
+              <rect x="-20" y="-12" width="40" height="25" fill="#e1e1d8" stroke="#7c8880" strokeWidth="2" />
+              <path d="M-14 3h28m-28 5h28" stroke={on('ac') ? '#53998f' : '#a2a79f'} strokeWidth="2" />
+              {on('ac') && <path className="power-map__air" d="M-12 18v14M0 18v14M12 18v14" />}
+              <text y="50" textAnchor="middle" className="power-map__fixture-label">AC</text>
+            </g>
+            {loads.instruments && <g transform={`translate(${x + 88} 260)`}><rect x="-20" y="-14" width="40" height="28" fill="#aab2aa" stroke="#6a786e" strokeWidth="2" /><rect x="-14" y="-9" width="20" height="16" fill={on('instruments') ? '#70b9b0' : '#68716d'} /><path d="M-11 0h3l3-5 4 9 4-4" fill="none" stroke={on('instruments') ? '#b4ffee' : '#939b94'} strokeWidth="2" /><text y="31" textAnchor="middle" className="power-map__fixture-label">LAB KIT</text></g>}
+            <rect x={x + 20} y="282" width="24" height="29" fill="#e1c971" stroke="#8e7d40" strokeWidth="2" /><path d={`m${x + 34} 286-9 12h7l-4 9 12-14h-7Z`} fill="#82632b" />
+            <g transform={`translate(${x + 65} 318)`}><rect x="-7" y="-10" width="14" height="20" fill={room.rfid_active ? '#6abca0' : '#a2aaa1'} stroke="#5f7569" strokeWidth="2" /><circle r="2" fill={room.rfid_active ? '#d9fff0' : '#d0d4cb'} /></g>
+            <text x={x + 80} y="363" className="power-map__feed-label">{room.loads.filter(load => load.served).reduce((sum, load) => sum + load.watts, 0).toLocaleString()} W / {room.rfid_active ? 'ACTIVE ROOM' : 'ESSENTIALS FIRST'}</text>
+          </g>;
+        })}
+        <g transform="translate(25 380)"><rect width="125" height="56" fill="#677c6e" stroke="#3e5647" strokeWidth="3" /><rect x="9" y="10" width="22" height="35" fill="#3c5144" /><path d="M13 19h14m-14 7h14m-14 7h14" stroke="#a7b6a6" strokeWidth="2" /><text x="40" y="24" className="power-map__source-text">SUPPLY</text><text x="40" y="42" className="power-map__source-text">{snapshot.capacity_w.toLocaleString()} W</text></g>
+        <text x="180" y="440" className="power-map__map-note">SHARED POWER BUS → ROOM PANELS → EQUIPMENT</text>
       </svg>
     </div>
-    <div className="blueprint__load-list" aria-label={`${room.name} equipment status`}>
-      {room.loads.map(item => <div key={item.id} className={`blueprint__load ${item.served ? 'is-served' : 'is-shed'}`}>
-        <span className="blueprint__status-dot" /><span className="blueprint__load-name">{item.name}</span>
-        <strong>{item.watts.toLocaleString()} W</strong><b>{item.served ? 'ON' : /restor/i.test(item.reason) ? 'RESTORING' : 'OFF'}</b>
-        {!item.served && <span className="blueprint__load-reason">{item.reason}</span>}
-      </div>)}
+    <div className="power-map__room-ledger">
+      {snapshot.rooms.map(room => <article key={room.id} className={room.rfid_active ? 'is-selected' : ''} aria-label={`${room.name} equipment status`}><header><strong>{room.name}</strong><span>{room.rfid_active ? 'RFID active' : 'Unscanned'}</span></header><div className="power-map__loads">{room.loads.map(load => <span key={load.id} className={load.served ? 'is-on' : 'is-off'} title={`${load.watts} W · ${load.reason}`}><i />{load.name}<b>{status(load)}</b></span>)}</div></article>)}
     </div>
-  </article>;
+  </section>;
 }
