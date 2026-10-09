@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Literal
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StrictInt
 
 from app.schemas.snapshot import (
     SystemSnapshot,
@@ -25,12 +25,14 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.activity.model import FEATURES
-from app.visualizers import ClassroomDemo, hospital_snapshot
+from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, hospital_snapshot
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["scan", "normal", "overload", "reset"]
+    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset",
+                    "replay_pause", "replay_resume", "replay_step"]
     classroom_id: Literal["CR1", "CR2", "CR3"] | None = None
+    capacity_w: StrictInt | None = None
 
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -71,7 +73,7 @@ def load_replay():
 replay_data = load_replay()
 grid = GridState()
 grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
-classroom_demo = ClassroomDemo()
+classroom_demo = ClassroomDemo(model=grid.model, replay=replay_data)
 hospital_scenario = "normal"
 
 async def broadcast_state():
@@ -159,9 +161,14 @@ async def get_classroom_demo():
 
 @app.post("/api/v1/visualizers/classrooms")
 async def act_classroom_demo(req: ClassroomDemoAction):
-    if (req.action == "scan") != (req.classroom_id is not None):
-        raise HTTPException(422, "classroom_id is required only for scan")
-    return classroom_demo.act(req.action, req.classroom_id)
+    if (req.action in ("scan", "unscan")) != (req.classroom_id is not None):
+        raise HTTPException(422, "classroom_id is required only for scan and unscan")
+    if (req.action == "set_capacity") != (req.capacity_w is not None):
+        raise HTTPException(422, "capacity_w is required only for set_capacity")
+    low, high = CLASSROOM_CAPACITY_RANGE_W
+    if req.capacity_w is not None and not low <= req.capacity_w <= high:
+        raise HTTPException(422, f"capacity_w must be between {low} and {high}")
+    return classroom_demo.act(req.action, req.classroom_id, req.capacity_w)
 
 @app.get("/api/v1/visualizers/hospital")
 async def get_hospital_demo():

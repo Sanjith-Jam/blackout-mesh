@@ -1,7 +1,10 @@
 """Independent synthetic classroom and hospital demos."""
 from __future__ import annotations
 
+import json
 import time
+from pathlib import Path
+
 from app.core.restoration import RestorationGate
 
 ROOMS = ("CR1", "CR2", "CR3")
@@ -14,26 +17,89 @@ LOAD_KEYS = tuple((room, item[0]) for room in ROOMS for item in LOADS[room])
 ZONES = ("ICU", "Theatre", "Wards")
 
 
-class ClassroomDemo:
-    def __init__(self, clock=time.monotonic):
-        self.capacity = 8000
-        self.selected: str | None = None
-        self.rfid: str | None = None
-        self.gate = RestorationGate(clock)
-        initial = (1 << len(LOAD_KEYS)) - 1
-        self.gate.update(initial, (self.capacity, self.selected), range(len(LOAD_KEYS)))
+NORMAL_CAPACITY_W = 8000
+OVERLOAD_CAPACITY_W = 3400
+CAPACITY_RANGE_W = (0, 8000)
+REPLAY_STEP_S = 5.0
+ACTIVITY_RANK = {"ACTIVE": 0, "UNKNOWN": 1, "INACTIVE": 2}
+REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
 
-    def _priority(self):
-        selected = self.selected
-        # Essential loads in every room come first; the scanned room leads ties.
-        order = ([selected] if selected else []) + [r for r in ROOMS if r != selected]
+
+def load_replay(path=REPLAY_PATH):
+    try:
+        data = json.loads(Path(path).read_text())
+        return {cid: rows for cid, rows in data.items() if cid in ROOMS and isinstance(rows, list) and rows}
+    except (OSError, ValueError):
+        return {}
+
+
+class ClassroomDemo:
+    """Several rooms may be scanned at once. The activity model ranks scanned rooms from
+    recorded sensor observations; the rank orders optional loads only, never essentials."""
+
+    def __init__(self, clock=time.monotonic, model=None, replay=None):
+        if model is None:
+            from app.activity.model import ActivityModel
+            model = ActivityModel()
+        self.model = model
+        self.replay = load_replay() if replay is None else replay
+        self.replay_length = min((len(rows) for rows in self.replay.values()), default=0)
+        self.capacity = NORMAL_CAPACITY_W
+        self.scanned: list[str] = []   # scan order; the last entry is the most recent card
+        self.gate = RestorationGate(clock)
+        self.replay_running = self.replay_length > 0
+        self.replay_base = 0
+        self.replay_anchor = clock()
+        self._predictions: dict[tuple[str, int], dict] = {}
+        initial = (1 << len(LOAD_KEYS)) - 1
+        self.gate.update(initial, self._signature(self._room_order()), range(len(LOAD_KEYS)))
+
+    # ---- recorded sensor replay and model evidence ----
+    def replay_index(self):
+        if not self.replay_length:
+            return 0
+        steps = int((self.gate.clock() - self.replay_anchor) // REPLAY_STEP_S) if self.replay_running else 0
+        return (self.replay_base + steps) % self.replay_length
+
+    def activity(self, cid):
+        if not self.replay_length or cid not in self.replay:
+            return {"state": "UNKNOWN", "score": None, "reason": "no recorded sensor evidence",
+                    "model_version": "unavailable", "evidence": {}}
+        index = self.replay_index()
+        cached = self._predictions.get((cid, index))
+        if cached is None:
+            row = self.replay[cid][index]
+            evidence = {key: row.get(key) for key in ("temperature_c", "humidity_pct", "co2_ppm", "humidity_ratio")}
+            try:
+                prediction = self.model.predict(evidence)
+            except Exception as exc:
+                prediction = {"state": "UNKNOWN", "score": None, "model_version": "unavailable",
+                              "reason": f"inference failed: {type(exc).__name__}"}
+            cached = {**prediction, "evidence": evidence}
+            self._predictions[(cid, index)] = cached
+        return cached
+
+    # ---- allocation ----
+    def _room_order(self):
+        """Scanned rooms ranked by model state, then scan order; unscanned rooms after.
+        Raw scores are not compared: small score noise would reorder rooms on every reading."""
+        def key(cid):
+            return (ACTIVITY_RANK.get(self.activity(cid).get("state"), 1), self.scanned.index(cid))
+        return sorted(self.scanned, key=key) + [r for r in ROOMS if r not in self.scanned]
+
+    def _signature(self, order):
+        return (self.capacity, tuple(r for r in order if r in self.scanned))
+
+    def _priority(self, order):
+        # Essentials in every room first, then scanned rooms' optional loads in model rank, then the rest.
         result = [(r, item) for r in order for item in LOADS[r] if item[3]]
-        result += [(r, item) for r in order for item in LOADS[r] if not item[3] and r == selected]
-        result += [(r, item) for r in ROOMS for item in LOADS[r] if not item[3] and r != selected]
+        result += [(r, item) for r in order for item in LOADS[r] if not item[3] and r in self.scanned]
+        result += [(r, item) for r in ROOMS for item in LOADS[r] if not item[3] and r not in self.scanned]
         return result
 
     def snapshot(self):
-        priority = self._priority()
+        order = self._room_order()
+        priority = self._priority(order)
         target: set[tuple[str, str]] = set()
         remaining = self.capacity
         for room, item in priority:
@@ -42,7 +108,8 @@ class ClassroomDemo:
                 target.add(key)
                 remaining -= item[2]
         proposed = sum(1 << LOAD_KEYS.index(key) for key in target)
-        applied = self.gate.update(proposed, (self.capacity, self.selected), range(len(LOAD_KEYS)))
+        bit_order = [LOAD_KEYS.index((room, item[0])) for room, item in priority]
+        applied = self.gate.update(proposed, self._signature(order), bit_order)
         current = {key for bit, key in enumerate(LOAD_KEYS) if applied & (1 << bit)}
         rooms = []
         for cid in ROOMS:
@@ -56,23 +123,51 @@ class ClassroomDemo:
                           "Shed by classroom demo policy")
                 loads.append({"id": lid, "name": name, "watts": watts, "essential": essential,
                               "served": on, "reason": reason})
-            rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": self.rfid == cid, "loads": loads})
+            act = self.activity(cid)
+            rooms.append({"id": cid, "name": f"Classroom {cid[-1]}", "rfid_active": cid in self.scanned,
+                          "priority_rank": order.index(cid) + 1 if cid in self.scanned else None,
+                          "activity": {key: act.get(key) for key in ("state", "score", "reason", "model_version", "evidence")},
+                          "loads": loads})
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
-        return {"capacity_w": self.capacity, "requested_w": requested, "served_w": served_w,
-                "shortfall_w": requested-served_w, "selected_classroom_id": self.selected,
-                "rooms": rooms, "mode": "SIMULATED", "policy": "Classroom-only: essential lighting and computers first, selected room next, then deterministic optional loads."}
+        status = self.model.status() if hasattr(self.model, "status") else {}
+        return {"capacity_w": self.capacity, "capacity_range_w": list(CAPACITY_RANGE_W),
+                "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
+                "selected_classroom_id": self.scanned[-1] if self.scanned else None,
+                "scanned_classroom_ids": [r for r in ROOMS if r in self.scanned],
+                "priority_order": [r for r in order if r in self.scanned],
+                "rooms": rooms, "mode": "SIMULATED",
+                "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"),
+                          "fallback_reason": status.get("fallback_reason")},
+                "replay": {"running": self.replay_running, "index": self.replay_index(),
+                           "length": self.replay_length, "step_s": REPLAY_STEP_S},
+                "policy": "Classroom-only: lighting and computers in every room first. Scanned rooms' other "
+                          "equipment next, ranked by the activity model (ACTIVE, then UNKNOWN, then INACTIVE; "
+                          "earlier scan first within a state). Unscanned rooms' optional loads last."}
 
-    def act(self, action: str, classroom_id: str | None):
+    def act(self, action: str, classroom_id: str | None = None, capacity_w: int | None = None):
         if action == "scan":
-            self.selected = self.rfid = classroom_id
+            if classroom_id not in self.scanned:
+                self.scanned.append(classroom_id)
+        elif action == "unscan":
+            if classroom_id in self.scanned:
+                self.scanned.remove(classroom_id)
+        elif action == "set_capacity":
+            self.capacity = capacity_w
         elif action == "normal":
-            self.capacity = 8000
+            self.capacity = NORMAL_CAPACITY_W
         elif action == "overload":
-            self.capacity = 3400
+            self.capacity = OVERLOAD_CAPACITY_W
+        elif action == "replay_pause":
+            self.replay_base, self.replay_running = self.replay_index(), False
+        elif action == "replay_resume":
+            if self.replay_length:
+                self.replay_base, self.replay_anchor, self.replay_running = self.replay_index(), self.gate.clock(), True
+        elif action == "replay_step":
+            if self.replay_length:
+                self.replay_base, self.replay_anchor = (self.replay_index() + 1) % self.replay_length, self.gate.clock()
         elif action == "reset":
-            clock = self.gate.clock
-            self.__init__(clock)
+            self.__init__(self.gate.clock, self.model, self.replay)
         return self.snapshot()
 
 
