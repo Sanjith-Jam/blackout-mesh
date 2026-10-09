@@ -67,6 +67,7 @@ function TransformerReadings({ transformer }: { transformer: HospitalDemoTransfo
 export default function HospitalDemo() {
   const [snapshot, setSnapshot] = useState<HospitalDemoSnapshot | null>(null);
   const [selected, setSelected] = useState<HospitalDemoScenario | null>(null);
+  const [scannedZone, setScannedZone] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
@@ -164,6 +165,21 @@ export default function HospitalDemo() {
           <h2 id="hospital-controls-title">Demo controls</h2>
           <p>Scenarios inject synthetic sensor evidence to trigger different hospital diagnoses.</p>
           
+          <div className="classroom-demo__button-stack" aria-label="Scan a hospital zone">
+            {(['ICU', 'Theatre', 'Wards'] as const).map(zone => (
+              <button 
+                key={zone} 
+                className={`classroom-demo__button ${scannedZone === zone ? 'classroom-demo__button--primary' : ''}`} 
+                disabled={pending} 
+                onClick={() => setScannedZone(zone)}
+              >
+                Scan {zone}{scannedZone === zone ? ' · scanned' : ''}
+              </button>
+            ))}
+          </div>
+
+          <div className="classroom-demo__control-divider" />
+          
           <div className="classroom-demo__button-stack" aria-label="Apply hospital scenario">
             <button className={`classroom-demo__button ${selected === 'normal' ? 'classroom-demo__button--primary' : ''}`} disabled={pending} onClick={() => void selectScenario('normal')}>Normal operation</button>
           </div>
@@ -175,6 +191,12 @@ export default function HospitalDemo() {
             <button className={`classroom-demo__button ${selected === 'cooling_failure' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('cooling_failure')}>Cooling failure</button>
             <button className={`classroom-demo__button ${selected === 'upstream_loss' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('upstream_loss')}>Upstream loss</button>
             <button className={`classroom-demo__button ${selected === 'missing_sensor' ? 'classroom-demo__button--primary' : 'classroom-demo__button--warn'}`} disabled={pending} onClick={() => void selectScenario('missing_sensor')}>Missing sensor</button>
+          </div>
+
+          <div className="classroom-demo__control-divider" />
+          
+          <div className="classroom-demo__button-stack">
+            <button className="classroom-demo__button" disabled={pending} onClick={() => { setScannedZone(null); void selectScenario('normal'); }}>Reset demo</button>
           </div>
 
           <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Applying virtual sensor readings…' : ''}</p>
