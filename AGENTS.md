@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Offline campus-power decision demo: simulated electrical model, Python authority, real ESP32 radio/LED feedback.
-Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.1). State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
+Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.2) plus `LAB_ACTIVITY_ML_PLAN.md`; the latter governs lab ML, current catalog/objective and hardware. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
 
 **Status:** planning docs only. No code, tests or firmware exist until you create and run them.
 
@@ -10,7 +10,7 @@ Spec: `PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md` (v1.1). State/handoff: `CONT
 - `backend/` Python + FastAPI, single worker, the only owner of modeled state.
 - `frontend/` React + TypeScript + Vite, renders full snapshots.
 - `firmware/` Arduino C++ + ESP-NOW.
-- Allocation: exact 128-mask enumeration (64 for the legacy fixture) is the oracle; OR-Tools CP-SAT must match it.
+- Allocation: exact 512-mask enumeration (128/64 for separate legacy fixtures) is the oracle; OR-Tools CP-SAT must match it.
 - Pin versions only after a successful local install/compile. Never invent pins.
 
 ## Commands
@@ -45,7 +45,11 @@ Keep commits under ~200 changed lines where possible. Split refactors from behav
 
 ## Scope
 
-Do not add mandatory trained ML, a broker, a second backend, cloud storage, real power electronics or mesh routing. Prefer stdlib and native browser features. Follow the component layout in plan §6; create modules only as needed.
+Implement the required small lab-activity classifier and evaluation plan. Do not add deep vision models, a broker, a second backend, cloud storage, real power electronics or mesh routing. Prefer stdlib and native browser features. Follow the component layout in plan §6; create modules only as needed.
+
+## Lab activity ML
+
+Use only causal observations; never truth labels, future samples, scenario IDs, card UID, allocator masks or post-shedding power as classifier inputs. Keep complete sessions disjoint across train/validation/test. Classifier uncertainty becomes UNKNOWN; critical tiers and hard constraints remain fixed. RFID identifies Lab A/B/C and sends observed session requests, never a direct priority assignment.
 
 ## Shared contract
 

@@ -1,12 +1,22 @@
 # Blackout Mesh — Unified Implementation Blueprint
 
-**Version:** 1.1 (verified merge; current implementation baseline)  
+**Version:** 1.2 (required lab-activity ML; nine-load primary catalog)  
 **Updated:** 9 October 2026 · **Execution:** component tasks; human staffing assignments removed  
 **Time box:** 24 working hours · **Incremental hardware budget:** ideally ₹0–₹300, ceiling approximately ₹1,500  
 **Chosen direction:** intelligent fault-aware power-management product; lightweight digital twin is its supporting simulation/evaluation environment.  
 **Project tagline:** **Detect → Diagnose → Optimize → Act → Explain → Recover**
 
 > **Status key:** **COMMITTED** = previously agreed project direction; **SPECIFIED** = concrete engineering choice made in *this* blueprint, to implement unless blocked; **OPTIONAL** = only after core delivery; **NOT CLAIMED** = deliberately outside prototype capabilities. Numeric thresholds and targets below are initial settings or goals, **not measured outcomes**.
+
+## Required lab-activity revision — read first
+
+[Lab activity ML plan](LAB_ACTIVITY_ML_PLAN.md) specifies the current primary catalog, model, features/data/evaluation, objective, hardware and phased delivery. It supersedes conflicting earlier example values below. A trained lab-activity classifier is now required, not optional. The first model candidate is Random Forest, compared with rules and logistic regression on held-out session groups.
+
+The primary has **nine loads / 512 masks**: original lab 16 kW becomes Labs A/B/C at 6/6/4 kW. Configured demand remains 84 kW. ESP32 B displays all nine bits (`0x01ff`); A reads three Lab-ID cards and four controls. Exactly two working ESP32s are available, no Arduino board or displays. Phase 0 is complete by user declaration.
+
+ML estimates ACTIVE/INACTIVE, abstaining to UNKNOWN when evidence is uncertain or stale. A fixed policy maps that estimate into lab priority; clinic/emergency/server priorities and all electrical constraints remain binding. Inputs are simulated or explicitly emulated session/presence/activity observations; no real multi-lab occupancy instrumentation currently exists. RFID identifies a lab; it never directly sets priority or proves occupancy.
+
+The seven-load catalog, 128-mask oracle, B3/C4 split, three-board/display inventory and examples below are **legacy v1.1 regression references**, not the current primary build. The six-load fixture is also historical. General state ownership, fault diagnosis, recovery, replay, validation and measurement rules carry forward unless explicitly revised by the linked ML plan. No manual Balanced/Shelter/Lab card policy is part of the new primary.
 
 ## Contents
 1. Mission and design contract
@@ -56,7 +66,7 @@ A locally runnable, live-control-room demonstration in which an operator injects
 - **SIMULATED** tags on synthetic voltage/current/power and power-flow values. A powered LED is a **PHYSICAL INDICATOR**, not evidence of physical kilowatt flow.
 - Two/three ESP32s with ESP-NOW form direct peer communication, **not a routing mesh**. No claim of autonomous restoration of an electrically broken feeder.
 - Basic local LED/communication behavior may survive a laptop outage; full power optimization **requires the laptop** in this build.
-- Optimization is genuine (OR-Tools CP-SAT or independently checkable exact enumeration); optional ML must earn its place against deterministic baselines.
+- Optimization is genuine (OR-Tools CP-SAT or independently checkable exact enumeration); required lab-activity ML must be trained and compared with deterministic baselines; optional fault-novelty ML remains separate.
 
 ## 2. Combination: what is borrowed and what is deliberately changed
 
@@ -198,7 +208,8 @@ At 7,000 W, exact tier-count allocation selects clinic/emergency/communications/
 | Graph | NetworkX | Connectivity/topology/hypothesis traversal, not physical power flow |
 | Numerical | NumPy | Deterministic synthetic sensor noise, statistics |
 | Optimization | **OR-Tools CP-SAT** | Binary served/shed constraints, hierarchy and cost |
-| Model optional | scikit-learn Isolation Forest | Advisory novelty only, held-out comparison required |
+| Required lab activity model | scikit-learn Random Forest first candidate | CPU inference; causal features, grouped holdout and visible abstention; see ML plan |
+| Fault model optional | scikit-learn Isolation Forest | Advisory novelty only, held-out comparison required |
 | Persistence | SQLite + SQLModel | Local-file event/action persistence; WAL, batch writes |
 | Streaming | Native WebSockets | Server-authoritative grid snapshot/events |
 | Serial bridge | pyserial | Python ↔ ESP32 A via USB |
@@ -625,7 +636,7 @@ Third board, knobs/displays, richer charts, recommend-only mode, active probing 
 
 ### 17.3 Questions to preempt
 - **“Where are the real grid measurements?”** None: this is a software electrical-network model with real wireless indicator hardware. ADC sensing is a future adapter.
-- **“Why call it AI?”** The core is statistics, graph inference and OR; only call it ML if a trained model is actually added/tested.
+- **“Why call it AI?”** The current required scope adds a trained lab-activity classifier to graph/rule inference and constrained optimization. Claim ML only after the artifact and held-out results exist.
 - **“What is ‘self-healing’?”** Staged simulated load reconnection when supply/feeders become available; not physical feeder repair.
 - **“How is this different from existing SCADA/FLISR?”** It is an inexpensive educational/proof-of-concept integration with uncertainty gating, explainable constrained allocation and repeatable offline test scenarios; **no world-first claim**.
 - **“Is your confidence 92%?”** No: rank/heuristic score, not a calibrated probability.
@@ -641,7 +652,7 @@ Third board, knobs/displays, richer charts, recommend-only mode, active probing 
 | Data contracts mismatch | High / integration lost | Freeze Pydantic + fixtures by hour 2; generated TypeScript client |
 | ESP-NOW or wiring broken | Medium / demo fails | Direct 2-board happy path by hour 4; simulation-only fallback; prerecorded video |
 | OR-Tools install or solver issue | Medium / core weakened | Exact enumeration of 128 subsets tested early; feature flag fallback |
-| Unnecessary deep ML | High / delays completion | Rules + graph + OR is P0; Isolation Forest advisory only if holdout improves |
+| Unnecessary deep ML | High / delays completion | Small trained lab classifier + rules/graph/OR is P0; deep vision models deferred; Isolation Forest advisory only if holdout improves |
 | UI CDN/offline failure | Medium / dead demo | Vendor/bundle all front-end dependencies and run offline rehearsal |
 | 5V LCD/I²C damage | Medium / hardware risk | Confirm device voltage/pullups and use level shifter where needed; skip LCD if uncertain |
 | Unbounded DB/high-frequency writes | Medium / performance | Write only events and downsample; bounded queue, WAL |
@@ -649,7 +660,7 @@ Third board, knobs/displays, richer charts, recommend-only mode, active probing 
 | Critical load physically cannot be kept alive | High / pitch mismatch | Explicit `CRITICAL_INFEASIBLE`; no guarantees during disconnected feeders |
 
 ### Priority labels
-**P0** — realistic-enough graph connectivity and capacity model; deterministic scenarios; integrity/provenance; source/feeder incident inference; trust gating; CP-SAT+enumeration allocation; React Flow control room; FastAPI WebSocket; ESP-NOW ↔ LED command ↔ app ACK; event log; basic suite.  
+**P0** — required trained lab-activity classifier and priority integration (see ML plan); realistic-enough graph connectivity and capacity model; deterministic scenarios; integrity/provenance; source/feeder incident inference; trust gating; CP-SAT+enumeration allocation; React Flow control room; FastAPI WebSocket; ESP-NOW ↔ LED command ↔ app ACK; event log; basic suite.  
 **P1** — richer evidence/abstain, phased restoration, greedy comparison and charts, replay/history, second remote ESP32/OLED.  
 **P2** — Isolation Forest advisory with real heldout benefit, first-order thermal model, active measurement request, genuine deterministic re-execution of historical states, LCD polish.  
 **P3 / DEFER** — pandapower/AC flow integration, LoRa, actual mains sensor/relay control, multi-hop mesh, secure field rollout, Convex, separate microservices, blockchain, solar-energy trading, LLM assistant, sensor hardware replica of original BLACKOUT MESH.
@@ -700,7 +711,7 @@ Reuse research is maintained outside this repository. Before copying code, verif
 | “Internet-independent peer communication.” | YES if tested | “The ESP32 peer link works without router/internet; backend depends on local laptop.” |
 | “Mesh routing” | **NO** | “ESP-NOW star/peer link; routed mesh is future work.” |
 | “90% probability the feeder failed.” | **NO** | “Heuristic compatibility score; competing hypotheses shown, with abstention.” |
-| “Autonomous AI” | CONDITIONAL | “Deterministic rules + graph inference + mathematical optimization; optional tested ML advisory.” |
+| “Autonomous AI” | CONDITIONAL | “Trained lab-activity estimation, fixed priority policy and constrained optimization; synthetic-data limitations disclosed.” |
 | “Unique invention” | **NO** | “Distinctive low-cost integration, focused on explainable action and reproducible evaluation.” |
 
 ### Submission alignment
@@ -724,7 +735,7 @@ The user confirmed there is no specific problem statement. Optimize for an open-
 ### Decision register (this revision)
 - **COMMITTED:** Blackout Mesh product focus; simulated grid electrical data; Stack A; hardware inventory as reported; hybrid rules+graph+optimization with optimization fallback.
 - **SPECIFIED:** single authoritative FastAPI state machine; seven-load radial model; 5-Hz tick; CP-SAT + enumeration oracle; staged autonomous simulated execution; React Flow/shadcn UI; three-board gateway/indicators (two-board fallback); provenance and held-out benchmark standards.
-- **OPTIONAL:** two potentiometer physical controls, second LCD/OLED polish, optional ML advisory, deeper active diagnosis, thermal-state model, true replay re-execution.
+- **OPTIONAL:** two potentiometer physical controls, second LCD/OLED polish, optional fault-novelty ML advisory, deeper active diagnosis, thermal-state model, true replay re-execution.
 - **DEFERRED:** BLACKOUT MESH's actual three-channel ADC sensing circuit, 3.3-V physical electrical emulator, industrial sensing and mains switching, multi-hop mesh, pandapower as required architecture, cloud-first database.
 
 ### Change log

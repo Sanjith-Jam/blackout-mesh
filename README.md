@@ -2,11 +2,12 @@
 
 Keep critical services first when available power falls, and show when evidence is insufficient.
 
-A hackathon prototype combining a simulated campus power network, explainable allocation and real ESP32 radio/LED feedback. “Mesh” is a working name; multi-hop routing is outside scope.
+A hackathon prototype combining ML-based lab-activity estimation, constrained power allocation, a simulated campus network and real ESP32 radio/LED feedback. “Mesh” is a working name; multi-hop routing is outside scope.
 
 ## Project documents
 
 - [Implementation plan](PRIORITYGRID_UNIFIED_IMPLEMENTATION_PLAN.md): authoritative scope, architecture, contracts, delivery gates and acceptance checks.
+- [Required lab activity ML plan](LAB_ACTIVITY_ML_PLAN.md): model, data, nine-load catalog, priority policy and phased implementation.
 - [Agent instructions](AGENTS.md): implementation workflow and invariants.
 - [Context](CONTEXT.md): project status and next action.
 
@@ -14,6 +15,6 @@ A hackathon prototype combining a simulated campus power network, explainable al
 
 Planning only. Application code, firmware and prototype tests have not been implemented in this repository. No build or run commands exist yet.
 
-The main demo requests 84 kW across seven services, starts at 100 kW and drops to 52/55 kW. Electrical values are simulated; physical LEDs indicate independently acknowledged radio commands. The earlier six-load example remains a separate regression fixture.
+The main demo has nine circuits with 84 kW total configured demand: three labs plus six other services. A required classifier estimates lab activity; a fixed policy prioritizes active labs below protected critical services, and the optimizer enforces capacity/feeder limits. Inputs are simulated or explicitly emulated; no real-campus occupancy accuracy is claimed. Two ESP32s handle Lab-ID RFID cards, four buttons and nine load indicators. Old seven/six-load examples remain separate regression fixtures.
 
 Review notes, reuse research, notices drafts and historical plans are maintained locally outside this repository. Preserve applicable third-party license notices whenever code is incorporated.
