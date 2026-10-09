@@ -1,0 +1,32 @@
+# Local planning and research must not be uploaded.
+/local-only/
+/sources/
+/GITHUB_REUSE.md
+/JUDGE_CRITIQUE.md
+/THIRD_PARTY_NOTICES.md
+/PLAN_MERGE_REVIEW.md
+/SKILL_INSTALLATION.md
+/PRIORITYGRID_MASTER_PLAN.md
+
+# Credentials and local runtime data
+.env
+.env.*
+!.env.example
+secrets.h
+secrets.json
+*.pem
+*.key
+*.sqlite
+*.sqlite3
+*.db
+
+# Generated dependencies and output
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+.pio/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
