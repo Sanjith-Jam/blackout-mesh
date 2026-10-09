@@ -264,7 +264,7 @@ class HospitalPriorityDemo(ClassroomDemo):
                 "id": f"TX{i+1}", "name": f"Transformer {i+1}", "zone": z,
                 "rated_current_a": 100.0, "sensors": {"cooling_ok": True},
                 "diagnosis": {"code": "NORMAL", "severity": "normal"},
-                "energized": True,
+                "energized": any(l["served"] for l in loads),
                 "rfid_active": z in self.scanned,
                 "priority_rank": order.index(z) + 1 if z in self.scanned else None,
                 "activity": {key: act.get(key) for key in ("state", "score", "reason", "model_version", "evidence")},

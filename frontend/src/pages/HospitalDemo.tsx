@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Activity, AlertTriangle, Zap } from 'lucide-react';
 import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoActionName, HospitalDemoZone, HospitalDemoSnapshot } from '../types';
-import './ClasszoneVisualizer.css';
+import './ClassroomVisualizer.css';
 import HospitalBlueprint from './HospitalBlueprint';
 
 export default function HospitalDemo() {
@@ -55,8 +55,8 @@ export default function HospitalDemo() {
     scan: `Scanned ${zoneId}.`,
     unscan: `Ended ${zoneId}'s session.`,
     set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
-    normal: 'Full supply 8,000 W applied.',
-    overload: 'Overload preset 3,400 W applied.',
+    normal: 'Full supply 7,000 W applied.',
+    overload: 'Overload preset 3,000 W applied.',
     reset: 'Classzone demo reset.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',
@@ -164,13 +164,13 @@ export default function HospitalDemo() {
           </div>;
         })()}
         <div className="classroom-demo__button-stack">
-          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 8,000 W</button>
-          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 3,400 W</button>
+          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 7,000 W</button>
+          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 3,000 W</button>
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
         <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating hospital state…' : feedback ?? ''}</p>
         <p><strong>Policy:</strong> {snapshot.policy}</p>
-        <p>RFID scan state is shown as session evidence. The 8,000 W budget belongs to this hospital demo and is separate from the six-service campus model.</p>
+        <p>RFID scan state is shown as session evidence. The 7,000 W budget belongs to this hospital demo and is separate from the six-service campus model.</p>
       </aside>
     </div>
   </main>;
