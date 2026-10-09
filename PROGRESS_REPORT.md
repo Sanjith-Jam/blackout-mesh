@@ -2,6 +2,15 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## One site authority, first step (#3) — 2026-10-10
+
+- `backend/app/core/site.py` adds `SiteAuthority`, which owns the campus `GridState`, the classroom view and the hospital fixtures. Every POST route goes through `site.command()` / `site.commit()`, which applies the change, ticks all parts in a fixed order (campus first) and returns a receipt. The control loop ticks the site, not the parts. Every projection (`/api/v1/snapshot`, both visualizers, the WebSocket) carries `site = {run_id, revision, profile, catalog_version}`, and a single command updates all three under one revision. The pages show the run and revision in their headers.
+- `docs/CATALOG_MIGRATION.md` inventories every ID, load, feeder, room mapping and route command. Classroom appliances are declared as the leaves of L3/L4/L5 (2,000/2,000/4,000 W = 8,000 W = feeder B); `reconcile_catalog()` refuses to start if they disagree.
+- Coupling: the classroom view allocates within `min(classroom limit, campus feeder B headroom)`, so a campus shortage or feeder B trip reaches `/classrooms` in the same revision. The slider stays a named sub-budget (`classroom_limit_w`), and the page says when the campus is the binding limit. Hospital scenario/zone globals became a `HospitalFixtures` part.
+- `backend/tests/conftest.py` resets the whole site before each test, because the campus singleton previously leaked state between test files.
+- Validation: 51 backend tests pass, including `test_site.py` (leaf reconciliation, one-command cross-route identity, feeder B trip, shortage bound, multi-scan shortage, slider still binding, hospital revision, reads never bump the revision). Frontend build passes. Live check: campus capacity 9,000 W showed "Classroom supply 6,000 W · Limited by campus feeder B" with the same run/revision on all three pages.
+- Remaining for #3 (listed in the migration doc): L3–L5 are still decided as whole rooms by the campus allocator while the classroom view decides appliances (same budget, two decisions); campus RFID/load sessions and classroom scans are separate stores (#21); hospital transformer fixtures are not mapped to L0–L2; `GridState` is still a singleton (#11).
+
 ## Hard safety limits on occupancy predictions (#22) — 2026-10-10
 
 - `backend/app/core/safety.py` (policy `safety-2026-10-10.1`) defines protected demand independent of ML output and RFID: campus L0/L1 critical circuits and each classroom's lighting + computers. Predictions only reorder optional service.
