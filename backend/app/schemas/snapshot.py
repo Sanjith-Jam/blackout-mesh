@@ -104,6 +104,7 @@ class SystemSnapshot(BaseModel):
     replay: "ReplaySnapshot"
     allocation: "AllocationSnapshot"
     site: Optional[Dict[str, object]] = None
+    edges: List[Dict[str, object]] = Field(default_factory=list)  # canonical power paths (#23)
 
 
 class ActivityObservationRequest(BaseModel):

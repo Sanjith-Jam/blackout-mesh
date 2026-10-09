@@ -43,3 +43,15 @@
 @keyframes power-fan { to { transform:rotate(360deg); } }
 @media(max-width:640px) { .power-map__toolbar { align-items:flex-start; flex-direction:column; } .power-map__room-ledger { grid-template-columns:1fr; } .power-map__room-ledger article + article { border-left:0; border-top:1px solid var(--surface-border); } .power-map__viewport::after { content:'Scroll sideways to follow all three room circuits'; display:block; font-size:.75rem; color:var(--text-muted); padding:9px 14px; } }
 @media(prefers-reduced-motion:reduce) { .power-map * { animation:none !important; } }
+/* Edge states (#23): each state has its own line style and a text label in the legend and ledger. */
+.power-map__circuit.state-PENDING_RESTORATION .power-map__cable { stroke:#d6a02a; stroke-width:4; stroke-dasharray:2 4; }
+.power-map__circuit.state-SHED .power-map__cable { stroke:#a5ada4; stroke-width:3; stroke-dasharray:4 5; opacity:.65; }
+.power-map__circuit.state-SHED .power-map__cable-bed { stroke-width:5; opacity:.5; }
+.power-map__circuit.state-OPEN .power-map__cable { stroke:#b54a4a; stroke-width:3; stroke-dasharray:8 6; }
+.power-map__circuit.state-OPEN .power-map__cable-bed { stroke-width:5; opacity:.4; }
+.power-map__circuit.state-UNKNOWN .power-map__cable { stroke:#7c6fa8; stroke-width:3; stroke-dasharray:1 4; }
+.power-map__legend .pending { border-top:3px dashed #d6a02a; }
+.power-map__legend .open { border-top:3px dashed #b54a4a; }
+.power-map__legend .unknown { border-top:3px dotted #7c6fa8; }
+.power-map__stale-note { color:var(--status-err); font-weight:700; }
+.power-map__footnote { margin:0; padding:10px 14px; border-top:1px solid var(--surface-border); color:var(--text-muted); font-size:.72rem; }
