@@ -145,10 +145,12 @@ def test_model_ranks_scanned_rooms_under_a_tight_supply():
 
 
 def test_ties_keep_scan_order_and_unknown_sits_between():
-    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500], CR2=[500], CR3=[200]))
+    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500, 500], CR2=[500, 500], CR3=[200, 200]))
     for cid in ("CR3", "CR2", "CR1"):
         demo.act("scan", cid)
-    assert demo.snapshot()["priority_order"] == ["CR2", "CR1", "CR3"]
+    assert demo.snapshot()["priority_order"] == ["CR3", "CR2", "CR1"]  # one INACTIVE reading is not enough
+    demo.act("replay_pause")
+    assert demo.act("replay_step")["priority_order"] == ["CR2", "CR1", "CR3"]  # confirmed on the second reading
 
 
 def test_replay_steps_change_the_ranking():
