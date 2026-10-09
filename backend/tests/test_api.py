@@ -5,41 +5,22 @@ from app.core.state import GridState
 from app.core.restoration import RestorationGate
 import time
 
-client = TestClient(app)
 
-@pytest.fixture(autouse=True)
-def reset_state():
-    """Reset the singleton GridState before each test."""
-    grid = GridState()
-    with grid._lock:
-        grid.source_capacity_w = 14000
-        grid.feeder_limits_w = {"A": 6000, "B": 8000}
-        grid.feeder_available = {"A": True, "B": True}
-        grid.control_revision = 0
-        grid.active_classroom_id = None
-        grid.recent_rfid_scan = None
-        grid.last_rfid_scan_time = None
-        grid.last_rfid_uid = None
-        grid.classroom_load_events = {"CR1": False, "CR2": False, "CR3": False}
-        grid.indicator_confirmed_mask = None
-        grid.software_mode = False
-        grid.replay_running = False
-        grid.replay_index = 0
-        grid.activity_tokens = {"CR1": 0, "CR2": 0, "CR3": 0}
-        grid.activity_received_monotonic = {"CR1": None, "CR2": None, "CR3": None}
-        grid.last_allocation_mask = 0
-        grid.last_allocation_key = None
-        grid.proposed_mask = 0
-        grid.restoration_gate = RestorationGate(time.monotonic)
-        grid.restoration_gate.update(0b111111, (14000, (("A", 6000), ("B", 8000)), (("A", True), ("B", True))), range(6))
-    yield
+@pytest.fixture
+def client():
+    app.dependency_overrides.clear()
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
 
-def test_health_endpoint():
+
+
+def test_health_endpoint(client):
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
-def test_snapshot_backward_compatibility():
+def test_snapshot_backward_compatibility(client):
     response = client.get("/api/v1/snapshot")
     assert response.status_code == 200
     data = response.json()
@@ -62,7 +43,7 @@ def test_snapshot_backward_compatibility():
     assert l0["watts"] == 2000
     assert l0["feeder"] == "A"
 
-def test_hospital_rooms_follow_l0():
+def test_hospital_rooms_follow_l0(client):
     response = client.get("/api/v1/snapshot")
     data = response.json()
     
@@ -75,7 +56,7 @@ def test_hospital_rooms_follow_l0():
     cmd_mask = data["indicator_command_mask"]
     assert (cmd_mask & 0b111) == 0b111  # bits 0, 1, 2 are 1
 
-def test_rfid_registered_card_selection():
+def test_rfid_registered_card_selection(client):
     # Scan Card 1 (CR1)
     response = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
     assert response.status_code == 200
@@ -86,7 +67,7 @@ def test_rfid_registered_card_selection():
     snap = client.get("/api/v1/snapshot").json()
     assert snap["zones"]["classroom"]["active_classroom_id"] == "CR1"
 
-def test_rfid_unknown_card_is_nondestructive():
+def test_rfid_unknown_card_is_nondestructive(client):
     client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
     
     # Scan unknown card
@@ -98,11 +79,11 @@ def test_rfid_unknown_card_is_nondestructive():
     snap = client.get("/api/v1/snapshot").json()
     assert snap["zones"]["classroom"]["active_classroom_id"] == "CR1"
 
-def test_duplicate_scan_suppressed():
+def test_duplicate_scan_suppressed(client):
     import time
     # Unscan first
     time.sleep(2.1)
-    client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
+    # Fresh state, first scan
     r1 = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
     assert r1.json()["accepted"] is True
     
@@ -110,9 +91,7 @@ def test_duplicate_scan_suppressed():
     assert r2.json()["accepted"] is False
     assert r2.json()["event_type"] == "DUPLICATE_SUPPRESSED"
 
-def test_classroom_led_isolation():
-    from app.core.state import GridState
-    GridState().active_sessions.clear()
+def test_classroom_led_isolation(client):
     # 1. Scan Card 1 (CR1)
     client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
     
@@ -138,9 +117,7 @@ def test_classroom_led_isolation():
     # CR2 LED is OFF because its load event is false.
     assert (cmd_mask & 0b001000) != 0
 
-def test_classroom_led_shed_condition():
-    from app.core.state import GridState
-    GridState().active_sessions.clear()
+def test_classroom_led_shed_condition(client):
     # CR1 selected and load active
     client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
     client.post("/api/v1/simulation/classroom-load", json={"classroom_id": "CR1", "active": True})
@@ -158,7 +135,7 @@ def test_classroom_led_shed_condition():
     # LED 3 is OFF
     assert (snap["indicator_command_mask"] & 0b111000) == 0
 
-def test_priority_allocation_constraints():
+def test_priority_allocation_constraints(client):
     # Drop capacity to 6000W
     client.post("/api/v1/simulation/capacity", json={"capacity_w": 6000})
     snap = client.get("/api/v1/snapshot").json()
@@ -182,13 +159,13 @@ def test_priority_allocation_constraints():
     
     assert services["L5"]["modeled_served"] is False
 
-def test_hardware_confirmation_truth():
+def test_hardware_confirmation_truth(client):
     snap = client.get("/api/v1/snapshot").json()
     # Indicator confirmed mask should be None (never fabricate a confirmation)
     assert snap["indicator_confirmed_mask"] is None
 
 
-def test_contract_fields_present():
+def test_contract_fields_present(client):
     response = client.get("/api/v1/snapshot")
     assert response.status_code == 200
     data = response.json()
