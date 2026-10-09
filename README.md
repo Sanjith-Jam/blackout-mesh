@@ -65,3 +65,13 @@ pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0
 B bench commands (from `hardware/host/`): `python3 controller.py --sim`, `python3 controller.py --port <port>`, `python3 hw_check.py <port>`. Real serial needs pyserial. Board B flashing/core instructions are in its guide. Do not connect the unchanged A and B implementations expecting protocol compatibility, or run a bench controller alongside the backend authority.
 
 Local planning/reuse research, judge critique, notice drafts, private credentials and historical archives stay outside this repository. Existing reuse recommendations remain unchanged; preserve required license notices when incorporating upstream code.
+
+## Recorded campus history (#25)
+Restart the backend after installing backend/requirements.txt and open /demo.
+LIVE records campus telemetry and decisions; HISTORY reads them without commands.
+Choose a run and UTC range, then use previous/next/play/pause. Data before this
+feature was installed is unavailable. History defaults to backend/history.sqlite3;
+set PRIORITYGRID_HISTORY_DB for another path. Raw retention is 30 days.
+See docs/ISSUE_25_DELIVERY.md for current dependency blockers and verification.
+From frontend/: npm.cmd run test:history runs the targeted history DOM checks.
+Tests require a jsdom-supported Node version; tested on Node 26.3.1.
