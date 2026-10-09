@@ -231,6 +231,7 @@ export interface HospitalDemoTransformer {
   };
   diagnosis: HospitalDemoDiagnosis;
   energized: boolean;
+  loads?: { id: string; served: boolean }[];
 }
 
 export interface HospitalDemoSnapshot {

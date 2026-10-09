@@ -205,6 +205,12 @@ HOSPITAL_FAULT_FIXTURES = {
 }
 
 
+HOSPITAL_LOADS = {
+    "ICU": [("ventilator", True), ("monitor", True), ("infusion", True), ("lights", True), ("oxygen", True)],
+    "Theatre": [("surgical_light", True), ("anesthesia", True), ("esu", True), ("monitor", True), ("ac", False)],
+    "Wards": [("bed_lights", True), ("nurse_call", True), ("fans", False), ("tv", False), ("ac", False)]
+}
+
 def hospital_snapshot(scenario="normal", zone="Theatre"):
     target_i = 2
     if zone == "ICU":
@@ -221,8 +227,20 @@ def hospital_snapshot(scenario="normal", zone="Theatre"):
         sensors = {"current_a": current, "temperature_c": temp, "input_voltage_v": vin,
                    "output_voltage_v": vout, "cooling_ok": cooling}
         diagnosis = diagnose(100.0, **sensors)
-        transformers.append({"id": f"TX{i}", "name": f"Transformer {i}", "zone": ZONES[i - 1],
+        zname = ZONES[i - 1]
+        energized = vout is not None and vout >= 100.0
+        
+        loads = []
+        for eq_id, essential in HOSPITAL_LOADS[zname]:
+            # Default to energized status
+            served = energized
+            # If we are in overload, non-scanned zones shed their non-essential loads
+            if scenario == "overload" and zname != zone and not essential:
+                served = False
+            loads.append({"id": eq_id, "served": served})
+            
+        transformers.append({"id": f"TX{i}", "name": f"Transformer {i}", "zone": zname,
                              "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnosis,
-                             "energized": vout is not None and vout >= 100.0})
+                             "energized": energized, "loads": loads})
     return {"mode": "SIMULATED", "transformers": transformers,
             "summary": "Synthetic sensor diagnosis for demonstration; thresholds are not certified protection settings."}
