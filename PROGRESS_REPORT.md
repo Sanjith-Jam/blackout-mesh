@@ -2,6 +2,15 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## Hard safety limits on occupancy predictions (#22) — 2026-10-10
+
+- `backend/app/core/safety.py` (policy `safety-2026-10-10.1`) defines protected demand independent of ML output and RFID: campus L0/L1 critical circuits and each classroom's lighting + computers. Predictions only reorder optional service.
+- `ActivityGuard` turns failed, missing, malformed or out-of-range inference into UNKNOWN with a visible reason, and requires two consecutive distinct INACTIVE readings before a room is ranked INACTIVE; upgrades apply immediately and any non-INACTIVE reading restarts confirmation. Stale campus evidence (> 600 s) is UNKNOWN with a guard reason.
+- The campus allocator no longer sheds a requested room only because it is predicted INACTIVE: INACTIVE ranks last but is served whenever capacity allows (this replaces the previous "inactive rooms can be deliberately left unserved" behaviour).
+- Both authorities report `safety` with `FEASIBLE` / `PROTECTED_SHORTFALL`, requested/served/shortfall watts and the declared fallback order. The classrooms page shows the status and each room's guard reason.
+- Validation: 44 backend tests pass. `test_safety.py` checks all 27 activity combinations x 29 capacities x 4 feeder states x 8 room-request sets for the campus (protected served whenever feasible; no fitting room left unserved) and 27 x 8 scan sets x 41 capacities for the classroom demo (essentials always served at >= 2,100 W, quantified shortfall below). The two campus property tests fail against the previous allocator. Frontend build passes.
+- Limits: campus classroom services are still indivisible 2/2/4 kW aggregates, so their essential minimum can only be protected by not shedding the whole room; decomposing them is #3. No manual override path exists yet, so none can bypass limits. Modeled policy only, not certified protection.
+
 ## Background control loop and read-only reads (#9, #10) — 2026-10-10
 
 - One `ControlLoop` (`backend/app/core/control_loop.py`), started and awaited in the FastAPI lifespan, ticks the campus `GridState` and the classroom demo every 250 ms whether or not any browser is connected. It counts overrun (skipped, not replayed) ticks and errors; `GET /api/v1/health` reports `control_loop` health.
