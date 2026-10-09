@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
+﻿from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
 from typing import List, Optional, Dict
 from datetime import datetime
@@ -69,6 +69,9 @@ class FacilityZones(BaseModel):
     classroom: ClassroomZone
 
 class SystemEvent(BaseModel):
+    event_id: str | None = None
+    run_id: str | None = None
+    revision: int = 0
     timestamp: str
     type: str
     description: str
@@ -177,3 +180,5 @@ class FeederChangeResponse(BaseModel):
     feeder: str
     available: bool
     control_revision: int
+
+

@@ -1,3 +1,4 @@
+﻿from uuid import uuid4
 import threading
 import time
 from datetime import datetime, timezone
@@ -86,6 +87,7 @@ class GridState:
         self.proposed_mask = 0
         self.restoration_gate = RestorationGate(time.monotonic)
         self.events = []
+        self.history = None
         self.fault_diagnosis = None
         self.compute_fault_diagnosis()
         self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
@@ -96,10 +98,15 @@ class GridState:
     def add_event(self, event_type: str, desc: str):
         with self._lock:
             event = SystemEvent(
+                event_id=str(uuid4()),
+                revision=self.control_revision,
+                run_id=self.history.run_id if self.history else None,
                 timestamp=datetime.now(timezone.utc).isoformat(),
                 type=event_type,
                 description=desc
             )
+            if self.history:
+                self.history.event(event, self.history_inputs())
             self.events.append(event)
             if len(self.events) > 50:
                 self.events.pop(0)
@@ -196,6 +203,7 @@ class GridState:
                                            "priority": "UNKNOWN", "evidence": dict(features)}
             age = max(0.0, (datetime.now(timezone.utc) - observed_at).total_seconds())
             self.activity_received_monotonic[classroom_id] = time.monotonic() - age
+            self.add_event("OBSERVATION", f"Observation recorded for {classroom_id}")
         return current_revision
 
     def apply_prediction(self, classroom_id, revision, prediction):
@@ -208,6 +216,7 @@ class GridState:
             self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason", "inference failed"),
                                                 model_version=pred.get("model_version", "unavailable"), priority=priority)
             self.control_revision += 1
+            self.add_event("PREDICTION", f"Prediction applied for {classroom_id}")
             return True
 
     def current_activity(self):
@@ -271,6 +280,12 @@ class GridState:
                         mask |= (1 << classroom["led_bit"])
                         
             return mask
+
+    def history_inputs(self):
+        return {"capacity_w": self.source_capacity_w, "feeder_limits_w": self.feeder_limits_w.copy(),
+                "feeder_available": self.feeder_available.copy(), "loads": self.classroom_load_events.copy(),
+                "active_classroom_id": self.active_classroom_id, "activity": self.current_activity(),
+                "catalog": SERVICE_CATALOG, "software_mode": self.software_mode}
 
     def build_snapshot(self) -> SystemSnapshot:
         with self._lock:
@@ -341,7 +356,7 @@ class GridState:
 
             activity = self.current_activity()
 
-            return SystemSnapshot(
+            snapshot = SystemSnapshot(
                 control_revision=self.control_revision,
                 generated_at=datetime.now(timezone.utc),
                 source=SourceInfo(kind=SourceKind.SIMULATED, capacity_w=self.source_capacity_w),
@@ -367,3 +382,8 @@ class GridState:
                             "baseline_mask": fixed_priority_mask(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
                                                                  self.feeder_available, requested_mask)}
             )
+            if self.history:
+                self.history.capture(snapshot, self.history_inputs())
+            return snapshot
+
+

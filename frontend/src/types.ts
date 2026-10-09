@@ -1,4 +1,4 @@
-export interface SourceInfo {
+﻿export interface SourceInfo {
   kind: string;
   capacity_w: number;
 }
@@ -53,6 +53,9 @@ export interface FacilityZones {
 }
 
 export interface SystemEvent {
+  event_id?: string | null;
+  run_id?: string | null;
+  revision?: number;
   timestamp: string;
   type: string;
   description: string;
@@ -286,4 +289,6 @@ export interface HospitalDemoSnapshot {
   replay: { running: boolean; index: number; length: number; step_s: number };
   policy: string;
 }
+
+
 

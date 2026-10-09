@@ -34,3 +34,36 @@ def test_readonly_replay_is_persisted_not_recomputed(tmp_path):
     assert first == HistoryStore(tmp_path / "history.sqlite3").page("campus", "run", kind="decision")
     assert first["items"][0]["payload"] == evidence
 
+
+def test_recording_is_sampled_and_readonly_api_does_not_advance_grid(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import app, grid
+    from app.storage.recorder import HistoryRecorder
+    store = HistoryStore(tmp_path / "history.sqlite3")
+    clock = [0.0]
+    recorder = HistoryRecorder(store, "check-run", lambda: clock[0])
+    monkeypatch.setattr(grid, "history", recorder)
+    grid.build_snapshot()
+    for _ in range(10):
+        grid.build_snapshot()
+    assert len(store.page("campus", "check-run", kind="decision")["items"]) == 1
+    assert len(store.page("campus", "check-run", kind="telemetry")["items"]) == 1
+    grid.set_capacity(6000)
+    grid.build_snapshot()
+    clock[0] = 1
+    grid.build_snapshot()
+    decisions = store.page("campus", "check-run", kind="decision")["items"]
+    event = store.page("campus", "check-run", kind="event")["items"][0]
+    assert event["record_id"] in decisions[-1]["payload"]["event_ids"]
+    assert decisions[-1]["payload"]["trail"]["validated_ack"] is None
+    assert decisions[-1]["payload"]["trail"]["command_identity"] is None
+    before = (grid.control_revision, grid.last_allocation_mask, grid.replay_index)
+    client = TestClient(app)
+    url = "/api/v1/history/records?run_id=check-run&kind=decision&limit=1"
+    first = client.get(url).json()
+    assert client.get(url).json() == first
+    assert before == (grid.control_revision, grid.last_allocation_mask, grid.replay_index)
+    assert client.get(url + "&start=2026-10-10T00:00:00").status_code == 422
+    assert client.get(url + "&after=-1").status_code == 422
+    assert client.get(url + "&site_id=invalid").status_code == 422
+

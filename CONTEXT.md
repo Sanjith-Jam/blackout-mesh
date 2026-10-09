@@ -30,3 +30,5 @@ When hardware resumes, agree one A/B transport and physical mapping before linki
 Issue #25 foundation: indexed SQLModel/SQLite ordered history, deduplication and explicit pruning added. Check: PYTHONPATH=backend python -m pytest backend/tests/test_history.py -q — 3 passed. Next: attach recording and read-only API; no history UI delivered yet.
 
 Windows check prerequisite: training metrics import now tolerates absent Unix resource module; peak memory remains null on Windows. Full suite reached 34 passed / 2 existing hospital visualizer failures (removed HOSPITAL_LOADS and obsolete scenario API), outside #25.
+
+Issue #25 recording/API: sampled telemetry, stable event IDs, separate decisions with captured evidence, model/policy/catalog and null ACK trail; read-only site/run cursor endpoints added. Relevant checks: 22 passed (history/API/ML integration). See docs/HISTORY_CONTRACT.md for blockers; full suite has 2 unchanged hospital failures. Next: server-history frontend.

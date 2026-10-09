@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import math
 from contextlib import asynccontextmanager
@@ -24,6 +24,7 @@ from app.schemas.snapshot import (
     ReplayActionRequest,
 )
 from app.core.state import GridState
+from app.api.history import attach_history, register_history
 from app.activity.model import FEATURES
 from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
 
@@ -80,9 +81,9 @@ hospital_demo = HospitalPriorityDemo(model=grid.model, replay=replay_data)
 
 async def broadcast_state():
     while True:
-        if manager.active_connections:
+        if True:
             try:
-                snapshot = grid.build_snapshot()
+                snapshot = await asyncio.to_thread(grid.build_snapshot)
                 await manager.broadcast(snapshot.model_dump_json())
             except Exception as e:
                 print(f"Broadcast error: {e}")
@@ -115,6 +116,7 @@ async def run_replay(generation):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    attach_history(grid)
     task = asyncio.create_task(broadcast_state())
     yield
     task.cancel()
@@ -127,6 +129,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.include_router(register_history(grid))
 
 # CORS Configuration
 origins = [
@@ -151,6 +155,7 @@ async def health_check():
 
 @app.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot():
+    attach_history(grid)
     return grid.build_snapshot()
 
 @app.get("/api/v1/model/status")
@@ -299,3 +304,5 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+

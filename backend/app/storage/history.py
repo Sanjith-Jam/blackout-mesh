@@ -1,5 +1,6 @@
 ﻿"""Durable ordered history. Playback reads these records; it never runs control."""
 import json
+from fastapi.encoders import jsonable_encoder
 import threading
 from sqlalchemy import Index, UniqueConstraint, delete
 from sqlmodel import SQLModel, Field, Session, create_engine, select
@@ -54,7 +55,7 @@ class HistoryStore:
                 session.add(HistoryRun(site_id=site, run_id=run, started_at=timestamp))
             record = HistoryRecord(site_id=site, run_id=run, kind=kind, record_id=record_id,
                                    timestamp=timestamp, revision=revision,
-                                   payload_json=json.dumps(payload, allow_nan=False))
+                                   payload_json=json.dumps(jsonable_encoder(payload), allow_nan=False))
             session.add(record)
             session.commit()
             session.refresh(record)
@@ -100,4 +101,5 @@ class HistoryStore:
             session.exec(delete(HistoryRecord).where(HistoryRecord.timestamp < before))
             session.commit()
             return len(old)
+
 
