@@ -2,6 +2,10 @@
 
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
+## UI correction — 2026-10-09
+
+The user rejected the visual redesign. Restored the original landing page, dashboard, routes and styles from `aafaebc`. ML training artifacts, APIs, allocation and tests remain intact; model/replay presentation is available through the API, pending user-defined classifier visuals. The frontend build passes with the original large-bundle warning. The software delivery UI descriptions below are historical.
+
 ## Software delivery update — 2026-10-09
 
 Hardware is paused at the user's request. This update supersedes the historical software status below; historical firmware evidence is retained and has not been rerun.

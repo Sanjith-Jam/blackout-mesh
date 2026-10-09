@@ -1,225 +1,375 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowDown, Check, CircleHelp, Cpu, Pause, Play, RotateCcw, Server, Shield, Timer, Zap } from 'lucide-react';
-import { changeCapacity, changeFeeder, fetchModelStatus, getWebSocketUrl, setReplayAction } from '../api';
-import { ActivityPrediction, ModelStatus, Snapshot } from '../types';
+import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
+import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
+import { Snapshot } from '../types';
+import TopologyGraph from '../components/TopologyGraph';
+import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
+import AllocationHistoryChart from '../components/AllocationHistoryChart';
+import IncidentTimeline from '../components/IncidentTimeline';
 import './DemoDashboard.css';
 
-const rooms = [
-  { id: 'CR1', name: 'Classroom 01', serviceId: 'L3' },
-  { id: 'CR2', name: 'Classroom 02', serviceId: 'L4' },
-  { id: 'CR3', name: 'Classroom 03', serviceId: 'L5' },
-] as const;
-
-const evaluationFields: Record<string, string> = {
-  macro_f1_all_rows_unknown_as_error: 'Macro F1 · unknown as error',
-  occupancy_recall_all_rows_unknown_counts_as_miss: 'Occupancy recall · unknown as miss',
-  false_inactive_rate_of_occupied: 'False inactive rate',
-  coverage: 'Coverage',
-  unknown_rate: 'UNKNOWN rate',
-};
-
-function modelEvaluation(value: Record<string, unknown> | undefined) {
-  if (!value) return null;
-  const split = value.test_exploratory ? 'test_exploratory' : value.test ? 'test' : value.validation ? 'validation' : null;
-  const selected = split && typeof value[split] === 'object' && value[split] !== null ? value[split] as Record<string, unknown> : null;
-  if (!selected) return null;
-  return {
-    label: split === 'test_exploratory' ? 'TIME-DISJOINT EXPLORATORY TEST' : split === 'test' ? 'TEST' : 'VALIDATION',
-    sampleCount: typeof selected.n === 'number' ? selected.n : null,
-    scope: typeof value.scope === 'string' ? value.scope : null,
-    previouslyInspected: split === 'test_exploratory',
-    metrics: Object.entries(evaluationFields).flatMap(([key, label]) => {
-      const metric = selected[key];
-      return typeof metric === 'number' && Number.isFinite(metric) ? [[label, metric] as [string, number]] : [];
-    }),
-  };
-}
-
-function prediction(snapshot: Snapshot, roomId: string): ActivityPrediction | undefined {
-  return snapshot.activity?.[roomId];
-}
-
-function servedForMask(snapshot: Snapshot, mask: number) {
-  return snapshot.services.filter((service) => {
-    const bit = Number(service.id.replace(/^L/, ''));
-    return Number.isInteger(bit) && Boolean(mask & (1 << bit));
-  });
-}
-
-function FlowMap({ snapshot, hidden }: { snapshot: Snapshot; hidden: boolean }) {
-  const servedOn = (feeder: 'A' | 'B') => snapshot.services.some((service) => service.feeder === feeder && service.modeled_served);
-  const feederA = servedOn('A');
-  const feederB = servedOn('B');
-  return <div className="mesh-map" data-hidden={hidden} aria-label="Simulated power source connected to two feeders and six services">
-    <div className="mesh-source"><span className="mesh-icon"><Zap size={18} /></span><span><b>SIMULATED SOURCE</b><small>{snapshot.source.capacity_w.toLocaleString()} W available</small></span><i /></div>
-    <svg className="mesh-wires" viewBox="0 0 1000 180" preserveAspectRatio="none" aria-hidden="true">
-      <path className={feederA ? 'wire-on' : 'wire-off'} d="M500 0 V38 Q500 52 485 52 H250 V100" />
-      <path className={feederB ? 'wire-on' : 'wire-off'} d="M500 38 Q500 52 515 52 H750 V100" />
-      <path className={feederA ? 'wire-on' : 'wire-off'} d="M250 100 V180" /><path className={feederB ? 'wire-on' : 'wire-off'} d="M750 100 V180" />
-    </svg>
-    <div className="mesh-feeders"><div><span>FEEDER A</span><b>{snapshot.feeder_limits_w.A.toLocaleString()} W limit</b></div><div><span>FEEDER B</span><b>{snapshot.feeder_limits_w.B.toLocaleString()} W limit</b></div></div>
-    <div className="mesh-services">
-      {snapshot.services.map((item) => {
-        const bit = Number(item.id.replace(/^L/, ''));
-        const restoring = Boolean(snapshot.proposed_mask & (1 << bit)) && !item.modeled_served;
-        return <div className={`mesh-service ${item.modeled_served ? 'is-served' : restoring ? 'is-restoring' : 'is-shed'}`} key={item.id} title={item.model_reason}>
-          <span className="service-state-icon">{item.modeled_served ? <Check size={13} /> : restoring ? <Timer size={13} /> : <AlertTriangle size={13} />}</span>
-          <b>{item.id}</b><span>{item.name}</span><small>{item.watts.toLocaleString()} W · {item.modeled_served ? 'SERVED' : restoring ? 'RESTORING' : item.requested ? 'SHED' : 'IDLE'}</small>
-        </div>;
-      })}
-    </div>
-    <div className="mesh-legend"><span><i className="legend-dot served-dot" /> Simulated served</span><span><i className="legend-dot shed-dot" /> Shed or idle</span><span><i className="legend-dot unknown-dot" /> Unknown evidence</span></div>
-  </div>;
-}
-
-function EvidenceCard({ room, evidence, service }: { room: typeof rooms[number]; evidence?: ActivityPrediction; service?: Snapshot['services'][number] }) {
-  const state = evidence?.state ?? 'UNKNOWN';
-  const inputs = evidence?.evidence;
-  const observed = (value: number | null | undefined, suffix: string, digits = 1) => value == null ? '—' : `${value.toFixed(digits)}${suffix}`;
-  return <article className={`evidence-card evidence-${state.toLowerCase()}`}>
-    <div className="evidence-top"><span className="evidence-glyph">{state === 'UNKNOWN' ? <CircleHelp size={17} /> : <Activity size={17} />}</span><span className="eyebrow">{room.id} · VIRTUAL ROOM</span><span className={`state-tag tag-${state.toLowerCase()}`}>{state}</span></div>
-    <h3>{room.name}</h3>
-    <p className="evidence-reason">{evidence?.reason || 'No current model evidence is available for this room.'}</p>
-    <div className="evidence-facts">
-      <div><span>Priority</span><b>{evidence?.priority || 'Unassigned'}</b></div>
-      <div><span>Model score</span><b>{evidence?.score == null ? '—' : evidence.score.toFixed(3)}</b></div>
-      <div><span>Modeled service</span><b>{service?.modeled_served ? 'Served' : service?.requested ? 'Shed' : 'Idle'}</b></div>
-    </div>
-    <div className="sensor-readings" aria-label="Observed model input values">
-      <div><span>Temperature</span><b>{observed(inputs?.temperature_c, '°C')}</b></div>
-      <div><span>Humidity</span><b>{observed(inputs?.humidity_pct, '%')}</b></div>
-      <div><span>CO₂</span><b>{observed(inputs?.co2_ppm, ' ppm', 0)}</b></div>
-      <div><span>Humidity ratio</span><b>{observed(inputs?.humidity_ratio, '', 4)}</b></div>
-    </div>
-    <div className="evidence-foot"><span>{evidence?.source?.replace(/_/g, ' ') || 'WAITING FOR OBSERVATION'}</span><span>{evidence?.observed_at ? new Date(evidence.observed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'NO TIMESTAMP'}</span></div>
-  </article>;
+interface TimeSeriesPoint {
+  time: string;
+  capacity: number;
+  demand: number;
+  servedCount: number;
+  shedCount: number;
 }
 
 export default function DemoDashboard() {
+  const [activeTab, setActiveTab] = useState("overview");
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [modelStatus, setModelStatus] = useState<ModelStatus | null>(null);
-  const [connected, setConnected] = useState(false);
+  const [healthOk, setHealthOk] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [capacityDraft, setCapacityDraft] = useState(14000);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [pageVisible, setPageVisible] = useState(!document.hidden);
+  const [actionPending, setActionPending] = useState<boolean>(false);
+  const [actionFeedback, setActionFeedback] = useState<{msg: string, isError: boolean} | null>(null);
+
+  // Time series data for charts
+  const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
+  const MAX_HISTORY = 50;
+
   const wsRef = useRef<WebSocket | null>(null);
-  const observedCapacity = useRef<number | null>(null);
 
   useEffect(() => {
-    let active = true;
-    let reconnect: ReturnType<typeof setTimeout> | undefined;
-    const connect = () => {
-      if (!active) return;
-      const ws = new WebSocket(getWebSocketUrl());
+    const connectWs = () => {
+      const ws = new WebSocket('ws://127.0.0.1:8000/ws/live');
       wsRef.current = ws;
-      ws.onopen = () => { if (active) { setConnected(true); setError(null); } };
+
+      ws.onopen = () => {
+        setHealthOk(true);
+        setError(null);
+      };
+
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as Snapshot;
-          if (active) {
-            setSnapshot(data);
-            setModelStatus(data.model);
-            if (observedCapacity.current !== data.source.capacity_w) {
-              observedCapacity.current = data.source.capacity_w;
-              setCapacityDraft(data.source.capacity_w);
-            }
-          }
-        } catch { if (active) setError('Received an unreadable update from the simulation.'); }
+          const data: Snapshot = JSON.parse(event.data);
+          setSnapshot(data);
+          setHealthOk(true);
+
+          // Update history
+          const now = new Date(data.generated_at).toLocaleTimeString();
+          const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
+          const servedCount = data.services.filter(s => s.modeled_served).length;
+          const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
+
+          setHistory(prev => {
+            const next = [...prev, { time: now, capacity: data.source.capacity_w, demand, servedCount, shedCount }];
+            if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
+            return next;
+          });
+
+        } catch (e) {
+          console.error("Failed to parse websocket message", e);
+        }
       };
-      ws.onerror = () => { if (active) setError('Live connection interrupted. Reconnecting…'); };
+
+      ws.onerror = (e) => {
+        console.error("Websocket error", e);
+      };
+
       ws.onclose = () => {
-        if (!active) return;
-        setConnected(false);
-        setError('Live connection interrupted. Reconnecting…');
-        reconnect = setTimeout(connect, 2500);
+        setHealthOk(false);
+        setError("WebSocket disconnected. Reconnecting...");
+        setTimeout(connectWs, 3000);
       };
     };
-    connect();
-    const controller = new AbortController();
-    fetchModelStatus(controller.signal).then((status) => { if (active) setModelStatus(status); }).catch(() => { if (active) setModelStatus(null); });
+
+    connectWs();
     return () => {
-      active = false;
-      if (reconnect) clearTimeout(reconnect);
-      controller.abort();
-      wsRef.current?.close();
+      if (wsRef.current) wsRef.current.close();
     };
   }, []);
 
-  useEffect(() => {
-    const updateVisibility = () => setPageVisible(!document.hidden);
-    document.addEventListener('visibilitychange', updateVisibility);
-    return () => document.removeEventListener('visibilitychange', updateVisibility);
-  }, []);
-
-  const current = snapshot?.allocation ? servedForMask(snapshot, snapshot.modeled_mask) : [];
-  const baseline = useMemo(() => snapshot?.allocation ? servedForMask(snapshot, snapshot.allocation.baseline_mask) : [], [snapshot]);
-  const currentWatts = current.reduce((sum, item) => sum + item.watts, 0);
-  const baselineWatts = baseline.reduce((sum, item) => sum + item.watts, 0);
-  const currentClassrooms = current.filter((item) => ['L3', 'L4', 'L5'].includes(item.id));
-  const baselineClassrooms = baseline.filter((item) => ['L3', 'L4', 'L5'].includes(item.id));
-  const pendingRestorations = snapshot?.services.filter((service) => {
-    const bit = Number(service.id.replace(/^L/, ''));
-    return Boolean(snapshot.proposed_mask & (1 << bit)) && !Boolean(snapshot.modeled_mask & (1 << bit));
-  }) || [];
-
-  const runAction = async (task: () => Promise<unknown>, message: string) => {
-    if (busy) return;
-    setBusy(true); setFeedback(null);
-    try { await task(); setFeedback(message); }
-    catch (cause) { setFeedback(cause instanceof Error ? cause.message : 'Action failed.'); }
-    finally { setBusy(false); }
+  const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
+    if (actionPending) return;
+    setActionPending(true);
+    setActionFeedback(null);
+    try {
+      const res = await actionFn();
+      if (res.accepted) {
+        setActionFeedback({ msg: successMsg, isError: false });
+      } else {
+        setActionFeedback({ msg: `Action rejected: ${res.event_type || 'Constraints violated'}`, isError: true });
+      }
+    } catch (err: any) {
+      setActionFeedback({ msg: `Failed: ${err.message}`, isError: true });
+    } finally {
+      setActionPending(false);
+      setTimeout(() => setActionFeedback(null), 3000);
+    }
   };
 
-  if (!snapshot) return <main className="console-loading"><Activity size={28} /><h1>Connecting to Blackout Mesh</h1><p>{error || 'Waiting for the simulation snapshot…'}</p><Link to="/">Return to overview</Link></main>;
+  const doRfidScan = (uid: string) => handleAction(() => processRfidScan(uid), `RFID Scan processed for ${uid}`);
+  const doClassroomLoad = (cid: string, active: boolean) => handleAction(() => changeClassroomLoad(cid, active), `Classroom ${cid} load set to ${active}`);
+  const doCapacity = (watts: number) => handleAction(() => changeCapacity(watts), `Capacity set to ${watts}W`);
+  const doFeeder = (feeder: string, available: boolean) => handleAction(() => changeFeeder(feeder, available), `Feeder ${feeder} available: ${available}`);
 
-  const sourceLabel = modelStatus?.data_source?.replace(/_/g, ' ') || 'DATA SOURCE UNAVAILABLE';
-  const evaluation = modelEvaluation(modelStatus?.evaluation);
+  if (!snapshot) {
+    return (
+      <div className="dashboard-container loading">
+        <Activity className="spin" size={48} />
+        <h2>Connecting to Live Feed...</h2>
+        {error && <p className="text-err">{error}</p>}
+      </div>
+    );
+  }
 
-  return <main className="command-center">
-    <a className="skip-link" href="#main-content">Skip to command center</a>
-    <header className="console-header">
-      <Link to="/" className="console-brand" aria-label="Blackout Mesh home"><span className="brand-mark"><Activity size={20} /></span><span>BLACKOUT <b>MESH</b><small>RESILIENCE DECISION SYSTEM</small></span></Link>
-      <div className="console-header-right"><span className={`connection-tag ${connected ? 'online' : 'offline'}`}><i />{connected ? 'SIMULATION CONNECTED' : 'RECONNECTING'}</span><span className="hardware-tag"><span>●</span> HARDWARE DISCONNECTED</span><Link className="exit-link" to="/">Overview</Link></div>
-    </header>
-    {error && <div className="connection-alert" role="status"><AlertTriangle size={16} />{error}</div>}
-    <div id="main-content" className="console-main">
-      <section className="console-intro"><div><div className="eyebrow intro-label">SOFTWARE SIMULATION <span>·</span> SESSION {String(snapshot.control_revision).padStart(3, '0')}</div><h1>Keep critical systems<br /><em>in the loop.</em></h1><p>Observe room activity, inspect the model’s reasoning, and see how the constrained policy responds when supply changes.</p></div><div className="intro-status"><span className="status-orb"><Activity size={21} /></span><div><b>{modelStatus?.ready ? 'MODEL READY' : 'MODEL FALLBACK'}</b><span>{modelStatus?.model_type || 'Status unavailable'}</span></div></div></section>
-      <section className="stat-strip" aria-label="Current simulation metrics">
-        <div><span>SIMULATED SUPPLY</span><b>{snapshot.source.capacity_w.toLocaleString()}<small> W</small></b><i>14 kW source model</i></div>
-        <div><span>ALLOCATED SERVICES</span><b>{current.length}<small> / {snapshot.services.length}</small></b><i>{currentWatts.toLocaleString()} W modeled served</i></div>
-        <div><span>CRITICAL SHORTFALL</span><b className={snapshot.allocation.critical_shortfall_w ? 'text-amber' : ''}>{snapshot.allocation.critical_shortfall_w.toLocaleString()}<small> W</small></b><i>{snapshot.allocation.critical_shortfall_w ? 'Essential demand unmet' : 'Protected demand met'}</i></div>
-        <div><span>REPLAY POSITION</span><b>{snapshot.replay.index}<small> / {snapshot.replay.length}</small></b><i>{snapshot.replay.running ? 'Recorded stream advancing' : 'Replay paused'}</i></div>
+  const { services, zones, source, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
+  
+  const servedWatts = services.filter(s => s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
+  const servedCount = services.filter(s => s.modeled_served).length;
+
+  const getService = (id: string) => services.find(s => s.id === id);
+  const l0 = getService('L0');
+  const l1 = getService('L1');
+  const l2 = getService('L2');
+
+  const checkBit = (mask: number | null, bit: number) => {
+    if (mask === null) return null;
+    return Boolean((mask >> bit) & 1);
+  };
+
+  return (
+    <div className="dashboard-container">
+      {/* HEADER */}
+      <header className="dash-header">
+        <div className="dash-brand">
+          <Activity className="brand-icon" />
+          <div>
+            <span className="brand-name">PriorityGrid</span>
+            <span className="brand-badge">Live Console</span>
+          </div>
+        </div>
+        
+        <div className="dash-status-indicators">
+          <div className={`status-pill ${healthOk ? 'ok' : 'error'}`}>
+            <Server size={14} /> Backend {healthOk ? 'Live' : 'Disconnected'}
+          </div>
+          <div className="status-pill warn">
+            <Wifi size={14} /> HW: {snapshot.hardware_link.replace('_', ' ')}
+          </div>
+        </div>
+
+        <div className="dash-actions">
+          <Link to="/" className="btn-secondary">Back to Home</Link>
+        </div>
+      </header>
+
+      {error && (
+        <div className="dash-alert error">
+          <AlertTriangle size={16} /> {error}
+        </div>
+      )}
+
+      {/* OVERVIEW STRIP */}
+      <section className="overview-strip">
+        <div className="metric-box">
+          <div className="metric-label">Live Capacity</div>
+          <div className="metric-value">{source.capacity_w} <small>W</small></div>
+        </div>
+        <div className="metric-box">
+          <div className="metric-label">Modeled Services</div>
+          <div className="metric-value">{servedCount} <small>/ {services.length}</small></div>
+        </div>
+        <div className="metric-box">
+          <div className="metric-label">Modeled Demand</div>
+          <div className="metric-value">{servedWatts} <small>W</small></div>
+        </div>
+        <div className="metric-box">
+          <div className="metric-label">Control Revision</div>
+          <div className="metric-value">{control_revision}</div>
+        </div>
       </section>
 
-      <div className="console-grid">
-        <section className="panel topology-panel"><div className="panel-heading"><div><span className="eyebrow">01 / SYSTEM VIEW</span><h2>Power topology</h2></div><span className="simulation-chip"><span /> VIRTUAL SYSTEM</span></div><FlowMap snapshot={snapshot} hidden={!pageVisible} /><p className="panel-caption">This view shows modeled allocation state. It does not confirm power delivery or physical device acknowledgements.</p><p className={`restoration-caption ${pendingRestorations.length ? "pending" : "clear"}`}><Timer size={14} /> {pendingRestorations.length ? <>{pendingRestorations.length} service{pendingRestorations.length === 1 ? " is" : "s are"} waiting for simulated restoration: {pendingRestorations.map((service) => `${service.name} — ${service.model_reason}`).join("; ")}</> : "Pending restoration: 0 services. No loads are waiting."}</p></section>
-        <section className="panel control-panel"><div className="panel-heading"><div><span className="eyebrow">02 / EXPERIMENT</span><h2>Replay controls</h2></div><span className="replay-count">{snapshot.replay.index} / {snapshot.replay.length}</span></div><div className="replay-buttons"><button disabled={busy || snapshot.replay.running} onClick={() => runAction(() => setReplayAction('start'), 'Recorded replay started.')}><Play size={16} /> Start</button><button disabled={busy || !snapshot.replay.running} onClick={() => runAction(() => setReplayAction('pause'), 'Recorded replay paused.')}><Pause size={16} /> Pause</button><button disabled={busy} onClick={() => runAction(() => setReplayAction('reset'), 'Replay reset to the beginning.')}><RotateCcw size={16} /> Reset</button></div><div className="control-divider" /><label className="capacity-label" htmlFor="capacity-range"><span>Simulated source capacity</span><b>{capacityDraft.toLocaleString()} W</b></label><input id="capacity-range" type="range" min="0" max="20000" step="500" value={capacityDraft} onChange={(event) => setCapacityDraft(Number(event.target.value))} /><div className="range-ends"><span>0 W</span><span>20,000 W</span></div><button className="apply-capacity" disabled={busy || capacityDraft === snapshot.source.capacity_w} onClick={() => runAction(() => changeCapacity(capacityDraft), `Simulated source set to ${capacityDraft.toLocaleString()} W.`)}><Zap size={15} /> Apply capacity</button><div className="feeder-control"><b>Feeder faults</b><div>{(['A', 'B'] as const).map((feeder) => <div className="feeder-action-row" key={feeder}><span>Feeder {feeder}</span><button disabled={busy} onClick={() => runAction(() => changeFeeder(feeder, false), `Feeder ${feeder} marked unavailable.`)}>Trip</button><button disabled={busy} onClick={() => runAction(() => changeFeeder(feeder, true), `Feeder ${feeder} restored.`)}>Restore</button></div>)}</div></div>{feedback && <p className="action-feedback" role="status">{feedback}</p>}<p className="control-note">Capacity and feeder controls affect the software model only.</p></section>
+      {/* VISUALIZATIONS ROW */}
+      <section className="visualizations-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <div className="vis-panel" style={{ flex: '1 1 300px', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Source vs Demand</h3>
+          <SourceCapacityDemandChart data={history} />
+        </div>
+        <div className="vis-panel" style={{ flex: '1 1 300px', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Allocation History</h3>
+          <AllocationHistoryChart data={history} />
+        </div>
+        <div className="vis-panel" style={{ flex: '1 1 300px' }}>
+          <IncidentTimeline events={snapshot.events} />
+        </div>
+      </section>
+
+      {/* TOPOLOGY & ZONES ROW */}
+      
+      <div className="demo-tabs" style={{ display: 'flex', gap: '1rem', padding: '0 0', borderBottom: '1px solid #e2e8f0', background: 'transparent', marginBottom: '1.5rem' }}>
+        <button className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'overview' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Overview</button>
+        <button className={`tab-btn ${activeTab === 'hospital' ? 'active' : ''}`} onClick={() => setActiveTab('hospital')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'hospital' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Hospital Zone</button>
+        <button className={`tab-btn ${activeTab === 'classrooms' ? 'active' : ''}`} onClick={() => setActiveTab('classrooms')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'classrooms' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Classroom Zone</button>
       </div>
 
-      <section className="evidence-section"><div className="section-heading"><div><span className="eyebrow">03 / MODEL EVIDENCE</span><h2>What the model sees</h2></div><span className="provenance-label"><span className="provenance-mark">R</span>{sourceLabel}</span></div><div className="evidence-grid">{rooms.map((room) => <EvidenceCard key={room.id} room={room} evidence={prediction(snapshot, room.id)} service={snapshot.services.find((item) => item.id === room.serviceId)} />)}</div></section>
+      <div className="zones-layout">
+        <div className="main-zones">
+          
+          {/* NETWORK TOPOLOGY */}
+          {activeTab === "overview" && <section className="zone-section">
+            <div className="zone-header">
+              <h2>Network Topology</h2>
+              <p>Real-time physical modeled connections.</p>
+            </div>
+            <TopologyGraph snapshot={snapshot} />
+          </section>}
 
-      <div className="bottom-grid"><section className="panel decision-panel"><div className="panel-heading"><div><span className="eyebrow">04 / DECISION TRACE</span><h2>Why this allocation?</h2></div><Shield size={18} /></div><div className="decision-flow"><div><span className="flow-step">01</span><b>OBSERVATION</b><small>{sourceLabel}</small></div><ArrowDown size={15} /><div><span className="flow-step">02</span><b>ACTIVITY ESTIMATE</b><small>Model outputs per-room state and reason</small></div><ArrowDown size={15} /><div><span className="flow-step">03</span><b>PRIORITY POLICY</b><small>{snapshot.allocation.objective || 'Priority objective unavailable'}</small></div><ArrowDown size={15} /><div><span className="flow-step">04</span><b>FEASIBLE ALLOCATION</b><small>{current.length} services · {currentWatts.toLocaleString()} W modeled served</small></div></div><div className="decision-explain"><b>Constraint check</b><span>{snapshot.allocation.critical_shortfall_w ? `${snapshot.allocation.critical_shortfall_w.toLocaleString()} W critical demand could not be served within the current source and feeder limits.` : `Modeled served load is ${currentWatts.toLocaleString()} W against ${snapshot.source.capacity_w.toLocaleString()} W of source capacity.`}</span></div></section>
-      <section className="panel compare-panel">
-        <div className="panel-heading"><div><span className="eyebrow">05 / SAME SNAPSHOT</span><h2>Policy comparison</h2></div><Cpu size={18} /></div>
-        <p className="compare-copy">Current activity-aware policy and fixed-priority baseline use the same observations and modeled limits.</p>
-        <div className="compare-row">
-          <div><span>FIXED-PRIORITY BASELINE</span><b>{baseline.length}<small> services</small></b><i>{baselineWatts.toLocaleString()} W served</i><i>{baselineClassrooms.length} classroom services · {baselineClassrooms.map((item) => `CR${Number(item.id.slice(1)) - 2}`).join(", ") || "none"}</i></div>
-          <div className="compare-divider">VS</div>
-          <div><span>ACTIVITY-AWARE MODEL</span><b>{current.length}<small> services</small></b><i>{currentWatts.toLocaleString()} W served</i><i>{currentClassrooms.length} classroom services · {currentClassrooms.map((item) => `CR${Number(item.id.slice(1)) - 2}`).join(", ") || "none"}</i></div>
+          {/* HOSPITAL ZONE */}
+          {activeTab === "hospital" && <section className="zone-section">
+            <div className="zone-header">
+              <h2>Hospital Zone</h2>
+              <p>Three rooms with shared essential lighting and priority-aware support services.</p>
+            </div>
+            
+            <div className="hospital-rooms-grid">
+              {zones?.hospital.rooms.map(room => {
+                const cmdOn = checkBit(indicator_command_mask, room.led_bit);
+                const confOn = checkBit(indicator_confirmed_mask, room.led_bit);
+                return (
+                  <div key={room.id} className="room-card">
+                    <h3>{room.name}</h3>
+                    <div className="room-tag">Follows L0</div>
+                    <div className="led-states">
+                      <div className="led-row">
+                        <span>Cmd:</span>
+                        <span className={`led-badge ${cmdOn ? 'on' : 'off'}`}>{cmdOn ? 'ON' : 'OFF'}</span>
+                      </div>
+                      <div className="led-row">
+                        <span>HW:</span>
+                        <span className="led-badge unknown">{confOn === null ? 'Unknown' : (confOn ? 'ON' : 'OFF')}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hospital-services">
+              {[l0, l1, l2].map(svc => svc && (
+                <div key={svc.id} className={`service-row ${svc.modeled_served ? 'served' : 'shed'}`}>
+                  <div className="svc-info">
+                    <strong>{svc.id} - {svc.name}</strong>
+                    <span className="svc-meta">{svc.tier} | {svc.watts}W | Feeder {svc.feeder}</span>
+                  </div>
+                  <div className="svc-status">
+                    {svc.modeled_served ? <span className="text-ok">Served</span> : <span className="text-err">Shed</span>}
+                  </div>
+                  <div className="svc-reason">{svc.model_reason}</div>
+                </div>
+              ))}
+            </div>
+          </section>}
+
+          {/* CLASSROOM ZONE */}
+          {activeTab === "classrooms" && <section className="zone-section">
+            <div className="zone-header">
+              <h2>RFID Classroom Zone</h2>
+              <p>Select a classroom, activate a simulated load event, and observe the backend's allocation decision and indicator state.</p>
+            </div>
+            
+            <div className="classrooms-grid">
+              {zones?.classroom.classrooms.map(cr => {
+                const isSelected = zones.classroom.active_classroom_id === cr.id;
+                const svc = getService(cr.service_id);
+                const cmdOn = checkBit(indicator_command_mask, cr.led_bit);
+                const confOn = checkBit(indicator_confirmed_mask, cr.led_bit);
+
+                return (
+                  <div key={cr.id} className={`cr-card ${isSelected ? 'selected' : ''}`}>
+                    <div className="cr-header">
+                      <h3>{cr.name}</h3>
+                      {isSelected && <span className="cr-active-badge">Active Selection</span>}
+                    </div>
+                    
+                    <div className="cr-props">
+                      <span>Service {cr.service_id}</span>
+                      <span>Priority {svc?.tier}</span>
+                      <span>{svc?.watts} W</span>
+                    </div>
+
+                    <div className="cr-states">
+                      <div className="state-line">
+                        <span className="label">Simulated Load:</span>
+                        <span className={`value ${cr.load_event_active ? 'text-ok' : 'text-off'}`}>
+                          {cr.load_event_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="state-line">
+                        <span className="label">Modeled Service:</span>
+                        <span className={`value ${svc?.modeled_served ? 'text-ok' : 'text-err'}`}>
+                          {svc?.modeled_served ? 'Served' : 'Shed'}
+                        </span>
+                      </div>
+                      <div className="state-line">
+                        <span className="label">Indicator Cmd:</span>
+                        <span className={`led-badge ${cmdOn ? 'on' : 'off'}`}>{cmdOn ? 'ON' : 'OFF'}</span>
+                      </div>
+                      <div className="state-line">
+                        <span className="label">Hardware Conf:</span>
+                        <span className="led-badge unknown">{confOn === null ? 'Unknown' : (confOn ? 'ON' : 'OFF')}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>}
+          
         </div>
-        <div className="compare-note">Classroom service identities are shown for each policy. Outcomes are measured from this same simulation snapshot.</div>
-        <div className="measured-metrics">
-          <span>MODEL EVALUATION · {evaluation?.label || "NO REPORTED SPLIT"}{evaluation?.sampleCount == null ? "" : ` · n=${evaluation.sampleCount.toLocaleString()}`}</span>
-          <p>{evaluation?.scope || sourceLabel} Model metrics describe this office-data proxy; they are not campus-lab accuracy claims.</p>
-          {evaluation?.previouslyInspected && <small>Exploratory test: these results were previously inspected and are not a pristine final evaluation.</small>}
-          {!evaluation && <small>Evaluation measurements are unavailable.</small>}
-          {evaluation?.metrics.map(([key, value]) => <div key={key}><span>{key}</span><b>{(value * 100).toFixed(1)}%</b></div>)}
-        </div>
-      </section></div>
-      <footer className="console-footer"><span><Server size={14} /> Backend-authoritative simulated state</span><span>Recorded office observations replayed as virtual room evidence</span><span>Hardware link: {snapshot.hardware_link.replace(/_/g, ' ')}</span></footer>
+
+        {/* DEMO CONTROLS SIDEBAR */}
+        <aside className="demo-controls-sidebar">
+          <div className="controls-panel">
+            <h2>Demo Controls</h2>
+            
+            {actionFeedback && (
+              <div className={`feedback-toast ${actionFeedback.isError ? 'error' : 'success'}`}>
+                {actionFeedback.msg}
+              </div>
+            )}
+
+            <div className="control-group">
+              <h3>RFID Selection</h3>
+              <p className="control-desc">Simulate a physical card scan.</p>
+              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_1_UID')}>Scan Classroom 1</button>
+              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_2_UID')}>Scan Classroom 2</button>
+              <button className="btn-outline" disabled={actionPending} onClick={() => doRfidScan('CARD_3_UID')}>Scan Classroom 3</button>
+              <button className="btn-outline err" disabled={actionPending} onClick={() => doRfidScan('UNKNOWN_CARD_UID')}>Scan Unknown Card</button>
+            </div>
+
+            <div className="control-group">
+              <h3>Classroom Load Control</h3>
+              <p className="control-desc">Simulate electrical demand for the selected classroom.</p>
+              {zones?.classroom.active_classroom_id ? (
+                <div className="flex-buttons">
+                  <button className="btn-outline" disabled={actionPending} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, true)}>Activate Load</button>
+                  <button className="btn-outline" disabled={actionPending} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, false)}>Deactivate Load</button>
+                </div>
+              ) : (
+                <div className="text-err text-small">Select a classroom first.</div>
+              )}
+            </div>
+
+            <div className="control-group">
+              <h3>Power Scenarios</h3>
+              <p className="control-desc">Test fault detection and constrained optimization.</p>
+              <button className="btn-outline" disabled={actionPending} onClick={() => {
+                doCapacity(14000);
+                doFeeder('A', true);
+                doFeeder('B', true);
+              }}>Normal Conditions</button>
+              
+              <button className="btn-outline warn" disabled={actionPending} onClick={() => doCapacity(6000)}>Shortage (6000W)</button>
+              <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('A', false)}>Feeder A Loss</button>
+              <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('B', false)}>Feeder B Loss</button>
+            </div>
+
+          </div>
+        </aside>
+      </div>
     </div>
-  </main>;
+  );
 }

@@ -4,6 +4,8 @@ Updated 2026-10-09. Remote application/Board B work and local ESP32 A work are m
 
 ## Current state
 
+UI correction: restored frontend pages, styles, routes and HTML to pre-redesign commit `aafaebc` at the user’s request. ML/backend work and typed API support remain. The restored UI does not expose the new replay/model panels; classifier visuals await user direction. Frontend production build passes with its original large-bundle warning.
+
 Software work is active and hardware work is paused. A trained four-feature local occupancy proxy, observation/model/replay APIs, exact 64-mask allocator, restoration gate and responsive command center are now integrated. The software freezes the existing six-service 14-kW catalog; the historical nine-load catalog remains deferred. No paid keys are required.
 
 The selected logistic pipeline beat Random Forest on validation; the tested CPU TabICL configuration was too slow for live inference. Later-day exploratory performance is much weaker than validation; do not claim real campus accuracy or untouched test results. Full measurements and data attribution are in `backend/models/MODEL_REPORT.md` and `evaluation.json`.
