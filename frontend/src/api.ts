@@ -1,4 +1,11 @@
-import { Snapshot, HealthResponse } from './types';
+import { 
+  Snapshot, 
+  HealthResponse, 
+  RfidScanResponse, 
+  CapacityChangeResponse, 
+  ClassroomLoadResponse, 
+  FeederChangeResponse 
+} from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -15,6 +22,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T>
       ...options,
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         ...options?.headers,
       },
     });
@@ -38,4 +46,32 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
 
 export async function fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
   return fetchJson<Snapshot>('/api/v1/snapshot', { signal });
+}
+
+export async function processRfidScan(uid: string): Promise<RfidScanResponse> {
+  return fetchJson<RfidScanResponse>('/api/v1/rfid/scan', {
+    method: 'POST',
+    body: JSON.stringify({ uid })
+  });
+}
+
+export async function changeCapacity(capacity_w: number): Promise<CapacityChangeResponse> {
+  return fetchJson<CapacityChangeResponse>('/api/v1/simulation/capacity', {
+    method: 'POST',
+    body: JSON.stringify({ capacity_w })
+  });
+}
+
+export async function changeClassroomLoad(classroom_id: string, active: boolean): Promise<ClassroomLoadResponse> {
+  return fetchJson<ClassroomLoadResponse>('/api/v1/simulation/classroom-load', {
+    method: 'POST',
+    body: JSON.stringify({ classroom_id, active })
+  });
+}
+
+export async function changeFeeder(feeder: string, available: boolean): Promise<FeederChangeResponse> {
+  return fetchJson<FeederChangeResponse>('/api/v1/simulation/feeder', {
+    method: 'POST',
+    body: JSON.stringify({ feeder, available })
+  });
 }
