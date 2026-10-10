@@ -4,7 +4,6 @@ import itertools
 import random
 from datetime import datetime, timedelta, timezone
 
-import networkx as nx
 import pytest
 
 from app.api.district import DistrictAction, DistrictActionName, DistrictObservation
@@ -53,6 +52,8 @@ def first_benefit(topology, profile, trace, faults):
 
 def oracle(topology, profile, trace, faults):
     """Independent: networkx forest test + min-cost max-flow per tie subset."""
+    nx = pytest.importorskip("networkx")
+    nx = pytest.importorskip("networkx")
     critical = {row.building_id for row in profile.buildings if row.tier == "critical"}
     demand = {row.building_id: row.demand_weight for row in profile.buildings}
     ties = sorted(edge["id"] for edge in topology["edges"] if edge["kind"] == "tie")
