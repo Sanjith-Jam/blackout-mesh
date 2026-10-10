@@ -10,7 +10,7 @@ Spec: `docs/planning/PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `docs/
 - `backend/` Python + FastAPI, single worker, the only owner of modeled state.
 - `frontend/` React + TypeScript + Vite, renders full snapshots.
 - `firmware/` Arduino C++ + ESP-NOW.
-- Allocation: current web app uses six services; older required-ML plan specifies nine. The software demo explicitly retains the six-service 14-kW catalog and enumerates all 64 masks. The nine-service catalog is deferred; physical catalog reconciliation is still pending.
+- Allocation: current web app uses six services; older required-ML plan specifies nine. The software demo retains the six-service 14-kW catalog, but each of its 31 appliances is now decided by OR-Tools CP-SAT with independent validation and an exhaustive oracle in tests; the 64-mask enumerator is a regression fixture only (docs/APPLIANCE_ALLOCATION.md). The nine-service catalog is deferred; physical catalog reconciliation is still pending.
 - Pin versions only after a successful local install/compile. Never invent pins.
 
 ## Commands
