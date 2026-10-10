@@ -17,7 +17,7 @@ export function HeroSection() {
           Predictive AI for demand warnings, an interactive city grid, and guided outage recovery.
           Simulated power, explainable decisions, and real-time ESP32 status when connected.
         </p>
-        <Link to="/demo" className="inline-block rounded-full bg-brand-sand px-8 py-3 font-semibold text-gray-900 focus-ring">Explore the city grid</Link>
+        <Link to="/grid" className="inline-block rounded-full bg-brand-sand px-8 py-3 font-semibold text-gray-900 focus-ring">Explore the GNITC district</Link>
         <p className="text-sm text-muted-foreground">Demand forecasts are trained on synthetic sessions. Physical hardware acceptance is pending.</p>
 
       </div>

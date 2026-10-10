@@ -14,7 +14,7 @@ from benchmarks.allocation import run_benchmark
 
 OUT = Path(__file__).resolve().parent / "results"
 METRICS = ("critical_unmet_wh", "essential_unmet_wh", "occupied_service_fraction", "worst_room_starvation_s",
-           "switching_count", "recovery_latency_s_max", "constraint_violations")
+           "switching_count", "recovery_latency_s_max", "constraint_violations", "occupied_service_gini")
 FOCUS = "proposed[validation_rates]"
 
 
@@ -27,7 +27,8 @@ def summarize(report: dict) -> dict:
     table, paired = {}, {}
     for run in report["runs"]:
         table.setdefault((run["scenario"], run["policy"]), []).append(run)
-    summary = {f"{s}|{p}": {m: mean(r[m] for r in runs) for m in METRICS} | {"n_seeds": len(runs)}
+    summary = {f"{s}|{p}": {m: mean(r[m] for r in runs) for m in METRICS} |
+               {"n_seeds": len(runs), "occupied_service_gini_defined_runs": sum(r["occupied_service_gini"] is not None for r in runs)}
                for (s, p), runs in table.items()}
     by_key = {(r["scenario"], r["seed"], r["policy"]): r for r in report["runs"]}
     for scenario in report["scenarios"]:
@@ -56,7 +57,14 @@ def markdown(report: dict, derived: dict, commit: str) -> str:
              "exact allocator) with each classifier variant and an always-UNKNOWN no-ML ablation, and "
              "`oracle_occupancy_upper_bound`, which reads true occupancy and is **not deployable**.", "",
              "Every run of a scenario/seed has the same input digest (capacity, feeders, bookings, classifier outputs); "
-             "true occupancy is used only by the evaluator.", ""]
+             "true occupancy is used only by the evaluator.", "",
+             "Room service Gini reuses CityLearn's MIT-licensed equity distribution formula "
+             "(834575c1a0194c8ae9d648ae858376a94dfceb78). It compares each room's served/occupied-requested time: "
+             "0 means equal fractions; higher means less equal. Rooms with no occupied requests are excluded; "
+             "all-zero service is undefined (—). Read it alongside unmet Wh and occupied service: equality alone "
+             "does not establish adequate service. Gini is averaged over defined runs (n/seeds shown); "
+             "per-room denominators are in JSON. "
+             "Source and full notice: backend/benchmarks/citylearn_metrics.py and licenses/CityLearn-LICENSE.", ""]
     order = ("fixed_priority", "round_robin", "essentials_first_no_ml", "proposed[no_ml_unknown]",
              "proposed_no_dwell[validation_rates]", "proposed[validation_rates]", "proposed_no_dwell[heavy_errors]",
              "proposed[heavy_errors]", "proposed[perfect]", "oracle_occupancy_upper_bound")
@@ -80,16 +88,18 @@ def markdown(report: dict, derived: dict, commit: str) -> str:
                           "essentials-first without ML. Any classifier gain is bounded by that.", ""]
     for scenario in report["scenarios"]:
         lines += [f"## {scenario}", "",
-                  "| Policy | Critical unmet Wh | Essential unmet Wh | Occupied service | Worst starvation s | Switches | Recovery s (max) | Violations |",
-                  "|---|---:|---:|---:|---:|---:|---:|---:|"]
+                  "| Policy | Critical unmet Wh | Essential unmet Wh | Occupied service | Room service Gini (n/seeds) | Worst starvation s | Switches | Recovery s (max) | Violations |",
+                  "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
         for key, row in sorted(derived["summary"].items()):
             s, p = key.split("|")
             if s != scenario:
                 continue
             frac = "—" if row["occupied_service_fraction"] is None else f"{row['occupied_service_fraction']:.1%}"
             rec = "—" if row["recovery_latency_s_max"] is None else f"{row['recovery_latency_s_max']:.0f}"
+            gini = "—" if row["occupied_service_gini"] is None else f"{row['occupied_service_gini']:.3f}"
+            gini += f" ({row['occupied_service_gini_defined_runs']}/{row['n_seeds']})"
             lines.append(f"| {p} | {row['critical_unmet_wh']:.1f} | {row['essential_unmet_wh']:.1f} | {frac} | "
-                         f"{row['worst_room_starvation_s']:.0f} | {row['switching_count']:.1f} | {rec} | {row['constraint_violations']:.0f} |")
+                         f"{gini} | {row['worst_room_starvation_s']:.0f} | {row['switching_count']:.1f} | {rec} | {row['constraint_violations']:.0f} |")
         lines.append("")
     lines += [f"## Paired differences: {FOCUS} minus each other policy (mean over seeds, [min, max])", "",
               "Negative is better for unmet Wh, starvation, switches and recovery; positive is better for occupied service.", "",

@@ -435,6 +435,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/district": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** District Snapshot */
+        get: operations["get_api_v1_district"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/district/action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** District Action */
+        post: operations["post_api_v1_district_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/district/generation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Topology */
+        post: operations["post_api_v1_district_generation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1028,6 +1079,300 @@ export interface components {
             /** Recommendation */
             recommendation: string;
         };
+        /** DistrictAction */
+        DistrictAction: {
+            /** Run Id */
+            run_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            action: components["schemas"]["DistrictActionName"];
+            /** Component Id */
+            component_id?: string | null;
+            /** Fault Kind */
+            fault_kind?: string | null;
+        };
+        /**
+         * DistrictActionName
+         * @enum {string}
+         */
+        DistrictActionName: "inject_fault" | "clear_fault" | "propose_recovery" | "apply_recovery" | "advance_hour" | "transformer_scenario" | "reset";
+        /** DistrictEnergy */
+        DistrictEnergy: {
+            /** Hour */
+            hour: number;
+            /** Profile */
+            profile: components["schemas"]["DistrictEnergyHour"][];
+            /** Battery Soc Wh */
+            battery_soc_wh: number;
+            /** Engine */
+            engine: string;
+            /** Provenance */
+            provenance: string;
+            /** Pv Used W */
+            pv_used_w: number;
+            /** Battery Charge W */
+            battery_charge_w: number;
+            /** Battery Discharge W */
+            battery_discharge_w: number;
+            /** Grid Import W */
+            grid_import_w: number;
+            totals: components["schemas"]["DistrictEnergyTotals"];
+            network_interval: components["schemas"]["DistrictNetworkEnergyInterval"];
+        };
+        /** DistrictEnergyHour */
+        DistrictEnergyHour: {
+            /** Hour */
+            hour: number;
+            /** Demand W */
+            demand_w: number;
+            /** Pv W */
+            pv_w: number;
+            /** Baseline Grid W */
+            baseline_grid_w: number;
+            /** Dispatch Grid W */
+            dispatch_grid_w: number;
+            /** Battery Soc Wh */
+            battery_soc_wh: number;
+            /** Pv Used W */
+            pv_used_w: number;
+            /** Battery Charge W */
+            battery_charge_w: number;
+            /** Battery Discharge W */
+            battery_discharge_w: number;
+            /** Grid Import W */
+            grid_import_w: number;
+            /** Loss Wh */
+            loss_wh: number;
+        };
+        /** DistrictEnergyTotals */
+        DistrictEnergyTotals: {
+            /** Period Hours */
+            period_hours: number;
+            /** Demand Wh */
+            demand_wh: number;
+            /** Pv Generated Wh */
+            pv_generated_wh: number;
+            /** Pv Used Wh */
+            pv_used_wh: number;
+            /** Pv Curtailed Wh */
+            pv_curtailed_wh: number;
+            /** Baseline Import Scheduled Wh */
+            baseline_import_scheduled_wh: number;
+            /** Dispatch Import Scheduled Wh */
+            dispatch_import_scheduled_wh: number;
+            /** Grid Export Wh */
+            grid_export_wh: number;
+            /** Battery Charge Wh */
+            battery_charge_wh: number;
+            /** Battery Discharge Wh */
+            battery_discharge_wh: number;
+            /** Battery Loss Wh */
+            battery_loss_wh: number;
+            /** Battery Round Trip Efficiency */
+            battery_round_trip_efficiency: number;
+        };
+        /** DistrictGeneration */
+        DistrictGeneration: {
+            /** Status */
+            status: string;
+            /** Available */
+            available: boolean;
+            /** Cluster Count */
+            cluster_count: number | null;
+            /** Secondary Strategy */
+            secondary_strategy: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Generated At */
+            generated_at: string | null;
+        };
+        /** DistrictIdentity */
+        DistrictIdentity: {
+            /** Site Id */
+            site_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Revision */
+            revision: number;
+        };
+        /** DistrictLoad */
+        DistrictLoad: {
+            /** Building Id */
+            building_id: string;
+            /** Tier */
+            tier: string;
+            /** Requested W */
+            requested_w: number;
+            /** Local Supply W */
+            local_supply_w: number;
+            /** Grid Requested W */
+            grid_requested_w: number;
+            /** Grid Served W */
+            grid_served_w: number;
+            /** Served W */
+            served_w: number;
+            /** Unmet W */
+            unmet_w: number;
+            /** Demand Provenance */
+            demand_provenance: string;
+            /** Local Supply Provenance */
+            local_supply_provenance: string;
+            /** Local Supply Basis */
+            local_supply_basis: string;
+            /** Local Supply Semantics */
+            local_supply_semantics: string;
+            /** Grid Service Provenance */
+            grid_service_provenance: string;
+            /** Unmet Provenance */
+            unmet_provenance: string;
+        };
+        /** DistrictMap */
+        DistrictMap: {
+            /** Source */
+            source: string;
+            /** Source Url */
+            source_url: string;
+            /** Attribution */
+            attribution: string;
+            /** License */
+            license: string;
+            /** Retrieved */
+            retrieved: string;
+            /** Source Sha256 */
+            source_sha256: string;
+            /** Features */
+            features: components["schemas"]["DistrictMapFeature"][];
+        };
+        /** DistrictMapFeature */
+        DistrictMapFeature: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string | null;
+            /** Geometry Type */
+            geometry_type: string;
+            /** Paths */
+            paths: components["schemas"]["DistrictPath"][];
+        };
+        /** DistrictNetworkEnergyInterval */
+        DistrictNetworkEnergyInterval: {
+            /** Duration Hours */
+            duration_hours: number;
+            /** Requested Wh */
+            requested_wh: number;
+            /** Local Supply Wh */
+            local_supply_wh: number;
+            /** Grid Import Requested Wh */
+            grid_import_requested_wh: number;
+            /** Grid Served Wh */
+            grid_served_wh: number;
+            /** Served Wh */
+            served_wh: number;
+            /** Unmet Wh */
+            unmet_wh: number;
+            /** Unmet Fraction Of Requested */
+            unmet_fraction_of_requested: number;
+        };
+        /** DistrictPath */
+        DistrictPath: {
+            /** Coordinates */
+            coordinates: number[][];
+        };
+        /** DistrictSite */
+        DistrictSite: {
+            /** Name */
+            name: string;
+            /** Center */
+            center: {
+                [key: string]: unknown;
+            };
+            /** Radius M */
+            radius_m: number;
+        };
+        /** DistrictSnapshot */
+        DistrictSnapshot: {
+            /** Schema Version */
+            schema_version: string;
+            identity: components["schemas"]["DistrictIdentity"];
+            site: components["schemas"]["DistrictSite"];
+            map: components["schemas"]["DistrictMap"];
+            topology: components["schemas"]["DistrictTopology"];
+            generation: components["schemas"]["DistrictGeneration"];
+            state: components["schemas"]["DistrictState"];
+            energy: components["schemas"]["DistrictEnergy"];
+        };
+        /** DistrictState */
+        DistrictState: {
+            /** Hour */
+            hour: number;
+            /** Source Capacity W */
+            source_capacity_w: number;
+            /** Source Capacity Provenance */
+            source_capacity_provenance: string;
+            /** Source Capacity Note */
+            source_capacity_note: string;
+            /** Grid Requested W */
+            grid_requested_w: number;
+            /** Grid Served W */
+            grid_served_w: number;
+            /** Unmet W */
+            unmet_w: number;
+            /** Source Available */
+            source_available: boolean;
+            /** Edges */
+            edges: {
+                [key: string]: unknown;
+            }[];
+            /** Loads */
+            loads: components["schemas"]["DistrictLoad"][];
+            /** Critical Shortfall W */
+            critical_shortfall_w: number;
+            /** Faults */
+            faults: {
+                [key: string]: unknown;
+            }[];
+            /** Restoration */
+            restoration: {
+                [key: string]: unknown;
+            };
+            /** Transformers */
+            transformers: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** DistrictTopology */
+        DistrictTopology: {
+            /** Schema Version */
+            schema_version: string;
+            /** Engine */
+            engine: string;
+            /** Engine Version */
+            engine_version: string;
+            /** Engine License */
+            engine_license: string;
+            /** Secondary Strategy */
+            secondary_strategy: string;
+            /** Cluster Count */
+            cluster_count: number;
+            /** Group Members */
+            group_members: {
+                [key: string]: string[];
+            };
+            /** Provenance */
+            provenance: string;
+            /** Equipment Stage */
+            equipment_stage: string;
+            /** Nodes */
+            nodes: {
+                [key: string]: unknown;
+            }[];
+            /** Edges */
+            edges: {
+                [key: string]: unknown;
+            }[];
+        };
         /** Edge */
         Edge: {
             /** Id */
@@ -1259,6 +1604,17 @@ export interface components {
              * @enum {string}
              */
             board: "A" | "B";
+        };
+        /** GenerationRequest */
+        GenerationRequest: {
+            /** Run Id */
+            run_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Cluster Count */
+            cluster_count: number;
+            /** Secondary Strategy */
+            secondary_strategy: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3242,6 +3598,119 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplianceRequestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_district: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictSnapshot"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    post_api_v1_district_action: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DistrictAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    post_api_v1_district_generation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictSnapshot"];
                 };
             };
             /** @description Validation Error */

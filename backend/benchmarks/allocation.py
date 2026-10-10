@@ -21,8 +21,9 @@ from app.core.allocator import allocate, feasible, fixed_priority_mask
 from app.core.restoration import RestorationGate
 from app.core.safety import RANK_DWELL_READINGS, SAFETY_POLICY_VERSION, ActivityGuard, RankDwell
 from app.core.state import SERVICE_CATALOG
+from benchmarks.citylearn_metrics import _equity_distribution_metrics
 
-BENCHMARK_VERSION = "alloc-bench-2026-10-10.2"
+BENCHMARK_VERSION = "alloc-bench-2026-10-10.3"
 STEP_S = 5.0
 ROOMS = ("CR1", "CR2", "CR3")
 ROOM_BIT = {"CR1": 3, "CR2": 4, "CR3": 5}
@@ -230,6 +231,8 @@ def evaluate(timeline: Timeline, masks: list[int]) -> dict:
     occupied_served_s = occupied_requested_s = 0.0
     switches = violations = 0
     starvation = {r: 0.0 for r in ROOMS}
+    room_requested_s = {r: 0.0 for r in ROOMS}
+    room_served_s = {r: 0.0 for r in ROOMS}
     worst = 0.0
     recovery = []  # one entry per return to normal supply: step it returned, step all requests were served
     prev = None
@@ -249,8 +252,10 @@ def evaluate(timeline: Timeline, masks: list[int]) -> dict:
         for r in ROOMS:
             if r in step.booked and timeline.occupied[k][r]:
                 occupied_requested_s += STEP_S
+                room_requested_s[r] += STEP_S
                 if mask & (1 << ROOM_BIT[r]):
                     occupied_served_s += STEP_S
+                    room_served_s[r] += STEP_S
                     starvation[r] = 0.0
                 else:
                     starvation[r] += STEP_S
@@ -270,9 +275,16 @@ def evaluate(timeline: Timeline, masks: list[int]) -> dict:
             recovery[-1]["end"] = k
     latencies = [(r["end"] - r["start"]) * STEP_S for r in recovery if r["end"] is not None]
     unrecovered = sum(1 for r in recovery if r["end"] is None)
+    room_fractions = {r: room_served_s[r] / room_requested_s[r] if room_requested_s[r] else None for r in ROOMS}
+    # Compare service fractions, excluding rooms with no occupied demand; all-zero service is undefined.
+    gini = _equity_distribution_metrics([v for v in room_fractions.values() if v is not None])["equity_gini_benefit"]
     return {"critical_unmet_wh": round(crit_unmet, 3), "essential_unmet_wh": round(ess_unmet, 3),
             "occupied_service_fraction": round(occupied_served_s / occupied_requested_s, 4) if occupied_requested_s else None,
             "occupied_requested_s": occupied_requested_s,
+            "occupied_service_by_room": {r: {"requested_s": room_requested_s[r], "served_s": room_served_s[r],
+                                             "fraction": round(room_fractions[r], 4) if room_fractions[r] is not None else None}
+                                         for r in ROOMS},
+            "occupied_service_gini": round(gini, 4) if gini is not None else None,
             "worst_room_starvation_s": worst, "switching_count": switches,
             "recovery_latency_s_max": max(latencies) if latencies else None,
             "recoveries": len(recovery), "unrecovered": unrecovered,

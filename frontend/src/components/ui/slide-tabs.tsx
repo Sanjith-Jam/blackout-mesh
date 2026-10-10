@@ -23,7 +23,7 @@ export function SlideTabs({ tabs }: { tabs: TabItem[] }) {
               <a
                 href={tab.href}
                 className={cn(
-                  "px-6 py-2 text-sm font-medium transition-colors block focus-ring rounded-full",
+                  "px-2 sm:px-6 py-2 text-sm font-medium transition-colors block focus-ring rounded-full",
                   isActive ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
                 )}
               >
@@ -40,7 +40,7 @@ export function SlideTabs({ tabs }: { tabs: TabItem[] }) {
               <Link
                 to={tab.href}
                 className={cn(
-                  "px-6 py-2 text-sm font-medium transition-colors block focus-ring rounded-full",
+                  "px-2 sm:px-6 py-2 text-sm font-medium transition-colors block focus-ring rounded-full",
                   isActive ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
                 )}
               >

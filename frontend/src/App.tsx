@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage';
 import DemoDashboard from './pages/DemoDashboard';
 import CityDemo from './pages/CityDemo';
 import PowerSystemDemo from './pages/PowerSystemDemo';
+import DistrictDemo from './pages/DistrictDemo';
 import HospitalPage from './pages/HospitalDemo';
 import ClassroomsPage from './pages/ClassroomsDemo';
 import { Header } from '@/components/ui/header';
@@ -69,6 +70,7 @@ function AppContent() {
             <Route path="/hospital" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><HospitalPage /></motion.div>} />
             <Route path="/classrooms" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><ClassroomsPage /></motion.div>} />
             <Route path="/demo" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><PowerSystemDemo /></motion.div>} />
+            <Route path="/grid" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><DistrictDemo /></motion.div>} />
             <Route path="/city" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><CityDemo /></motion.div>} />
             <Route path="/console" element={<DemoDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />

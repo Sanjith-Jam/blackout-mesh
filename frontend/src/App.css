@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@media (max-width: 900px) {
+  .site-header { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: .55rem; padding: .65rem .75rem; }
+  .site-header > :first-child { grid-area: 1 / 1; }
+  .site-header > :nth-child(2) { grid-area: 2 / 1 / 3 / 3; min-width: 0; }
+  .site-header > :last-child { grid-area: 1 / 2; }
+}
+
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));

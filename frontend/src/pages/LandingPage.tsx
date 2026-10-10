@@ -94,7 +94,7 @@ export default function LandingPage() {
             Offline decision console demonstration. Not for production life-safety use.
           </div>
           <div className="footer-links">
-            <Link to="/demo" className="hover:text-primary">Interactive Demo</Link>
+            <Link to="/grid" className="hover:text-primary">Interactive District Demo</Link>
           </div>
         </div>
       </footer>

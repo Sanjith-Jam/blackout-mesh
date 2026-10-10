@@ -1,0 +1,27 @@
+# GNITC district MVP plan
+
+Status: implementation plan, not delivery evidence. Target: the GNITC R&D block at **17.161849, 78.659909**, within roughly 500 m. This is a separate synthetic district study on `/grid`; the existing six-service campus model, `/demo`, and ESP32/LED behavior stay as they are.
+
+## Boundary and ownership
+
+- **Worker A — Python authority:** acquire and pin an attributable local geography snapshot; derive bounded parcel points; run SHIFT's offline PRSG topology generation; own the district model, scenario state, CityLearn battery/energy simulation, restoration rules, transformer evidence, API schemas, OpenAPI and deterministic fixtures/tests. The existing FastAPI process remains the only state owner. Persist no claim that generated wires are real feeders.
+- **Worker B — frontend:** add one `/grid` route with SHIFT, Energy, Self-healing and Transformers tabs. All tabs share the same map, selected node/edge, run/revision and API snapshot; they must not maintain competing electrical state or recalculate allocation. Build responsive, keyboard usable map and detail views at 375, 768 and 1440 px. Existing routes remain available.
+- **Shared boundary:** Worker A freezes the response and command contract plus fixtures before Worker B wires live data. Each quantity includes unit and source (`OBSERVED`, `CACHED_GEOGRAPHY`, `CONFIGURED_SIMULATED_ASSUMPTION`, `MODEL_DERIVED` or `UNKNOWN` as appropriate). Unknown stays null. Proposed topology/restoration, applied modeled state and physical confirmation remain distinct. A schema change updates Python models, generated TypeScript types, fixtures and API callers in one commit.
+
+## Ordered deliverables
+
+1. **Geography and topology.** Store a bounded, attributable map/parcel snapshot for the target area with source URL, retrieval date, license and snapshot hash. Generate the synthetic primary radial network with SHIFT PRSG from those local points, record algorithm/package version and seed, and validate a connected tree, unique IDs, reachability and bounded node/line counts. Assign synthetic W demand and line/source ratings explicitly; no inferred real feeder, current or voltage measurements.
+2. **District authority and contract.** Expose one versioned district snapshot and a small set of validated scenario/dispatch/fault commands under `/api/v1/district`. Keep server epoch, run ID and state revision so stale commands and responses cannot overwrite newer state. Use deterministic seeds and one shared graph for all four tabs.
+3. **Energy.** Run CityLearn's battery/energy simulation offline on district-shaped synthetic demand, PV and storage inputs. Compare baseline and dispatch over the same time window; report served/import/export energy, battery SOC, losses/efficiency and unmet demand with denominators and units. No trained RL policy or claims of real savings.
+4. **Self-healing.** On a simulated fault, isolate the affected edge and search only declared tie switches for a capacity-feasible radial restoration. Report critical shortfall, proposal, applied modeled state and why a rejected route failed. Require fresh evidence and stable capacity before restoration; shedding is immediate. Never serve through a known open feeder, exceed source/line limits or claim an ACK from a graph transition.
+5. **Transformer view.** Show a cutaway linked to the selected map transformer and highlight a suspected area only when the observation rule supports it. Show unknown when evidence is absent or stale. Label temperature/current/voltage and diagnosis inputs as simulated or observed, with no fabricated measurement or fault certainty.
+6. **Frontend integration and acceptance.** The four tabs use the same selected asset and revision. Verify API and fixtures, backend topology/energy/restoration/evidence tests, frontend tests and production build, then a browser flow at 375/768/1440 px. Check normal, fault, rejected restoration, unknown evidence and stale response paths. Update `CONTEXT.md` with actual commands and results after each landed step.
+
+## Source and claim provenance
+
+- SHIFT: `NLR-Distribution-Suite/shift@995004c84c16df7c8ebfd3ddddf3e723a0938a99` (BSD-3-Clause), for PRSG generation. Generated district wires remain synthetic.
+- CityLearn: `citylearn-project/CityLearn@834575c1a0194c8ae9d648ae858376a94dfceb78` (MIT), for the battery/energy simulation. The repository already uses its fairness metric in a benchmark; this deliverable requires an actual simulation run.
+- Self-healing reference: `Ninjagrape/Self-Healing-Grid-via-Graph-RL@ad6f76928a18490043746d3f8f757da8013cf0ae` (Apache-2.0), for graph ideas. Use deterministic constrained restoration; RL training is deferred by user request.
+- Transformer reference: `roshini0108/Transformer-Health-Intelligence-System@78aeea0381a066fd97d9e00cce5a176a7af6b0ed` has no repository license file. The user reports direct permission from its owner for code reuse; record that as user-provided authorization only. Do not imply an MIT license or rights to its datasets/artifacts. Preserve any required notices for copied code.
+
+Source checkouts under ignored `sources/` and local research under `local-only/reuse-2026-10-10/` are inputs, not shipped runtime dependencies. Every UI result distinguishes real/cached geography from synthetic nodes, load, PV, storage, faults and modeled restoration.
