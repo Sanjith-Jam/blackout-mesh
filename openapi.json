@@ -3146,7 +3146,9 @@
                   "reset",
                   "replay_pause",
                   "replay_resume",
-                  "replay_step"
+                  "replay_step",
+                  "inject_fault",
+                  "clear_fault"
                 ]
               },
               {
@@ -3181,6 +3183,25 @@
               }
             ],
             "title": "Capacity W"
+          },
+          "fault": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "overload",
+                  "cooling_failure",
+                  "overload_cooling",
+                  "upstream_loss",
+                  "sensor_dropout",
+                  "stuck_sensor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fault"
           },
           "scenario": {
             "anyOf": [
@@ -3315,6 +3336,16 @@
               }
             ],
             "title": "Limited By"
+          },
+          "fault": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HospitalFaultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "requested_w": {
             "anyOf": [
@@ -3681,6 +3712,43 @@
           "hypotheses"
         ],
         "title": "HospitalDiagnosisResponse"
+      },
+      "HospitalFaultResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "overload",
+              "cooling_failure",
+              "overload_cooling",
+              "upstream_loss",
+              "sensor_dropout",
+              "stuck_sensor"
+            ],
+            "title": "Kind"
+          },
+          "zone_id": {
+            "type": "string",
+            "title": "Zone Id"
+          },
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "provenance": {
+            "type": "string",
+            "const": "INJECTED_SIMULATION",
+            "title": "Provenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "zone_id",
+          "asset_id",
+          "provenance"
+        ],
+        "title": "HospitalFaultResponse"
       },
       "HospitalRoom": {
         "properties": {

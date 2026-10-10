@@ -11,6 +11,7 @@ import {
   ClassroomDemoRoom,
   HospitalDemoSnapshot,
   HospitalDemoActionName,
+  HospitalDemoFault,
   HardwareStatus
 } from './types';
 
@@ -121,8 +122,8 @@ export async function getHospitalDemo(signal?: AbortSignal): Promise<HospitalDem
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', { signal });
 }
 
-export async function postHospitalDemo(action: HospitalDemoActionName, zone_id?: string, capacity_w?: number): Promise<HospitalDemoSnapshot> {
+export async function postHospitalDemo(action: HospitalDemoActionName, zone_id?: string, capacity_w?: number, fault?: HospitalDemoFault): Promise<HospitalDemoSnapshot> {
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', {
-    method: 'POST', body: JSON.stringify({ action, ...(zone_id ? { zone_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}) })
+    method: 'POST', body: JSON.stringify({ action, ...(zone_id ? { zone_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}), ...(fault ? { fault } : {}) })
   });
 }

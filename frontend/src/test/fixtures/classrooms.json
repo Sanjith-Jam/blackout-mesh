@@ -8,7 +8,7 @@
  "classroom_limit_w": 3000,
  "command": {
   "applied_revision": 5,
-  "command_id": "da1db090-3d07-4c67-92e7-a07ddf8ef2f1",
+  "command_id": "55f41979-7129-4b98-926a-1a1733161cbb",
   "name": "classroom.set_capacity",
   "run_id": "<volatile>"
  },
@@ -18,10 +18,10 @@
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:03:06.255982+00:00",
+   "observation_time": "2026-10-10T01:06:38.280153+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791594186,
+   "server_epoch": 1791594398,
    "site_id": "Default Campus",
    "state_revision": 5
   },

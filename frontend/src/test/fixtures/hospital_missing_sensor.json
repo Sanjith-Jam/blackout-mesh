@@ -1,56 +1,421 @@
 {
- "campus_limit_w": null,
- "capacity_range_w": null,
- "capacity_w": null,
- "command": null,
+ "campus_limit_w": 6000,
+ "capacity_range_w": [
+  0,
+  6000
+ ],
+ "capacity_w": 6000,
+ "command": {
+  "applied_revision": 7,
+  "command_id": "6b6aed9b-ace6-4d13-b7cc-5fab4fcdc026",
+  "name": "hospital.inject_fault",
+  "run_id": "<volatile>"
+ },
  "contract": {
   "campus_totals": null,
   "identity": {
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:03:06.255982+00:00",
+   "observation_time": "2026-10-10T01:06:38.280153+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791594186,
+   "server_epoch": 1791594398,
    "site_id": "Default Campus",
-   "state_revision": 6
+   "state_revision": 7
   },
   "zone_totals": {}
  },
- "edges": [],
- "effective_capacity_w": null,
- "generated_at": null,
- "hospital_limit_w": null,
- "limited_by": null,
+ "edges": [
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "UTILITY",
+   "id": "hospital:SUPPLY>BUS",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Campus feeder A; 6,000 W available",
+   "requested_w": 6000,
+   "served_w": 6000,
+   "state": "ENERGIZED",
+   "to": "BUS",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "BUS",
+   "id": "hospital:BUS>TX1",
+   "observed": {
+    "diagnosis_status": "NORMAL",
+    "energized": true,
+    "note": "Voltage presence only; no measured branch current.",
+    "output_voltage_v": 220.0,
+    "provenance": "SIMULATED_SENSOR"
+   },
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "1,150 W of ICU equipment served",
+   "requested_w": 1150,
+   "served_w": 1150,
+   "state": "ENERGIZED",
+   "to": "TX1",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX1",
+   "id": "hospital:TX1>ventilator",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Ventilator: served (essential)",
+   "requested_w": 300,
+   "served_w": 300,
+   "state": "ENERGIZED",
+   "to": "TX1.ventilator",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX1",
+   "id": "hospital:TX1>monitor",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Patient Monitor: served (essential)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "TX1.monitor",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX1",
+   "id": "hospital:TX1>infusion",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Infusion Pump: served (essential)",
+   "requested_w": 50,
+   "served_w": 50,
+   "state": "ENERGIZED",
+   "to": "TX1.infusion",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX1",
+   "id": "hospital:TX1>lights",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Emergency Lights: served (essential)",
+   "requested_w": 200,
+   "served_w": 200,
+   "state": "ENERGIZED",
+   "to": "TX1.lights",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX1",
+   "id": "hospital:TX1>oxygen",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "O2 System: served (essential)",
+   "requested_w": 500,
+   "served_w": 500,
+   "state": "ENERGIZED",
+   "to": "TX1.oxygen",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "BUS",
+   "id": "hospital:BUS>TX2",
+   "observed": {
+    "diagnosis_status": "ABSTAINED",
+    "energized": true,
+    "note": "Voltage presence only; no measured branch current.",
+    "output_voltage_v": 220.0,
+    "provenance": "SIMULATED_SENSOR"
+   },
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Diagnosis abstained: Insufficient sensor evidence to evaluate transformer state.",
+   "requested_w": 2350,
+   "served_w": 2350,
+   "state": "UNKNOWN",
+   "to": "TX2",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX2",
+   "id": "hospital:TX2>surgical_light",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Surgical Light: served (essential)",
+   "requested_w": 500,
+   "served_w": 500,
+   "state": "ENERGIZED",
+   "to": "TX2.surgical_light",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX2",
+   "id": "hospital:TX2>anesthesia",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Anesthesia Unit: served (essential)",
+   "requested_w": 200,
+   "served_w": 200,
+   "state": "ENERGIZED",
+   "to": "TX2.anesthesia",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX2",
+   "id": "hospital:TX2>esu",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Electrosurgical: served (essential)",
+   "requested_w": 650,
+   "served_w": 650,
+   "state": "ENERGIZED",
+   "to": "TX2.esu",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX2",
+   "id": "hospital:TX2>monitor",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Vital Monitor: served (essential)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "TX2.monitor",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX2",
+   "id": "hospital:TX2>ac",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Climate Control: served (optional)",
+   "requested_w": 900,
+   "served_w": 900,
+   "state": "ENERGIZED",
+   "to": "TX2.ac",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "BUS",
+   "id": "hospital:BUS>TX3",
+   "observed": {
+    "diagnosis_status": "NORMAL",
+    "energized": true,
+    "note": "Voltage presence only; no measured branch current.",
+    "output_voltage_v": 220.0,
+    "provenance": "SIMULATED_SENSOR"
+   },
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "2,500 W of Wards equipment served",
+   "requested_w": 2500,
+   "served_w": 2500,
+   "state": "ENERGIZED",
+   "to": "TX3",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX3",
+   "id": "hospital:TX3>bed_lights",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Bed Lights: served (essential)",
+   "requested_w": 300,
+   "served_w": 300,
+   "state": "ENERGIZED",
+   "to": "TX3.bed_lights",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX3",
+   "id": "hospital:TX3>nurse_call",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Nurse Call: served (essential)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "TX3.nurse_call",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX3",
+   "id": "hospital:TX3>fans",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Ceiling Fans: served (optional)",
+   "requested_w": 300,
+   "served_w": 300,
+   "state": "ENERGIZED",
+   "to": "TX3.fans",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX3",
+   "id": "hospital:TX3>water_pump",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Water Pump: served (optional)",
+   "requested_w": 600,
+   "served_w": 600,
+   "state": "ENERGIZED",
+   "to": "TX3.water_pump",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "TX3",
+   "id": "hospital:TX3>ac",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Air Conditioning: served (optional)",
+   "requested_w": 1200,
+   "served_w": 1200,
+   "state": "ENERGIZED",
+   "to": "TX3.ac",
+   "unit": "W"
+  }
+ ],
+ "effective_capacity_w": 6000,
+ "fault": {
+  "asset_id": "TX2",
+  "kind": "sensor_dropout",
+  "provenance": "INJECTED_SIMULATION",
+  "zone_id": "Theatre"
+ },
+ "generated_at": "<volatile>",
+ "hospital_limit_w": 6000,
+ "limited_by": "hospital limit",
  "mode": "SIMULATED",
- "model": null,
- "policy": null,
+ "model": {
+  "fallback_reason": null,
+  "model_version": "uci-occ-logistic-2026-10-09",
+  "ready": true
+ },
+ "policy": "Hospital: the equipment decomposes campus feeder A (L0 essential circuit, L1 emergency lighting, L2 water pump and HVAC). Essential equipment is always served first; scanned zones' optional equipment next, within the feeder A power the campus allocated.",
  "priority_order": [],
- "replay": null,
- "requested_w": null,
- "safety": null,
+ "replay": {
+  "index": 0,
+  "length": 0,
+  "running": false,
+  "step_s": 5.0
+ },
+ "requested_w": 6000,
+ "safety": {
+  "fallback_order": [
+   "hospital critical (L0, L1)",
+   "classroom essentials in room rank order",
+   "optional loads in room rank order"
+  ],
+  "policy_version": "safety-2026-10-10.1",
+  "protected_requested_w": 3000,
+  "protected_served_w": 3000,
+  "protected_shortfall_w": 0,
+  "status": "FEASIBLE"
+ },
  "scanned_zone_ids": [],
  "selected_zone_id": null,
- "served_w": null,
- "shortfall_w": null,
+ "served_w": 6000,
+ "shortfall_w": 0,
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 6,
+  "revision": 7,
   "run_id": "<volatile>"
  },
- "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; a cause is inferred after two consecutive agreeing readings. Thresholds are not certified protection settings.",
+ "summary": null,
  "transformers": [
   {
-   "activity": null,
+   "activity": {
+    "evidence": {},
+    "guard": "conservative fallback: no evidence",
+    "model_version": "unavailable",
+    "raw_state": "UNKNOWN",
+    "reason": "no recorded activity evidence for hospital zones",
+    "score": null,
+    "state": "UNKNOWN"
+   },
    "diagnosis": {
     "abstention": null,
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 45.0 A within rating (110.0 A limit).",
-     "Temperature 58.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Current 5.0 A within rating (5.5 A limit).",
+     "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
      "Input 230.0 V, Output 220.0 V."
     ],
@@ -65,61 +430,69 @@
    "id": "TX1",
    "loads": [
     {
-     "essential": null,
+     "essential": true,
      "id": "ventilator",
-     "name": null,
-     "reason": null,
+     "name": "Ventilator",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 300
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "monitor",
-     "name": null,
-     "reason": null,
+     "name": "Patient Monitor",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 100
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "infusion",
-     "name": null,
-     "reason": null,
+     "name": "Infusion Pump",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 50
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "lights",
-     "name": null,
-     "reason": null,
+     "name": "Emergency Lights",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 200
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "oxygen",
-     "name": null,
-     "reason": null,
+     "name": "O2 System",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 500
     }
    ],
    "name": "Transformer 1",
    "priority_rank": null,
-   "rated_current_a": 100.0,
-   "rfid_active": null,
+   "rated_current_a": 5.0,
+   "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 45.0,
+    "current_a": 5.0,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
-    "temperature_c": 58.0
+    "temperature_c": 60.0
    },
    "zone": "ICU"
   },
   {
-   "activity": null,
+   "activity": {
+    "evidence": {},
+    "guard": "conservative fallback: no evidence",
+    "model_version": "unavailable",
+    "raw_state": "UNKNOWN",
+    "reason": "no recorded activity evidence for hospital zones",
+    "score": null,
+    "state": "UNKNOWN"
+   },
    "diagnosis": {
     "abstention": {
      "asset_id": "TX2",
@@ -150,68 +523,76 @@
    "id": "TX2",
    "loads": [
     {
-     "essential": null,
+     "essential": true,
      "id": "surgical_light",
-     "name": null,
-     "reason": null,
+     "name": "Surgical Light",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 500
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "anesthesia",
-     "name": null,
-     "reason": null,
+     "name": "Anesthesia Unit",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 200
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "esu",
-     "name": null,
-     "reason": null,
+     "name": "Electrosurgical",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 650
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "monitor",
-     "name": null,
-     "reason": null,
+     "name": "Vital Monitor",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 100
     },
     {
-     "essential": null,
+     "essential": false,
      "id": "ac",
-     "name": null,
-     "reason": null,
+     "name": "Climate Control",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 900
     }
    ],
    "name": "Transformer 2",
    "priority_rank": null,
-   "rated_current_a": 100.0,
-   "rfid_active": null,
+   "rated_current_a": 10.22,
+   "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
     "current_a": null,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
-    "temperature_c": 55.0
+    "temperature_c": 60.0
    },
    "zone": "Theatre"
   },
   {
-   "activity": null,
+   "activity": {
+    "evidence": {},
+    "guard": "conservative fallback: no evidence",
+    "model_version": "unavailable",
+    "raw_state": "UNKNOWN",
+    "reason": "no recorded activity evidence for hospital zones",
+    "score": null,
+    "state": "UNKNOWN"
+   },
    "diagnosis": {
     "abstention": null,
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 45.0 A within rating (110.0 A limit).",
-     "Temperature 58.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Current 10.9 A within rating (12.0 A limit).",
+     "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
      "Input 230.0 V, Output 220.0 V."
     ],
@@ -226,56 +607,56 @@
    "id": "TX3",
    "loads": [
     {
-     "essential": null,
+     "essential": true,
      "id": "bed_lights",
-     "name": null,
-     "reason": null,
+     "name": "Bed Lights",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 300
     },
     {
-     "essential": null,
+     "essential": true,
      "id": "nurse_call",
-     "name": null,
-     "reason": null,
+     "name": "Nurse Call",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 100
     },
     {
-     "essential": null,
+     "essential": false,
      "id": "fans",
-     "name": null,
-     "reason": null,
+     "name": "Ceiling Fans",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 300
     },
     {
-     "essential": null,
+     "essential": false,
      "id": "water_pump",
-     "name": null,
-     "reason": null,
+     "name": "Water Pump",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 600
     },
     {
-     "essential": null,
+     "essential": false,
      "id": "ac",
-     "name": null,
-     "reason": null,
+     "name": "Air Conditioning",
+     "reason": "served",
      "served": true,
-     "watts": null
+     "watts": 1200
     }
    ],
    "name": "Transformer 3",
    "priority_rank": null,
-   "rated_current_a": 100.0,
-   "rfid_active": null,
+   "rated_current_a": 10.87,
+   "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 45.0,
+    "current_a": 10.87,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
-    "temperature_c": 58.0
+    "temperature_c": 60.0
    },
    "zone": "Wards"
   }

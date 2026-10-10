@@ -47,6 +47,8 @@ The `/hospital` route is `HospitalPriorityDemo`: ICU, Theatre and Wards behind T
 
 By zone: ICU 1,150 W, Theatre 2,350 W, Wards 2,500 W; total 6,000 W = feeder A limit.
 
+Injected faults (overload, cooling failure, both, upstream loss, sensor dropout, stuck sensor) are persistent hospital state until `clear_fault` or reset. `app/simulation/sensors.py::apply_fault` turns them into telemetry; diagnosis sees only the resulting observations. Only upstream loss changes allocation, by removing the hospital's incoming supply.
+
 ## Room and indicator mappings (unchanged)
 
 | Room | Campus service | LED bit | RFID default UID |
@@ -69,7 +71,7 @@ Every command below goes through `SiteAuthority.command()`, which applies it, ti
 | `POST /api/v1/activity/observations` | activity evidence | campus |
 | `POST /api/v1/replay` | campus replay start/pause/reset | campus |
 | `POST /api/v1/visualizers/classrooms` | scan/unscan, classroom limit, presets, replay controls, reset | classroom |
-| `POST /api/v1/visualizers/hospital` | zone scan/unscan, hospital supply limit, presets, reset | hospital zone view |
+| `POST /api/v1/visualizers/hospital` | zone scan/unscan, hospital supply limit, presets, reset, `inject_fault` / `clear_fault` (the old `scenario` field is an alias) | hospital zone view |
 
 ## Coupling introduced in this step
 

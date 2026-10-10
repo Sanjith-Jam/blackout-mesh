@@ -464,6 +464,13 @@ class HospitalDemoTransformerResponse(BaseModel):
     loads: List[VisualizerLoad]
 
 
+class HospitalFaultResponse(BaseModel):
+    kind: Literal["overload", "cooling_failure", "overload_cooling", "upstream_loss", "sensor_dropout", "stuck_sensor"]
+    zone_id: str
+    asset_id: str
+    provenance: Literal["INJECTED_SIMULATION"]
+
+
 class HospitalDemoResponse(BaseModel):
     contract: CrossRouteContract
     site: Optional[SiteIdentityResponse] = None
@@ -476,6 +483,7 @@ class HospitalDemoResponse(BaseModel):
     campus_limit_w: Optional[int] = None
     effective_capacity_w: Optional[int] = None
     limited_by: Optional[Literal["hospital limit", "campus feeder A"]] = None
+    fault: Optional[HospitalFaultResponse] = None
     requested_w: Optional[int] = None
     served_w: Optional[int] = None
     shortfall_w: Optional[int] = None

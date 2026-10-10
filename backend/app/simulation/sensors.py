@@ -53,6 +53,38 @@ def zone_readings(served_w: dict[str, float], demand_w: dict[str, float]) -> dic
     return readings
 
 
+# Faults the hospital zone view can inject into its live telemetry (A4). The allocation never sees them.
+HOSPITAL_FAULTS = ("overload", "cooling_failure", "overload_cooling", "upstream_loss", "sensor_dropout", "stuck_sensor")
+
+
+def apply_fault(readings: dict[str, dict], fault: dict | None, rated_current_a: dict[str, float], steps: int) -> dict[str, dict]:
+    """Hidden truth of an injected fault, applied on top of zone telemetry. `steps` counts samples since injection.
+
+    stuck_sensor is a real overload whose current sensor stays frozen at its pre-fault value.
+    """
+    if not fault:
+        return readings
+    out = {asset: dict(values) for asset, values in readings.items()}
+    kind, target = fault["kind"], fault["asset"]
+    ramp = min(1.0, (steps + 1) / 4)
+    if kind == "upstream_loss":
+        for asset in out:
+            out[asset] = dict(zip(TRANSFORMER_FIELDS, UPSTREAM_LOSS_SENSORS))
+        return out
+    values = out[target]
+    if kind in ("overload", "overload_cooling", "stuck_sensor"):
+        values["current_a"] = round(1.3 * rated_current_a[target], 2)
+        values["temperature_c"] = round(values["temperature_c"] + ramp * 20.0, 1)
+    if kind in ("cooling_failure", "overload_cooling"):
+        values["cooling_ok"] = False
+        values["temperature_c"] = round(values["temperature_c"] + ramp * 35.0, 1)
+    if kind == "sensor_dropout":
+        values["current_a"] = None
+    if kind == "stuck_sensor":
+        values["current_a"] = fault["frozen_current_a"]
+    return out
+
+
 def campus_readings(source_capacity_w: int, feeder_available: dict, served_w_by_feeder: dict) -> dict[str, dict]:
     """Bus and feeder-head telemetry implied by the simulated campus state."""
     bus_v = NOMINAL_V if source_capacity_w > 0 else 0.0

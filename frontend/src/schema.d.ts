@@ -1094,11 +1094,13 @@ export interface components {
         /** HospitalDemoAction */
         HospitalDemoAction: {
             /** Action */
-            action?: ("scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset" | "replay_pause" | "replay_resume" | "replay_step") | null;
+            action?: ("scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset" | "replay_pause" | "replay_resume" | "replay_step" | "inject_fault" | "clear_fault") | null;
             /** Zone Id */
             zone_id?: ("ICU" | "Theatre" | "Wards") | null;
             /** Capacity W */
             capacity_w?: number | null;
+            /** Fault */
+            fault?: ("overload" | "cooling_failure" | "overload_cooling" | "upstream_loss" | "sensor_dropout" | "stuck_sensor") | null;
             /** Scenario */
             scenario?: ("normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor") | null;
         };
@@ -1127,6 +1129,7 @@ export interface components {
             effective_capacity_w?: number | null;
             /** Limited By */
             limited_by?: ("hospital limit" | "campus feeder A") | null;
+            fault?: components["schemas"]["HospitalFaultResponse"] | null;
             /** Requested W */
             requested_w?: number | null;
             /** Served W */
@@ -1209,6 +1212,23 @@ export interface components {
             missing?: string[];
             /** Stale */
             stale?: string[];
+        };
+        /** HospitalFaultResponse */
+        HospitalFaultResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "overload" | "cooling_failure" | "overload_cooling" | "upstream_loss" | "sensor_dropout" | "stuck_sensor";
+            /** Zone Id */
+            zone_id: string;
+            /** Asset Id */
+            asset_id: string;
+            /**
+             * Provenance
+             * @constant
+             */
+            provenance: "INJECTED_SIMULATION";
         };
         /** HospitalRoom */
         HospitalRoom: {

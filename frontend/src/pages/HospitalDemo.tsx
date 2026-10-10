@@ -59,6 +59,8 @@ export default function HospitalDemo() {
     normal: 'Full supply 6,000 W applied.',
     overload: 'Overload preset 4,000 W applied.',
     reset: 'Hospital demo reset.',
+    inject_fault: `Fault injected at ${zoneId ?? 'Theatre'}.`,
+    clear_fault: 'Injected fault cleared.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',
     replay_step: 'Moved to the next recorded reading.',

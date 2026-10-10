@@ -313,8 +313,8 @@
     "before": {
      "applied_mask": 63,
      "initialized": true,
-     "last_restored": 1198.794789389,
-     "last_shed": 1198.794789389,
+     "last_restored": 1410.817557621,
+     "last_shed": 1410.817557621,
      "signature": [
       14000,
       [
@@ -338,9 +338,9 @@
        ]
       ]
      ],
-     "stable_since": 1198.794789389
+     "stable_since": 1410.817557621
     },
-    "now_s": 1198.794796956,
+    "now_s": 1410.817565678,
     "order": [
      0,
      1,
@@ -415,12 +415,12 @@
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:03:06.255982+00:00",
+   "observation_time": "2026-10-10T01:06:38.280153+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791594186,
+   "server_epoch": 1791594398,
    "site_id": "Default Campus",
-   "state_revision": 6
+   "state_revision": 7
   },
   "zone_totals": {
    "classroom": {
@@ -735,7 +735,7 @@
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 6,
+  "revision": 7,
   "run_id": "<volatile>"
  },
  "source": {

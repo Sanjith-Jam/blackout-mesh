@@ -10,7 +10,7 @@ from app.core.edges import edge as power_edge
 from app.core.restoration import RestorationGate
 from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
 from app.diagnosis.observations import validate as validate_observation
-from app.simulation.sensors import HOSPITAL_ASSETS, TRANSFORMER_FIELDS, envelopes as sensor_envelopes, hospital_readings, zone_readings
+from app.simulation.sensors import HOSPITAL_ASSETS, HOSPITAL_FAULTS, TRANSFORMER_FIELDS, apply_fault, envelopes as sensor_envelopes, hospital_readings, zone_readings
 from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
 
 from app.core.state import site_profile
@@ -357,6 +357,8 @@ class HospitalPriorityDemo(ClassroomDemo):
         self.published_revision = 0
         self.telemetry = ObservationWindow()
         self.telemetry_sequence = 0
+        self.fault: dict | None = None  # injected sensor/supply fault (A4); allocation never reads its kind
+        self._last_readings: dict[str, dict] = {}
         self._advance_evidence()
         initial = (1 << len(HOSP_LOAD_KEYS)) - 1
         self.gate.update(initial, self._signature(self._room_order()), range(len(HOSP_LOAD_KEYS)))
@@ -367,6 +369,18 @@ class HospitalPriorityDemo(ClassroomDemo):
                               "reason": "no recorded activity evidence for hospital zones",
                               "guard": "conservative fallback: no evidence", "evidence": {}}
                           for z in HOSP_ZONES}
+
+    def effective_capacity(self):
+        if self.fault and self.fault["kind"] == "upstream_loss":
+            return 0  # the injected loss removes the hospital's incoming supply
+        return super().effective_capacity()
+
+    def _supply_open_reason(self):
+        if self.campus_feeder_closed is False:
+            return "Open: campus feeder A is unavailable"
+        if self.fault and self.fault["kind"] == "upstream_loss":
+            return "Open: upstream supply lost (injected fault)"
+        return None
 
     def _room_order(self):
         act = {z: self.activity(z) for z in HOSP_ZONES}
@@ -435,6 +449,8 @@ class HospitalPriorityDemo(ClassroomDemo):
             "scanned_zone_ids": [z for z in HOSP_ZONES if z in self.scanned],
             "priority_order": [z for z in order if z in self.scanned],
             "transformers": transformers, "mode": "SIMULATED", "safety": safety, "edges": edges,
+            "fault": None if not self.fault else {"kind": self.fault["kind"], "zone_id": self.fault["zone"],
+                                                  "asset_id": self.fault["asset"], "provenance": "INJECTED_SIMULATION"},
             "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"), "fallback_reason": status.get("fallback_reason")},
             "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": REPLAY_STEP_S},
             "policy": "Hospital: the equipment decomposes campus feeder A (L0 essential circuit, L1 emergency "
@@ -444,8 +460,8 @@ class HospitalPriorityDemo(ClassroomDemo):
 
     def _hospital_edges(self, target, current, readings, diagnoses):
         """Supply -> bus -> transformer -> equipment edges for the hospital drawing (#23)."""
-        closed = self.campus_feeder_closed is not False
-        open_reason = "Open: campus feeder A is unavailable"
+        open_reason = self._supply_open_reason()
+        closed = open_reason is None
         edges = [power_edge("hospital:SUPPLY>BUS", "UTILITY", "BUS", connected=closed, commanded=bool(target),
                             applied=bool(current), requested_w=sum(x[2] for rows in HOSP_LOADS.values() for x in rows),
                             served_w=sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current),
@@ -491,6 +507,10 @@ class HospitalPriorityDemo(ClassroomDemo):
         served = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current) for i, z in enumerate(HOSP_ZONES)}
         demand = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z]) for i, z in enumerate(HOSP_ZONES)}
         readings = zone_readings(served, demand)
+        if self.fault:
+            ratings = {f"TX{i+1}": self._rating(z).rated_current_a for i, z in enumerate(HOSP_ZONES)}
+            readings = apply_fault(readings, self.fault, ratings, self.telemetry_sequence - self.fault["sequence"])
+        self._last_readings = readings
         self.telemetry_sequence += 1
         for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
             self.telemetry.add(validate_observation(raw, set(readings), now))
@@ -498,13 +518,27 @@ class HospitalPriorityDemo(ClassroomDemo):
                      for i, z in enumerate(HOSP_ZONES)}
         return readings, diagnoses
 
-    def act(self, action: str, zone_id: str | None = None, capacity_w: int | None = None):
+    def inject_fault(self, kind: str, zone_id: str | None = None):
+        """Persist an injected fault until cleared or reset; the diagnosis still sees only telemetry."""
+        if kind not in HOSPITAL_FAULTS:
+            raise ValueError(f"unknown fault {kind!r}")
+        zone = zone_id or "Theatre"
+        asset = f"TX{HOSP_ZONES.index(zone) + 1}"
+        frozen = (self._last_readings.get(asset) or {}).get("current_a")
+        self.fault = {"kind": kind, "zone": zone, "asset": asset, "sequence": self.telemetry_sequence,
+                      "frozen_current_a": frozen}
+
+    def act(self, action: str, zone_id: str | None = None, capacity_w: int | None = None, fault: str | None = None):
         if action == "scan":
             if zone_id not in self.scanned:
                 self.scanned.append(zone_id)
         elif action == "unscan":
             if zone_id in self.scanned:
                 self.scanned.remove(zone_id)
+        elif action == "inject_fault":
+            self.inject_fault(fault, zone_id)
+        elif action == "clear_fault":
+            self.fault = None
         elif action == "set_capacity":
             self.capacity = capacity_w
         elif action == "normal":
