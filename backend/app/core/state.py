@@ -24,7 +24,7 @@ from app.activity.model import ActivityModel, FEATURES
 from app.diagnosis.infer import FeederRating, ObservationWindow, diagnose_campus
 from app.diagnosis.observations import validate as validate_observation
 from app.simulation.sensors import CAMPUS_BUS, CAMPUS_FEEDERS, campus_readings, envelopes as sensor_envelopes
-from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, normalize_prediction, shortfall_status
+from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, RankDwell, normalize_prediction, shortfall_status
 
 from app.schemas.snapshot import CrossRouteContract, ScopeTotals
 from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
@@ -103,6 +103,7 @@ class GridState:
         self.replay_index = 0
         self.replay_length = 0
         self.activity_guard = ActivityGuard()
+        self.rank_dwell = RankDwell()
         self.activity_tokens = {c["id"]: 0 for c in CLASSROOMS}
         self.activity_received_monotonic = {c["id"]: None for c in CLASSROOMS}
         self.policy = AllocationPolicy()
@@ -441,6 +442,7 @@ class GridState:
             if revision != self.activity_tokens[classroom_id]:
                 return False
             pred = self.activity_guard.update(classroom_id, normalize_prediction(prediction), revision)
+            pred = self.rank_dwell.update(classroom_id, pred, revision)
             state = pred["state"]
             priority = {"ACTIVE": "HIGH", "UNKNOWN": "MEDIUM", "INACTIVE": "LOW"}[state]
             self.activity[classroom_id].update(state=state, score=pred.get("score"), reason=pred.get("reason") or "inference failed",

@@ -16,7 +16,7 @@ Catalog version `site-catalog-2026-10-10.1`. This file records every identifier,
 |---:|---|---|---|---|---:|---|
 | 0 | L0 | Hospital Essential Circuit | T1 | A | 2,000 | yes |
 | 1 | L1 | Emergency Lighting | T1 | A | 1,000 | yes |
-| 2 | L2 | Water Pump | T2 | A | 3,000 | no |
+| 2 | L2 | Water Pump & HVAC | T2 | A | 3,000 | no |
 | 3 | L3 | Classroom 1 | T2 | B | 2,000 | lighting + computers |
 | 4 | L4 | Classroom 2 | T2 | B | 2,000 | lighting + computers |
 | 5 | L5 | Classroom 3 | T3 | B | 4,000 | lighting + computers |
@@ -35,17 +35,19 @@ The classroom demo's appliances are the leaves of the campus classroom services.
 
 \* protected essential minimum (#22). Classroom leaves total 8,000 W = feeder B limit.
 
-## Hospital zone view (not mapped)
+## Hospital equipment leaves decompose L0–L2
 
-The `/hospital` route is `HospitalPriorityDemo`: ICU, Theatre and Wards behind TX1–TX3, with zone scans, its own 0–7,000 W supply limit (7,000 W normal, 3,000 W overload preset) and essential equipment served first.
+The `/hospital` route is `HospitalPriorityDemo`: ICU, Theatre and Wards behind TX1–TX3, with zone scans and a named 0–6,000 W hospital limit (6,000 W normal, 4,000 W overload preset). Its equipment are the leaves of the campus feeder A services, by tier: essential equipment belongs to T1 services, optional equipment to L2. `reconcile_catalog()` refuses to start if any sum or tier disagrees.
 
-| Zone | Essential (W) | Optional (W) | Total |
-|---|---|---|---:|
-| ICU | ventilator 300, monitor 100, infusion 50, lights 50, O₂ 500 | — | 1,000 |
-| Theatre | surgical light 500, anesthesia 200, ESU 800, monitor 100 | climate 1,400 | 3,000 |
-| Wards | nurse call 100 | bed lights 200, fans 500, TV 200, AC 2,000 | 3,000 |
+| Parent | Leaves (W) | Sum |
+|---|---|---:|
+| L0 Hospital Essential Circuit (T1) | ICU ventilator 300, monitor 100, infusion 50, O₂ 500; Theatre anesthesia 200, ESU 650, monitor 100; Wards nurse call 100 | 2,000 |
+| L1 Emergency Lighting (T1) | ICU emergency lights 200; Theatre surgical light 500; Wards bed lights 300 | 1,000 |
+| L2 Water Pump & HVAC (T2) | Theatre climate 900; Wards fans 300, water pump 600, AC 1,200 | 3,000 |
 
-These 7,000 W do not reconcile with the campus feeder A services (L0 2,000 + L1 1,000 + L2 3,000 = 6,000 W). There is no reviewed mapping, so the hospital view is not coupled to the campus budget. It shares the site run identity and revision only. The earlier scenario-based transformer sensor fixtures (`hospital_snapshot`) still exist in code but are no longer served by a route.
+By zone: ICU 1,150 W, Theatre 2,350 W, Wards 2,500 W; total 6,000 W = feeder A limit.
+
+Injected faults (overload, cooling failure, both, upstream loss, sensor dropout, stuck sensor) are persistent hospital state until `clear_fault` or reset. `app/simulation/sensors.py::apply_fault` turns them into telemetry; diagnosis sees only the resulting observations. Only upstream loss changes allocation, by removing the hospital's incoming supply.
 
 ## Room and indicator mappings (unchanged)
 
@@ -63,21 +65,22 @@ Every command below goes through `SiteAuthority.command()`, which applies it, ti
 | Route | Command | Applies to |
 |---|---|---|
 | `POST /api/v1/rfid/scan` | RFID scan | campus |
-| `POST /api/v1/simulation/capacity` | source capacity | campus (and, through coupling, the classroom budget) |
-| `POST /api/v1/simulation/feeder` | feeder availability | campus (and, through coupling, the classroom budget) |
+| `POST /api/v1/simulation/capacity` | source capacity | campus (and, through coupling, the classroom and hospital budgets) |
+| `POST /api/v1/simulation/feeder` | feeder availability | campus (and, through coupling, the classroom and hospital budgets) |
 | `POST /api/v1/simulation/classroom-load` | classroom load event | campus |
 | `POST /api/v1/activity/observations` | activity evidence | campus |
 | `POST /api/v1/replay` | campus replay start/pause/reset | campus |
 | `POST /api/v1/visualizers/classrooms` | scan/unscan, classroom limit, presets, replay controls, reset | classroom |
-| `POST /api/v1/visualizers/hospital` | zone scan/unscan, hospital supply limit, presets, reset | hospital zone view |
+| `POST /api/v1/visualizers/hospital` | zone scan/unscan, hospital supply limit, presets, reset, `inject_fault` / `clear_fault` (the old `scenario` field is an alias) | hospital zone view |
 
 ## Coupling introduced in this step
 
 The classroom view now allocates within `min(classroom limit, campus feeder B headroom)`. Headroom is 0 when feeder B is unavailable, otherwise `min(feeder B limit, source capacity − campus-served feeder A watts)`. A campus shortage or feeder B trip therefore reaches the classroom page in the same revision. The classroom limit slider stays as an explicitly named sub-budget (`classroom_limit_w`).
 
+The hospital view allocates within `min(hospital limit, campus feeder A served watts)`: the watts of L0–L2 that the campus allocator served, or 0 when feeder A is unavailable. A campus shortage or feeder A trip therefore reaches the hospital page in the same revision, and the hospital view can never serve more than the campus granted feeder A.
+
 ## Remaining migration (not done in this step)
 
-- The campus allocator still decides L3–L5 as whole rooms while the classroom view decides appliances. Both respect the same feeder B budget, but they are two decisions. Next step: derive L3–L5 served watts from the leaf allocation (partial service) and retire whole-room classroom decisions.
+- The campus allocator still decides L0–L5 as whole services while the classroom and hospital views decide equipment within the budget the campus granted. Both levels respect the same feeder budgets, but they are two decisions. Next step: derive L3–L5 served watts from the leaf allocation (partial service) and retire whole-room classroom decisions.
 - Campus RFID events, classroom-view scan controls and board session events now share `GridState.active_sessions`; these update the same requested campus services and classroom projection (#21). Hardware inputs remain simulated/unconnected unless the explicitly provisioned gateway is present.
-- The hospital zone view (7,000 W) is not mapped to campus feeder A (6,000 W).
 - `GridState` is still a process-wide singleton (#11).

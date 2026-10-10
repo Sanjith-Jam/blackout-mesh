@@ -45,6 +45,7 @@ export type DiagnosticHypothesis = components['schemas']['HospitalDiagnosisRespo
 export type DiagnosticAbstention = components['schemas']['HospitalDiagnosisResponse']['abstention'];
 export type HospitalDemoDiagnosis = components['schemas']['HospitalDiagnosisResponse'];
 export type HospitalDemoActionName = NonNullable<components['schemas']['HospitalDemoAction']['action']>;
+export type HospitalDemoFault = NonNullable<components['schemas']['HospitalDemoAction']['fault']>;
 export type HospitalDemoZone = components['schemas']['HospitalDemoTransformerResponse'];
 export type HospitalDemoTransformer = HospitalTransformerView;
 type HospitalTransformerView = Omit<components['schemas']['HospitalDemoTransformerResponse'],

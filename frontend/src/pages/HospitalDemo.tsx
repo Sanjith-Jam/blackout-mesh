@@ -56,9 +56,11 @@ export default function HospitalDemo() {
     scan: `Scanned ${zoneId}.`,
     unscan: `Ended ${zoneId}'s session.`,
     set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
-    normal: 'Full supply 7,000 W applied.',
-    overload: 'Overload preset 3,000 W applied.',
+    normal: 'Full supply 6,000 W applied.',
+    overload: 'Overload preset 4,000 W applied.',
     reset: 'Hospital demo reset.',
+    inject_fault: `Fault injected at ${zoneId ?? 'Theatre'}.`,
+    clear_fault: 'Injected fault cleared.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',
     replay_step: 'Moved to the next recorded reading.',
@@ -105,7 +107,7 @@ export default function HospitalDemo() {
     <div className="classroom-demo__layout">
       <section className="classroom-demo__main" aria-label="Hospital power state">
         <div className="classroom-demo__metrics">
-          <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Hospital-only supply</span><span className="classroom-demo__metric-value">{snapshot.capacity_w.toLocaleString()} W</span></div>
+          <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Hospital supply</span><span className="classroom-demo__metric-value">{(snapshot.effective_capacity_w ?? snapshot.capacity_w).toLocaleString()} W</span>{snapshot.limited_by === 'campus feeder A' && <span className="classroom-demo__metric-note">Limited by campus feeder A ({(snapshot.campus_limit_w ?? 0).toLocaleString()} W)</span>}</div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Requested</span><span className="classroom-demo__metric-value">{snapshot.requested_w.toLocaleString()} W</span></div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Served</span><span className="classroom-demo__metric-value">{snapshot.served_w.toLocaleString()} W</span></div>
           <div className="classroom-demo__metric"><span className="classroom-demo__metric-label">Unmet</span><span className="classroom-demo__metric-value">{snapshot.shortfall_w.toLocaleString()} W</span></div>
@@ -186,13 +188,13 @@ export default function HospitalDemo() {
           </div>;
         })()}
         <div className="classroom-demo__button-stack">
-          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 7,000 W</button>
-          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 3,000 W</button>
+          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 6,000 W</button>
+          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 4,000 W</button>
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
         <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating hospital state…' : feedback ?? ''}</p>
         <p><strong>Policy:</strong> {snapshot.policy}</p>
-        <p>RFID scan state is shown as session evidence. The 7,000 W budget belongs to this hospital demo and is separate from the six-service campus model.</p>
+        <p>RFID scan state is shown as session evidence. This 6,000 W hospital load is campus feeder A (L0, L1 and L2) broken into equipment, so campus shortages and feeder A trips apply here too.</p>
       </aside>
     </div>
   </main>;

@@ -195,28 +195,23 @@
   "stuck_sensor": {
    "scenarios": 4,
    "fault_scenarios": 4,
-   "detected": 0,
+   "detected": 4,
    "claims": 0,
    "correct_claims": 0,
    "false_alarm_steps": 0,
    "normal_asset_steps": 295,
    "location_errors": 0,
-   "abstained_steps": 0,
+   "abstained_steps": 77,
    "asset_steps": 384,
-   "correct_abstentions": 0,
-   "safety_violations": 73,
-   "missed": [
-    "68f6ecd752fd5590",
-    "858063085bccfc6d",
-    "261add00bf0bfd34",
-    "30648776ded5ef9b"
-   ],
-   "recall": 0.0,
+   "correct_abstentions": 77,
+   "safety_violations": 0,
+   "missed": [],
+   "recall": 1.0,
    "precision": null,
    "false_alarm_rate": 0.0,
-   "time_to_detect_steps_median": null,
-   "time_to_detect_steps_max": null,
-   "coverage": 1.0
+   "time_to_detect_steps_median": 1.0,
+   "time_to_detect_steps_max": 1,
+   "coverage": 0.7995
   },
   "delay_reorder": {
    "scenarios": 4,
