@@ -208,3 +208,7 @@ README, demo guide and planning index now identify `/grid` as the primary distri
 ## Round 3 #69 explicit district policy — 2026-10-10
 
 `DISTRICT_PROFILE` now selects a strictly validated district policy (default `gnitc_profile.json`): all 12 synthetic building tiers/rationales and demand weights are explicit; missing/duplicate buildings, invalid watts and unsupported island modes reject. Largest-remainder allocation conserves integer W. Cached CityLearn residual supply is explicitly grid-following and becomes zero on isolated buildings; disconnected PV/storage cannot invent island service. Generated topology must retain every configured building. This separate profile retains the 6,000 W source. Focused profile/authority/evidence checks: 14 passed using `/tmp/round3-69-history.sqlite`; `git diff --check` passed. Integrated appliance mapping and durable district replay remain next.
+
+## Round 3 #69 shared allocator path budgets — 2026-10-10
+
+The existing appliance `Item`/`Problem` accepts an optional graph-edge path and edge limits. CP-SAT and the independent validator enforce every nested path budget, and reject service on an undeclared edge. Existing A/B callers keep empty paths and unchanged behavior. The compact path-budget test cross-checks the exhaustive oracle, plus existing allocator checks: 161 passed in 7.46 s. `git diff --check` passed. Next: the opt-in district mapping adapter; no new solver or dependency.

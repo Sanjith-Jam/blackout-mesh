@@ -36,6 +36,7 @@ class Item:
     reachable: bool = True
     group: str | None = None
     requires: tuple = ()
+    path: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,7 @@ class Problem:
     zone_limits_w: dict = field(default_factory=dict)
     class_order: tuple = ()
     previous: frozenset = frozenset()
+    edge_limits_w: dict = field(default_factory=dict)
 
 
 def _eligible(problem: Problem, item: Item) -> bool:
@@ -80,6 +82,13 @@ def validate(problem: Problem, served) -> list[str]:
         w = sum(it.watts for it in on if it.zone == zone)
         if w > limit:
             violations.append(f"zone {zone}: {w} W exceeds {limit} W")
+    for edge, limit in problem.edge_limits_w.items():
+        watts = sum(it.watts for it in on if edge in it.path)
+        if watts > limit:
+            violations.append(f"edge {edge}: {watts} W exceeds {limit} W")
+    for it in on:
+        if any(edge not in problem.edge_limits_w for edge in it.path):
+            violations.append(f"{it.id}: path contains an unconfigured edge")
     groups: dict[str, list[Item]] = {}
     for it in problem.items:
         if it.group:
@@ -133,6 +142,11 @@ def solve(problem: Problem, time_limit_s: float = 2.0) -> Plan:
         model.Add(sum(it.watts * x[it.id] for it in items if it.feeder == feeder) <= limit)
     for zone, limit in problem.zone_limits_w.items():
         model.Add(sum(it.watts * x[it.id] for it in items if it.zone == zone) <= limit)
+    for edge, limit in problem.edge_limits_w.items():
+        model.Add(sum(it.watts * x[it.id] for it in items if edge in it.path) <= limit)
+    for it in items:
+        if any(edge not in problem.edge_limits_w for edge in it.path):
+            model.Add(x[it.id] == 0)
     groups: dict[str, list[Item]] = {}
     for it in items:
         if it.group:
