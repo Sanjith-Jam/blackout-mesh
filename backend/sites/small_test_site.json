@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "name": "Small Test Site",
+  "assets": [
+    {
+      "id": "SOURCE",
+      "type": "source",
+      "name": "Micro Grid",
+      "capacity_w": 5000
+    },
+    {
+      "id": "A",
+      "type": "feeder",
+      "name": "Feeder A",
+      "parent_id": "SOURCE",
+      "capacity_w": 3000
+    },
+    {
+      "id": "L0",
+      "type": "service",
+      "name": "Main Lighting",
+      "parent_id": "A",
+      "tier": "T1",
+      "rating_w": 1000,
+      "zone": "hospital"
+    },
+    {
+      "id": "L1",
+      "type": "service",
+      "name": "Secondary Room",
+      "parent_id": "A",
+      "tier": "T2",
+      "rating_w": 2000,
+      "zone": "classroom"
+    },
+    {
+      "id": "HR1",
+      "type": "hospital_room",
+      "name": "Only Hospital Room",
+      "parent_id": "L0",
+      "led_bit": 0
+    },
+    {
+      "id": "CR1",
+      "type": "classroom",
+      "name": "Only Classroom",
+      "parent_id": "L1",
+      "led_bit": 1
+    }
+  ]
+}

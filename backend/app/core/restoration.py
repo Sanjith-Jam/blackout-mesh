@@ -11,8 +11,8 @@ class RestorationGate:
         self.initialized = False
         self.applied_mask = 0
 
-    def update(self, proposed_mask, signature, order):
-        now = self.clock()
+    def update(self, proposed_mask, signature, order, now=None):
+        now = self.clock() if now is None else now
         if not self.initialized:
             self.initialized = True
             self.signature = signature

@@ -1,0 +1,3 @@
+# Offline cross-check only; not a second runtime engine.
+-r requirements-electrical.txt
+pandapower==3.5.6

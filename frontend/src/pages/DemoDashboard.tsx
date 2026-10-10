@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSnapshot } from '../useServerState';
+import { useAppStore } from '../store';
 import { Link } from 'react-router-dom';
 import { Activity, Server, Wifi, AlertTriangle } from 'lucide-react';
 import { processRfidScan, changeCapacity, changeClassroomLoad, changeFeeder } from '../api';
-import { Snapshot } from '../types';
+
 import TopologyGraph from '../components/TopologyGraph';
 import SourceCapacityDemandChart from '../components/SourceCapacityDemandChart';
 import AllocationHistoryChart from '../components/AllocationHistoryChart';
@@ -18,68 +20,41 @@ interface TimeSeriesPoint {
 }
 
 export default function DemoDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [healthOk, setHealthOk] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data: snapshot } = useSnapshot();
+  const isConnected = useAppStore(s => s.isConnected);
+  const isStale = useAppStore(s => s.isStale);
+  const activeTab = useAppStore(s => s.activeTab);
+  const setActiveTab = useAppStore(s => s.setActiveTab);
+
   const [actionPending, setActionPending] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<{msg: string, isError: boolean} | null>(null);
 
-  // Time series data for charts
   const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
   const MAX_HISTORY = 50;
 
-  const wsRef = useRef<WebSocket | null>(null);
+  const lastRunId = useRef<string | null>(null);
 
   useEffect(() => {
-    const connectWs = () => {
-      const ws = new WebSocket('ws://127.0.0.1:8000/ws/live');
-      wsRef.current = ws;
+    if (!snapshot) return;
+    const runId = snapshot.contract?.identity?.run_id;
+    if (lastRunId.current !== null && lastRunId.current !== runId) {
+      setHistory([]);
+    }
+    lastRunId.current = runId;
 
-      ws.onopen = () => {
-        setHealthOk(true);
-        setError(null);
-      };
+    const now = new Date(snapshot.generated_at).toLocaleTimeString();
+    const demand = snapshot.services.filter((s: any) => s.requested).reduce((sum: number, s: any) => sum + s.watts, 0);
+    const servedCount = snapshot.services.filter((s: any) => s.modeled_served).length;
+    const shedCount = snapshot.services.filter((s: any) => !s.modeled_served && s.requested).length;
 
-      ws.onmessage = (event) => {
-        try {
-          const data: Snapshot = JSON.parse(event.data);
-          setSnapshot(data);
-          setHealthOk(true);
-
-          // Update history
-          const now = new Date(data.sent_at ?? data.generated_at).toLocaleTimeString();
-          const demand = data.services.filter(s => s.requested).reduce((sum, s) => sum + s.watts, 0);
-          const servedCount = data.services.filter(s => s.modeled_served).length;
-          const shedCount = data.services.filter(s => !s.modeled_served && s.requested).length;
-
-          setHistory(prev => {
-            const next = [...prev, { time: now, capacity: data.source.capacity_w, demand, servedCount, shedCount }];
-            if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
-            return next;
-          });
-
-        } catch (e) {
-          console.error("Failed to parse websocket message", e);
-        }
-      };
-
-      ws.onerror = (e) => {
-        console.error("Websocket error", e);
-      };
-
-      ws.onclose = () => {
-        setHealthOk(false);
-        setError("WebSocket disconnected. Reconnecting...");
-        setTimeout(connectWs, 3000);
-      };
-    };
-
-    connectWs();
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-    };
-  }, []);
+    setHistory(prev => {
+      // prevent exact duplicates if control_revision hasn't changed (though the time might)
+      // actually we just append
+      const next = [...prev, { time: now, capacity: snapshot.source.capacity_w, demand, servedCount, shedCount }];
+      if (next.length > MAX_HISTORY) return next.slice(next.length - MAX_HISTORY);
+      return next;
+    });
+  }, [snapshot?.control_revision]); // only append when revision changes
 
   const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
     if (actionPending) return;
@@ -110,13 +85,13 @@ export default function DemoDashboard() {
       <div className="dashboard-container loading">
         <Activity className="spin" size={48} />
         <h2>Connecting to Live Feed...</h2>
-        {error && <p className="text-err">{error}</p>}
+        {isStale && <p className="text-err">Reconnecting...</p>}
       </div>
     );
   }
 
   const { services, zones, source, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
-  
+
   const servedWatts = services.filter(s => s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
   const servedCount = services.filter(s => s.modeled_served).length;
 
@@ -138,13 +113,13 @@ export default function DemoDashboard() {
           <Activity className="brand-icon" />
           <div>
             <span className="brand-name">PriorityGrid</span>
-            <span className="brand-badge">Live Console{snapshot?.site ? ` · run ${snapshot.site.run_id} · rev ${snapshot.site.revision}` : ''}</span>
+            <span className="brand-badge">Live Console</span>
           </div>
         </div>
-        
+
         <div className="dash-status-indicators">
-          <div className={`status-pill ${healthOk ? 'ok' : 'error'}`}>
-            <Server size={14} /> Backend {healthOk ? 'Live' : 'Disconnected'}
+          <div className={`status-pill ${isConnected && !isStale ? 'ok' : 'error'}`}>
+            <Server size={14} /> Backend {isConnected && !isStale ? 'Live' : 'Stale/Disconnected'}
           </div>
           <div className="status-pill warn">
             <Wifi size={14} /> HW: {snapshot.hardware_link.replace('_', ' ')}
@@ -156,9 +131,9 @@ export default function DemoDashboard() {
         </div>
       </header>
 
-      {error && (
+      {isStale && (
         <div className="dash-alert error">
-          <AlertTriangle size={16} /> {error}
+          <AlertTriangle size={16} /> Reconnecting to backend...
         </div>
       )}
 
@@ -198,7 +173,7 @@ export default function DemoDashboard() {
       </section>
 
       {/* TOPOLOGY & ZONES ROW */}
-      
+
       <div className="demo-tabs" style={{ display: 'flex', gap: '1rem', padding: '0 0', borderBottom: '1px solid #e2e8f0', background: 'transparent', marginBottom: '1.5rem' }}>
         <button className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'overview' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Overview</button>
         <button className={`tab-btn ${activeTab === 'hospital' ? 'active' : ''}`} onClick={() => setActiveTab('hospital')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'hospital' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Hospital Zone</button>
@@ -207,7 +182,7 @@ export default function DemoDashboard() {
 
       <div className="zones-layout">
         <div className="main-zones">
-          
+
           {/* NETWORK TOPOLOGY */}
           {activeTab === "overview" && <section className="zone-section">
             <div className="zone-header">
@@ -223,11 +198,11 @@ export default function DemoDashboard() {
               <h2>Hospital Zone</h2>
               <p>Three rooms with shared essential lighting and priority-aware support services.</p>
             </div>
-            
+
             <div className="hospital-rooms-grid">
               {zones?.hospital.rooms.map(room => {
-                const cmdOn = checkBit(indicator_command_mask, room.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask, room.led_bit);
+                const cmdOn = checkBit(indicator_command_mask ?? null, room.led_bit);
+                const confOn = checkBit(indicator_confirmed_mask ?? null, room.led_bit);
                 return (
                   <div key={room.id} className="room-card">
                     <h3>{room.name}</h3>
@@ -269,13 +244,13 @@ export default function DemoDashboard() {
               <h2>RFID Classroom Zone</h2>
               <p>Select a classroom, activate a simulated load event, and observe the backend's allocation decision and indicator state.</p>
             </div>
-            
+
             <div className="classrooms-grid">
               {zones?.classroom.classrooms.map(cr => {
                 const isSelected = zones.classroom.active_classroom_id === cr.id;
                 const svc = getService(cr.service_id);
-                const cmdOn = checkBit(indicator_command_mask, cr.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask, cr.led_bit);
+                const cmdOn = checkBit(indicator_command_mask ?? null, cr.led_bit);
+                const confOn = checkBit(indicator_confirmed_mask ?? null, cr.led_bit);
 
                 return (
                   <div key={cr.id} className={`cr-card ${isSelected ? 'selected' : ''}`}>
@@ -283,7 +258,7 @@ export default function DemoDashboard() {
                       <h3>{cr.name}</h3>
                       {isSelected && <span className="cr-active-badge">Active Selection</span>}
                     </div>
-                    
+
                     <div className="cr-props">
                       <span>Service {cr.service_id}</span>
                       <span>Priority {svc?.tier}</span>
@@ -317,14 +292,14 @@ export default function DemoDashboard() {
               })}
             </div>
           </section>}
-          
+
         </div>
 
         {/* DEMO CONTROLS SIDEBAR */}
         <aside className="demo-controls-sidebar">
           <div className="controls-panel">
             <h2>Demo Controls</h2>
-            
+
             {actionFeedback && (
               <div className={`feedback-toast ${actionFeedback.isError ? 'error' : 'success'}`}>
                 {actionFeedback.msg}
@@ -361,7 +336,7 @@ export default function DemoDashboard() {
                 doFeeder('A', true);
                 doFeeder('B', true);
               }}>Normal Conditions</button>
-              
+
               <button className="btn-outline warn" disabled={actionPending} onClick={() => doCapacity(6000)}>Shortage (6000W)</button>
               <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('A', false)}>Feeder A Loss</button>
               <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('B', false)}>Feeder B Loss</button>

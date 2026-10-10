@@ -69,6 +69,27 @@ def test_hospital_diagnosis_multi_hypothesis_and_backward_compatibility():
 
 
 
+
+def test_simultaneous_fault_matrix_and_ambiguity():
+    # 1. Overload hiding cooling failure (simultaneous)
+    simul = diagnose(100, 130, 91, 230, 220, False)
+    # The highest score should be OVERLOAD or COOLING_FAILURE, but BOTH should be in hypotheses
+    codes = [h["code"] for h in simul["hypotheses"]]
+    assert "OVERLOAD" in codes
+    assert "COOLING_FAILURE" in codes
+
+    # 2. Ambiguous thermal fault (missing cooling_ok)
+    ambig = diagnose(100, 45, 91, 230, 220, None)
+    assert ambig["hypotheses"][0]["code"] == "HIGH_TEMPERATURE"
+    assert ambig["status"] == "FAULT_DETECTED"
+    assert "cooling_ok" in ambig["missing"]
+    assert all(h["code"] != "COOLING_FAILURE" for h in ambig["hypotheses"])
+    assert ambig["hypotheses"][0]["sufficiency"] == "PARTIAL"
+
+    # 3. Missing everything
+    missing = diagnose(100, None, None, None, None, None)
+    assert missing["code"] == "UNKNOWN"
+
 def test_classroom_restoration_uses_time_not_snapshot_count():
     now = [0.0]
     demo = ClassroomDemo(lambda: now[0])

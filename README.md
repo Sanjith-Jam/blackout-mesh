@@ -66,3 +66,9 @@ pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0
 Board B bench check: `python hardware/tools/check_board_b.py <port>`. Full demo with both boards: start the backend with `BLACKOUT_GATEWAY_PORT=<board A port>` or use Connect on the Classrooms page, as in the [connection guide](docs/ESP32_A_CONNECTION_GUIDE.md).
 
 Local planning/reuse research, judge critique, notice drafts, private credentials and historical archives stay outside this repository. Existing reuse recommendations remain unchanged; preserve required license notices when incorporating upstream code.
+
+### Evaluation and policy evidence
+
+- [Temporal occupancy audit](backend/benchmarks/occupancy/REPORT.md): rolling-origin results and conservative adoption gate; campus generalization remains unvalidated.
+- [Allocation policies](docs/ALLOCATION_POLICIES.md): versioned API configuration, per-load explanations and decision replay.
+- [Electrical studies](docs/ELECTRICAL_SIMULATION.md): optional balanced AC adapter, matched engines, assumptions and failure boundaries.

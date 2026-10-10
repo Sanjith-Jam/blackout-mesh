@@ -1,5 +1,14 @@
 # Blackout Mesh — implementation context
 
+## PR #38 conflict resolution — 2026-10-10
+
+Merged current main (`6b2feaf`) into `feature/bm-fixes`. Preserved the evaluated logistic artifact and ML requirements, telemetry-derived diagnosis, protected allocation policies, read-only projections, background control loop, electrical-study boundary and evidence-backed classroom/hospital drawings. Integrated per-application lifecycle/storage, configurable inventory, generated OpenAPI/TypeScript contracts and the shared TanStack/Zustand WebSocket connection. Publication ordering uses `published_revision`; duplicate heartbeats remain fresh and older HTTP snapshots cannot replace newer same-run cached data.
+
+SQLModel 0.0.22 failed on the project's Python 3.14 runtime; installed and tested 0.0.48. Each app owns its SQLite engine and shuts down its control/replay tasks. Simulation ACKs are saved without confirming physical LEDs; physical ACKs remain rejected until a validated command/session protocol is provisioned.
+
+Verification: **133 backend tests passed**, including independent app instances, main route/WS envelope checks, SQLite audit records surviving restart and simulated ACK separation. Frontend production build passed; generated API schema/types are synchronized. Existing large-bundle warning remains. No browser interaction or physical hardware acceptance was run. Incident lifecycle/history replay and complete generated typing/runtime validation remain follow-up work; the PR does not establish production or hardware readiness.
+
+
 Updated 2026-10-09. Remote application/Board B work and local ESP32 A work are merged. See [progress report](PROGRESS_REPORT.md) for current evidence, blockers and next actions; [ESP32 A handoff](ESP32_A_STATUS.md) retains its original build/physical limits.
 
 ## Current state
@@ -33,3 +42,23 @@ When hardware resumes, agree one A/B transport and physical mapping before linki
 ## Pending-work planning — 2026-10-10
 
 [PENDING_IMPLEMENTATION_PLAN.md](PENDING_IMPLEMENTATION_PLAN.md) defines all 24 requested backlog items against `d1c58d7`, with six phases, dependencies, acceptance/verification criteria and scoped library choices. This is planning, not implementation completion. Hardware remains paused and existing reuse recommendations are unchanged. Runtime code and dependencies were not changed or tested in this planning task; plan structure and dependency graph were checked. GitHub issue links are recorded in the plan index.
+
+## Issue #5 delivered locally — 2026-10-10
+
+Added a frozen exploratory temporal-audit protocol, reproducible rolling-day evaluator, leakage/gate tests and a report with split hashes, class counts, confusion matrices, selective risk, per-day variation, latency and memory. Shipped model/manifest/replay unchanged. Four-sensor candidates fail temporal coverage/safety gates; Light is an offline experiment only. Campus generalization remains unvalidated until independently labeled new-room sessions exist. See backend/benchmarks/occupancy/REPORT.md. Temporal tests and existing model tests pass; no hardware work. Code is local until an explicit push.
+
+## Issue #6 delivered locally — 2026-10-10
+
+Versioned activity_first/water_first campus policies, bounded within-tier fairness and switching preferences are configurable through GET/PUT /api/v1/allocation/policy. Hard T1/feeder/source constraints and restoration dwell stay fixed. Snapshot explanations include per-load reasons/score terms, immutable optimization inputs and exact applied-gate replay. Policy/schema/TypeScript/test changes are coordinated. Idle ticks preserve the trace. See docs/ALLOCATION_POLICIES.md. Six services profile at 1.59-ms median; experimental 19 leaves take 11.95 s, so that path stays offline and no unused solver was installed. Safety/control-loop/policy tests pass. Durable persistence and a shared 19-leaf dispatch engine remain outside this issue.
+
+## Issue #7 delivered locally — 2026-10-10
+
+Optional POST /api/v1/studies/electrical runs a balanced 400-V radial AC study on a worker thread; the campus source explicitly labels watt_budget limitations. Power Grid Model 1.13.193 is selected; NetworkX is connectivity-only and pandapower 3.5.6 is offline comparison-only. Result contracts include units, provenance, engine/version, convergence, independent I²R power-balance residual, null islands/failures and no restoration authorization. Observations pass through existing diagnosis validation; no thermal values are fabricated. Busy/timeout/stale-run-or-revision paths are covered, including keeping timed-out work serialized. Engine installed and tested in both the main Python 3.14.7 ML environment and isolated Python 3.12.15 benchmark environment. Detailed assumptions, licenses, matched cases, compatibility and latency evidence are in docs/ELECTRICAL_SIMULATION.md and backend/benchmarks/results/electrical_report.json. No hardware work or field-validation claim. Publication awaits explicit push.
+
+### Final verification for issues #5–#7
+
+- `PYTHONPATH=backend .venv-ml/bin/python -m pytest backend/tests -q` — **119 passed**, including optional PGM in the Python 3.14.7 ML runtime.
+- `PYTHONPATH=backend .venv-electrical/bin/python -m pytest backend/tests/test_electrical.py -q` — **16 passed**, Python 3.12.15; only a dependency TestClient deprecation warning.
+- `cd frontend && npm run build` — passed; existing large-bundle warning remains. No interface redesign.
+- Temporal evaluator rerun from `/tmp/occupancy.zip`; benchmark scripts produced checked-in evidence. Original model binary/manifest/replay diff is empty. No physical hardware tested, no campus labels invented, no GitHub reuse files uploaded.
+- GitHub issues #5/#6/#7 were already marked closed (without linked closing PRs or implementation comments) when inspected. This delivery adds actual local implementation/evidence; it does not rely on those status labels. Commits remain local pending an explicit push.

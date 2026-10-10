@@ -1,5 +1,14 @@
 # Blackout Mesh — progress report
 
+## PR #38 conflict resolution — 2026-10-10
+
+Merged current main (`6b2feaf`) into `feature/bm-fixes`. Preserved the evaluated logistic artifact and ML requirements, telemetry-derived diagnosis, protected allocation policies, read-only projections, background control loop, electrical-study boundary and evidence-backed classroom/hospital drawings. Integrated per-application lifecycle/storage, configurable inventory, generated OpenAPI/TypeScript contracts and the shared TanStack/Zustand WebSocket connection. Publication ordering uses `published_revision`; duplicate heartbeats remain fresh and older HTTP snapshots cannot replace newer same-run cached data.
+
+SQLModel 0.0.22 failed on the project's Python 3.14 runtime; installed and tested 0.0.48. Each app owns its SQLite engine and shuts down its control/replay tasks. Simulation ACKs are saved without confirming physical LEDs; physical ACKs remain rejected until a validated command/session protocol is provisioned.
+
+Verification: **133 backend tests passed**, including independent app instances, main route/WS envelope checks, SQLite audit records surviving restart and simulated ACK separation. Frontend production build passed; generated API schema/types are synchronized. Existing large-bundle warning remains. No browser interaction or physical hardware acceptance was run. Incident lifecycle/history replay and complete generated typing/runtime validation remain follow-up work; the PR does not establish production or hardware readiness.
+
+
 Updated 2026-10-09. Repository synchronization combines remote main through `f2edb91` with local ESP32 A work through `0aa4210`. The histories are merged without rebasing or discarding either implementation. This is a component-level prototype; end-to-end readiness is not established.
 
 ## Hardware integration: board A + board B + website — 2026-10-10
@@ -177,3 +186,28 @@ Initial backend test attempts lacked system pytest, then lacked `app` on the imp
 - Train and integrate required ML, validate constrained decisions and recovery, then rehearse the judge demo.
 
 Detailed two-person physical phases remain local at `/home/bread/blackout-mesh-local/HARDWARE_IMPLEMENTATION_PLAN.md`. Reuse research, judge critique, notice drafts, device credentials and historical plan archives remain outside the uploaded document set. No connected-device queries, flashing, browser QA or fresh physical tests were performed during this sync.
+
+
+## Updates for BM-17 and BM-19
+- **BM-19**: Unified session semantics across RFID and software routes. `GridState` now uses `active_sessions` instead of a single active room. RFID unscan is fully supported.
+- **BM-17**: Added support for simultaneous faults, hypothesis ranking, and diagnostic abstention. `diagnose` logic now correctly evaluates all hypotheses and ranks them by score. Ambiguous conditions explicitly return abstention.
+- **BM-12**: Added Pydantic models and explicit OpenAPI schema generation (`backend/scripts/export_openapi.py`), with `openapi-typescript` for generated UI contracts. WebSocket consumers check envelope shape and revision; full runtime JSON-schema validation and complete generated typing of visualizer routes remain pending.
+- **BM-11**: Relocated WebSocket subscription management into a global application shell (`useWebSocketSync`), implemented capped backoff reconnects, added strict monotonic revision validation (discarding duplicate or stale updates), integrated TanStack Query as the single source of truth for snapshots, and used Zustand strictly for UI state.
+- **BM-10**: Implemented durable persistence using SQLite (WAL) and `sqlmodel`. Audit tables cover Run, Command, Decision, Transition, Incident, Acknowledgment and Observation; run/decision/transition/observation and simulated acknowledgment writes are integrated. Full telemetry-derived incident opening/resolution remains pending. Added an API endpoint for simulated ACK history; unprovisioned physical ACKs are rejected and no physical confirmation is inferred. Designed resilient writes inside the core `GridState` instance lock to preserve authoritative history synchronously, falling back to a visible `DB_DEGRADED` degraded state if disk access fails.
+## Issue #5 — temporal occupancy evidence (2026-10-10)
+
+Delivered `backend/scripts/evaluate_temporal.py`, frozen `backend/benchmarks/occupancy/PROTOCOL.md`, machine-readable results and REPORT.md. Four rolling origins hold out complete days; data have no true room-session IDs. Validation-only gates, training-only preprocessing, duplicate/conflict checks and feature/artifact fingerprints are tested. Majority/rule/logistic/tree comparisons count UNKNOWN explicitly. Four-sensor logistic covered 40.0% overall with 121/2,094 false-INACTIVE occupied rows; its first evaluation block alone had 121/268 (45.1%). No candidate adopted, no calibration or campus-validation claim. Original model, manifest and replay retained; fresh independently labeled campus data remain unavailable. Reproduce with `.venv-ml/bin/python backend/scripts/evaluate_temporal.py --data /path/to/occupancy.zip`; see the report for full denominators, provenance, versions and resources.
+
+## Issue #6 — configurable campus allocation (2026-10-10)
+
+Delivered two named lexicographic policies through the API, with immutable protected-first constraints, UNKNOWN ordering, bounded optional waiting credit and switching penalty. Every campus load gets requested/proposed/applied status, constraints, shortfall, score contribution and a reason/counterfactual. Optimization inputs detach from live state; restoration replay includes pre-step gate state, timestamp, signature and order. Policy changes restart stability timing. Tests cover alternative optional choices, ties, open feeders, impossible capacities, fairness/request aging, replay, validation, unchanged idle traces and policy changes during restoration. The exact 64-mask runtime remains authoritative. A real 19-leaf scale probe is recorded in `backend/benchmarks/results/allocation_profile.json`: median 11.95 s across three runs, versus 1.59 ms over 50 six-service runs. Larger dispatch needs a separately bounded solver before use in the control loop. No solver timeout path was added because no external solver was adopted. Policy scope/limits and API examples are in `docs/ALLOCATION_POLICIES.md`.
+
+## Issue #7 — explicit electrical boundary (2026-10-10)
+
+Delivered an optional balanced AC study endpoint and matched pandapower/Power Grid Model benchmark. The normal demo remains explicitly watt-budget accounting; electrical studies cannot change allocation or authorize restoration. Inputs validate topology version, balanced applicability, switches, demand, PF and impedance. Results expose SI units, engine/version, provenance, convergence and independently checked power-balance residual; missing/islanded/failed outputs stay null. NetworkX supplies connectivity only. Solver measurements cross the existing telemetry validation boundary; diagnosis gets observations and ratings, never switch/scenario truth. Current exceedance is a one-sample alarm; thermal/earth-fault claims remain excluded.
+
+The installed engines agree for normal, overload and open-branch cases within 0.01 V / 0.001 A / 0.1 W. Both fail the declared nonconvergence case without flowing-current output. Source-off produces a deenergized/no-solution result. Final warm single p95 on the measured host: PGM 3.23 ms versus pandapower 310 ms. PGM is the optional runtime dependency; pandapower stays in an isolated offline benchmark environment. Strict API validation, real-engine API round trip, conservation, missing readings, timeout/busy/stale results and control independence are tested. See `docs/ELECTRICAL_SIMULATION.md` for installation, license metadata, parameters, limitations, serial-batch timing and reproduction.
+
+### Verification of the combined #5–#7 delivery
+
+Final backend suite: **119 passed** via `PYTHONPATH=backend .venv-ml/bin/python -m pytest backend/tests -q`. Isolated Python 3.12 electrical suite: **16 passed** via `PYTHONPATH=backend .venv-electrical/bin/python -m pytest backend/tests/test_electrical.py -q` (dependency deprecation warning only). Frontend `npm run build` passed; the existing bundle-size warning remains. All three implementation areas are committed locally, with no push. Hardware and independent campus-room validation remain untested/unavailable; the shipped model and four-feature runtime were preserved. No 19-leaf live solver or thermal/protection physics was added.

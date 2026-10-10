@@ -79,7 +79,7 @@ def test_shortfall_is_quantified_never_called_feasible():
 
 
 def test_campus_snapshot_reports_protected_shortfall():
-    grid = main.grid
+    grid = main.app.state.grid
     client = TestClient(main.app)
     try:
         client.post("/api/v1/simulation/capacity", json={"capacity_w": 0})
@@ -102,7 +102,7 @@ def test_campus_failed_inference_is_visible_conservative_fallback(monkeypatch):
         def status(self):
             return {"ready": False, "model_version": "broken", "fallback_reason": "model down"}
 
-    grid = main.grid
+    grid = main.app.state.grid
     monkeypatch.setattr(grid, "model", Broken())
     grid.activity_guard.reset()
     from datetime import datetime, timezone

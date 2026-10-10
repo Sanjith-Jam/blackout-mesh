@@ -82,15 +82,22 @@ class FakeBoardA:
                                         "ms": 1, "code": "reset_requires_sync"}))
 
 
+APP = main.app
+
+
+def demo():
+    return APP.state.classroom_demo
+
+
 @pytest.fixture
 def rig(monkeypatch):
     now = [0.0]
-    demo = ClassroomDemo(lambda: now[0])
-    monkeypatch.setattr(main, "classroom_demo", demo)
-    monkeypatch.setattr(main.site, "classroom", demo)
+    classroom = ClassroomDemo(lambda: now[0])
+    APP.state.classroom_demo = classroom
+    APP.state.site.classroom = classroom
     fake = FakeBoardA()
-    bridge = GatewayBridge(fake, main.handle_gateway_event, main.desired_led_mask, clock=lambda: now[0],
-                           session_seed=lambda: 100)
+    bridge = GatewayBridge(fake, lambda action, room: main.handle_gateway_event(APP, action, room),
+                           lambda: main.desired_led_mask(APP), clock=lambda: now[0], session_seed=lambda: 100)
 
     class Thread:
         error = None
@@ -98,17 +105,18 @@ def rig(monkeypatch):
         def stop(self):
             pass
 
-    monkeypatch.setattr(main, "gateway", (bridge, Thread()))
+    APP.state.gateway = (bridge, Thread())
 
     def run(seconds=0.2):
         end = now[0] + seconds
         while now[0] < end:
             now[0] += 0.05
-            main.site.tick()
+            APP.state.site.tick()
             bridge.step()
 
     run(0.5)
-    return fake, bridge, run, now
+    yield fake, bridge, run, now
+    APP.state.gateway = None
 
 
 def test_handshake_binds_board_b_and_reports_connected(rig):
@@ -124,10 +132,10 @@ def test_fallback_button_lights_room_a_and_is_confirmed(rig):
     fake, bridge, run, _ = rig
     fake.press("START_SESSION", "A")  # the RFID-fail fallback button sends exactly this event
     run(0.3)
-    assert main.classroom_demo.snapshot()["scanned_classroom_ids"] == ["CR1"]
+    assert demo().snapshot()["scanned_classroom_ids"] == ["CR1"]
     assert bridge.status()["confirmed_mask"] == 0b001000 and bridge.status()["led_confirmed"]
     assert any(m["type"] == "event_ack" and m["accepted"] for m in fake.sent)
-    hw = TestClient(main.app).get("/api/v1/visualizers/classrooms").json()["hardware"]
+    hw = TestClient(APP).get("/api/v1/visualizers/classrooms").json()["hardware"]
     assert hw["link"] == "CONNECTED" and hw["confirmed_mask"] == 8
 
 
@@ -139,7 +147,7 @@ def test_deprived_and_normal_buttons_change_which_leds_are_on(rig):
     assert bridge.status()["confirmed_mask"] == 0b011000  # normal supply: both rooms fully served
     fake.press("SIMULATE_SHORTAGE")                         # deprived of kW: 3,400 W preset
     run(0.3)
-    assert main.classroom_demo.snapshot()["capacity_w"] == 3400
+    assert demo().snapshot()["capacity_w"] == 3400
     assert bridge.status()["confirmed_mask"] == 0b001000   # only room A keeps everything
     fake.press("RESTORE")                                   # normal state
     run(8.0)                                                # staged restoration: >5 s stable, 1 load/s
@@ -152,7 +160,7 @@ def test_reset_re_handshakes_and_clears_rooms(rig):
     run(0.3)
     fake.press("RESET_SESSION")
     run(1.5)
-    assert main.classroom_demo.snapshot()["scanned_classroom_ids"] == []
+    assert demo().snapshot()["scanned_classroom_ids"] == []
     assert bridge.status()["link"] == "CONNECTED" and bridge.status()["confirmed_mask"] == 0
     assert [m["type"] for m in fake.sent].count("sync") >= 2
 
@@ -165,7 +173,7 @@ def test_reader_fault_is_visible_and_end_event_unscans(rig):
     run(0.3)
     assert bridge.status()["board_a"]["reader_ok"] is False
     assert "reader_fault" in bridge.status()["recent_status"]
-    assert main.classroom_demo.snapshot()["scanned_classroom_ids"] == []
+    assert demo().snapshot()["scanned_classroom_ids"] == []
 
 
 def test_board_b_reboot_forces_a_fresh_radio_sync(rig):
@@ -182,7 +190,7 @@ def test_campus_snapshot_reports_the_physical_link(rig):
     fake, bridge, run, _ = rig
     fake.press("START_SESSION", "A")
     run(0.3)
-    snap = TestClient(main.app).get("/api/v1/snapshot").json()
+    snap = TestClient(APP).get("/api/v1/snapshot").json()
     assert snap["hardware_link"] == "CONNECTED" and snap["indicator_confirmed_mask"] == 8
 
 
@@ -190,5 +198,5 @@ def test_invalid_events_are_rejected_not_applied(rig):
     fake, bridge, run, _ = rig
     fake._emit("event", event=99, action="START_SESSION", room="Z")
     run(0.2)
-    assert main.classroom_demo.snapshot()["scanned_classroom_ids"] == []
+    assert demo().snapshot()["scanned_classroom_ids"] == []
     assert any(m["type"] == "event_ack" and m["event"] == 99 and m["accepted"] is False for m in fake.sent)

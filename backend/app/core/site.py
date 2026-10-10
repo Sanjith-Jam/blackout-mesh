@@ -52,7 +52,7 @@ class SiteAuthority:
         self.hospital = hospital
         self._lock = threading.RLock()
         self._commands = itertools.count(1)
-        self.run_id = uuid.uuid4().hex[:12]
+        self.run_id = grid.run_id
         self.revision = 0
         self.last_command = None
         self._seen = None

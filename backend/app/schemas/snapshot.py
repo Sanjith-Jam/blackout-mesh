@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 from datetime import datetime
 
 class HardwareLinkStatus(str, Enum):
@@ -17,6 +17,8 @@ class Tier(str, Enum):
     T3 = "T3"
 
 class SourceInfo(BaseModel):
+    model: Literal["watt_budget"] = "watt_budget"
+    limitations: str = "Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics"
     kind: SourceKind
     capacity_w: int
 
@@ -82,7 +84,30 @@ class FaultDiagnosis(BaseModel):
     affected_assets: List[str] = Field(default_factory=list)
     supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
+class ScopeTotals(BaseModel):
+    capacity_w: Optional[int] = None
+    requested_w: int
+    served_w: int
+
+class RunIdentity(BaseModel):
+    site_id: str
+    run_id: str
+    server_epoch: int
+    config_hash: str
+    catalog_version: str
+    policy_version: str
+    model_version: str
+    state_revision: int
+    observation_time: str
+
+class CrossRouteContract(BaseModel):
+    identity: RunIdentity
+    campus_totals: Optional[ScopeTotals] = None
+    zone_totals: Dict[str, ScopeTotals] = {}
+
 class SystemSnapshot(BaseModel):
+    contract: CrossRouteContract
+    config_hash: str = ""
     control_revision: int
     generated_at: datetime
     published_revision: int = 0
@@ -147,6 +172,7 @@ class SafetySnapshot(BaseModel):
 
 
 class AllocationSnapshot(BaseModel):
+    explanation: dict = Field(default_factory=dict)
     objective: str
     critical_shortfall_w: int
     served_w: int
@@ -195,3 +221,106 @@ class FeederChangeResponse(BaseModel):
     feeder: str
     available: bool
     control_revision: int
+
+
+class HealthResponse(BaseModel):
+    control_loop: dict = Field(default_factory=dict)
+    status: str
+    application: str
+
+class ModelStatusResponse(BaseModel):
+    ready: bool
+    model_version: str
+    model_type: str
+    features: List[str]
+    data_source: str
+    evaluation: Dict[str, object] = Field(default_factory=dict)
+    fallback_reason: Optional[str] = None
+
+class ClassroomDemoLoad(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    name: str
+    watts: int
+    essential: bool
+    served: bool
+    reason: str
+
+class ClassroomDemoRoom(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    name: str
+    rfid_active: bool
+    loads: List[ClassroomDemoLoad]
+
+class ClassroomDemoSnapshot(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    contract: CrossRouteContract
+    capacity_w: int
+    requested_w: int
+    served_w: int
+    shortfall_w: int
+    selected_classroom_id: Optional[str] = None
+    rooms: List[ClassroomDemoRoom]
+    mode: str
+    policy: str
+
+class HospitalDemoSensors(BaseModel):
+    current_a: Optional[float] = None
+    temperature_c: Optional[float] = None
+    input_voltage_v: Optional[float] = None
+    output_voltage_v: Optional[float] = None
+    cooling_ok: Optional[bool] = None
+
+class HospitalDemoDiagnosis(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    code: str
+    cause: str
+    severity: str
+    evidence: List[str]
+    recommendation: str
+    hypotheses: List[Dict[str, object]]
+
+class HospitalDemoTransformer(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    name: str
+    zone: str
+    rated_current_a: float
+    sensors: HospitalDemoSensors
+    diagnosis: HospitalDemoDiagnosis
+    energized: bool
+
+class HospitalDemoSnapshot(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    contract: CrossRouteContract
+    mode: str
+    transformers: List[HospitalDemoTransformer]
+    summary: str
+
+class ActivityObservationResponse(BaseModel):
+    accepted: bool
+    applied: bool
+    revision: int
+    activity: ActivitySnapshot
+
+class ReplayActionResponse(BaseModel):
+    running: bool
+    index: int
+    length: int
+
+class WebSocketMessageEnvelope(BaseModel):
+    sent_at: datetime
+    type: str
+    payload: SystemSnapshot
+
+class HardwareAckRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    device_boot: str
+    sequence: int
+    session: str
+    confirmed_mask: int
+    provenance: str
+
+class HardwareAckResponse(BaseModel):
+    accepted: bool
