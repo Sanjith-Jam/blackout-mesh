@@ -78,6 +78,10 @@ class DistrictAuthority:
         self.last_observation: tuple[int, datetime] | None = None
         self.evidence: list[tuple[int, datetime]] = []
         self.transformer_scenarios: dict[str, str] = {}
+        self.stale_transformers: set[str] = set()
+        self.accepted_actions: dict[str, int] = {}
+        self.journal = None
+        self.rehydration: dict | None = None
         self.restoration_reason: str | None = None
         self.generation_task_id: str | None = None
         runtime_available, runtime_reason = shift_runtime_probe()
@@ -93,6 +97,57 @@ class DistrictAuthority:
         if closed_ties is None:
             self.decision = decision
         return states, loads
+
+    MUTABLE = ("revision", "hour", "faults", "closed_ties", "proposal", "transformer_scenarios", "stale_transformers",
+               "restoration_reason", "last_observation", "evidence", "topology", "generation", "accepted_actions")
+
+    def mutable_state(self):
+        """Deep copy of everything an action may change, for rollback when the audit commit fails."""
+        return copy.deepcopy({key: getattr(self, key) for key in self.MUTABLE})
+
+    def restore_mutable(self, state):
+        for key, value in state.items():
+            setattr(self, key, value)
+
+    def state_record(self):
+        """Complete modeled state persisted with each accepted revision (observations excluded)."""
+        generated = self.generation["status"] == "GENERATED"
+        return {"hour": self.hour, "faults": sorted(self.faults), "closed_ties": sorted(self.closed_ties),
+                "proposal": copy.deepcopy(self.proposal), "transformer_scenarios": dict(self.transformer_scenarios),
+                "restoration_reason": self.restoration_reason,
+                "last_observation_sequence": self.last_observation[0] if self.last_observation else None,
+                "generation": copy.deepcopy(self.generation), "topology": copy.deepcopy(self.topology) if generated else None,
+                "hashes": {"profile": self.profile.config_hash,
+                           "electrical": self.electrical.config_hash if self.electrical else None,
+                           "topology": hashlib.sha256(json.dumps(self.topology, sort_keys=True).encode()).hexdigest()}}
+
+    def rehydrate(self, record):
+        """Restore the last committed revision under a new run and epoch; observations become stale."""
+        state = record["payload"]["state"]
+        if state["hashes"]["profile"] != self.profile.config_hash:
+            self.rehydration = {"status": "REJECTED", "from_run_id": record["run_id"], "from_revision": record["revision"],
+                                "reason": "Recorded profile hash differs from the configured profile; starting fresh."}
+            return False
+        if state["topology"] is not None:
+            self.profile.validate_topology(state["topology"])
+            self.topology = state["topology"]
+            self.generation.update({key: state["generation"][key] for key in ("status", "cluster_count", "secondary_strategy", "generated_at")})
+        elif state["hashes"]["topology"] != hashlib.sha256(json.dumps(self.topology, sort_keys=True).encode()).hexdigest():
+            self.rehydration = {"status": "REJECTED", "from_run_id": record["run_id"], "from_revision": record["revision"],
+                                "reason": "Recorded cached-topology hash differs from the shipped topology; starting fresh."}
+            return False
+        self.revision = record["revision"]
+        self.hour, self.faults, self.closed_ties = state["hour"], set(state["faults"]), frozenset(state["closed_ties"])
+        self.proposal, self.transformer_scenarios = state["proposal"], dict(state["transformer_scenarios"])
+        self.stale_transformers = set(self.transformer_scenarios)
+        seq = state["last_observation_sequence"]
+        # Keep sequence monotonic across restart, but no pre-restart sample ever counts as fresh evidence.
+        self.last_observation = (seq, datetime.min.replace(tzinfo=timezone.utc)) if seq else None
+        self._reset_evidence()
+        self.restoration_reason = "Restored after restart; earlier observations are stale. Fresh evidence is required."
+        self.rehydration = {"status": "RESTORED", "from_run_id": record["run_id"], "from_revision": record["revision"],
+                            "reason": "Last committed revision restored under a new run and server epoch; observations are stale."}
+        return True
 
     def _reset_evidence(self):
         self.evidence = []
@@ -188,6 +243,8 @@ class DistrictAuthority:
                 sensor.update(oil_temperature_c=105.0, voltage_v=380.0, current_a=60.0,
                               cooling_ok=False, status="STALE",
                               provenance="CONFIGURED_SIMULATED_ASSUMPTION")
+            if node["id"] in self.stale_transformers and sensor["status"] == "SIMULATED":
+                sensor["status"] = "STALE"  # recorded before the restart; never fresh evidence
             diagnosis = diagnose_transformer(sensor)
             transformers.append({"component_id": node["id"], "sensor": sensor, "diagnosis": diagnosis})
 
@@ -196,6 +253,8 @@ class DistrictAuthority:
         return {"schema_version": "district-v2",
             "identity": {"site_id": "gnitc-demo", "run_id": self.run_id, "revision": self.revision,
                          "server_epoch": SERVER_EPOCH, "profile_hash": self.profile.config_hash},
+            "audit": {"journal": "SQLITE" if getattr(self, "journal", None) else "DISABLED",
+                      "rehydration": copy.deepcopy(self.rehydration)},
             "profile": {"id": self.profile.id, "config_hash": self.profile.config_hash,
                 "demand_basis": self.profile.demand_basis, "local_supply_mode": self.profile.local_supply_mode,
                 "catalog_version": CATALOG.version if self.profile.demand_basis == "appliance_inventory" else None,
@@ -257,7 +316,9 @@ class DistrictAuthority:
         if name != "record_observation" and getattr(action, "observation", None) is not None:
             return False
         if name == "reset":
+            journal, revision = getattr(self, "journal", None), self.revision
             self.__init__()
+            self.journal, self.revision = journal, revision  # keep revisions monotonic for stale clients
             return True
         if name == "advance_hour":
             if action.component_id is not None or action.fault_kind is not None:
@@ -336,5 +397,6 @@ class DistrictAuthority:
                 self.transformer_scenarios.pop(action.component_id, None)
             else:
                 self.transformer_scenarios[action.component_id] = action.fault_kind
+            self.stale_transformers.discard(action.component_id)
             return True
         return False

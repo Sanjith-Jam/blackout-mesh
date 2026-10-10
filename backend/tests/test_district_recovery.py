@@ -1,3 +1,4 @@
+import uuid
 """Joint switch/load recovery: oracle agreement, refusals, proposals and the evidence gate."""
 import itertools
 import random
@@ -180,7 +181,7 @@ def test_incompatible_voltage_and_faulted_ties_are_never_permitted():
 # --- authority: proposals, staleness and the restoration evidence gate ---
 
 def act(name, component_id=None, fault_kind=None, observation=None):
-    return DistrictAction(run_id="t", expected_revision=1, action=name, component_id=component_id,
+    return DistrictAction(action_id=str(uuid.uuid4()), run_id="t", expected_revision=1, action=name, component_id=component_id,
                           fault_kind=fault_kind, observation=observation)
 
 

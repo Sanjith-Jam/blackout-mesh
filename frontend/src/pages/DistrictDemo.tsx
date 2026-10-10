@@ -6,6 +6,7 @@ import DistrictMap, { type DistrictEdge, type DistrictEdgeState, type DistrictFe
 import './DistrictDemo.css';
 import DistrictApplianceTrace from './DistrictApplianceTrace';
 import DistrictRecoveryProposal from './DistrictRecoveryProposal';
+import DistrictAuditReplay from './DistrictAuditReplay';
 
 const TABS = [
   { id: 'shift', label: 'SHIFT network' }, { id: 'energy', label: 'Energy' },
@@ -137,7 +138,7 @@ export default function DistrictDemo() {
     }
   };
   const action = (current: DistrictSnapshot, name: DistrictActionName, component_id?: string, fault_kind?: string, healthy?: boolean) => districtAction({
-    run_id: current.identity.run_id, expected_revision: current.identity.revision, action: name, component_id, fault_kind,
+    action_id: crypto.randomUUID(), run_id: current.identity.run_id, expected_revision: current.identity.revision, action: name, component_id, fault_kind,
     observation: healthy === undefined ? undefined : observationRequest(current.state.restoration.last_observation_sequence, healthy),
   });
 
@@ -178,6 +179,7 @@ export default function DistrictDemo() {
       <div className={`district-status${district.isError || district.isPlaceholderData ? ' is-stale' : ''}`} role="status"><span className="district-status-dot" />{statusText}<small>Run {snapshot.identity.run_id.slice(0, 8)} · revision {snapshot.identity.revision}</small></div>
     </header>
     <p className="district-cue">Real geography; synthetic electrical assets and demand · {snapshot.profile.id} · profile {snapshot.profile.config_hash.slice(0, 12)}</p>
+    {snapshot.audit.rehydration?.status === 'RESTORED' && <p className="district-alert" role="status">Restored revision {snapshot.audit.rehydration.from_revision} after a backend restart. Earlier observations are stale; fresh evidence is required before recovery.</p>}
     {district.isError && <p className="district-alert" role="alert">The connection failed. Controls are disabled and the last received snapshot remains visible. <button onClick={() => void district.refetch()}>Retry</button></p>}
     <div className="district-tabs" role="tablist" aria-label="District study views" onKeyDown={tabsKeyDown}>{TABS.map(item => <button key={item.id} id={`district-tab-${item.id}`} role="tab" tabIndex={tab === item.id ? 0 : -1}
       aria-selected={tab === item.id} aria-controls={`district-panel-${item.id}`} onClick={() => setTab(item.id)}>{item.label}</button>)}</div>
@@ -220,6 +222,7 @@ export default function DistrictDemo() {
           <p className="district-action-help">Observations come from a labeled simulated adapter (timestamped, sequence-numbered). Advancing the hour is not evidence.</p>
           <p id="clear-fault-help" className="district-action-help" aria-live="polite">{clearFault.reason}</p>
           <DistrictRecoveryProposal proposal={restoration.proposal} stale={!!restoration.proposal_stale} />
+          <DistrictAuditReplay snapshot={snapshot} />
           <p className="district-feedback" role="status">{feedback || (restoration.candidate_edge_id ? `Candidate ${restoration.candidate_edge_ids?.join(', ')}; ${restoration.stable_evidence_count} healthy observation(s) counted.` : 'Select a synthetic line on the map to inject a fault.')}</p>
           {snapshot.state.loads.map(load => <p className="district-load-row" key={load.building_id}>{load.building_id}: {number(load.served_w, 'W')} served of {number(load.requested_w, 'W')} gross demand · {load.tier}. Local supply {number(load.local_supply_w, 'W')}; routed grid service {number(load.grid_served_w, 'W')} of {number(load.grid_requested_w, 'W')} allocated; {number(load.unmet_w, 'W')} unmet. Demand: {load.demand_provenance}; local supply: {load.local_supply_provenance}, {load.local_supply_basis}, {load.local_supply_semantics}; grid service: {load.grid_service_provenance}; unmet: {load.unmet_provenance}.</p>)}</>}
         {tab === 'transformers' && <><h2>Transformer inspection</h2><p>{selectedTransformer ? `Selected synthetic transformer ${selectedTransformer.component_id}.` : 'Select a synthetic transformer on the map.'} Measurements are shown only when the snapshot includes evidence.</p>

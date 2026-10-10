@@ -469,6 +469,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/district/history/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** District History Runs */
+        get: operations["get_api_v1_district_history_runs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/district/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * District History
+         * @description Read-only playback; there is no command path from history.
+         */
+        get: operations["get_api_v1_district_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/district/generation": {
         parameters: {
             query?: never;
@@ -1081,6 +1118,8 @@ export interface components {
         };
         /** DistrictAction */
         DistrictAction: {
+            /** Action Id */
+            action_id: string;
             /** Run Id */
             run_id: string;
             /** Expected Revision */
@@ -1117,6 +1156,12 @@ export interface components {
             reachable: boolean;
             /** Path Edge Ids */
             path_edge_ids: string[];
+        };
+        /** DistrictAudit */
+        DistrictAudit: {
+            /** Journal */
+            journal: string;
+            rehydration: components["schemas"]["DistrictRehydration"] | null;
         };
         /** DistrictDispatch */
         DistrictDispatch: {
@@ -1218,6 +1263,49 @@ export interface components {
             reason: string | null;
             /** Generated At */
             generated_at: string | null;
+        };
+        /** DistrictHistoryPage */
+        DistrictHistoryPage: {
+            /** Items */
+            items: components["schemas"]["DistrictHistoryRecord"][];
+            /** Next Cursor */
+            next_cursor: number | null;
+            /** Retention Gap */
+            retention_gap: boolean;
+            /** Pruned Through */
+            pruned_through: number;
+        };
+        /** DistrictHistoryRecord */
+        DistrictHistoryRecord: {
+            /** Seq */
+            seq: number;
+            /** Record Id */
+            record_id: string;
+            /** Site Id */
+            site_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Kind */
+            kind: string;
+            /** Timestamp */
+            timestamp: string;
+            /** Revision */
+            revision: number;
+            /** Provenance */
+            provenance: string;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        /** DistrictHistoryRuns */
+        DistrictHistoryRuns: {
+            /** Current Run Id */
+            current_run_id: string;
+            /** Runs */
+            runs: {
+                [key: string]: unknown;
+            }[];
         };
         /** DistrictIdentity */
         DistrictIdentity: {
@@ -1360,6 +1448,17 @@ export interface components {
             appliance_count: number;
             decision: components["schemas"]["DistrictDispatch"];
         };
+        /** DistrictRehydration */
+        DistrictRehydration: {
+            /** Status */
+            status: string;
+            /** From Run Id */
+            from_run_id: string;
+            /** From Revision */
+            from_revision: number;
+            /** Reason */
+            reason: string;
+        };
         /** DistrictSite */
         DistrictSite: {
             /** Name */
@@ -1376,6 +1475,7 @@ export interface components {
             /** Schema Version */
             schema_version: string;
             identity: components["schemas"]["DistrictIdentity"];
+            audit: components["schemas"]["DistrictAudit"];
             profile: components["schemas"]["DistrictProfileInfo"];
             site: components["schemas"]["DistrictSite"];
             map: components["schemas"]["DistrictMap"];
@@ -3744,6 +3844,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DistrictSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_district_history_runs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictHistoryRuns"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_district_history: {
+        parameters: {
+            query: {
+                run_id: string;
+                after?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictHistoryPage"];
                 };
             };
             /** @description Validation Error */

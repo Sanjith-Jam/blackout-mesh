@@ -8,7 +8,7 @@ from enum import StrEnum
 from typing import Literal
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
 
 from app.district.authority import DistrictAuthority
@@ -44,6 +44,7 @@ class DistrictObservation(BaseModel):
 
 class DistrictAction(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
+    action_id: StrictStr = Field(min_length=8, max_length=100, pattern=r"^[A-Za-z0-9_.:-]+$")
     run_id: StrictStr
     expected_revision: StrictInt = Field(ge=1)
     action: DistrictActionName = Field(strict=False)
@@ -64,6 +65,7 @@ class DistrictSnapshot(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     schema_version: StrictStr
     identity: "DistrictIdentity"
+    audit: "DistrictAudit"
     profile: "DistrictProfileInfo"
     site: "DistrictSite"
     map: "DistrictMap"
@@ -83,6 +85,42 @@ class DistrictIdentity(StrictDTO):
     revision: StrictInt
     server_epoch: StrictStr
     profile_hash: StrictStr
+
+
+class DistrictRehydration(StrictDTO):
+    status: StrictStr
+    from_run_id: StrictStr
+    from_revision: StrictInt
+    reason: StrictStr
+
+
+class DistrictAudit(StrictDTO):
+    journal: StrictStr
+    rehydration: DistrictRehydration | None
+
+
+class DistrictHistoryRecord(StrictDTO):
+    seq: StrictInt
+    record_id: StrictStr
+    site_id: StrictStr
+    run_id: StrictStr
+    kind: StrictStr
+    timestamp: StrictStr
+    revision: StrictInt
+    provenance: StrictStr
+    payload: dict
+
+
+class DistrictHistoryPage(StrictDTO):
+    items: list[DistrictHistoryRecord]
+    next_cursor: StrictInt | None
+    retention_gap: StrictBool
+    pruned_through: StrictInt
+
+
+class DistrictHistoryRuns(StrictDTO):
+    current_run_id: StrictStr
+    runs: list[dict]
 
 
 class DistrictDispatch(StrictDTO):
@@ -270,15 +308,43 @@ def register_district():
     async def district_action(body: DistrictAction, request: Request):
         async with request.app.state.district_lock:
             district: DistrictAuthority = request.app.state.district
+            if body.action_id in district.accepted_actions:
+                # Retried command: idempotent, never applied twice.
+                return await asyncio.to_thread(district.snapshot)
             if body.run_id != district.run_id or body.expected_revision != district.revision:
                 raise HTTPException(409, "district run or revision is stale")
             if district.generation.get("status") == "GENERATING" and body.action != DistrictActionName.reset:
                 raise HTTPException(409, "district topology generation is in progress")
+            before = district.mutable_state()
             result = await asyncio.to_thread(district.apply_action, body)
             if not result:
                 raise HTTPException(422, "action is invalid for the current district state")
             district.revision += 1
-            return await asyncio.to_thread(district.snapshot)
+            district.accepted_actions[body.action_id] = district.revision
+            try:
+                snapshot = await asyncio.to_thread(district.snapshot)
+                await asyncio.to_thread(commit_revision, district, body.action_id, body.model_dump(mode="json"), snapshot)
+            except Exception as exc:
+                # Nothing is published unless the revision is durably recorded.
+                district.restore_mutable(before)
+                raise HTTPException(503, "district audit commit failed; the previous revision is unchanged") from exc
+            return snapshot
+
+    @router.get("/history/runs", response_model=DistrictHistoryRuns)
+    async def district_history_runs(request: Request):
+        journal = request.app.state.district.journal
+        if journal is None:
+            raise HTTPException(503, "district audit journal is disabled")
+        return {"current_run_id": request.app.state.district.run_id, "runs": await asyncio.to_thread(journal.runs)}
+
+    @router.get("/history", response_model=DistrictHistoryPage)
+    async def district_history(request: Request, run_id: str = Query(min_length=1, max_length=100),
+                               after: int = Query(default=0, ge=0), limit: int = Query(default=200, ge=1, le=1000)):
+        """Read-only playback; there is no command path from history."""
+        journal = request.app.state.district.journal
+        if journal is None:
+            raise HTTPException(503, "district audit journal is disabled")
+        return await asyncio.to_thread(journal.page, run_id, after, limit)
 
     @router.post("/generation", response_model=DistrictSnapshot)
     async def generate_topology(body: GenerationRequest, request: Request):
@@ -310,8 +376,32 @@ def register_district():
     return router
 
 
+def commit_revision(district, record_id, action, snapshot):
+    journal = getattr(district, "journal", None)
+    if journal is None:
+        return
+    state = snapshot["state"]
+    journal.commit(district.run_id, record_id, district.revision, {
+        "action": action, "state": district.state_record(),
+        "summary": {"served_w": sum(load["served_w"] for load in state["loads"]), "unmet_w": state["unmet_w"],
+                    "critical_shortfall_w": state["critical_shortfall_w"], "faults": [f["component_id"] for f in state["faults"]],
+                    "candidate_edge_ids": state["restoration"]["candidate_edge_ids"],
+                    "applied_edge_ids": state["restoration"]["applied_edge_ids"],
+                    "solver_status": (state["restoration"]["proposal"] or {}).get("solver_status"),
+                    "reason": state["restoration"]["reason"]}})
+
+
 def initialize_district(app):
-    app.state.district = DistrictAuthority()
+    from app.district.journal import DistrictJournal
+    from app.storage.history import HistoryStore
+    district = DistrictAuthority()
+    path = Path(os.environ.get("PRIORITYGRID_HISTORY_DB", str(Path(__file__).resolve().parents[2] / "history.sqlite3")))
+    district.journal = DistrictJournal(HistoryStore(path))
+    record = district.journal.latest()
+    if record and district.rehydrate(record):
+        commit_revision(district, f"rehydrate:{district.run_id}", {"action": "rehydrate", "from_run_id": record["run_id"]},
+                        district.snapshot())
+    app.state.district = district
     app.state.district_lock = asyncio.Lock()
 
 
@@ -364,12 +454,18 @@ async def _run_generation(district, python, script, body, run_id, task_id, revis
             if not current_job():
                 return
             district.profile.validate_topology(result)
+            before = district.mutable_state()
             district.topology = result
             district._reset_evidence()
             district.generation.update(status="GENERATED", cluster_count=body.cluster_count,
                 secondary_strategy=body.secondary_strategy, generated_at=datetime.now(timezone.utc).isoformat(),
                 reason=None)
             district.revision += 1
+            try:
+                commit_revision(district, f"generation:{task_id}", {"action": "generation_completed"}, district.snapshot())
+            except Exception:
+                district.restore_mutable(before)
+                raise
     except Exception as exc:
         async with lock:
             if current_job():

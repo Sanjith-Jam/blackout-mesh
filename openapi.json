@@ -1326,6 +1326,115 @@
         }
       }
     },
+    "/api/v1/district/history/runs": {
+      "get": {
+        "tags": [
+          "district study"
+        ],
+        "summary": "District History Runs",
+        "operationId": "get_api_v1_district_history_runs",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistrictHistoryRuns"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/district/history": {
+      "get": {
+        "tags": [
+          "district study"
+        ],
+        "summary": "District History",
+        "description": "Read-only playback; there is no command path from history.",
+        "operationId": "get_api_v1_district_history",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "After"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistrictHistoryPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/district/generation": {
       "post": {
         "tags": [
@@ -3202,6 +3311,13 @@
       },
       "DistrictAction": {
         "properties": {
+          "action_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Action Id"
+          },
           "run_id": {
             "type": "string",
             "title": "Run Id"
@@ -3250,6 +3366,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "action_id",
           "run_id",
           "expected_revision",
           "action"
@@ -3326,6 +3443,31 @@
           "path_edge_ids"
         ],
         "title": "DistrictAppliance"
+      },
+      "DistrictAudit": {
+        "properties": {
+          "journal": {
+            "type": "string",
+            "title": "Journal"
+          },
+          "rehydration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DistrictRehydration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "journal",
+          "rehydration"
+        ],
+        "title": "DistrictAudit"
       },
       "DistrictDispatch": {
         "properties": {
@@ -3620,6 +3762,123 @@
           "generated_at"
         ],
         "title": "DistrictGeneration"
+      },
+      "DistrictHistoryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictHistoryRecord"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "retention_gap": {
+            "type": "boolean",
+            "title": "Retention Gap"
+          },
+          "pruned_through": {
+            "type": "integer",
+            "title": "Pruned Through"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor",
+          "retention_gap",
+          "pruned_through"
+        ],
+        "title": "DistrictHistoryPage"
+      },
+      "DistrictHistoryRecord": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "seq",
+          "record_id",
+          "site_id",
+          "run_id",
+          "kind",
+          "timestamp",
+          "revision",
+          "provenance",
+          "payload"
+        ],
+        "title": "DistrictHistoryRecord"
+      },
+      "DistrictHistoryRuns": {
+        "properties": {
+          "current_run_id": {
+            "type": "string",
+            "title": "Current Run Id"
+          },
+          "runs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Runs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "current_run_id",
+          "runs"
+        ],
+        "title": "DistrictHistoryRuns"
       },
       "DistrictIdentity": {
         "properties": {
@@ -4014,6 +4273,35 @@
         ],
         "title": "DistrictProfileInfo"
       },
+      "DistrictRehydration": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "from_run_id": {
+            "type": "string",
+            "title": "From Run Id"
+          },
+          "from_revision": {
+            "type": "integer",
+            "title": "From Revision"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "from_run_id",
+          "from_revision",
+          "reason"
+        ],
+        "title": "DistrictRehydration"
+      },
       "DistrictSite": {
         "properties": {
           "name": {
@@ -4048,6 +4336,9 @@
           "identity": {
             "$ref": "#/components/schemas/DistrictIdentity"
           },
+          "audit": {
+            "$ref": "#/components/schemas/DistrictAudit"
+          },
           "profile": {
             "$ref": "#/components/schemas/DistrictProfileInfo"
           },
@@ -4075,6 +4366,7 @@
         "required": [
           "schema_version",
           "identity",
+          "audit",
           "profile",
           "site",
           "map",

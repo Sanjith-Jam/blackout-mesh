@@ -1,3 +1,4 @@
+import uuid
 import asyncio
 import pytest
 import copy
@@ -11,7 +12,7 @@ from pathlib import Path
 
 
 def action(name, component_id=None, fault_kind=None):
-    return DistrictAction(run_id="test", expected_revision=1, action=name,
+    return DistrictAction(action_id=str(uuid.uuid4()), run_id="test", expected_revision=1, action=name,
                           component_id=component_id, fault_kind=fault_kind)
 
 
@@ -82,7 +83,7 @@ def healthy_evidence(district):
     for index in range(2):
         at = start + timedelta(seconds=6 * index)
         district.clock = lambda at=at: at
-        assert district.apply_action(DistrictAction(run_id="test", expected_revision=1, action="record_observation",
+        assert district.apply_action(DistrictAction(action_id=str(uuid.uuid4()), run_id="test", expected_revision=1, action="record_observation",
             observation=DistrictObservation(sequence=sequence + index + 1, observed_at=at.isoformat(),
                                             healthy=True, source="SIMULATED_OBSERVATION_ADAPTER")))
 
@@ -156,7 +157,7 @@ def test_district_api_can_represent_stale_transformer_observations_as_unknown():
     with TestClient(create_app()) as client:
         snapshot = client.get("/api/v1/district").json()
         transformer_id = snapshot["state"]["transformers"][0]["component_id"]
-        response = client.post("/api/v1/district/action", json={
+        response = client.post("/api/v1/district/action", json={"action_id": str(uuid.uuid4()),
             "run_id": snapshot["identity"]["run_id"],
             "expected_revision": snapshot["identity"]["revision"],
             "action": "transformer_scenario", "component_id": transformer_id,
@@ -176,11 +177,11 @@ def test_district_api_validates_snapshot_and_rejects_stale_actions():
     with TestClient(create_app()) as client:
         snapshot = client.get("/api/v1/district").json()
         identity = snapshot["identity"]
-        result = client.post("/api/v1/district/action", json={"run_id": identity["run_id"],
+        result = client.post("/api/v1/district/action", json={"action_id": str(uuid.uuid4()), "run_id": identity["run_id"],
             "expected_revision": identity["revision"], "action": "advance_hour"})
         assert result.status_code == 200
         assert result.json()["energy"]["hour"] == (snapshot["energy"]["hour"] + 1) % 24
-        stale = client.post("/api/v1/district/action", json={"run_id": identity["run_id"],
+        stale = client.post("/api/v1/district/action", json={"action_id": str(uuid.uuid4()), "run_id": identity["run_id"],
             "expected_revision": identity["revision"], "action": "advance_hour"})
         assert stale.status_code == 409
 

@@ -82,6 +82,7 @@ export type HistoryRecord = components['schemas']['HistoryEventRecord'] |
 export type DistrictActionName = components['schemas']['DistrictActionName'];
 export type DistrictActionRequest = components['schemas']['DistrictAction'];
 export type DistrictGenerationRequest = components['schemas']['GenerationRequest'];
+export type DistrictHistoryPage = components['schemas']['DistrictHistoryPage'];
 type DistrictNode = { id: string; role: string; lon: number; lat: number; building_id?: string | null };
 type DistrictTopologyEdge = { id: string; from: string; to: string; kind: string };
 type DistrictEdgeState = { id: string; closed: boolean; faulted: boolean; energized: boolean; flow_w: number; provenance?: string };
