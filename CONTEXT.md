@@ -1,5 +1,13 @@
 # Blackout Mesh — implementation context
 
+## GNITC synthetic district demo — 2026-10-10
+
+Delivered `/grid` with shared SHIFT, Energy, Self-healing and Transformers views backed by the district API. The backend owns snapshots and commands; the frontend map and panels consume the same run/revision. Generated distribution lines and demand, PV, storage, fault and restoration states are synthetic; cached geography is attributed. CityLearn's pinned source was traced through an actual run: at hour 12 it reports 8,900 W local PV against 7,400 W demand plus 1,500 W battery charging; at hour 17 it reports 1,800 W local PV plus 1,500 W battery discharge, 4,300 W grid import and 7,600 W gross demand.
+
+Verification reported for this delivery: district backend suite **12 passed**; focused frontend DistrictMap test **1 passed**; `npm run build` passed. Generated OpenAPI and TypeScript schema are synchronized. Isolated live browser/backend rehearsal on frontend port 5175 and backend port 8001 at hour 20 showed 6,200 W scheduled/requested, 6,000 W grid served and 200 W unmet; injecting a simulated line fault changed this to 5,166 W served and 1,034 W unmet. Per-load requested power reconciled to served plus unmet, and edge flows stayed within declared limits. These are simulated results, not physical measurements.
+
+Not run: full backend/frontend suites, held-out test unsealing, hardware or physical acceptance. Hardware remains paused and district wires are not real feeder data. Next: review the district experience against the remaining plan, address any acceptance gaps, then schedule physical A/B integration only when hardware work resumes.
+
 ## Selective licensed benchmark reuse — 2026-10-10
 
 Reused CityLearn's original NumPy equity-distribution method at pinned commit `834575c1a0194c8ae9d648ae858376a94dfceb78`, with its complete MIT notice under `backend/benchmarks/licenses/`. Allocation benchmark v2026-10-10.3 reports per-room occupied requested/served seconds, nullable service fractions and service Gini, including defined-run denominators in JSON/Markdown. This is offline evaluation; policy inputs and decisions are unchanged. No new dependencies or API/schema changes.

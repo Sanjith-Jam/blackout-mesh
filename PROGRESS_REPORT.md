@@ -1,5 +1,13 @@
 # Blackout Mesh — progress report
 
+## GNITC synthetic district demo — 2026-10-10
+
+Delivered `/grid` with shared SHIFT, Energy, Self-healing and Transformers views over the Python-owned district API. Generated wires and district demand, PV, storage, faults and restoration are simulated; cached geography is attributed and does not establish real feeder topology. The pinned CityLearn source was exercised in an actual run: hour 12 shows 8,900 W local PV for 7,400 W demand plus 1,500 W battery charging; hour 17 shows 1,800 W local PV, 1,500 W battery discharge, 4,300 W grid import and 7,600 W gross demand.
+
+Focused evidence: district backend tests **12 passed**; DistrictMap frontend test **1 passed**; frontend production build passed; generated OpenAPI and TypeScript schemas are synchronized. An isolated live UI/backend rehearsal (frontend 5175, backend 8001) at hour 20 showed 6,200 W scheduled/requested, 6,000 W grid served and 200 W unmet. A simulated line fault produced 5,166 W served and 1,034 W unmet. Per-load requested = served + unmet, and edge flows remained within declared limits. These values are simulated.
+
+The full suites and hardware/physical acceptance were not run; no held-out test was unsealed. Hardware remains paused. Next step: review district acceptance against `docs/planning/GNITC_DISTRICT_MVP_PLAN.md`, then resume physical A/B integration only when hardware work is scheduled.
+
 ## Issue #15 cleanup — 2026-10-10
 
 Removed three empty `.gitkeep` placeholders, pinned backend runtime/test dependencies from a clean Python 3.14 install (195 passed, 2 skipped) and fixed the stale `--with httpx` test command in `AGENTS.md`. Every other script and both firmware trees have callers and stay. Inventory and evidence: [docs/ISSUE_15_DELIVERY.md](docs/ISSUE_15_DELIVERY.md).
