@@ -18,6 +18,10 @@ from shift.graph.distribution_graph import DistributionGraph
 from scripts import generate_district_topology as generator
 
 
+def test_topology_generator_defaults_to_preserved_500m_osm_cache():
+    assert generator.MAP.name == "gnitc_map_500m.geojson"
+
+
 def _small_graph():
     graph = DistributionGraph()
     graph.add_nodes([

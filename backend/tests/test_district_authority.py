@@ -18,6 +18,10 @@ def test_snapshot_uses_citylearn_trace_and_keeps_missing_transformer_evidence_un
     district = DistrictAuthority()
     snapshot = district.snapshot()
 
+    assert snapshot["site"]["radius_m"] == 500
+    assert snapshot["map"]["radius_m"] == 3000
+    assert snapshot["map"]["license"] == "ODbL-1.0"
+    assert snapshot["map"]["source_sha256"]
     assert len(snapshot["energy"]["profile"]) == 24
     assert snapshot["energy"]["provenance"] == "CITYLEARN_EXECUTED_ON_SYNTHETIC_DEMO_INPUTS"
     assert snapshot["energy"]["battery_soc_wh"] == snapshot["energy"]["profile"][12]["battery_soc_wh"]

@@ -1,6 +1,6 @@
 # GNITC district MVP plan
 
-Status: implementation plan, not delivery evidence. Target: the GNITC R&D block at **17.161849, 78.659909**, within roughly 500 m. This is a separate synthetic district study on `/grid`; the existing six-service campus model, `/demo`, and ESP32/LED behavior stay as they are.
+Status: implementation plan, not delivery evidence. Target: the GNITC R&D block at **17.161849, 78.659909**. The map provides a 3 km radius OSM context; SHIFT topology remains generated from the preserved 500 m cache. This is a separate synthetic district study on `/grid`; the existing six-service campus model, `/demo`, and ESP32/LED behavior stay as they are.
 
 ## Boundary and ownership
 

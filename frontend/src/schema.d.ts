@@ -1232,6 +1232,8 @@ export interface components {
         };
         /** DistrictMap */
         DistrictMap: {
+            /** Radius M */
+            radius_m: number;
             /** Source */
             source: string;
             /** Source Url */

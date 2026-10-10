@@ -63,7 +63,7 @@ export default function DistrictMap({ features, nodes, edges, edgeStates, select
           <path d={`M${x1} ${y1} L${x2} ${y2}`} className={`wire${e.kind === 'tie' ? ' is-tie' : ''}${state?.faulted ? ' is-faulted' : state?.closed === false ? ' is-open' : ''}${selected === e.id ? ' is-selected' : ''}`} />
         </g>;
       })}
-      {edges.map(e => {
+      {[...edges.filter(e => e.kind === 'tie'), ...edges.filter(e => e.kind !== 'tie')].map(e => {
         const a = nodesById.get(e.from), b = nodesById.get(e.to);
         if (!a || !b) return null;
         const state = statesById.get(e.id);

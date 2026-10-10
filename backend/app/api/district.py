@@ -81,6 +81,7 @@ class DistrictMapFeature(StrictDTO):
 
 
 class DistrictMap(StrictDTO):
+    radius_m: StrictInt
     source: StrictStr
     source_url: StrictStr
     attribution: StrictStr

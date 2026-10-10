@@ -3,6 +3,29 @@ import { describe, expect, it, vi } from 'vitest';
 import DistrictMap from './DistrictMap';
 
 describe('DistrictMap', () => {
+  it('lets a tree edge win pointer hits at crossings while leaving ties selectable', () => {
+    const onSelect = vi.fn();
+    render(<DistrictMap features={[]} nodes={[
+      { id: 'nw', role: 'junction', lon: 0, lat: 10 },
+      { id: 'se', role: 'junction', lon: 10, lat: 0 },
+      { id: 'sw', role: 'junction', lon: 0, lat: 0 },
+      { id: 'ne', role: 'junction', lon: 10, lat: 10 },
+    ]} edges={[
+      { id: 'tree-edge', from: 'nw', to: 'se', kind: 'line' },
+      { id: 'tie:declared-demo', from: 'sw', to: 'ne', kind: 'tie' },
+    ]} edgeStates={[]} selected={null} onSelect={onSelect} mode="shift" />);
+
+    const tree = screen.getByRole('button', { name: 'tree-edge · line · unenergized' });
+    const tie = screen.getByRole('button', { name: 'tie:declared-demo · tie · unenergized' });
+    expect(tie.compareDocumentPosition(tree) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(tree);
+    expect(onSelect).toHaveBeenLastCalledWith('tree-edge');
+    fireEvent.click(tie);
+    expect(onSelect).toHaveBeenLastCalledWith('tie:declared-demo');
+    fireEvent.keyDown(tie, { key: 'Enter' });
+    expect(onSelect).toHaveBeenLastCalledWith('tie:declared-demo');
+  });
+
   it('keeps map assets keyboard-selectable with visible selection state', () => {
     const onSelect = vi.fn();
     render(<DistrictMap features={[]} nodes={[

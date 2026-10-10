@@ -3639,6 +3639,10 @@
       },
       "DistrictMap": {
         "properties": {
+          "radius_m": {
+            "type": "integer",
+            "title": "Radius M"
+          },
           "source": {
             "type": "string",
             "title": "Source"
@@ -3674,6 +3678,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "radius_m",
           "source",
           "source_url",
           "attribution",

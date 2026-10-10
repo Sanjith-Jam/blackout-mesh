@@ -38,7 +38,7 @@ from shift.system_builder import DistributionSystemBuilder
 from shift.graph.secondary import MeshSteinerStrategy, RadialStrategy
 
 ROOT = Path(__file__).resolve().parents[2]
-MAP = ROOT / "backend/app/district/data/gnitc_map.geojson"
+MAP = ROOT / "backend/app/district/data/gnitc_map_500m.geojson"
 OUTPUT = ROOT / "backend/app/district/data/gnitc_topology.json"
 CENTER = GeoLocation(78.659909, 17.161849)
 SHIFT_COMMIT = "995004c84c16df7c8ebfd3ddddf3e723a0938a99"
