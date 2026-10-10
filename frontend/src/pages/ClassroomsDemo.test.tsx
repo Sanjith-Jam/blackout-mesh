@@ -52,7 +52,10 @@ describe('Classrooms page (#16)', () => {
     renderPage();
     fireEvent.click(await screen.findByRole('button', { name: /CR1 scanned/ }));
     await waitFor(() => expect(api.posts()).toHaveLength(1));
-    expect(api.posts()[0].body).toEqual({ action: 'unscan', classroom_id: 'CR1' });
+    const body = api.posts()[0].body;
+    expect(body).toMatchObject({ action: 'unscan', classroom_id: 'CR1', run_id: classrooms.site?.run_id });
+    expect(body.event_id).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(Number.isNaN(Date.parse(body.observed_at))).toBe(false);
     await screen.findByRole('button', { name: /Scan CR1/ });
   });
 

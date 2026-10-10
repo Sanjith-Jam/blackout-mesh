@@ -123,14 +123,7 @@ export default function LandingPage() {
       {/* PERFORMANCE BENCHMARK */}
       <section className="content-section alternate relative z-10 p-12">
         <div className="container mx-auto max-w-4xl">
-          <BenchmarkCard 
-            title="Algorithm Decision Speed (ms)" 
-            stats={[
-              { label: "Rule-Based", value: 45 },
-              { label: "Logistic Regression", value: 12 },
-              { label: "PriorityGrid Engine", value: 95 }
-            ]} 
-          />
+          <BenchmarkCard />
         </div>
       </section>
 

@@ -29,7 +29,7 @@ export function Header() {
     >
       <div className="flex items-center justify-start gap-2 text-brand-forest font-bold text-xl">
         <Activity className="text-brand-forest" />
-        <span className="hidden sm:inline-block">PriorityGrid</span>
+        <Link to="/" className="hidden sm:inline-block">Blackout Mesh</Link>
       </div>
       
       <div className="flex justify-center w-full min-w-0">

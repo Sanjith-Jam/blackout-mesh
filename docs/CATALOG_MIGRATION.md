@@ -78,6 +78,6 @@ The classroom view now allocates within `min(classroom limit, campus feeder B he
 ## Remaining migration (not done in this step)
 
 - The campus allocator still decides L3–L5 as whole rooms while the classroom view decides appliances. Both respect the same feeder B budget, but they are two decisions. Next step: derive L3–L5 served watts from the leaf allocation (partial service) and retire whole-room classroom decisions.
-- Campus RFID selection / load events and classroom-view scans are still separate session stores (#21).
+- Campus RFID events, classroom-view scan controls and board session events now share `GridState.active_sessions`; these update the same requested campus services and classroom projection (#21). Hardware inputs remain simulated/unconnected unless the explicitly provisioned gateway is present.
 - The hospital zone view (7,000 W) is not mapped to campus feeder A (6,000 W).
 - `GridState` is still a process-wide singleton (#11).

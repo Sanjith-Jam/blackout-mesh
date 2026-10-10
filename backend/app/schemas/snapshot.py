@@ -195,8 +195,10 @@ class ReplayActionRequest(BaseModel):
     action: StrictStr
 
 class RfidScanRequest(BaseModel):
-    uid: str
-    event_id: Optional[str] = None
+    uid: StrictStr = Field(min_length=1, max_length=256)
+    event_id: StrictStr = Field(min_length=1, max_length=128)
+    observed_at: datetime
+    run_id: StrictStr = Field(min_length=1, max_length=100)
 
 class RfidScanResponse(BaseModel):
     accepted: bool
@@ -216,6 +218,9 @@ class CapacityChangeResponse(BaseModel):
 class ClassroomLoadRequest(BaseModel):
     classroom_id: StrictStr
     active: StrictBool
+    event_id: StrictStr = Field(min_length=1, max_length=128)
+    observed_at: datetime
+    run_id: StrictStr = Field(min_length=1, max_length=100)
 
 class ClassroomLoadResponse(BaseModel):
     accepted: bool

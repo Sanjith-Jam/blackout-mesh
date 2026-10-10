@@ -1,0 +1,56 @@
+{
+  "model_version": "synthetic-demand-ridge-v1",
+  "artifact_sha256": "3863b72b47bdb21b88f02c03347256d234082e8e3c44a1fb00866d31b412c3a4",
+  "source": "Synthetic smooth demand sessions; no field or campus validation",
+  "seed": 68123,
+  "sessions": {
+    "train": 80,
+    "calibration": 20,
+    "test": 20
+  },
+  "rows": {
+    "train": 5680,
+    "calibration": 1420,
+    "test": 1420
+  },
+  "sample_s": 10,
+  "horizon_s": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60
+  ],
+  "mae_w": [
+    43.81,
+    57.59,
+    74.57,
+    96.78,
+    121.94,
+    149.49
+  ],
+  "persistence_mae_w": [
+    87.1,
+    162.13,
+    239.0,
+    316.42,
+    393.38,
+    469.59
+  ],
+  "empirical_band_coverage": [
+    0.9162,
+    0.9218,
+    0.8958,
+    0.8908,
+    0.8866,
+    0.8831
+  ],
+  "sklearn_predict_median_ms": 0.04337599966675043,
+  "latency_calls": 100,
+  "limits": [
+    "Smooth synthetic demand only; abrupt trips and new sessions cannot be predicted reliably.",
+    "Error bands use separate synthetic calibration sessions, not calibrated field confidence.",
+    "Advisory only; forecasts cannot shed loads or authorize restoration."
+  ]
+}

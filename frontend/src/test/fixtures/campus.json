@@ -53,11 +53,11 @@
   }
  },
  "allocation": {
-  "baseline_mask": 63,
+  "baseline_mask": 31,
   "critical_shortfall_w": 0,
   "explanation": {
-   "control_revision": 0,
-   "decision_id": "53db1e9f0277166c22c07cc3eae91cec5067e717cbcffeb40d632ab9b47d72a6",
+   "control_revision": 2,
+   "decision_id": "<volatile>",
    "decisions": [
     {
      "applied": true,
@@ -156,11 +156,13 @@
      "shortfall_w": 0
     },
     {
-     "applied": true,
-     "binding_constraints": [],
-     "counterfactual": "served",
+     "applied": false,
+     "binding_constraints": [
+      "restoration_dwell_or_stability"
+     ],
+     "counterfactual": "force-on violates restoration_dwell_or_stability",
      "proposed": true,
-     "reason": "Selected by activity_first under protected-first lexicographic objective",
+     "reason": "Selected but waiting for stable evidence and restoration dwell",
      "requested": true,
      "score_terms": {
       "active": 0,
@@ -172,32 +174,34 @@
        0
       ],
       "served_w": 2000,
-      "switching": 0,
+      "switching": -1,
       "unknown": 1,
       "water": 0
      },
      "service_id": "L4",
-     "shortfall_w": 0
+     "shortfall_w": 2000
     },
     {
-     "applied": true,
-     "binding_constraints": [],
-     "counterfactual": "served",
-     "proposed": true,
-     "reason": "Selected by activity_first under protected-first lexicographic objective",
-     "requested": true,
+     "applied": false,
+     "binding_constraints": [
+      "not_requested"
+     ],
+     "counterfactual": "force-on violates not_requested",
+     "proposed": false,
+     "reason": "Not selected: not_requested",
+     "requested": false,
      "score_terms": {
       "active": 0,
-      "deterministic_mask": -32,
+      "deterministic_mask": 0,
       "fairness": 0,
       "inactive": 0,
       "protected": [
        0,
        0
       ],
-      "served_w": 4000,
+      "served_w": 0,
       "switching": 0,
-      "unknown": 1,
+      "unknown": 0,
       "water": 0
      },
      "service_id": "L5",
@@ -248,8 +252,8 @@
      "switching_penalty": 1,
      "version": "allocation-v1"
     },
-    "previous_mask": 63,
-    "requested_mask": 63,
+    "previous_mask": 15,
+    "requested_mask": 31,
     "services": [
      {
       "feeder": "A",
@@ -311,11 +315,12 @@
    },
    "restoration_replay": {
     "before": {
-     "applied_mask": 63,
+     "applied_mask": 15,
      "initialized": true,
-     "last_restored": 52065.32924156,
-     "last_shed": 52065.32924156,
+     "last_restored": "<volatile>",
+     "last_shed": "<volatile>",
      "signature": [
+      "{\"name\":\"activity_first\",\"version\":\"allocation-v1\",\"fairness_weight\":0,\"switching_penalty\":1}",
       14000,
       [
        [
@@ -338,9 +343,9 @@
        ]
       ]
      ],
-     "stable_since": 52065.32924156
+     "stable_since": "<volatile>"
     },
-    "now_s": 52065.329248714,
+    "now_s": "<volatile>",
     "order": [
      0,
      1,
@@ -376,16 +381,16 @@
    },
    "score_terms": {
     "active": 0,
-    "deterministic_mask": -63,
+    "deterministic_mask": -31,
     "fairness": 0,
     "inactive": 0,
     "protected": [
      1,
      1
     ],
-    "served_w": 14000,
-    "switching": 0,
-    "unknown": 3,
+    "served_w": 10000,
+    "switching": -1,
+    "unknown": 2,
     "water": 1
    }
   },
@@ -402,31 +407,31 @@
    "protected_shortfall_w": 0,
    "status": "FEASIBLE"
   },
-  "served_w": 14000
+  "served_w": 8000
  },
  "config_hash": "e7cb835f",
  "contract": {
   "campus_totals": {
    "capacity_w": 14000,
-   "requested_w": 14000,
-   "served_w": 14000
+   "requested_w": 10000,
+   "served_w": 8000
   },
   "identity": {
    "catalog_version": "1.0",
    "config_hash": "e7cb835f",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T00:48:43.678263+00:00",
+   "observation_time": "2026-10-10T01:12:29.248226+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791593323,
+   "server_epoch": "<volatile>",
    "site_id": "Default Campus",
    "state_revision": 5
   },
   "zone_totals": {
    "classroom": {
     "capacity_w": null,
-    "requested_w": 8000,
-    "served_w": 8000
+    "requested_w": 4000,
+    "served_w": 2000
    },
    "hospital": {
     "capacity_w": null,
@@ -435,7 +440,7 @@
    }
   }
  },
- "control_revision": 0,
+ "control_revision": 2,
  "edges": [
   {
    "applied": true,
@@ -461,8 +466,8 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Feeder B head",
-   "requested_w": 8000,
-   "served_w": 8000,
+   "requested_w": 4000,
+   "served_w": 2000,
    "state": "ENERGIZED",
    "to": "B",
    "unit": "W"
@@ -528,37 +533,54 @@
    "unit": "W"
   },
   {
-   "applied": true,
+   "applied": false,
    "commanded": true,
    "connected": true,
    "from": "B",
    "id": "campus:B>L4",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Served by allocation policy",
+   "reason": "Waiting for simulated restoration delay",
    "requested_w": 2000,
-   "served_w": 2000,
-   "state": "ENERGIZED",
+   "served_w": 0,
+   "state": "PENDING_RESTORATION",
    "to": "L4",
    "unit": "W"
   },
   {
-   "applied": true,
-   "commanded": true,
+   "applied": false,
+   "commanded": false,
    "connected": true,
    "from": "B",
    "id": "campus:B>L5",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Served by allocation policy",
-   "requested_w": 4000,
-   "served_w": 4000,
-   "state": "ENERGIZED",
+   "reason": "No active load request",
+   "requested_w": 0,
+   "served_w": 0,
+   "state": "SHED",
    "to": "L5",
    "unit": "W"
   }
  ],
- "events": [],
+ "events": [
+  {
+   "description": "Session for CR1 became active via UI",
+   "event_id": "<volatile>",
+   "revision": 1,
+   "run_id": "<volatile>",
+   "timestamp": "<volatile>",
+   "type": "SESSION_START"
+  },
+  {
+   "description": "Session for CR2 became active via UI",
+   "event_id": "<volatile>",
+   "revision": 2,
+   "run_id": "<volatile>",
+   "timestamp": "<volatile>",
+   "type": "SESSION_START"
+  }
+ ],
  "fault_diagnosis": null,
  "feeder_limits_w": {
   "A": 6000,
@@ -566,7 +588,7 @@
  },
  "generated_at": "<volatile>",
  "hardware_link": "NOT_CONNECTED",
- "indicator_command_mask": 7,
+ "indicator_command_mask": 15,
  "indicator_confirmed_mask": null,
  "indicator_mask": null,
  "model": {
@@ -655,15 +677,15 @@
   "model_version": "uci-occ-logistic-2026-10-09",
   "ready": true
  },
- "modeled_mask": 63,
- "proposed_mask": 63,
- "published_revision": 2,
+ "modeled_mask": 15,
+ "proposed_mask": 31,
+ "published_revision": 4,
  "replay": {
   "index": 0,
   "length": 40,
   "running": false
  },
- "requested_mask": 63,
+ "requested_mask": 31,
  "services": [
   {
    "feeder": "A",
@@ -713,8 +735,8 @@
    "feeder": "B",
    "id": "L4",
    "indicator_confirmed": null,
-   "model_reason": "Served by allocation policy",
-   "modeled_served": true,
+   "model_reason": "Waiting for simulated restoration delay",
+   "modeled_served": false,
    "name": "Classroom 2",
    "requested": true,
    "tier": "T2",
@@ -724,10 +746,10 @@
    "feeder": "B",
    "id": "L5",
    "indicator_confirmed": null,
-   "model_reason": "Served by allocation policy",
-   "modeled_served": true,
+   "model_reason": "No active load request",
+   "modeled_served": false,
    "name": "Classroom 3",
-   "requested": true,
+   "requested": false,
    "tier": "T3",
    "watts": 4000
   }
@@ -746,12 +768,12 @@
  },
  "zones": {
   "classroom": {
-   "active_classroom_id": null,
+   "active_classroom_id": "CR1",
    "classrooms": [
     {
      "id": "CR1",
      "led_bit": 3,
-     "load_event_active": false,
+     "load_event_active": true,
      "name": "Classroom 1",
      "rfid_card_registered": true,
      "service_id": "L3"
@@ -759,7 +781,7 @@
     {
      "id": "CR2",
      "led_bit": 4,
-     "load_event_active": false,
+     "load_event_active": true,
      "name": "Classroom 2",
      "rfid_card_registered": true,
      "service_id": "L4"

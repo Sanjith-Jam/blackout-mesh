@@ -996,10 +996,137 @@
           }
         }
       }
+    },
+    "/api/v1/demo/evidence": {
+      "get": {
+        "summary": "Get Evidence",
+        "operationId": "get_api_v1_demo_evidence",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoEvidence"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo": {
+      "get": {
+        "summary": "Get City Demo",
+        "operationId": "get_api_v1_demo",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "LIVE_REQUESTED_DEMAND",
+                "SYNTHETIC_REPLAY"
+              ],
+              "type": "string",
+              "default": "LIVE_REQUESTED_DEMAND",
+              "title": "Source"
+            }
+          },
+          {
+            "name": "replay_index",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 7,
+              "minimum": 0,
+              "default": 3,
+              "title": "Replay Index"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityDemoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AblationRow": {
+        "properties": {
+          "policy": {
+            "type": "string",
+            "title": "Policy"
+          },
+          "occupied_service_pct": {
+            "type": "number",
+            "title": "Occupied Service Pct"
+          },
+          "switching_count": {
+            "type": "number",
+            "title": "Switching Count"
+          },
+          "essential_unmet_wh": {
+            "type": "number",
+            "title": "Essential Unmet Wh"
+          },
+          "critical_unmet_wh": {
+            "type": "number",
+            "title": "Critical Unmet Wh"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy",
+          "occupied_service_pct",
+          "switching_count",
+          "essential_unmet_wh",
+          "critical_unmet_wh"
+        ],
+        "title": "AblationRow"
+      },
       "ActivityObservationRequest": {
         "properties": {
           "classroom_id": {
@@ -1446,6 +1573,26 @@
         ],
         "title": "CapacityChangeResponse"
       },
+      "CityDemoResponse": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/SystemSnapshot"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/DemandForecastResponse"
+          },
+          "hardware": {
+            "$ref": "#/components/schemas/HardwareStatusResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "snapshot",
+          "forecast",
+          "hardware"
+        ],
+        "title": "CityDemoResponse"
+      },
       "ClassroomDemoAction": {
         "properties": {
           "action": {
@@ -1489,6 +1636,44 @@
               }
             ],
             "title": "Capacity W"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
           }
         },
         "additionalProperties": false,
@@ -1817,12 +2002,32 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "run_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Run Id"
           }
         },
         "type": "object",
         "required": [
           "classroom_id",
-          "active"
+          "active",
+          "event_id",
+          "observed_at",
+          "run_id"
         ],
         "title": "ClassroomLoadRequest"
       },
@@ -2015,6 +2220,217 @@
           "identity"
         ],
         "title": "CrossRouteContract"
+      },
+      "DemandForecastResponse": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "LIVE_REQUESTED_DEMAND",
+              "SYNTHETIC_REPLAY"
+            ],
+            "title": "Source"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "sample_s": {
+            "type": "integer",
+            "title": "Sample S"
+          },
+          "sample_age_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Age S"
+          },
+          "observations_w": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Observations W"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "SHORTAGE_RISK",
+              "WITHIN_CAPACITY"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "first_shortage_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Shortage S"
+          },
+          "capacity_w": {
+            "type": "integer",
+            "title": "Capacity W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "model_version",
+          "sample_s",
+          "sample_age_s",
+          "observations_w",
+          "points",
+          "status",
+          "reason",
+          "first_shortage_s",
+          "capacity_w"
+        ],
+        "title": "DemandForecastResponse"
+      },
+      "DemoEvidence": {
+        "properties": {
+          "inference_median_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inference Median Ms"
+          },
+          "inference_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inference Calls"
+          },
+          "allocation_median_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Median Ms"
+          },
+          "allocation_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Calls"
+          },
+          "masks": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masks"
+          },
+          "allocation_runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Runs"
+          },
+          "constraint_violations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constraint Violations"
+          },
+          "forecast_mae_60s_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Mae 60S W"
+          },
+          "persistence_mae_60s_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persistence Mae 60S W"
+          },
+          "forecast_test_sessions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Test Sessions"
+          },
+          "ablation": {
+            "items": {
+              "$ref": "#/components/schemas/AblationRow"
+            },
+            "type": "array",
+            "title": "Ablation",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "DemoEvidence"
       },
       "DiagnosticAbstentionResponse": {
         "properties": {
@@ -2515,6 +2931,34 @@
           "control_revision"
         ],
         "title": "FeederChangeResponse"
+      },
+      "ForecastPoint": {
+        "properties": {
+          "ahead_s": {
+            "type": "integer",
+            "title": "Ahead S"
+          },
+          "demand_w": {
+            "type": "integer",
+            "title": "Demand W"
+          },
+          "lower_w": {
+            "type": "integer",
+            "title": "Lower W"
+          },
+          "upper_w": {
+            "type": "integer",
+            "title": "Upper W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ahead_s",
+          "demand_w",
+          "lower_w",
+          "upper_w"
+        ],
+        "title": "ForecastPoint"
       },
       "GatewayConnect": {
         "properties": {
@@ -3959,23 +4403,34 @@
         "properties": {
           "uid": {
             "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
             "title": "Uid"
           },
           "event_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
             "title": "Event Id"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "run_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Run Id"
           }
         },
         "type": "object",
         "required": [
-          "uid"
+          "uid",
+          "event_id",
+          "observed_at",
+          "run_id"
         ],
         "title": "RfidScanRequest"
       },
