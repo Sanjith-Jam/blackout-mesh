@@ -1,0 +1,45 @@
+{
+ "protocol": "diag-bench-ranked-v3",
+ "process": "developer-held-out frozen before first ranked-metric run; no independent custodian",
+ "detector_sha256": "04864dc3b959f3873f2249df3f38d9185744bdef131df4ae14685ec3a3ac788d",
+ "scenarios": 96,
+ "families": {
+  "normal": 8,
+  "demand_change": 8,
+  "hot_ambient": 8,
+  "overload": 8,
+  "cooling_failure": 8,
+  "overload_and_cooling": 8,
+  "upstream_loss": 8,
+  "branch_interruption": 8,
+  "sensor_dropout": 8,
+  "stuck_sensor": 8,
+  "delay_reorder": 8,
+  "recovery_chatter": 8
+ },
+ "seeds": [
+  5000,
+  5007
+ ],
+ "regime": {
+  "overload": [
+   [
+    1.41,
+    1.7
+   ]
+  ],
+  "hot": [
+   [
+    95.1,
+    110.0
+   ]
+  ],
+  "noise": [
+   5.0,
+   2.5
+  ],
+  "delay": 3
+ },
+ "observations_sha256": "b33fc2fd41d8467964229ed478083bb403f28029e6c6e473c57c3e1c89c1137e",
+ "truth_sha256": "18a711b5d5d427aa3d0e62042aa6c0b2479cb4d8205a566ce2520c6f5dc81d4d"
+}

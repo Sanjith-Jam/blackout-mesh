@@ -17,10 +17,11 @@ RATED_A = 100.0
 FIELDS = ("current_a", "temperature_c", "input_voltage_v", "output_voltage_v", "cooling_ok")
 UNITS = {"current_a": "A", "temperature_c": "degC", "input_voltage_v": "V", "output_voltage_v": "V", "cooling_ok": "bool"}
 DATA_DIR = Path(__file__).resolve().parent / "data"
-RANKED_PROTOCOL = "diag-bench-ranked-v2"
-RANKED_DATA_DIR = Path(__file__).resolve().parent / "ranked-v2"
+# v1 (seeds 3000-3007) is unsealed; v2 (4000-4007) was frozen against rules that changed before it ran.
+RANKED_PROTOCOL = "diag-bench-ranked-v3"
+RANKED_DATA_DIR = Path(__file__).resolve().parent / "ranked-v3"
 RANKED_REGIME = {"overload": [(1.41, 1.70)], "hot": [(95.1, 110.0)],
-                 "noise": (5.0, 2.5), "delay": 3, "seeds": range(4000, 4008)}
+                 "noise": (5.0, 2.5), "delay": 3, "seeds": range(5000, 5008)}
 
 FAMILIES = ("normal", "demand_change", "hot_ambient", "overload", "cooling_failure", "overload_and_cooling",
             "upstream_loss", "branch_interruption", "sensor_dropout", "stuck_sensor", "delay_reorder", "recovery_chatter")
