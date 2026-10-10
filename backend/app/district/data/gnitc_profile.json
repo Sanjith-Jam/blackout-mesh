@@ -1,0 +1,82 @@
+{
+  "schema_version": "district-profile-v1",
+  "id": "gnitc-aggregate-6kw-v1",
+  "provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
+  "source_capacity_w": 6000,
+  "demand_basis": "hourly_trace_weights",
+  "local_supply_mode": "grid_following",
+  "buildings": [
+    {
+      "building_id": "osm-way-1133164421",
+      "tier": "critical",
+      "rationale": "Synthetic teaching assignment: protected demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164422",
+      "tier": "critical",
+      "rationale": "Synthetic teaching assignment: protected demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164423",
+      "tier": "critical",
+      "rationale": "Synthetic teaching assignment: protected demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164424",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164425",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164426",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164427",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164428",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164429",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164430",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164431",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    },
+    {
+      "building_id": "osm-way-1133164432",
+      "tier": "noncritical",
+      "rationale": "Synthetic teaching assignment: interruptible demonstration load. This does not represent verified building criticality.",
+      "demand_weight": 1
+    }
+  ]
+}

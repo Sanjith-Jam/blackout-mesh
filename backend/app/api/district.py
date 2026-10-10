@@ -303,6 +303,7 @@ async def _run_generation(district, python, script, body, run_id, task_id, revis
             raise RuntimeError("generated primary topology is disconnected")
         if not current_job():
             return
+        district.profile.validate_topology(result)
         district.topology = result
         district.generation.update(status="GENERATED", cluster_count=body.cluster_count,
             secondary_strategy=body.secondary_strategy, generated_at=datetime.now(timezone.utc).isoformat(),

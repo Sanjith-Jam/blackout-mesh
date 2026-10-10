@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import subprocess
 import uuid
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
+
+from app.district.profile import apportion, load_profile
 
 DATA = Path(__file__).with_name("data")
 SHIFT_PYTHON = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
@@ -47,6 +50,7 @@ class DistrictAuthority:
         self.run_id = str(uuid.uuid4())
         self.revision = 1
         self.topology = json.loads((DATA / "gnitc_topology.json").read_text())
+        self.profile = load_profile(Path(os.environ.get("DISTRICT_PROFILE", DATA / "gnitc_profile.json")), self.topology)
         self.map = json.loads((DATA / "gnitc_map.geojson").read_text())
         self.energy_trace = json.loads((DATA / "gnitc_energy.json").read_text())
         self.hour = 12
@@ -88,20 +92,20 @@ class DistrictAuthority:
                     parent[neighbor], parent_edge[neighbor] = current, edge_id
                     queue.append(neighbor)
 
-        # Split this hour's whole-district CityLearn totals deterministically by stable building ID.
+        # Allocate the hourly trace using declared per-building policy weights.
         loads = []
         flows = {edge_id: 0 for edge_id in states}
-        source_capacity_w = 6000
+        source_capacity_w = self.profile.source_capacity_w
         grid_served_total = 0
+        policies = {row.building_id: row for row in self.profile.buildings}
         requested = sorted((node for node in topology["nodes"] if node["role"] == "load"),
-                           key=lambda node: (node.get("building_id", node["id"])))
+                           key=lambda node: (policies[node.get("building_id", node["id"])].tier != "critical", node["id"]))
         profile = self.energy_trace["profile"][self.hour]
-        count = len(requested)
         demand_w = profile["demand_w"]
         grid_requested_total_w = profile["grid_import_w"]
-        demand_base, demand_extra = divmod(demand_w, count) if count else (0, 0)
-        grid_base, grid_extra = divmod(grid_requested_total_w, count) if count else (0, 0)
-        for index, node in enumerate(requested):
+        demands = apportion(demand_w, {key: row.demand_weight for key, row in policies.items()})
+        imports = apportion(grid_requested_total_w, demands)
+        for node in requested:
             path = []
             cursor = node["id"]
             while cursor in parent_edge:
@@ -109,11 +113,12 @@ class DistrictAuthority:
                 path.append(edge_id)
                 cursor = parent[cursor]
             connected = bool(source) and cursor == source
-            tier = "critical" if index < 3 else "noncritical"
-            requested_w = demand_base + (index < demand_extra)
-            grid_requested_w = grid_base + (index < grid_extra)
-            # CityLearn provides a district residual, allocated per building for this graph view.
-            local_supply_w = requested_w - grid_requested_w
+            policy = policies[node.get("building_id", node["id"])]
+            tier = policy.tier
+            requested_w = demands[policy.building_id]
+            grid_requested_w = imports[policy.building_id]
+            # Configured grid-following PV/storage cannot energize an isolated building.
+            local_supply_w = requested_w - grid_requested_w if connected else 0
             path_capacity = min((edge_by_id[edge_id]["limit_w"] - flows[edge_id] for edge_id in path), default=source_capacity_w)
             grid_served_w = min(grid_requested_w, source_capacity_w - grid_served_total, max(0, path_capacity)) if connected else 0
             if grid_served_w:
@@ -127,10 +132,10 @@ class DistrictAuthority:
                           "served_w": served_w, "unmet_w": requested_w - served_w,
                           "demand_provenance": self.energy_trace["provenance"],
                           "tier_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
-                          "tier_rationale": "First three loads in stable building-ID order are labeled critical for this demo; this does not represent verified building criticality.",
+                          "tier_rationale": policy.rationale,
                           "local_supply_provenance": "MODEL_DERIVED",
                           "local_supply_basis": "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING",
-                          "local_supply_semantics": "BEHIND_THE_METER_ALLOCATION_NO_FEEDER_PATH_REQUIRED",
+                          "local_supply_semantics": "CONFIGURED_GRID_FOLLOWING_REQUIRES_SOURCE_REACHABILITY",
                           "grid_service_provenance": "MODEL_DERIVED", "unmet_provenance": "MODEL_DERIVED"})
 
         for edge in topology["edges"]:
@@ -222,7 +227,7 @@ class DistrictAuthority:
                 "source_sha256": self.map["metadata"].get("source_sha256", ""), "features": features},
             "topology": topology,
             "generation": copy.deepcopy(self.generation),
-            "state": {"hour": self.hour, "source_capacity_w": 6000,
+            "state": {"hour": self.hour, "source_capacity_w": self.profile.source_capacity_w,
                 "source_capacity_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
                 "source_capacity_note": "Synthetic district dispatch limit; not a measured transformer rating.",
                 "grid_requested_w": sum(load["grid_requested_w"] for load in loads),
@@ -339,7 +344,7 @@ class DistrictAuthority:
             self.closed_tie = candidate
             proposed_states, proposed_loads = self._electrical_state()
             edge_limits = {edge["id"]: edge["limit_w"] for edge in self.topology["edges"]}
-            if (sum(load["grid_served_w"] for load in proposed_loads) > 6000
+            if (sum(load["grid_served_w"] for load in proposed_loads) > self.profile.source_capacity_w
                     or any(state["flow_w"] > edge_limits[edge_id] for edge_id, state in proposed_states.items())):
                 self.closed_tie = previous_tie
                 self.restoration_reason = "Fresh capacity evidence rejects the candidate under source or line limits."

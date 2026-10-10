@@ -204,3 +204,7 @@ Priority tiers are explicitly `CONFIGURED_SIMULATED_ASSUMPTION`: the first three
 ## Round 3 #69 route/model accuracy — 2026-10-10
 
 README, demo guide and planning index now identify `/grid` as the primary district study, `/demo` as the appliance controller and `/city` as its legacy city story. The separate district 6 kW source and campus 14 kW rated catalog are explicit. Current production allocation is CP-SAT; historic 64-mask timings are labeled regression evidence. Reviewed routing and links; `git diff --check` passed. Documentation-only slice; runtime tests not applicable. Issue #69 remains open for integration/reproduction/history acceptance.
+
+## Round 3 #69 explicit district policy — 2026-10-10
+
+`DISTRICT_PROFILE` now selects a strictly validated district policy (default `gnitc_profile.json`): all 12 synthetic building tiers/rationales and demand weights are explicit; missing/duplicate buildings, invalid watts and unsupported island modes reject. Largest-remainder allocation conserves integer W. Cached CityLearn residual supply is explicitly grid-following and becomes zero on isolated buildings; disconnected PV/storage cannot invent island service. Generated topology must retain every configured building. This separate profile retains the 6,000 W source. Focused profile/authority/evidence checks: 14 passed using `/tmp/round3-69-history.sqlite`; `git diff --check` passed. Integrated appliance mapping and durable district replay remain next.
