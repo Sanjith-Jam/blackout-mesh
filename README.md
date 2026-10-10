@@ -4,7 +4,7 @@ A hackathon prototype for simulated power allocation, RFID classroom interaction
 
 ## Current progress
 
-Software demo now includes a trained local occupancy classifier, recorded-data replay, exact six-service allocation and the original website interface. Hardware work is paused; ESP32 A/B contracts still conflict and physical ACKs remain unconfirmed. The model uses office observations as a proxy and does not establish campus accuracy.
+Software demo now includes a trained local occupancy classifier, recorded-data replay, exact six-service allocation and the original website interface. Board A (RFID reader + five buttons, including an RFID-fail fallback for room A) and board B (room LEDs) now share one contract, and the backend bridges board A to the website; physical end-to-end acceptance with both boards is still to be recorded. The model uses office observations as a proxy and does not establish campus accuracy.
 See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations and next steps.
 
 ## Documents
@@ -14,7 +14,7 @@ See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations 
 - [Required ML plan](LAB_ACTIVITY_ML_PLAN.md): training/evaluation requirement; catalog must be reconciled with the current application.
 - [Context](CONTEXT.md) and [agent instructions](AGENTS.md).
 - [A wiring](docs/ESP32_A_WIRING.md), [A status](ESP32_A_STATUS.md), [A serial/radio contract](contracts/serial_protocol.md).
-- [B bench guide](hardware/README.md) and [B contract](hardware/PROTOCOL.md). Contracts are currently incompatible.
+- [Board A connection guide](docs/ESP32_A_CONNECTION_GUIDE.md), [B guide](hardware/README.md); both boards use the [A serial/radio contract](contracts/serial_protocol.md).
 
 ## Application
 
@@ -46,7 +46,7 @@ pio run -d firmware -e esp32-a -e esp32-a-enroll
 PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with pytest --with httpx python -m pytest backend/tests -q
 ```
 
-From `hardware/host/`: `python3 -m unittest test_person_b`. From `frontend/`: `npm run build` after installing dependencies. Detailed results are in the progress report.
+From `frontend/`: `npm run build` after installing dependencies. Detailed results are in the progress report.
 
 ## Hardware utilities
 
@@ -63,6 +63,6 @@ pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0
 
 `pio device monitor --port /dev/ttyUSB0 --baud 115200` shows raw output without host sync. Run `pio pkg install -d firmware` before native C++ checks on a fresh checkout.
 
-B bench commands (from `hardware/host/`): `python3 controller.py --sim`, `python3 controller.py --port <port>`, `python3 hw_check.py <port>`. Real serial needs pyserial. Board B flashing/core instructions are in its guide. Do not connect the unchanged A and B implementations expecting protocol compatibility, or run a bench controller alongside the backend authority.
+Board B bench check: `python hardware/tools/check_board_b.py <port>`. Full demo with both boards: start the backend with `BLACKOUT_GATEWAY_PORT=<board A port>` or use Connect on the Classrooms page, as in the [connection guide](docs/ESP32_A_CONNECTION_GUIDE.md).
 
 Local planning/reuse research, judge critique, notice drafts, private credentials and historical archives stay outside this repository. Existing reuse recommendations remain unchanged; preserve required license notices when incorporating upstream code.

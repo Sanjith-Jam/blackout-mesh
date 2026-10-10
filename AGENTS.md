@@ -30,11 +30,11 @@ Spec: `PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `PRIORITYGRID_FINAL_
 For utility dependencies: `python3 -m venv .venv`, then `.venv/bin/python -m pip install pyserial`.
 Run `pio pkg install -d firmware` before host C++ checks on a fresh checkout.
 
-Hardware B commands (run from `hardware/host/`; current USB bench only):
+Hardware B commands (from repository root):
 
-- `python3 -m unittest test_person_b` — simulated B protocol/allocator/fault checks.
-- `python3 controller.py --sim` or `--port <port>` — bench controller.
-- `python3 hw_check.py <port>` — connected B bench check; physical access required.
+- `python hardware/tools/check_board_b.py <port>` — USB bench check of board B on contract v2 (no board A needed).
+- Board B flashing guide and toolchain: `hardware/README.md`. Full A+B demo: `docs/ESP32_A_CONNECTION_GUIDE.md`.
+- `BLACKOUT_GATEWAY_PORT=<board A port>` when starting the backend (or POST `/api/v1/hardware/connect`) connects the board A gateway bridge.
 - Board B flashing guide and toolchain: `hardware/README.md`.
 
 Application checks (from repo root):
@@ -44,7 +44,7 @@ Application checks (from repo root):
 - `PYTHONPATH=backend python -m benchmarks.diagnosis.run [--split dev|calibration]` — diagnosis benchmark on development data; held-out needs `--unseal` and is reserved for the final frozen evaluation (see `backend/benchmarks/diagnosis/PROTOCOL.md`).
 - `PYTHONPATH=backend python -m benchmarks.run_allocation` — allocation benchmark; writes `backend/benchmarks/results/allocation_report.{json,md}`, exits non-zero on any constraint violation.
 
-A and B currently use incompatible v2 codecs and serial envelopes. Do not claim a functioning bridge until a coordinated contract change passes both suites and physical acceptance.
+A and B both use contract v2 (`contracts/serial_protocol.md`); board B's `protocol.h` is a byte copy of board A's (enforced by `backend/tests/test_hardware_files.py`). The laptop side is `backend/app/hardware/gateway.py`. Physical end-to-end acceptance with both boards is still to be recorded.
 
 ## Workflow: small commits
 
