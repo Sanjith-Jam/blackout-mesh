@@ -274,7 +274,7 @@
      {
       "feeder": "A",
       "id": "L2",
-      "name": "Water Pump",
+      "name": "Water Pump & HVAC",
       "tier": "T2",
       "watts": 3000,
       "zone": "hospital"
@@ -409,7 +409,7 @@
   },
   "served_w": 8000
  },
- "config_hash": "e7cb835f",
+ "config_hash": "157a248c",
  "contract": {
   "campus_totals": {
    "capacity_w": 14000,
@@ -418,14 +418,14 @@
   },
   "identity": {
    "catalog_version": "1.0",
-   "config_hash": "e7cb835f",
+   "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:27:52.818896+00:00",
+   "observation_time": "2026-10-10T01:48:49.143155+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
    "site_id": "Default Campus",
-   "state_revision": 5
+   "state_revision": 9
   },
   "zone_totals": {
    "classroom": {
@@ -715,7 +715,7 @@
    "indicator_confirmed": null,
    "model_reason": "Served by allocation policy",
    "modeled_served": true,
-   "name": "Water Pump",
+   "name": "Water Pump & HVAC",
    "requested": true,
    "tier": "T2",
    "watts": 3000
@@ -757,7 +757,7 @@
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 5,
+  "revision": 9,
   "run_id": "<volatile>"
  },
  "source": {

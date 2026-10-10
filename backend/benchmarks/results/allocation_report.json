@@ -1,5 +1,5 @@
 {
- "benchmark_version": "alloc-bench-2026-10-10.1",
+ "benchmark_version": "alloc-bench-2026-10-10.2",
  "safety_policy_version": "safety-2026-10-10.1",
  "step_s": 5.0,
  "duration_s": 2400,
@@ -141,6 +141,63 @@
    "deployable": true,
    "input_digest": "e3fb1626a67b70d06601fad2d9c5d3edc08b1225ce678dcf174a12fa8fb111f2",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 220.694,
+   "occupied_service_fraction": 0.9912,
+   "occupied_requested_s": 1705.0,
+   "worst_room_starvation_s": 15.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5133.333,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 0,
+   "policy": "proposed[validation_rates]",
+   "deployable": true,
+   "input_digest": "e3fb1626a67b70d06601fad2d9c5d3edc08b1225ce678dcf174a12fa8fb111f2",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 216.806,
+   "occupied_service_fraction": 0.9853,
+   "occupied_requested_s": 1705.0,
+   "worst_room_starvation_s": 25.0,
+   "switching_count": 18,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5111.111,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 0,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "e3fb1626a67b70d06601fad2d9c5d3edc08b1225ce678dcf174a12fa8fb111f2",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 167.222,
+   "occupied_service_fraction": 0.9589,
+   "occupied_requested_s": 1705.0,
+   "worst_room_starvation_s": 70.0,
+   "switching_count": 22,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5031.944,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "e3fb1626a67b70d06601fad2d9c5d3edc08b1225ce678dcf174a12fa8fb111f2",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 218.75,
    "occupied_service_fraction": 0.9971,
    "occupied_requested_s": 1705.0,
@@ -156,7 +213,7 @@
   {
    "scenario": "shortage_6kw",
    "seed": 0,
-   "policy": "proposed[validation_rates]",
+   "policy": "proposed_no_dwell[validation_rates]",
    "deployable": true,
    "input_digest": "e3fb1626a67b70d06601fad2d9c5d3edc08b1225ce678dcf174a12fa8fb111f2",
    "critical_unmet_wh": 0.0,
@@ -175,7 +232,7 @@
   {
    "scenario": "shortage_6kw",
    "seed": 0,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "e3fb1626a67b70d06601fad2d9c5d3edc08b1225ce678dcf174a12fa8fb111f2",
    "critical_unmet_wh": 0.0,
@@ -331,6 +388,63 @@
    "deployable": true,
    "input_digest": "6d5f78e6643913e8a23773fc004a378372e3b56d3846acdefcb319754d13b5db",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 274.167,
+   "occupied_service_fraction": 0.7515,
+   "occupied_requested_s": 5150.0,
+   "worst_room_starvation_s": 780.0,
+   "switching_count": 26,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6981.944,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "6d5f78e6643913e8a23773fc004a378372e3b56d3846acdefcb319754d13b5db",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 261.528,
+   "occupied_service_fraction": 0.7641,
+   "occupied_requested_s": 5150.0,
+   "worst_room_starvation_s": 780.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7001.389,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "6d5f78e6643913e8a23773fc004a378372e3b56d3846acdefcb319754d13b5db",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 269.306,
+   "occupied_service_fraction": 0.7563,
+   "occupied_requested_s": 5150.0,
+   "worst_room_starvation_s": 780.0,
+   "switching_count": 24,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6979.167,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "6d5f78e6643913e8a23773fc004a378372e3b56d3846acdefcb319754d13b5db",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 293.611,
    "occupied_service_fraction": 0.732,
    "occupied_requested_s": 5150.0,
@@ -464,6 +578,63 @@
    "deployable": true,
    "input_digest": "3a9d553c75edf570768a50ddeb7238a7764b192d8b2be27237c6485d88207fe6",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 178.889,
+   "occupied_service_fraction": 0.7879,
+   "occupied_requested_s": 4315.0,
+   "worst_room_starvation_s": 910.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5770.833,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 2,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "3a9d553c75edf570768a50ddeb7238a7764b192d8b2be27237c6485d88207fe6",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 200.278,
+   "occupied_service_fraction": 0.7625,
+   "occupied_requested_s": 4315.0,
+   "worst_room_starvation_s": 910.0,
+   "switching_count": 18,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5776.389,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "3a9d553c75edf570768a50ddeb7238a7764b192d8b2be27237c6485d88207fe6",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 178.889,
+   "occupied_service_fraction": 0.7879,
+   "occupied_requested_s": 4315.0,
+   "worst_room_starvation_s": 910.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5770.833,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "3a9d553c75edf570768a50ddeb7238a7764b192d8b2be27237c6485d88207fe6",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 182.778,
    "occupied_service_fraction": 0.7833,
    "occupied_requested_s": 4315.0,
@@ -479,7 +650,7 @@
   {
    "scenario": "shortage_6kw",
    "seed": 2,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "3a9d553c75edf570768a50ddeb7238a7764b192d8b2be27237c6485d88207fe6",
    "critical_unmet_wh": 0.0,
@@ -616,6 +787,63 @@
    "deployable": true,
    "input_digest": "da22a19c1590ea31e5ca33ba40d9cb3b8371ab48fe19c9cc3074da5126250057",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 266.389,
+   "occupied_service_fraction": 0.8555,
+   "occupied_requested_s": 3080.0,
+   "worst_room_starvation_s": 180.0,
+   "switching_count": 20,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5709.722,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 3,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "da22a19c1590ea31e5ca33ba40d9cb3b8371ab48fe19c9cc3074da5126250057",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 272.222,
+   "occupied_service_fraction": 0.8019,
+   "occupied_requested_s": 3080.0,
+   "worst_room_starvation_s": 215.0,
+   "switching_count": 32,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5693.056,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "da22a19c1590ea31e5ca33ba40d9cb3b8371ab48fe19c9cc3074da5126250057",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 259.583,
+   "occupied_service_fraction": 0.8669,
+   "occupied_requested_s": 3080.0,
+   "worst_room_starvation_s": 410.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5729.167,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "da22a19c1590ea31e5ca33ba40d9cb3b8371ab48fe19c9cc3074da5126250057",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 267.361,
    "occupied_service_fraction": 0.8539,
    "occupied_requested_s": 3080.0,
@@ -631,7 +859,7 @@
   {
    "scenario": "shortage_6kw",
    "seed": 3,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "da22a19c1590ea31e5ca33ba40d9cb3b8371ab48fe19c9cc3074da5126250057",
    "critical_unmet_wh": 0.0,
@@ -749,6 +977,63 @@
    "deployable": true,
    "input_digest": "014a8ee2d147dd59c6bfc48b5a84c7e350fc0e95c91400c1fe489fa3eb14b944",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 182.778,
+   "occupied_service_fraction": 0.8734,
+   "occupied_requested_s": 4265.0,
+   "worst_room_starvation_s": 520.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6751.389,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 4,
+   "policy": "proposed[validation_rates]",
+   "deployable": true,
+   "input_digest": "014a8ee2d147dd59c6bfc48b5a84c7e350fc0e95c91400c1fe489fa3eb14b944",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 177.917,
+   "occupied_service_fraction": 0.8769,
+   "occupied_requested_s": 4265.0,
+   "worst_room_starvation_s": 520.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6748.611,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 4,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "014a8ee2d147dd59c6bfc48b5a84c7e350fc0e95c91400c1fe489fa3eb14b944",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 177.917,
+   "occupied_service_fraction": 0.8769,
+   "occupied_requested_s": 4265.0,
+   "worst_room_starvation_s": 520.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6748.611,
+   "steps": 480
+  },
+  {
+   "scenario": "shortage_6kw",
+   "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "014a8ee2d147dd59c6bfc48b5a84c7e350fc0e95c91400c1fe489fa3eb14b944",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 180.833,
    "occupied_service_fraction": 0.8757,
    "occupied_requested_s": 4265.0,
@@ -764,7 +1049,7 @@
   {
    "scenario": "shortage_6kw",
    "seed": 4,
-   "policy": "proposed[validation_rates]",
+   "policy": "proposed_no_dwell[validation_rates]",
    "deployable": true,
    "input_digest": "014a8ee2d147dd59c6bfc48b5a84c7e350fc0e95c91400c1fe489fa3eb14b944",
    "critical_unmet_wh": 0.0,
@@ -783,7 +1068,7 @@
   {
    "scenario": "shortage_6kw",
    "seed": 4,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "014a8ee2d147dd59c6bfc48b5a84c7e350fc0e95c91400c1fe489fa3eb14b944",
    "critical_unmet_wh": 0.0,
@@ -954,6 +1239,63 @@
   {
    "scenario": "deep_shortage_4kw",
    "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "f1dcf74b30a4f00ca59093cd40b145afaf43b26f566d1b932bdf3e0afda066aa",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 398.611,
+   "occupied_service_fraction": 0.7105,
+   "occupied_requested_s": 4370.0,
+   "worst_room_starvation_s": 680.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5690.278,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 0,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "f1dcf74b30a4f00ca59093cd40b145afaf43b26f566d1b932bdf3e0afda066aa",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 398.611,
+   "occupied_service_fraction": 0.7105,
+   "occupied_requested_s": 4370.0,
+   "worst_room_starvation_s": 680.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5690.278,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 0,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "f1dcf74b30a4f00ca59093cd40b145afaf43b26f566d1b932bdf3e0afda066aa",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 398.611,
+   "occupied_service_fraction": 0.7105,
+   "occupied_requested_s": 4370.0,
+   "worst_room_starvation_s": 680.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5690.278,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 0,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "f1dcf74b30a4f00ca59093cd40b145afaf43b26f566d1b932bdf3e0afda066aa",
@@ -1106,6 +1448,63 @@
   {
    "scenario": "deep_shortage_4kw",
    "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "eb1259d94ca7b5740be36635184e3262a1d98d98908b43ef74e626724830ffa3",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 239.167,
+   "occupied_service_fraction": 0.502,
+   "occupied_requested_s": 2470.0,
+   "worst_room_starvation_s": 840.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 4568.056,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "eb1259d94ca7b5740be36635184e3262a1d98d98908b43ef74e626724830ffa3",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 239.167,
+   "occupied_service_fraction": 0.502,
+   "occupied_requested_s": 2470.0,
+   "worst_room_starvation_s": 840.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 4568.056,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "eb1259d94ca7b5740be36635184e3262a1d98d98908b43ef74e626724830ffa3",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 239.167,
+   "occupied_service_fraction": 0.502,
+   "occupied_requested_s": 2470.0,
+   "worst_room_starvation_s": 840.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 4568.056,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 1,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "eb1259d94ca7b5740be36635184e3262a1d98d98908b43ef74e626724830ffa3",
@@ -1258,6 +1657,63 @@
   {
    "scenario": "deep_shortage_4kw",
    "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "a53cfaeb0d19875cb81743ca584df1166f728b1ba6751456efcdde06bb1f6a07",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 236.25,
+   "occupied_service_fraction": 0.8656,
+   "occupied_requested_s": 2120.0,
+   "worst_room_starvation_s": 210.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5309.722,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "a53cfaeb0d19875cb81743ca584df1166f728b1ba6751456efcdde06bb1f6a07",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 236.25,
+   "occupied_service_fraction": 0.8656,
+   "occupied_requested_s": 2120.0,
+   "worst_room_starvation_s": 210.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5309.722,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 2,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "a53cfaeb0d19875cb81743ca584df1166f728b1ba6751456efcdde06bb1f6a07",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 236.25,
+   "occupied_service_fraction": 0.8656,
+   "occupied_requested_s": 2120.0,
+   "worst_room_starvation_s": 210.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5309.722,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 2,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "a53cfaeb0d19875cb81743ca584df1166f728b1ba6751456efcdde06bb1f6a07",
@@ -1410,6 +1866,63 @@
   {
    "scenario": "deep_shortage_4kw",
    "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "85776633d3e22bc6b2c8f0175dd38352400f364c69d771f3f8111ff0a2770b70",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 334.444,
+   "occupied_service_fraction": 0.586,
+   "occupied_requested_s": 2210.0,
+   "worst_room_starvation_s": 910.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5281.944,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "85776633d3e22bc6b2c8f0175dd38352400f364c69d771f3f8111ff0a2770b70",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 334.444,
+   "occupied_service_fraction": 0.586,
+   "occupied_requested_s": 2210.0,
+   "worst_room_starvation_s": 910.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5281.944,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 3,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "85776633d3e22bc6b2c8f0175dd38352400f364c69d771f3f8111ff0a2770b70",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 334.444,
+   "occupied_service_fraction": 0.586,
+   "occupied_requested_s": 2210.0,
+   "worst_room_starvation_s": 910.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5281.944,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 3,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "85776633d3e22bc6b2c8f0175dd38352400f364c69d771f3f8111ff0a2770b70",
@@ -1562,6 +2075,63 @@
   {
    "scenario": "deep_shortage_4kw",
    "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "064ce34ed76dc6a8fbc18ea39f6394bcb5ac255ef0e923021555c6ccdf469ee1",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 523.056,
+   "occupied_service_fraction": 0.5895,
+   "occupied_requested_s": 3605.0,
+   "worst_room_starvation_s": 860.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6323.611,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 4,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "064ce34ed76dc6a8fbc18ea39f6394bcb5ac255ef0e923021555c6ccdf469ee1",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 523.056,
+   "occupied_service_fraction": 0.5895,
+   "occupied_requested_s": 3605.0,
+   "worst_room_starvation_s": 860.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6323.611,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 4,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "064ce34ed76dc6a8fbc18ea39f6394bcb5ac255ef0e923021555c6ccdf469ee1",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 523.056,
+   "occupied_service_fraction": 0.5895,
+   "occupied_requested_s": 3605.0,
+   "worst_room_starvation_s": 860.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6323.611,
+   "steps": 480
+  },
+  {
+   "scenario": "deep_shortage_4kw",
+   "seed": 4,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "064ce34ed76dc6a8fbc18ea39f6394bcb5ac255ef0e923021555c6ccdf469ee1",
@@ -1714,6 +2284,63 @@
   {
    "scenario": "feeder_b_loss",
    "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "1c420d194600484a895ae518409f4a0038395bae9e1ca016a5ea8368423a2693",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 332.5,
+   "occupied_service_fraction": 0.5597,
+   "occupied_requested_s": 3100.0,
+   "worst_room_starvation_s": 530.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6055.556,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 0,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "1c420d194600484a895ae518409f4a0038395bae9e1ca016a5ea8368423a2693",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 332.5,
+   "occupied_service_fraction": 0.5597,
+   "occupied_requested_s": 3100.0,
+   "worst_room_starvation_s": 530.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6055.556,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 0,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "1c420d194600484a895ae518409f4a0038395bae9e1ca016a5ea8368423a2693",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 332.5,
+   "occupied_service_fraction": 0.5597,
+   "occupied_requested_s": 3100.0,
+   "worst_room_starvation_s": 530.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6055.556,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 0,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "1c420d194600484a895ae518409f4a0038395bae9e1ca016a5ea8368423a2693",
@@ -1866,6 +2493,63 @@
   {
    "scenario": "feeder_b_loss",
    "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "3d74c093a2b0a01acf52dbe5f1a5365a872258de4d569833497877eb119cd3b5",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 355.833,
+   "occupied_service_fraction": 0.7227,
+   "occupied_requested_s": 2200.0,
+   "worst_room_starvation_s": 610.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7238.889,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 1,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "3d74c093a2b0a01acf52dbe5f1a5365a872258de4d569833497877eb119cd3b5",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 355.833,
+   "occupied_service_fraction": 0.7227,
+   "occupied_requested_s": 2200.0,
+   "worst_room_starvation_s": 610.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7238.889,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 1,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "3d74c093a2b0a01acf52dbe5f1a5365a872258de4d569833497877eb119cd3b5",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 355.833,
+   "occupied_service_fraction": 0.7227,
+   "occupied_requested_s": 2200.0,
+   "worst_room_starvation_s": 610.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7238.889,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 1,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "3d74c093a2b0a01acf52dbe5f1a5365a872258de4d569833497877eb119cd3b5",
@@ -2018,6 +2702,63 @@
   {
    "scenario": "feeder_b_loss",
    "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "7583a653d563b1a2b83c67243cbd2de1a123288f1fe7d4ece59a23276508d86c",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 58.333,
+   "occupied_service_fraction": 0.8585,
+   "occupied_requested_s": 2050.0,
+   "worst_room_starvation_s": 290.0,
+   "switching_count": 4,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5383.333,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "7583a653d563b1a2b83c67243cbd2de1a123288f1fe7d4ece59a23276508d86c",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 58.333,
+   "occupied_service_fraction": 0.8585,
+   "occupied_requested_s": 2050.0,
+   "worst_room_starvation_s": 290.0,
+   "switching_count": 4,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5383.333,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 2,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "7583a653d563b1a2b83c67243cbd2de1a123288f1fe7d4ece59a23276508d86c",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 58.333,
+   "occupied_service_fraction": 0.8585,
+   "occupied_requested_s": 2050.0,
+   "worst_room_starvation_s": 290.0,
+   "switching_count": 4,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5383.333,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 2,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "7583a653d563b1a2b83c67243cbd2de1a123288f1fe7d4ece59a23276508d86c",
@@ -2170,6 +2911,63 @@
   {
    "scenario": "feeder_b_loss",
    "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "0b1e56bf24a78c6bd97dacff709760daf146e74fb23d6e376bed7795cb007727",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 241.111,
+   "occupied_service_fraction": 0.6579,
+   "occupied_requested_s": 3625.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6269.444,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "0b1e56bf24a78c6bd97dacff709760daf146e74fb23d6e376bed7795cb007727",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 241.111,
+   "occupied_service_fraction": 0.6579,
+   "occupied_requested_s": 3625.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6269.444,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 3,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "0b1e56bf24a78c6bd97dacff709760daf146e74fb23d6e376bed7795cb007727",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 241.111,
+   "occupied_service_fraction": 0.6579,
+   "occupied_requested_s": 3625.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6269.444,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 3,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "0b1e56bf24a78c6bd97dacff709760daf146e74fb23d6e376bed7795cb007727",
@@ -2322,6 +3120,63 @@
   {
    "scenario": "feeder_b_loss",
    "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "fd54b573de78333674b4280689e25163fc2d4ed1c321b08fb27d36caf5ee8034",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 225.556,
+   "occupied_service_fraction": 0.7737,
+   "occupied_requested_s": 3955.0,
+   "worst_room_starvation_s": 545.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 5.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6444.444,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 4,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "fd54b573de78333674b4280689e25163fc2d4ed1c321b08fb27d36caf5ee8034",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 225.556,
+   "occupied_service_fraction": 0.7737,
+   "occupied_requested_s": 3955.0,
+   "worst_room_starvation_s": 545.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 5.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6444.444,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 4,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "fd54b573de78333674b4280689e25163fc2d4ed1c321b08fb27d36caf5ee8034",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 225.556,
+   "occupied_service_fraction": 0.7737,
+   "occupied_requested_s": 3955.0,
+   "worst_room_starvation_s": 545.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 5.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6444.444,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_b_loss",
+   "seed": 4,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "fd54b573de78333674b4280689e25163fc2d4ed1c321b08fb27d36caf5ee8034",
@@ -2474,6 +3329,63 @@
   {
    "scenario": "feeder_a_loss",
    "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "edb36e4f1a823ecd92dfd2eca77ee51d3615687fffe7d9ca6e343630139c163b",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.0,
+   "occupied_service_fraction": 1.0,
+   "occupied_requested_s": 5855.0,
+   "worst_room_starvation_s": 0.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8309.722,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 0,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "edb36e4f1a823ecd92dfd2eca77ee51d3615687fffe7d9ca6e343630139c163b",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.0,
+   "occupied_service_fraction": 1.0,
+   "occupied_requested_s": 5855.0,
+   "worst_room_starvation_s": 0.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8309.722,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 0,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "edb36e4f1a823ecd92dfd2eca77ee51d3615687fffe7d9ca6e343630139c163b",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.0,
+   "occupied_service_fraction": 1.0,
+   "occupied_requested_s": 5855.0,
+   "worst_room_starvation_s": 0.0,
+   "switching_count": 7,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8309.722,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 0,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "edb36e4f1a823ecd92dfd2eca77ee51d3615687fffe7d9ca6e343630139c163b",
@@ -2626,6 +3538,63 @@
   {
    "scenario": "feeder_a_loss",
    "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "5807e78a11991fbc6198acdc164094d62e70702733f9a78750c9b8aefa9a09d4",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 1.944,
+   "occupied_service_fraction": 0.9975,
+   "occupied_requested_s": 4020.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6445.833,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 1,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "5807e78a11991fbc6198acdc164094d62e70702733f9a78750c9b8aefa9a09d4",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 1.944,
+   "occupied_service_fraction": 0.9975,
+   "occupied_requested_s": 4020.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6445.833,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 1,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "5807e78a11991fbc6198acdc164094d62e70702733f9a78750c9b8aefa9a09d4",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 1.944,
+   "occupied_service_fraction": 0.9975,
+   "occupied_requested_s": 4020.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6445.833,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 1,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "5807e78a11991fbc6198acdc164094d62e70702733f9a78750c9b8aefa9a09d4",
@@ -2778,6 +3747,63 @@
   {
    "scenario": "feeder_a_loss",
    "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "5575f06ec5ce781ad4ec02810ea0ea4a2a19fee0ab111206c908169982abd72b",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.0,
+   "occupied_service_fraction": 1.0,
+   "occupied_requested_s": 4420.0,
+   "worst_room_starvation_s": 0.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8315.278,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "5575f06ec5ce781ad4ec02810ea0ea4a2a19fee0ab111206c908169982abd72b",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.0,
+   "occupied_service_fraction": 1.0,
+   "occupied_requested_s": 4420.0,
+   "worst_room_starvation_s": 0.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8315.278,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 2,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "5575f06ec5ce781ad4ec02810ea0ea4a2a19fee0ab111206c908169982abd72b",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.0,
+   "occupied_service_fraction": 1.0,
+   "occupied_requested_s": 4420.0,
+   "worst_room_starvation_s": 0.0,
+   "switching_count": 6,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8315.278,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 2,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "5575f06ec5ce781ad4ec02810ea0ea4a2a19fee0ab111206c908169982abd72b",
@@ -2930,6 +3956,63 @@
   {
    "scenario": "feeder_a_loss",
    "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "90932e34ba081a49806a56db5e614c0cb1bf67320b2db8bc7aec615e5f660f9d",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 1.944,
+   "occupied_service_fraction": 0.9964,
+   "occupied_requested_s": 1395.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6190.278,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "90932e34ba081a49806a56db5e614c0cb1bf67320b2db8bc7aec615e5f660f9d",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 1.944,
+   "occupied_service_fraction": 0.9964,
+   "occupied_requested_s": 1395.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6190.278,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 3,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "90932e34ba081a49806a56db5e614c0cb1bf67320b2db8bc7aec615e5f660f9d",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 1.944,
+   "occupied_service_fraction": 0.9964,
+   "occupied_requested_s": 1395.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6190.278,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 3,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "90932e34ba081a49806a56db5e614c0cb1bf67320b2db8bc7aec615e5f660f9d",
@@ -3082,6 +4165,63 @@
   {
    "scenario": "feeder_a_loss",
    "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "9efc3bc77918e8a1b5cb7d054d19aaa7a12f79770ad3c73d11c4a4eab87cd0a6",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.972,
+   "occupied_service_fraction": 0.998,
+   "occupied_requested_s": 2560.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 4812.5,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 4,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "9efc3bc77918e8a1b5cb7d054d19aaa7a12f79770ad3c73d11c4a4eab87cd0a6",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.972,
+   "occupied_service_fraction": 0.998,
+   "occupied_requested_s": 2560.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 4812.5,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 4,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "9efc3bc77918e8a1b5cb7d054d19aaa7a12f79770ad3c73d11c4a4eab87cd0a6",
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.972,
+   "occupied_service_fraction": 0.998,
+   "occupied_requested_s": 2560.0,
+   "worst_room_starvation_s": 5.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 4812.5,
+   "steps": 480
+  },
+  {
+   "scenario": "feeder_a_loss",
+   "seed": 4,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "9efc3bc77918e8a1b5cb7d054d19aaa7a12f79770ad3c73d11c4a4eab87cd0a6",
@@ -3234,6 +4374,63 @@
   {
    "scenario": "insufficient_critical_2kw",
    "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "23171053a388fb2999ac9058bf6bedd6c580b6ceebbc8d73cb72aab7b1dc8e79",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 272.222,
+   "occupied_service_fraction": 0.6947,
+   "occupied_requested_s": 3800.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6276.389,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 0,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "23171053a388fb2999ac9058bf6bedd6c580b6ceebbc8d73cb72aab7b1dc8e79",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 272.222,
+   "occupied_service_fraction": 0.6947,
+   "occupied_requested_s": 3800.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6276.389,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 0,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "23171053a388fb2999ac9058bf6bedd6c580b6ceebbc8d73cb72aab7b1dc8e79",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 272.222,
+   "occupied_service_fraction": 0.6947,
+   "occupied_requested_s": 3800.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6276.389,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 0,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "23171053a388fb2999ac9058bf6bedd6c580b6ceebbc8d73cb72aab7b1dc8e79",
@@ -3386,6 +4583,63 @@
   {
    "scenario": "insufficient_critical_2kw",
    "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "f8df5cead08ff146f610c38ab53207317059e056d4c3f4f30475ab6a3802280e",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 195.417,
+   "occupied_service_fraction": 0.8155,
+   "occupied_requested_s": 2060.0,
+   "worst_room_starvation_s": 380.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6629.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "f8df5cead08ff146f610c38ab53207317059e056d4c3f4f30475ab6a3802280e",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 195.417,
+   "occupied_service_fraction": 0.8155,
+   "occupied_requested_s": 2060.0,
+   "worst_room_starvation_s": 380.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6629.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 1,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "f8df5cead08ff146f610c38ab53207317059e056d4c3f4f30475ab6a3802280e",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 195.417,
+   "occupied_service_fraction": 0.8155,
+   "occupied_requested_s": 2060.0,
+   "worst_room_starvation_s": 380.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6629.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 1,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "f8df5cead08ff146f610c38ab53207317059e056d4c3f4f30475ab6a3802280e",
@@ -3538,6 +4792,63 @@
   {
    "scenario": "insufficient_critical_2kw",
    "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "52a5c802c08123e9aefc8638702968dbc29145178604aebf717c9969192d9fa9",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 297.5,
+   "occupied_service_fraction": 0.6832,
+   "occupied_requested_s": 4530.0,
+   "worst_room_starvation_s": 620.0,
+   "switching_count": 11,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6354.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "52a5c802c08123e9aefc8638702968dbc29145178604aebf717c9969192d9fa9",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 297.5,
+   "occupied_service_fraction": 0.6832,
+   "occupied_requested_s": 4530.0,
+   "worst_room_starvation_s": 620.0,
+   "switching_count": 11,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6354.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 2,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "52a5c802c08123e9aefc8638702968dbc29145178604aebf717c9969192d9fa9",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 297.5,
+   "occupied_service_fraction": 0.6832,
+   "occupied_requested_s": 4530.0,
+   "worst_room_starvation_s": 620.0,
+   "switching_count": 11,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6354.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 2,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "52a5c802c08123e9aefc8638702968dbc29145178604aebf717c9969192d9fa9",
@@ -3690,6 +5001,63 @@
   {
    "scenario": "insufficient_critical_2kw",
    "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "2024150a98ac05dbea0dff2341839966db1f3ed7a84c8b31b7e5213efb8087a4",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 226.528,
+   "occupied_service_fraction": 0.6336,
+   "occupied_requested_s": 3180.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5095.833,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "2024150a98ac05dbea0dff2341839966db1f3ed7a84c8b31b7e5213efb8087a4",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 226.528,
+   "occupied_service_fraction": 0.6336,
+   "occupied_requested_s": 3180.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5095.833,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 3,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "2024150a98ac05dbea0dff2341839966db1f3ed7a84c8b31b7e5213efb8087a4",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 226.528,
+   "occupied_service_fraction": 0.6336,
+   "occupied_requested_s": 3180.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 8,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5095.833,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 3,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "2024150a98ac05dbea0dff2341839966db1f3ed7a84c8b31b7e5213efb8087a4",
@@ -3842,6 +5210,63 @@
   {
    "scenario": "insufficient_critical_2kw",
    "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "bb0408a1fd1ed79a180e4293420d7d1b0720d7fd869f0535c2f9173aa44f77d9",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 167.222,
+   "occupied_service_fraction": 0.7667,
+   "occupied_requested_s": 3665.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5354.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 4,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "bb0408a1fd1ed79a180e4293420d7d1b0720d7fd869f0535c2f9173aa44f77d9",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 167.222,
+   "occupied_service_fraction": 0.7667,
+   "occupied_requested_s": 3665.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5354.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 4,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "bb0408a1fd1ed79a180e4293420d7d1b0720d7fd869f0535c2f9173aa44f77d9",
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 167.222,
+   "occupied_service_fraction": 0.7667,
+   "occupied_requested_s": 3665.0,
+   "worst_room_starvation_s": 615.0,
+   "switching_count": 10,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5354.167,
+   "steps": 480
+  },
+  {
+   "scenario": "insufficient_critical_2kw",
+   "seed": 4,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "bb0408a1fd1ed79a180e4293420d7d1b0720d7fd869f0535c2f9173aa44f77d9",
@@ -3994,6 +5419,63 @@
   {
    "scenario": "zero_supply",
    "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "bf9d8d1f3a50f380ac64459add2438cadaf5609e373fa461641c21a0a15d3ec8",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 126.389,
+   "occupied_service_fraction": 0.7619,
+   "occupied_requested_s": 2730.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 13,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6845.833,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 0,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "bf9d8d1f3a50f380ac64459add2438cadaf5609e373fa461641c21a0a15d3ec8",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 126.389,
+   "occupied_service_fraction": 0.7619,
+   "occupied_requested_s": 2730.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 13,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6845.833,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 0,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "bf9d8d1f3a50f380ac64459add2438cadaf5609e373fa461641c21a0a15d3ec8",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 126.389,
+   "occupied_service_fraction": 0.7619,
+   "occupied_requested_s": 2730.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 13,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6845.833,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 0,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "bf9d8d1f3a50f380ac64459add2438cadaf5609e373fa461641c21a0a15d3ec8",
@@ -4146,6 +5628,63 @@
   {
    "scenario": "zero_supply",
    "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "10f479bc5f63e872a0a32603f712122f1d8d44557287958d60f77e390d2240e2",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 150.694,
+   "occupied_service_fraction": 0.8394,
+   "occupied_requested_s": 4795.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 14,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7301.389,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 1,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "10f479bc5f63e872a0a32603f712122f1d8d44557287958d60f77e390d2240e2",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 150.694,
+   "occupied_service_fraction": 0.8394,
+   "occupied_requested_s": 4795.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 14,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7301.389,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 1,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "10f479bc5f63e872a0a32603f712122f1d8d44557287958d60f77e390d2240e2",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 150.694,
+   "occupied_service_fraction": 0.8394,
+   "occupied_requested_s": 4795.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 14,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7301.389,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 1,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "10f479bc5f63e872a0a32603f712122f1d8d44557287958d60f77e390d2240e2",
@@ -4298,6 +5837,63 @@
   {
    "scenario": "zero_supply",
    "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "a438bb1eb7ab6f5aefb1289b3a5c5085385d9935457c515999dc3c19281f4e9a",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 126.389,
+   "occupied_service_fraction": 0.8403,
+   "occupied_requested_s": 4070.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 13,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6845.833,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "a438bb1eb7ab6f5aefb1289b3a5c5085385d9935457c515999dc3c19281f4e9a",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 126.389,
+   "occupied_service_fraction": 0.8403,
+   "occupied_requested_s": 4070.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 13,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6845.833,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 2,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "a438bb1eb7ab6f5aefb1289b3a5c5085385d9935457c515999dc3c19281f4e9a",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 126.389,
+   "occupied_service_fraction": 0.8403,
+   "occupied_requested_s": 4070.0,
+   "worst_room_starvation_s": 325.0,
+   "switching_count": 13,
+   "recovery_latency_s_max": 25.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6845.833,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 2,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "a438bb1eb7ab6f5aefb1289b3a5c5085385d9935457c515999dc3c19281f4e9a",
@@ -4450,6 +6046,63 @@
   {
    "scenario": "zero_supply",
    "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "4a3ea20917631738821e3c954c40f6daffc03d1289c5b3085f61e9b83a116390",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 63.194,
+   "occupied_service_fraction": 0.8667,
+   "occupied_requested_s": 2400.0,
+   "worst_room_starvation_s": 320.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5818.056,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "4a3ea20917631738821e3c954c40f6daffc03d1289c5b3085f61e9b83a116390",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 63.194,
+   "occupied_service_fraction": 0.8667,
+   "occupied_requested_s": 2400.0,
+   "worst_room_starvation_s": 320.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5818.056,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 3,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "4a3ea20917631738821e3c954c40f6daffc03d1289c5b3085f61e9b83a116390",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 63.194,
+   "occupied_service_fraction": 0.8667,
+   "occupied_requested_s": 2400.0,
+   "worst_room_starvation_s": 320.0,
+   "switching_count": 9,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5818.056,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 3,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "4a3ea20917631738821e3c954c40f6daffc03d1289c5b3085f61e9b83a116390",
@@ -4602,6 +6255,63 @@
   {
    "scenario": "zero_supply",
    "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "69c80bcd7c0058836634933169692651e77bbeedd20e02ab0b375ef8ed7ed300",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 122.5,
+   "occupied_service_fraction": 0.752,
+   "occupied_requested_s": 1230.0,
+   "worst_room_starvation_s": 300.0,
+   "switching_count": 12,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5381.944,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 4,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "69c80bcd7c0058836634933169692651e77bbeedd20e02ab0b375ef8ed7ed300",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 122.5,
+   "occupied_service_fraction": 0.752,
+   "occupied_requested_s": 1230.0,
+   "worst_room_starvation_s": 300.0,
+   "switching_count": 12,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5381.944,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 4,
+   "policy": "proposed_no_dwell[heavy_errors]",
+   "deployable": true,
+   "input_digest": "69c80bcd7c0058836634933169692651e77bbeedd20e02ab0b375ef8ed7ed300",
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 122.5,
+   "occupied_service_fraction": 0.752,
+   "occupied_requested_s": 1230.0,
+   "worst_room_starvation_s": 300.0,
+   "switching_count": 12,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 1,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 5381.944,
+   "steps": 480
+  },
+  {
+   "scenario": "zero_supply",
+   "seed": 4,
    "policy": "oracle_occupancy_upper_bound",
    "deployable": false,
    "input_digest": "69c80bcd7c0058836634933169692651e77bbeedd20e02ab0b375ef8ed7ed300",
@@ -4720,6 +6430,63 @@
    "deployable": true,
    "input_digest": "9590a607b32f2c2831b173c62f29ffb2bccf45fc9d3c2cb0f91df9b1a82c14c1",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 165.278,
+   "occupied_service_fraction": 0.984,
+   "occupied_requested_s": 4055.0,
+   "worst_room_starvation_s": 40.0,
+   "switching_count": 60,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8319.444,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 0,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "9590a607b32f2c2831b173c62f29ffb2bccf45fc9d3c2cb0f91df9b1a82c14c1",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 179.861,
+   "occupied_service_fraction": 0.9396,
+   "occupied_requested_s": 4055.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 70,
+   "recovery_latency_s_max": 20.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8280.556,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 0,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "9590a607b32f2c2831b173c62f29ffb2bccf45fc9d3c2cb0f91df9b1a82c14c1",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 165.278,
+   "occupied_service_fraction": 0.984,
+   "occupied_requested_s": 4055.0,
+   "worst_room_starvation_s": 40.0,
+   "switching_count": 60,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8319.444,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 0,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "9590a607b32f2c2831b173c62f29ffb2bccf45fc9d3c2cb0f91df9b1a82c14c1",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 175.972,
    "occupied_service_fraction": 0.9704,
    "occupied_requested_s": 4055.0,
@@ -4735,7 +6502,7 @@
   {
    "scenario": "recovery_chatter",
    "seed": 0,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "9590a607b32f2c2831b173c62f29ffb2bccf45fc9d3c2cb0f91df9b1a82c14c1",
    "critical_unmet_wh": 0.0,
@@ -4853,6 +6620,63 @@
    "deployable": true,
    "input_digest": "70f0a197054c5600c7c109c78a6956d9cec902c524c3f7a705063ecd66a631db",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 85.556,
+   "occupied_service_fraction": 0.925,
+   "occupied_requested_s": 3265.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 35,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7129.167,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 1,
+   "policy": "proposed[validation_rates]",
+   "deployable": true,
+   "input_digest": "70f0a197054c5600c7c109c78a6956d9cec902c524c3f7a705063ecd66a631db",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 77.778,
+   "occupied_service_fraction": 0.9234,
+   "occupied_requested_s": 3265.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 41,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7105.556,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 1,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "70f0a197054c5600c7c109c78a6956d9cec902c524c3f7a705063ecd66a631db",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 51.528,
+   "occupied_service_fraction": 0.925,
+   "occupied_requested_s": 3265.0,
+   "worst_room_starvation_s": 40.0,
+   "switching_count": 37,
+   "recovery_latency_s_max": 10.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 7076.389,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 1,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "70f0a197054c5600c7c109c78a6956d9cec902c524c3f7a705063ecd66a631db",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 87.5,
    "occupied_service_fraction": 0.925,
    "occupied_requested_s": 3265.0,
@@ -4868,7 +6692,7 @@
   {
    "scenario": "recovery_chatter",
    "seed": 1,
-   "policy": "proposed[validation_rates]",
+   "policy": "proposed_no_dwell[validation_rates]",
    "deployable": true,
    "input_digest": "70f0a197054c5600c7c109c78a6956d9cec902c524c3f7a705063ecd66a631db",
    "critical_unmet_wh": 0.0,
@@ -4887,7 +6711,7 @@
   {
    "scenario": "recovery_chatter",
    "seed": 1,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "70f0a197054c5600c7c109c78a6956d9cec902c524c3f7a705063ecd66a631db",
    "critical_unmet_wh": 0.0,
@@ -5006,7 +6830,7 @@
    "input_digest": "4566c5d8b42154a53978e1b3e86bba5b05c9583553dae4d91ce1d5ed30471dd8",
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 117.639,
-   "occupied_service_fraction": 0.9854,
+   "occupied_service_fraction": 0.9811,
    "occupied_requested_s": 3435.0,
    "worst_room_starvation_s": 40.0,
    "switching_count": 53,
@@ -5021,6 +6845,63 @@
    "scenario": "recovery_chatter",
    "seed": 2,
    "policy": "proposed[validation_rates]",
+   "deployable": true,
+   "input_digest": "4566c5d8b42154a53978e1b3e86bba5b05c9583553dae4d91ce1d5ed30471dd8",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 118.611,
+   "occupied_service_fraction": 0.9796,
+   "occupied_requested_s": 3435.0,
+   "worst_room_starvation_s": 35.0,
+   "switching_count": 55,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6875.0,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 2,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "4566c5d8b42154a53978e1b3e86bba5b05c9583553dae4d91ce1d5ed30471dd8",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 118.611,
+   "occupied_service_fraction": 0.9461,
+   "occupied_requested_s": 3435.0,
+   "worst_room_starvation_s": 40.0,
+   "switching_count": 55,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6875.0,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 2,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "4566c5d8b42154a53978e1b3e86bba5b05c9583553dae4d91ce1d5ed30471dd8",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 117.639,
+   "occupied_service_fraction": 0.9854,
+   "occupied_requested_s": 3435.0,
+   "worst_room_starvation_s": 40.0,
+   "switching_count": 53,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6877.778,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 2,
+   "policy": "proposed_no_dwell[validation_rates]",
    "deployable": true,
    "input_digest": "4566c5d8b42154a53978e1b3e86bba5b05c9583553dae4d91ce1d5ed30471dd8",
    "critical_unmet_wh": 0.0,
@@ -5039,7 +6920,7 @@
   {
    "scenario": "recovery_chatter",
    "seed": 2,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "4566c5d8b42154a53978e1b3e86bba5b05c9583553dae4d91ce1d5ed30471dd8",
    "critical_unmet_wh": 0.0,
@@ -5176,6 +7057,63 @@
    "deployable": true,
    "input_digest": "1e693536013bfe0da0fad5c1496185b639b41e7ce3044636ae094ac83250c69b",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 165.278,
+   "occupied_service_fraction": 0.8808,
+   "occupied_requested_s": 6125.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 60,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8319.444,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 3,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "1e693536013bfe0da0fad5c1496185b639b41e7ce3044636ae094ac83250c69b",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 171.111,
+   "occupied_service_fraction": 0.871,
+   "occupied_requested_s": 6125.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 72,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8302.778,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 3,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "1e693536013bfe0da0fad5c1496185b639b41e7ce3044636ae094ac83250c69b",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 165.278,
+   "occupied_service_fraction": 0.8808,
+   "occupied_requested_s": 6125.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 60,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 8319.444,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 3,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "1e693536013bfe0da0fad5c1496185b639b41e7ce3044636ae094ac83250c69b",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 174.028,
    "occupied_service_fraction": 0.8727,
    "occupied_requested_s": 6125.0,
@@ -5191,7 +7129,7 @@
   {
    "scenario": "recovery_chatter",
    "seed": 3,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "1e693536013bfe0da0fad5c1496185b639b41e7ce3044636ae094ac83250c69b",
    "critical_unmet_wh": 0.0,
@@ -5328,6 +7266,63 @@
    "deployable": true,
    "input_digest": "e54bca7411aea9911ca7b8849ec8cd36e12977043b6a5827bbc5f18d4179d632",
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 63.194,
+   "occupied_service_fraction": 0.9779,
+   "occupied_requested_s": 2490.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 42,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6023.611,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 4,
+   "policy": "proposed[heavy_errors]",
+   "deployable": true,
+   "input_digest": "e54bca7411aea9911ca7b8849ec8cd36e12977043b6a5827bbc5f18d4179d632",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 62.222,
+   "occupied_service_fraction": 0.9719,
+   "occupied_requested_s": 2490.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 40,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6022.222,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 4,
+   "policy": "proposed_no_dwell[perfect]",
+   "deployable": true,
+   "input_digest": "e54bca7411aea9911ca7b8849ec8cd36e12977043b6a5827bbc5f18d4179d632",
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 85.556,
+   "occupied_service_fraction": 0.9779,
+   "occupied_requested_s": 2490.0,
+   "worst_room_starvation_s": 45.0,
+   "switching_count": 38,
+   "recovery_latency_s_max": 15.0,
+   "recoveries": 10,
+   "unrecovered": 0,
+   "constraint_violations": 0,
+   "served_wh": 6072.222,
+   "steps": 480
+  },
+  {
+   "scenario": "recovery_chatter",
+   "seed": 4,
+   "policy": "proposed_no_dwell[validation_rates]",
+   "deployable": true,
+   "input_digest": "e54bca7411aea9911ca7b8849ec8cd36e12977043b6a5827bbc5f18d4179d632",
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 74.861,
    "occupied_service_fraction": 0.9779,
    "occupied_requested_s": 2490.0,
@@ -5343,7 +7338,7 @@
   {
    "scenario": "recovery_chatter",
    "seed": 4,
-   "policy": "proposed[heavy_errors]",
+   "policy": "proposed_no_dwell[heavy_errors]",
    "deployable": true,
    "input_digest": "e54bca7411aea9911ca7b8849ec8cd36e12977043b6a5827bbc5f18d4179d632",
    "critical_unmet_wh": 0.0,
@@ -5422,6 +7417,36 @@
   },
   "shortage_6kw|proposed[perfect]": {
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 220.694,
+   "occupied_service_fraction": 0.857,
+   "worst_room_starvation_s": 527.0,
+   "switching_count": 7.8,
+   "recovery_latency_s_max": 10.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "shortage_6kw|proposed[validation_rates]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 221.861,
+   "occupied_service_fraction": 0.852,
+   "worst_room_starvation_s": 483.0,
+   "switching_count": 15.0,
+   "recovery_latency_s_max": 10.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "shortage_6kw|proposed[heavy_errors]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 218.361,
+   "occupied_service_fraction": 0.83,
+   "worst_room_starvation_s": 499.0,
+   "switching_count": 21.0,
+   "recovery_latency_s_max": 10.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "shortage_6kw|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 219.917,
    "occupied_service_fraction": 0.858,
    "worst_room_starvation_s": 525.0,
@@ -5430,7 +7455,7 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
-  "shortage_6kw|proposed[validation_rates]": {
+  "shortage_6kw|proposed_no_dwell[validation_rates]": {
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 220.306,
    "occupied_service_fraction": 0.854,
@@ -5440,7 +7465,7 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
-  "shortage_6kw|proposed[heavy_errors]": {
+  "shortage_6kw|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 237.611,
    "occupied_service_fraction": 0.813,
@@ -5530,6 +7555,36 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
+  "deep_shortage_4kw|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 346.306,
+   "occupied_service_fraction": 0.651,
+   "worst_room_starvation_s": 700.0,
+   "switching_count": 8.2,
+   "recovery_latency_s_max": 13.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "deep_shortage_4kw|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 346.306,
+   "occupied_service_fraction": 0.651,
+   "worst_room_starvation_s": 700.0,
+   "switching_count": 8.2,
+   "recovery_latency_s_max": 13.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "deep_shortage_4kw|proposed_no_dwell[heavy_errors]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 346.306,
+   "occupied_service_fraction": 0.651,
+   "worst_room_starvation_s": 700.0,
+   "switching_count": 8.2,
+   "recovery_latency_s_max": 13.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
   "deep_shortage_4kw|oracle_occupancy_upper_bound": {
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 346.306,
@@ -5601,6 +7656,36 @@
    "n_seeds": 5
   },
   "feeder_b_loss|proposed[heavy_errors]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 242.667,
+   "occupied_service_fraction": 0.715,
+   "worst_room_starvation_s": 518.0,
+   "switching_count": 6.6,
+   "recovery_latency_s_max": 12.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "feeder_b_loss|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 242.667,
+   "occupied_service_fraction": 0.715,
+   "worst_room_starvation_s": 518.0,
+   "switching_count": 6.6,
+   "recovery_latency_s_max": 12.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "feeder_b_loss|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 242.667,
+   "occupied_service_fraction": 0.715,
+   "worst_room_starvation_s": 518.0,
+   "switching_count": 6.6,
+   "recovery_latency_s_max": 12.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "feeder_b_loss|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 242.667,
    "occupied_service_fraction": 0.715,
@@ -5690,6 +7775,36 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
+  "feeder_a_loss|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.972,
+   "occupied_service_fraction": 0.998,
+   "worst_room_starvation_s": 3.0,
+   "switching_count": 8.0,
+   "recovery_latency_s_max": 15.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "feeder_a_loss|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.972,
+   "occupied_service_fraction": 0.998,
+   "worst_room_starvation_s": 3.0,
+   "switching_count": 8.0,
+   "recovery_latency_s_max": 15.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "feeder_a_loss|proposed_no_dwell[heavy_errors]": {
+   "critical_unmet_wh": 505.556,
+   "essential_unmet_wh": 0.972,
+   "occupied_service_fraction": 0.998,
+   "worst_room_starvation_s": 3.0,
+   "switching_count": 8.0,
+   "recovery_latency_s_max": 15.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
   "feeder_a_loss|oracle_occupancy_upper_bound": {
    "critical_unmet_wh": 505.556,
    "essential_unmet_wh": 0.972,
@@ -5761,6 +7876,36 @@
    "n_seeds": 5
   },
   "insufficient_critical_2kw|proposed[heavy_errors]": {
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 231.778,
+   "occupied_service_fraction": 0.719,
+   "worst_room_starvation_s": 569.0,
+   "switching_count": 9.2,
+   "recovery_latency_s_max": 23.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "insufficient_critical_2kw|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 231.778,
+   "occupied_service_fraction": 0.719,
+   "worst_room_starvation_s": 569.0,
+   "switching_count": 9.2,
+   "recovery_latency_s_max": 23.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "insufficient_critical_2kw|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": 168.056,
+   "essential_unmet_wh": 231.778,
+   "occupied_service_fraction": 0.719,
+   "worst_room_starvation_s": 569.0,
+   "switching_count": 9.2,
+   "recovery_latency_s_max": 23.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "insufficient_critical_2kw|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": 168.056,
    "essential_unmet_wh": 231.778,
    "occupied_service_fraction": 0.719,
@@ -5850,6 +7995,36 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
+  "zero_supply|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 117.833,
+   "occupied_service_fraction": 0.812,
+   "worst_room_starvation_s": 319.0,
+   "switching_count": 12.2,
+   "recovery_latency_s_max": 23.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "zero_supply|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 117.833,
+   "occupied_service_fraction": 0.812,
+   "worst_room_starvation_s": 319.0,
+   "switching_count": 12.2,
+   "recovery_latency_s_max": 23.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "zero_supply|proposed_no_dwell[heavy_errors]": {
+   "critical_unmet_wh": 255.556,
+   "essential_unmet_wh": 117.833,
+   "occupied_service_fraction": 0.812,
+   "worst_room_starvation_s": 319.0,
+   "switching_count": 12.2,
+   "recovery_latency_s_max": 23.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
   "zero_supply|oracle_occupancy_upper_bound": {
    "critical_unmet_wh": 255.556,
    "essential_unmet_wh": 117.833,
@@ -5902,6 +8077,36 @@
   },
   "recovery_chatter|proposed[perfect]": {
    "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 123.861,
+   "occupied_service_fraction": 0.95,
+   "worst_room_starvation_s": 43.0,
+   "switching_count": 49.2,
+   "recovery_latency_s_max": 15.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "recovery_chatter|proposed[validation_rates]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 118.028,
+   "occupied_service_fraction": 0.949,
+   "worst_room_starvation_s": 42.0,
+   "switching_count": 51.6,
+   "recovery_latency_s_max": 15.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "recovery_chatter|proposed[heavy_errors]": {
+   "critical_unmet_wh": 0.0,
+   "essential_unmet_wh": 116.667,
+   "occupied_service_fraction": 0.931,
+   "worst_room_starvation_s": 43.0,
+   "switching_count": 54.8,
+   "recovery_latency_s_max": 15.0,
+   "constraint_violations": 0.0,
+   "n_seeds": 5
+  },
+  "recovery_chatter|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 124.25,
    "occupied_service_fraction": 0.951,
    "worst_room_starvation_s": 43.0,
@@ -5910,7 +8115,7 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
-  "recovery_chatter|proposed[validation_rates]": {
+  "recovery_chatter|proposed_no_dwell[validation_rates]": {
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 124.639,
    "occupied_service_fraction": 0.945,
@@ -5920,7 +8125,7 @@
    "constraint_violations": 0.0,
    "n_seeds": 5
   },
-  "recovery_chatter|proposed[heavy_errors]": {
+  "recovery_chatter|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": 0.0,
    "essential_unmet_wh": 129.889,
    "occupied_service_fraction": 0.913,
@@ -5950,33 +8155,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 0.389,
-    "min": -16.52799999999999,
+    "mean": 1.167,
+    "min": -4.86099999999999,
     "max": 7.777999999999963,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": -0.005,
-    "min": -0.013000000000000012,
-    "max": 0.0011999999999999789,
+    "mean": -0.004,
+    "min": -0.011399999999999966,
+    "max": 0.0035000000000000586,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
-    "min": 0.0,
-    "max": 5.0,
+    "mean": -44.0,
+    "min": -230.0,
+    "max": 10.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 12.8,
-    "min": 0,
-    "max": 32,
+    "mean": 7.2,
+    "min": -2,
+    "max": 16,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 1.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -5986,7 +8191,7 @@
     "n": 5
    }
   },
-  "shortage_6kw|round_robin": {
+  "shortage_6kw|proposed[heavy_errors]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -5994,32 +8199,76 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": -128.528,
-    "min": -175.97200000000004,
-    "max": -38.88899999999998,
+    "mean": 3.5,
+    "min": -21.38899999999998,
+    "max": 49.584,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.19,
-    "min": 0.14079999999999993,
-    "max": 0.21430000000000005,
+    "mean": 0.022,
+    "min": 0.0,
+    "max": 0.05360000000000009,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": -4.0,
-    "min": -380.0,
-    "max": 380.0,
+    "mean": -16.0,
+    "min": -45.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": -165.6,
-    "min": -178,
-    "max": -144,
+    "mean": -6.0,
+    "min": -12,
+    "max": 0,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": -4.0,
-    "min": -5.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "shortage_6kw|proposed_no_dwell[perfect]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 1.945,
+    "min": -2.915999999999997,
+    "max": 7.777999999999963,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": -0.006,
+    "min": -0.011800000000000033,
+    "max": 0.0011999999999999789,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": -42.0,
+    "min": -230.0,
+    "max": 20.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 7.2,
+    "min": -2,
+    "max": 16,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
     "max": 0.0,
     "n": 5
    },
@@ -6038,33 +8287,77 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 15.167,
-    "min": 1.9439999999999884,
-    "max": 54.44400000000002,
+    "mean": 16.722,
+    "min": 0.0,
+    "max": 69.02800000000002,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.004,
-    "min": -0.013000000000000012,
-    "max": 0.04700000000000004,
+    "mean": 0.003,
+    "min": -0.011399999999999966,
+    "max": 0.03520000000000001,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": -15.0,
-    "min": -80.0,
+    "mean": -58.0,
+    "min": -230.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 8.4,
+    "min": 0,
+    "max": 16,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "shortage_6kw|proposed_no_dwell[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": -15.75,
+    "min": -32.08299999999997,
+    "max": 26.25,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.04,
+    "min": 0.02429999999999999,
+    "max": 0.07790000000000008,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 2.0,
+    "min": 0.0,
     "max": 5.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 14.0,
-    "min": 2,
-    "max": 36,
+    "mean": -44.0,
+    "min": -66,
+    "max": -26,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 1.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -6082,33 +8375,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 15.167,
-    "min": 1.9439999999999884,
-    "max": 54.44400000000002,
+    "mean": 16.722,
+    "min": 0.0,
+    "max": 69.02800000000002,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.004,
-    "min": -0.013000000000000012,
-    "max": 0.04700000000000004,
+    "mean": 0.003,
+    "min": -0.011399999999999966,
+    "max": 0.03520000000000001,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": -15.0,
-    "min": -80.0,
-    "max": 5.0,
+    "mean": -58.0,
+    "min": -230.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 14.0,
-    "min": 2,
-    "max": 36,
+    "mean": 8.4,
+    "min": 0,
+    "max": 16,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 1.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -6126,33 +8419,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 0.389,
-    "min": -16.52799999999999,
+    "mean": 1.945,
+    "min": -2.915999999999997,
     "max": 7.777999999999963,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": -0.005,
-    "min": -0.013000000000000012,
+    "mean": -0.006,
+    "min": -0.011800000000000033,
     "max": 0.0011999999999999789,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
-    "min": 0.0,
-    "max": 5.0,
+    "mean": -42.0,
+    "min": -230.0,
+    "max": 20.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 12.8,
-    "min": 0,
-    "max": 32,
+    "mean": 7.2,
+    "min": -2,
+    "max": 16,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 1.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -6170,33 +8463,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": -160.611,
-    "min": -174.02800000000002,
-    "max": -121.52799999999999,
+    "mean": -159.055,
+    "min": -175.972,
+    "max": -106.94399999999999,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.236,
+    "mean": 0.235,
     "min": 0.16699999999999993,
-    "max": 0.3167,
+    "max": 0.30489999999999995,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": -289.0,
-    "min": -495.0,
-    "max": 5.0,
+    "mean": -332.0,
+    "min": -725.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 14.4,
-    "min": 2,
-    "max": 36,
+    "mean": 8.8,
+    "min": 0,
+    "max": 18,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 1.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -6206,7 +8499,7 @@
     "n": 5
    }
   },
-  "shortage_6kw|proposed[heavy_errors]": {
+  "shortage_6kw|proposed_no_dwell[validation_rates]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6214,33 +8507,77 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": -17.306,
-    "min": -31.11099999999999,
-    "max": 11.665999999999997,
+    "mean": 1.556,
+    "min": -3.8889999999999816,
+    "max": 14.584000000000003,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.041,
-    "min": 0.02200000000000002,
-    "max": 0.07630000000000003,
+    "mean": -0.001,
+    "min": -0.011800000000000033,
+    "max": 0.0046000000000000485,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 45.0,
-    "min": -15.0,
-    "max": 235.0,
+    "mean": -43.0,
+    "min": -230.0,
+    "max": 20.0,
     "n": 5
    },
    "switching_count": {
-    "mean": -38.4,
-    "min": -66,
-    "max": -20,
+    "mean": -5.6,
+    "min": -24,
+    "max": 0,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 1.0,
+    "mean": -1.0,
+    "min": -5.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "shortage_6kw|round_robin": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": -126.972,
+    "min": -177.91699999999997,
+    "max": -24.30499999999998,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.189,
+    "min": 0.14079999999999993,
+    "max": 0.2159000000000001,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": -47.0,
+    "min": -380.0,
+    "max": 150.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": -171.2,
+    "min": -180,
+    "max": -162,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": -5.0,
+    "min": -5.0,
+    "max": -5.0,
     "n": 5
    },
    "constraint_violations": {
@@ -6294,7 +8631,51 @@
     "n": 5
    }
   },
-  "deep_shortage_4kw|round_robin": {
+  "deep_shortage_4kw|proposed[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "deep_shortage_4kw|proposed_no_dwell[perfect]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6339,6 +8720,50 @@
    }
   },
   "deep_shortage_4kw|essentials_first_no_ml": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "deep_shortage_4kw|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6514,7 +8939,51 @@
     "n": 5
    }
   },
-  "deep_shortage_4kw|proposed[heavy_errors]": {
+  "deep_shortage_4kw|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "deep_shortage_4kw|round_robin": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6602,7 +9071,51 @@
     "n": 5
    }
   },
-  "feeder_b_loss|round_robin": {
+  "feeder_b_loss|proposed[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "feeder_b_loss|proposed_no_dwell[perfect]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6647,6 +9160,50 @@
    }
   },
   "feeder_b_loss|essentials_first_no_ml": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "feeder_b_loss|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6822,7 +9379,51 @@
     "n": 5
    }
   },
-  "feeder_b_loss|proposed[heavy_errors]": {
+  "feeder_b_loss|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "feeder_b_loss|round_robin": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6910,7 +9511,51 @@
     "n": 5
    }
   },
-  "feeder_a_loss|round_robin": {
+  "feeder_a_loss|proposed[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "feeder_a_loss|proposed_no_dwell[perfect]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -6955,6 +9600,50 @@
    }
   },
   "feeder_a_loss|essentials_first_no_ml": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "feeder_a_loss|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7130,7 +9819,51 @@
     "n": 5
    }
   },
-  "feeder_a_loss|proposed[heavy_errors]": {
+  "feeder_a_loss|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "feeder_a_loss|round_robin": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7218,7 +9951,51 @@
     "n": 5
    }
   },
-  "insufficient_critical_2kw|round_robin": {
+  "insufficient_critical_2kw|proposed[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "insufficient_critical_2kw|proposed_no_dwell[perfect]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7263,6 +10040,50 @@
    }
   },
   "insufficient_critical_2kw|essentials_first_no_ml": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "insufficient_critical_2kw|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7438,7 +10259,51 @@
     "n": 5
    }
   },
-  "insufficient_critical_2kw|proposed[heavy_errors]": {
+  "insufficient_critical_2kw|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "insufficient_critical_2kw|round_robin": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7526,7 +10391,51 @@
     "n": 5
    }
   },
-  "zero_supply|round_robin": {
+  "zero_supply|proposed[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "zero_supply|proposed_no_dwell[perfect]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7571,6 +10480,50 @@
    }
   },
   "zero_supply|essentials_first_no_ml": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "zero_supply|proposed_no_dwell[heavy_errors]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7746,7 +10699,51 @@
     "n": 5
    }
   },
-  "zero_supply|proposed[heavy_errors]": {
+  "zero_supply|proposed_no_dwell[validation_rates]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "zero_supply|round_robin": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7798,32 +10795,76 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 0.389,
-    "min": -10.694999999999993,
-    "max": 10.694000000000017,
+    "mean": -5.834,
+    "min": -22.361999999999995,
+    "max": 0.9720000000000084,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": -0.005,
-    "min": -0.013599999999999945,
+    "mean": -0.001,
+    "min": -0.0016000000000000458,
     "max": 0.0,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
+    "mean": -1.0,
+    "min": -5.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": 2.4,
+    "min": 0,
+    "max": 6,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": 0.0,
     "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "recovery_chatter|proposed[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": 1.361,
+    "min": -14.582999999999998,
+    "max": 26.250000000000007,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.018,
+    "min": -0.0016000000000000458,
+    "max": 0.044399999999999995,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": -1.0,
+    "min": -5.0,
     "max": 5.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 8.8,
-    "min": 4,
-    "max": 16,
+    "mean": -3.2,
+    "min": -12,
+    "max": 4,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 2.0,
-    "min": 0.0,
+    "mean": 0.0,
+    "min": -5.0,
     "max": 5.0,
     "n": 5
    },
@@ -7834,7 +10875,7 @@
     "n": 5
    }
   },
-  "recovery_chatter|round_robin": {
+  "recovery_chatter|proposed_no_dwell[perfect]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -7842,32 +10883,32 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": -62.028,
-    "min": -70.0,
-    "max": -48.611000000000004,
+    "mean": -6.222,
+    "min": -22.361999999999995,
+    "max": 0.9720000000000084,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.078,
-    "min": 0.052100000000000035,
-    "max": 0.10770000000000002,
+    "mean": -0.001,
+    "min": -0.005800000000000027,
+    "max": 0.0,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 3.0,
+    "mean": -1.0,
     "min": -5.0,
-    "max": 10.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": -49.2,
-    "min": -54,
-    "max": -40,
+    "mean": 2.4,
+    "min": 0,
+    "max": 6,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": -2.0,
-    "min": -5.0,
+    "mean": 0.0,
+    "min": 0.0,
     "max": 0.0,
     "n": 5
    },
@@ -7886,33 +10927,77 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 13.805,
-    "min": 2.915999999999997,
-    "max": 30.139000000000003,
+    "mean": 7.194,
+    "min": 0.0,
+    "max": 29.16700000000001,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.035,
-    "min": 0.0,
+    "mean": 0.039,
+    "min": -0.0016000000000000458,
     "max": 0.09599999999999997,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
-    "min": 0.0,
-    "max": 5.0,
+    "mean": -1.0,
+    "min": -5.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 9.6,
-    "min": 6,
-    "max": 16,
+    "mean": 3.2,
+    "min": 0,
+    "max": 8,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 2.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "recovery_chatter|proposed_no_dwell[heavy_errors]": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": -11.861,
+    "min": -22.361000000000004,
+    "max": 6.806000000000012,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.036,
+    "min": 0.009199999999999986,
+    "max": 0.05669999999999997,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": -4.0,
+    "min": -10.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": -20.0,
+    "min": -26,
+    "max": -12,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": -3.0,
+    "min": -5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -7930,33 +11015,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 13.805,
-    "min": 2.915999999999997,
-    "max": 30.139000000000003,
+    "mean": 7.194,
+    "min": 0.0,
+    "max": 29.16700000000001,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.035,
-    "min": 0.0,
+    "mean": 0.039,
+    "min": -0.0016000000000000458,
     "max": 0.09599999999999997,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
-    "min": 0.0,
-    "max": 5.0,
+    "mean": -1.0,
+    "min": -5.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 9.6,
-    "min": 6,
-    "max": 16,
+    "mean": 3.2,
+    "min": 0,
+    "max": 8,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 2.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -7974,33 +11059,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": 0.194,
-    "min": -10.694999999999993,
-    "max": 10.694000000000017,
+    "mean": -6.417,
+    "min": -22.361999999999995,
+    "max": 0.9720000000000084,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": -0.005,
-    "min": -0.013599999999999945,
+    "mean": -0.001,
+    "min": -0.005800000000000027,
     "max": 0.0,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
-    "min": 0.0,
-    "max": 5.0,
+    "mean": -1.0,
+    "min": -5.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 8.8,
-    "min": 4,
-    "max": 16,
+    "mean": 2.4,
+    "min": 0,
+    "max": 6,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 2.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -8018,33 +11103,33 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": -54.25,
-    "min": -65.13900000000001,
-    "max": -37.917,
+    "mean": -60.861,
+    "min": -68.055,
+    "max": -38.888999999999996,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.074,
-    "min": 0.044399999999999995,
+    "mean": 0.078,
+    "min": 0.04279999999999995,
     "max": 0.10770000000000002,
     "n": 5
    },
    "worst_room_starvation_s": {
-    "mean": 1.0,
-    "min": 0.0,
-    "max": 5.0,
+    "mean": -1.0,
+    "min": -5.0,
+    "max": 0.0,
     "n": 5
    },
    "switching_count": {
-    "mean": 9.6,
-    "min": 6,
-    "max": 16,
+    "mean": 3.2,
+    "min": 0,
+    "max": 8,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": 2.0,
+    "mean": 0.0,
     "min": 0.0,
-    "max": 5.0,
+    "max": 0.0,
     "n": 5
    },
    "constraint_violations": {
@@ -8054,7 +11139,7 @@
     "n": 5
    }
   },
-  "recovery_chatter|proposed[heavy_errors]": {
+  "recovery_chatter|proposed_no_dwell[validation_rates]": {
    "critical_unmet_wh": {
     "mean": 0.0,
     "min": 0.0,
@@ -8062,15 +11147,15 @@
     "n": 5
    },
    "essential_unmet_wh": {
-    "mean": -5.25,
-    "min": -21.38900000000001,
-    "max": 7.778000000000006,
+    "mean": -6.611,
+    "min": -11.667000000000002,
+    "max": -0.9719999999999942,
     "n": 5
    },
    "occupied_service_fraction": {
-    "mean": 0.032,
-    "min": 0.010800000000000032,
-    "max": 0.0524,
+    "mean": 0.004,
+    "min": -0.0016000000000000458,
+    "max": 0.013599999999999945,
     "n": 5
    },
    "worst_room_starvation_s": {
@@ -8080,13 +11165,57 @@
     "n": 5
    },
    "switching_count": {
-    "mean": -13.6,
-    "min": -22,
-    "max": 0,
+    "mean": -6.4,
+    "min": -12,
+    "max": -2,
     "n": 5
    },
    "recovery_latency_s_max": {
-    "mean": -1.0,
+    "mean": -2.0,
+    "min": -5.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "constraint_violations": {
+    "mean": 0.0,
+    "min": 0,
+    "max": 0,
+    "n": 5
+   }
+  },
+  "recovery_chatter|round_robin": {
+   "critical_unmet_wh": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 5
+   },
+   "essential_unmet_wh": {
+    "mean": -68.639,
+    "min": -77.77800000000002,
+    "max": -49.583,
+    "n": 5
+   },
+   "occupied_service_fraction": {
+    "mean": 0.082,
+    "min": 0.05049999999999999,
+    "max": 0.10770000000000002,
+    "n": 5
+   },
+   "worst_room_starvation_s": {
+    "mean": 1.0,
+    "min": -5.0,
+    "max": 10.0,
+    "n": 5
+   },
+   "switching_count": {
+    "mean": -55.6,
+    "min": -60,
+    "max": -50,
+    "n": 5
+   },
+   "recovery_latency_s_max": {
+    "mean": -4.0,
     "min": -5.0,
     "max": 0.0,
     "n": 5
@@ -8099,5 +11228,5 @@
    }
   }
  },
- "commit": "c2c278d"
+ "commit": "409a2eb"
 }

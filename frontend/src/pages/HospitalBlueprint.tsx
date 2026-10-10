@@ -28,7 +28,7 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
       { id: 'bed_lights', name: 'Bed Lights', label: 'BED LIGHTS' },
       { id: 'nurse_call', name: 'Nurse Call', label: 'NURSE CALL' },
       { id: 'fans', name: 'Ceiling Fans', label: 'FANS' },
-      { id: 'tv', name: 'Patient TV', label: 'TV' },
+      { id: 'water_pump', name: 'Water Pump', label: 'WATER PUMP' },
       { id: 'ac', name: 'Air Conditioning', label: 'AC' },
     ]},
   ];

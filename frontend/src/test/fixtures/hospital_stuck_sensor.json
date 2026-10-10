@@ -1,4 +1,5 @@
 {
+ "campus_limit_w": null,
  "capacity_range_w": null,
  "capacity_w": null,
  "command": null,
@@ -6,19 +7,23 @@
   "campus_totals": null,
   "identity": {
    "catalog_version": "1.0",
-   "config_hash": "e7cb835f",
+   "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:27:52.818896+00:00",
+   "observation_time": "2026-10-10T01:48:49.143155+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
    "site_id": "Default Campus",
-   "state_revision": 5
+   "state_revision": 9
   },
   "zone_totals": {}
  },
  "edges": [],
+ "effective_capacity_w": null,
+ "fault": null,
  "generated_at": null,
+ "hospital_limit_w": null,
+ "limited_by": null,
  "mode": "SIMULATED",
  "model": null,
  "policy": null,
@@ -33,7 +38,7 @@
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 5,
+  "revision": 9,
   "run_id": "<volatile>"
  },
  "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; a cause is inferred after two consecutive agreeing readings. Thresholds are not certified protection settings.",
@@ -120,27 +125,26 @@
     "abstention": {
      "asset_id": "TX2",
      "contradictory_readings": [
-      "Current remained flat across three observations.",
-      "Temperature rose 16.0 \u00b0C."
+      "current_a",
+      "temperature_c"
      ],
-     "details": "Current is flat while transformer temperature is rising; a stuck current sensor is indistinguishable from a true load change.",
+     "details": "Current sensor suspected stuck: 45.0 A repeated on 3+ readings while temperature changed with cooling OK. Its reading cannot rule out an overload.",
      "indistinguishable_candidates": [
-      "CURRENT_SENSOR_STUCK",
-      "UNOBSERVED_LOAD_CHANGE"
+      "OVERLOAD",
+      "STUCK_CURRENT_SENSOR"
      ],
      "missing_sensors": [],
-     "next_check_needed": "Verify the current sensor with an independent meter before attributing or clearing the fault.",
-     "reason": "CONTRADICTORY_EVIDENCE"
+     "next_check_needed": "Check the current transformer and its wiring, or measure the load with a clamp meter.",
+     "reason": "SUSPECTED_STUCK_SENSOR"
     },
-    "cause": "Current is flat while transformer temperature is rising; a stuck current sensor is indistinguishable from a true load change.",
+    "cause": "Current sensor suspected stuck: 45.0 A repeated on 3+ readings while temperature changed with cooling OK. Its reading cannot rule out an overload.",
     "code": "UNKNOWN",
     "evidence": [
-     "Current remained flat across three observations.",
-     "Temperature rose 16.0 \u00b0C."
+     "Current sensor suspected stuck: 45.0 A repeated on 3+ readings while temperature changed with cooling OK. Its reading cannot rule out an overload."
     ],
     "hypotheses": [],
     "missing": [],
-    "recommendation": "Verify the current sensor with an independent meter before attributing or clearing the fault.",
+    "recommendation": "Check the current transformer and its wiring, or measure the load with a clamp meter.",
     "severity": "unknown",
     "stale": [],
     "status": "ABSTAINED"
@@ -198,7 +202,7 @@
     "current_a": 45.0,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
-    "temperature_c": 82.0
+    "temperature_c": 70.0
    },
    "zone": "Theatre"
   },
@@ -250,7 +254,7 @@
     },
     {
      "essential": null,
-     "id": "tv",
+     "id": "water_pump",
      "name": null,
      "reason": null,
      "served": true,

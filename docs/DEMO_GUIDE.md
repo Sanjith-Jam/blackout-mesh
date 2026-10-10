@@ -11,7 +11,7 @@ Use `/demo` for the city story. All source, feeder A/hospital and feeder B/class
 5. **Repair feeder A**, then **Restore supply**. The existing controller waits for stable evidence/dwell and restores in stages. The guide does not bypass it.
 6. Use `/hospital` and `/classrooms` for equipment drawings, or `/console` for history/playback and engineering controls.
 
-The legacy hospital equipment drill-down retains its separate 7 kW catalog, explicitly labeled on that page. The city hospital panel uses the reconciled six-service campus projection on feeder A. Rescaling the drill-down and persistent hospital fault injection are A3/A4 backend handoffs; this delivery does not silently combine the catalogs.
+The hospital equipment drill-down now shares feeder A’s 6 kW campus catalog and follows its served capacity. Its backend supports persistent simulated fault injection; the separate rehearsal buttons use isolated 100 A teaching fixtures and leave live allocation unchanged.
 
 ## Predictive demand
 
@@ -47,9 +47,9 @@ When authorized to resume B5, follow [the connection and acceptance guide](ESP32
 
 - Occupancy inference: [evaluation JSON](../backend/models/evaluation.json), `runtime_inference.warm_single_prediction_ms`, median 0.171876 ms over 100 warm calls.
 - Six-service exact allocation: [profile JSON](../backend/benchmarks/results/allocation_profile.json), median 1.594748 ms over 50 decisions/64 masks. The offline 19-leaf result does not establish live scalability.
-- Allocation safety/outcomes: [report JSON](../backend/benchmarks/results/allocation_report.json) and [full table](../backend/benchmarks/results/allocation_report.md), 280 simulated runs and zero constraint violations. This is not a field safety guarantee.
+- Allocation safety/outcomes: [report JSON](../backend/benchmarks/results/allocation_report.json) and [full table](../backend/benchmarks/results/allocation_report.md), 385 simulated runs and zero constraint violations. This is not a field safety guarantee.
 - The live comparison shows fixed-priority and exact-policy candidate masks over the same revision and inputs. The currently applied mask is separate so restoration dwell does not unfairly penalize one candidate.
-- The current ML/no-ML benchmark includes switching and essential/critical unmet Wh. A1's rank-dwell result remains pending; no ML superiority is assumed.
+- The current ML/no-ML benchmark includes switching and essential/critical unmet Wh. The rank-dwell ablation is included; no ML superiority is assumed.
 - The README GIF records the browser against an isolated real backend. It is software evidence, not B5's physical backup video.
 
 ## Verification
@@ -69,4 +69,4 @@ npm run test:contract
 
 ## Person B handoff
 
-B1 claim cleanup, B2 city story, B3 comparison/table, B6 real-backend browser smoke check and B7 pitch/docs are delivered. B4 has fully functioning, clearly labeled diagnostic rehearsals; persistent live injection awaits A4, and legacy hospital catalog coupling awaits A3. B5 is deferred at the user's request. The predictive-demand model is an added user-requested feature, separate from the occupancy ablation.
+B1 claim cleanup, B2 city story, B3 comparison/table, B6 real-backend browser smoke check and B7 pitch/docs are delivered. B4 has functioning, clearly labeled read-only diagnostic rehearsals, using the explicit `rehearsal` request field. The integrated backend also supports persistent `inject_fault` / `clear_fault` actions and couples hospital supply to campus feeder A; rehearsal buttons leave that live state unchanged. B5 is deferred at the user's request. The predictive-demand model is an added user-requested feature, separate from the occupancy ablation.

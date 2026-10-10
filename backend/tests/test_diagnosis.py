@@ -118,8 +118,8 @@ def test_flat_current_sensor_with_rising_temperature_abstains():
             window.add(validate(raw, {"TX"}, NOW))
     result = diagnose_transformer(window, "TX", TransformerRating(), NOW)
     assert result["status"] == "ABSTAINED"
-    assert result["abstention"]["reason"] == "CONTRADICTORY_EVIDENCE"
-    assert "stuck current sensor" in result["cause"]
+    assert result["abstention"]["reason"] == "SUSPECTED_STUCK_SENSOR"
+    assert "sensor suspected stuck" in result["cause"]
 
 
 def test_shared_upstream_loss_versus_local_branch_interruption():
@@ -227,3 +227,45 @@ def test_hospital_scenario_pipeline_uses_the_rolling_window():
     telemetry.sample("cooling_failure", "ICU", NOW)
     result = telemetry.diagnoses(NOW)
     assert result["TX1"]["code"] == "COOLING_FAILURE" and result["TX2"]["code"] == "NORMAL"
+
+
+def test_frozen_current_with_rising_temperature_abstains_until_the_reading_moves():
+    from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
+    from app.diagnosis.observations import validate
+    from app.simulation.sensors import envelopes
+    from datetime import datetime, timedelta, timezone
+
+    window, rating = ObservationWindow(), TransformerRating()
+    start = datetime.now(timezone.utc) - timedelta(seconds=2)
+
+    def feed(seq, current, temp):
+        at = start + timedelta(milliseconds=100 * seq)
+        values = {"current_a": current, "temperature_c": temp, "input_voltage_v": 230.0, "output_voltage_v": 220.0, "cooling_ok": True}
+        for raw in envelopes({"TX": values}, seq, at):
+            window.add(validate(raw, {"TX"}, at))
+        return diagnose_transformer(window, "TX", rating, at)
+
+    assert feed(1, 45.0, 58.0)["status"] == "NORMAL"
+    feed(2, 45.0, 63.0)
+    result = feed(3, 45.0, 68.0)
+    assert result["status"] == "ABSTAINED" and result["abstention"]["reason"] == "SUSPECTED_STUCK_SENSOR"
+    assert feed(4, 45.0, 68.2)["status"] == "ABSTAINED"  # latched while the reading stays frozen
+    assert feed(5, 45.7, 68.1)["status"] == "NORMAL"  # the reading moved: the sensor is live again
+
+
+def test_constant_current_with_failed_cooling_is_not_called_a_stuck_sensor():
+    from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
+    from app.diagnosis.observations import validate
+    from app.simulation.sensors import envelopes
+    from datetime import datetime, timedelta, timezone
+
+    window, rating = ObservationWindow(), TransformerRating()
+    start = datetime.now(timezone.utc) - timedelta(seconds=2)
+    for seq, temp in enumerate((58.0, 70.0, 82.0, 91.0), start=1):
+        at = start + timedelta(milliseconds=100 * seq)
+        values = {"current_a": 45.0, "temperature_c": temp, "input_voltage_v": 230.0, "output_voltage_v": 220.0, "cooling_ok": False}
+        for raw in envelopes({"TX": values}, seq, at):
+            window.add(validate(raw, {"TX"}, at))
+        result = diagnose_transformer(window, "TX", rating, at)
+    assert result["abstention"] is None or result["abstention"]["reason"] != "SUSPECTED_STUCK_SENSOR"
+    assert "COOLING_FAILURE" in {h["code"] for h in result["hypotheses"]}

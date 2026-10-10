@@ -7,7 +7,7 @@
  "capacity_w": 3000,
  "classroom_limit_w": 3000,
  "command": {
-  "applied_revision": 5,
+  "applied_revision": 8,
   "command_id": "<volatile>",
   "name": "classroom.set_capacity",
   "run_id": "<volatile>"
@@ -16,14 +16,14 @@
   "campus_totals": null,
   "identity": {
    "catalog_version": "1.0",
-   "config_hash": "e7cb835f",
+   "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:27:52.818896+00:00",
+   "observation_time": "2026-10-10T01:48:49.143155+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
    "site_id": "Default Campus",
-   "state_revision": 5
+   "state_revision": 8
   },
   "zone_totals": {}
  },
@@ -359,7 +359,7 @@
   "model_version": "uci-occ-logistic-2026-10-09",
   "ready": true
  },
- "policy": "Classroom-only: lighting and computers in every room are protected and served first, whatever the model says. Scanned rooms' other equipment next, ranked by the activity model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE counts only after 2 consecutive readings. Unscanned rooms' optional loads last. Safety policy safety-2026-10-10.1.",
+ "policy": "Classroom-only: lighting and computers in every room are protected and served first, whatever the model says. Scanned rooms' other equipment next, ranked by the activity model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE counts only after 2 consecutive readings, and any change of state reorders loads only after it repeats on 3 readings. Unscanned rooms' optional loads last. Safety policy safety-2026-10-10.1.",
  "priority_order": [
   "CR1",
   "CR2"
@@ -590,7 +590,7 @@
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 5,
+  "revision": 8,
   "run_id": "<volatile>"
  }
 }

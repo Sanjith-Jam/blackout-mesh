@@ -39,7 +39,7 @@ from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.core.policy import AllocationPolicy
 from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
 from app.activity.model import FEATURES
-from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo, hospital_snapshot
+from app.visualizers import hospital_snapshot, CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -64,10 +64,18 @@ class ClassroomDemoAction(BaseModel):
 
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"] | None = None
+    action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step",
+                    "inject_fault", "clear_fault"] | None = None
     zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
     capacity_w: StrictInt | None = None
-    scenario: Literal["normal", "overload", "cooling_failure", "overload_cooling", "upstream_loss", "missing_sensor", "stuck_sensor"] | None = None
+    fault: Literal["overload", "cooling_failure", "overload_cooling", "upstream_loss", "sensor_dropout", "stuck_sensor"] | None = None
+    # Preserve the live scenario alias; rehearsals use isolated diagnostic fixtures.
+    scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"] | None = None
+    rehearsal: Literal["normal", "overload", "cooling_failure", "overload_cooling", "upstream_loss", "missing_sensor", "stuck_sensor"] | None = None
+
+
+SCENARIO_FAULTS = {"overload": "overload", "cooling_failure": "cooling_failure", "upstream_loss": "upstream_loss",
+                   "missing_sensor": "sensor_dropout"}
 
 
 class ConnectionManager:
@@ -391,16 +399,25 @@ async def get_hospital_demo(request: Request):
 async def act_hospital_demo(request: Request, req: HospitalDemoAction):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
+    if req.rehearsal is not None:
+        if any(value is not None for value in (req.action, req.fault, req.scenario, req.zone_id, req.capacity_w)):
+            raise HTTPException(422, "rehearsal cannot be combined with live controls")
+        return with_contract(hospital_snapshot(req.rehearsal), site)
+    action, fault = req.action, req.fault
     if req.scenario is not None:
-        return with_contract(hospital_snapshot(req.scenario), site)
-    if req.action is None:
+        if action is not None or fault is not None:
+            raise HTTPException(422, "scenario cannot be combined with action or fault")
+        action, fault = ("clear_fault", None) if req.scenario == "normal" else ("inject_fault", SCENARIO_FAULTS[req.scenario])
+    if action is None:
         raise HTTPException(422, "either action or scenario must be provided")
+    if (action == "inject_fault") != (fault is not None):
+        raise HTTPException(422, "fault is required with inject_fault and only allowed with it")
     if req.capacity_w is not None:
         low, high = hospital_demo.snapshot()["capacity_range_w"]
         if not (low <= req.capacity_w <= high):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    _, receipt = site.command(f"hospital.{req.action}", lambda: hospital_demo.act(req.action, req.zone_id, req.capacity_w),
-                              {"action": req.action, "zone_id": req.zone_id, "capacity_w": req.capacity_w})
+    _, receipt = site.command(f"hospital.{action}", lambda: hospital_demo.act(action, req.zone_id, req.capacity_w, fault),
+                              {"action": action, "zone_id": req.zone_id, "capacity_w": req.capacity_w, "fault": fault})
     data, identity = site.read(hospital_demo.snapshot)
     return with_contract(data, site) | {"command": receipt}
 

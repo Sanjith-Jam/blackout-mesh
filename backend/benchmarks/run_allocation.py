@@ -57,6 +57,27 @@ def markdown(report: dict, derived: dict, commit: str) -> str:
              "`oracle_occupancy_upper_bound`, which reads true occupancy and is **not deployable**.", "",
              "Every run of a scenario/seed has the same input digest (capacity, feeders, bookings, classifier outputs); "
              "true occupancy is used only by the evaluator.", ""]
+    order = ("fixed_priority", "round_robin", "essentials_first_no_ml", "proposed[no_ml_unknown]",
+             "proposed_no_dwell[validation_rates]", "proposed[validation_rates]", "proposed_no_dwell[heavy_errors]",
+             "proposed[heavy_errors]", "proposed[perfect]", "oracle_occupancy_upper_bound")
+    for scenario in ("shortage_6kw", "recovery_chatter"):
+        if scenario not in report["scenarios"]:
+            continue
+        rows = {p: derived["summary"].get(f"{scenario}|{p}") for p in order}
+        lines += [f"## Ablation summary: {scenario}", "",
+                  "Same inputs for every row. `proposed_no_dwell` is the classifier path without rank hysteresis; "
+                  "`proposed` adds `RankDwell` (a changed state must repeat on 3 readings). The oracle row bounds what "
+                  "any occupancy signal could add here.", "",
+                  "| Policy | Occupied service | Switches | Essential unmet Wh | Critical unmet Wh |", "|---|---:|---:|---:|---:|"]
+        for p, row in rows.items():
+            if row:
+                lines.append(f"| {p} | {row['occupied_service_fraction']:.1%} | {row['switching_count']:.1f} | "
+                             f"{row['essential_unmet_wh']:.1f} | {row['critical_unmet_wh']:.1f} |")
+        base, oracle = rows["essentials_first_no_ml"], rows["oracle_occupancy_upper_bound"]
+        if base and oracle:
+            lines += ["", f"Headroom for occupancy evidence in this scenario: the non-deployable oracle serves occupied rooms "
+                          f"{oracle['occupied_service_fraction'] - base['occupied_service_fraction']:+.1%} versus "
+                          "essentials-first without ML. Any classifier gain is bounded by that.", ""]
     for scenario in report["scenarios"]:
         lines += [f"## {scenario}", "",
                   "| Policy | Critical unmet Wh | Essential unmet Wh | Occupied service | Worst starvation s | Switches | Recovery s (max) | Violations |",

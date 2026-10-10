@@ -36,7 +36,9 @@ def test_ranked_heldout_fixture_is_frozen_and_sealed(tmp_path):
     assert manifest["protocol"] == fixtures.RANKED_PROTOCOL
     assert "no independent custodian" in manifest["process"]
     regenerated = fixtures.write_ranked_heldout(tmp_path / "ranked")
-    assert json.loads(json.dumps(regenerated)) == manifest
+    # Fixture bytes stay frozen; a later detector must not rewrite their recorded source hash.
+    fixture_fields = lambda value: {k: v for k, v in value.items() if k != "detector_sha256"}
+    assert json.loads(json.dumps(fixture_fields(regenerated))) == fixture_fields(manifest)
     for kind in ("observations", "truth"):
         path = fixtures.RANKED_DATA_DIR / "heldout" / f"{kind}.json"
         assert hashlib.sha256(path.read_bytes()).hexdigest() == manifest[f"{kind}_sha256"]
@@ -45,6 +47,9 @@ def test_ranked_heldout_fixture_is_frozen_and_sealed(tmp_path):
     with pytest.raises(SystemExit) as exc:
         run_ranked_main([])
     assert "sealed" in str(exc.value)
+    if regenerated["detector_sha256"] != manifest["detector_sha256"]:
+        with pytest.raises(SystemExit, match="rules changed"):
+            run_ranked_main(["--unseal"])
     assert (log.read_bytes() if log.exists() else None) == before
 
 

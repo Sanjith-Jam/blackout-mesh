@@ -6,7 +6,7 @@ A local, explainable power-allocation demo: forecast requested demand, explore a
 
 **Real software:** a trained occupancy proxy, a synthetic-trained demand forecaster, exact 64-plan allocation, recorded history and an ESP32 USB/ESP-NOW bridge. **Simulated:** city power, demand, faults, switching and recovery. Physical LED confirmation appears only when the connected gateway reports a fresh acknowledgment. Physical end-to-end acceptance remains pending; B5 flashing/pairing/video is on hold.
 
-Recorded local medians: **0.17 ms** occupancy inference (100 warm calls), **1.59 ms** allocation (50 decisions), **0 constraint violations / 280 simulated runs**. These are different tasks, not a competing-controller speed comparison. [Measurement sources](docs/DEMO_GUIDE.md#evidence).
+Recorded local medians: **0.17 ms** occupancy inference (100 warm calls), **1.59 ms** allocation (50 decisions), **0 constraint violations / 385 simulated runs**. These are different tasks, not a competing-controller speed comparison. [Measurement sources](docs/DEMO_GUIDE.md#evidence).
 
 The 60-second demand forecast averaged **149.49 W error** versus **469.59 W** for last-value persistence on 20 held-out **synthetic** sessions. It warns about capacity risk and cannot authorize switching. Neither model establishes campus accuracy.
 
@@ -18,11 +18,12 @@ The 60-second demand forecast averaged **149.49 W error** versus **469.59 W** fo
 |---|---:|---:|---:|---:|
 | Fixed priority | 61.8% | 6.2 | 380.9 | 0.0 |
 | Essentials-first, no ML | 84.9% | 6.6 | 205.1 | 0.0 |
-| ML with simulated validation-rate errors | 85.4% | 20.6 | 220.3 | 0.0 |
+| ML without rank dwell, validation-rate errors | 85.4% | 20.6 | 220.3 | 0.0 |
+| ML with rank dwell, validation-rate errors | 85.2% | 15.0 | 221.9 | 0.0 |
 | Always UNKNOWN | 84.9% | 6.6 | 205.1 | 0.0 |
 | Oracle (offline only) | 85.8% | 7.8 | 219.9 | 0.0 |
 
-The small occupied-service gain comes with more switches and unmet essential demand. ML is optional; rank-dwell evaluation from A1 is still pending. [Full results](backend/benchmarks/results/allocation_report.md).
+The small occupied-service gain comes with more switches and unmet essential demand. ML is optional. Rank dwell reduces switching from 20.6 to 15.0 in this synthetic shortage, with a small occupied-service reduction. [Full results](backend/benchmarks/results/allocation_report.md).
 
 ## Run locally
 

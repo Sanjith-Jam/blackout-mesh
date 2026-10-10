@@ -18,6 +18,11 @@ from app.diagnosis.observations import Observation
 CONFIRM_SAMPLES = 2
 WINDOW_SAMPLES = 4
 STALE_AFTER = timedelta(seconds=3)
+# A current reading repeated exactly on STUCK_SAMPLES readings while temperature moves by at least
+# STUCK_TEMPERATURE_SPAN_C with cooling reported OK is treated as a frozen sensor (A2). The flag stays
+# until the reading changes, so a stuck sensor cannot turn back into a confident NORMAL.
+STUCK_SAMPLES = 3
+STUCK_TEMPERATURE_SPAN_C = 3.0
 
 
 @dataclass(frozen=True)
@@ -45,6 +50,7 @@ class ObservationWindow:
         self.size = size
         self._data: dict[tuple[str, str], deque] = {}
         self.dropped_out_of_order = 0
+        self.stuck: dict[tuple[str, str], float] = {}  # (asset, quantity) -> frozen value
 
     def add(self, obs: Observation) -> bool:
         key = (obs.asset_id, obs.quantity)
@@ -60,6 +66,7 @@ class ObservationWindow:
 
     def clear(self):
         self._data.clear()
+        self.stuck.clear()
 
 
 def _recent_values(window, asset, quantity, n):
@@ -83,6 +90,29 @@ def _readings(window: ObservationWindow, asset: str, n: int) -> list[dict]:
             by_seq.setdefault(o.sequence, {})[q] = o
     complete = sorted(s for s, row in by_seq.items() if len(row) == len(TRANSFORMER_QUANTITIES))
     return [by_seq[s] for s in complete[-n:]]
+
+
+def _update_stuck(window: ObservationWindow, asset: str) -> float | None:
+    """Latch a frozen current sensor; returns its frozen value while it stays frozen."""
+    key = (asset, "current_a")
+    rows = _readings(window, asset, STUCK_SAMPLES)
+    if not rows:
+        return window.stuck.get(key)
+    latest = rows[-1]["current_a"].value
+    if key in window.stuck:
+        if latest == window.stuck[key]:
+            return latest
+        del window.stuck[key]
+    if len(rows) < STUCK_SAMPLES:
+        return None
+    currents = [r["current_a"].value for r in rows]
+    temps = [r["temperature_c"].value for r in rows]
+    cooling = [r["cooling_ok"].value for r in rows]
+    if (None in currents or None in temps or len(set(currents)) != 1 or not all(c is True for c in cooling)
+            or max(temps) - min(temps) < STUCK_TEMPERATURE_SPAN_C):
+        return None
+    window.stuck[key] = latest
+    return latest
 
 
 def _engine(rating: TransformerRating, asset: str, row: dict) -> dict:
@@ -139,30 +169,23 @@ def diagnose_transformer(window: ObservationWindow, asset: str, rating: Transfor
     if stale:
         return abstain("Stale sensor evidence", stale=stale)
     missing = [q for q in TRANSFORMER_QUANTITIES if latest[q].value is None]
-
-    current_series = window.series(asset, "current_a")[-(CONFIRM_SAMPLES + 1):]
-    temperature_series = window.series(asset, "temperature_c")[-(CONFIRM_SAMPLES + 1):]
-    current_values = [o.value for o in current_series]
-    temperature_values = [o.value for o in temperature_series]
-    if (len(current_values) == CONFIRM_SAMPLES + 1 and len(temperature_values) == CONFIRM_SAMPLES + 1
-            and all(value is not None for value in current_values + temperature_values)
-            and max(current_values) - min(current_values) <= 0.01
-            and temperature_values[-1] - temperature_values[0] >= 4.0
-            and all(b >= a - 1.5 for a, b in zip(temperature_values, temperature_values[1:]))):
-        details = "Current is flat while transformer temperature is rising; a stuck current sensor is indistinguishable from a true load change."
-        recommendation = "Verify the current sensor with an independent meter before attributing or clearing the fault."
-        abstention = {"asset_id": asset, "reason": "CONTRADICTORY_EVIDENCE", "details": details,
-                      "missing_sensors": [], "contradictory_readings": ["Current remained flat across three observations.",
-                                                                               f"Temperature rose {temperature_values[-1] - temperature_values[0]:.1f} °C."],
-                      "indistinguishable_candidates": ["CURRENT_SENSOR_STUCK", "UNOBSERVED_LOAD_CHANGE"],
-                      "next_check_needed": recommendation}
-        return {**base, "status": "ABSTAINED", "hypotheses": [], "abstention": abstention,
-                "code": "UNKNOWN", "cause": details, "severity": "unknown", "missing": missing,
-                "evidence": abstention["contradictory_readings"], "recommendation": recommendation}
+    frozen = _update_stuck(window, asset)
 
     results = [_relabel_supply_loss(_engine(rating, asset, r), peers_input_low) for r in rows]
     current = results[-1]
     out = {**base, **current, "missing": missing, "affected_assets": [asset]}
+    if frozen is not None and current["status"] in ("NORMAL", "FAULT_DETECTED") and not current["hypotheses"]:
+        details = (f"Current sensor suspected stuck: {frozen} A repeated on {STUCK_SAMPLES}+ readings while "
+                   "temperature changed with cooling OK. Its reading cannot rule out an overload.")
+        abstention = {"asset_id": asset, "reason": "SUSPECTED_STUCK_SENSOR", "details": details,
+                      "missing_sensors": [], "contradictory_readings": ["current_a", "temperature_c"],
+                      "indistinguishable_candidates": ["OVERLOAD", "STUCK_CURRENT_SENSOR"],
+                      "next_check_needed": "Check the current transformer and its wiring, or measure the load with a clamp meter."}
+        return {**base, "status": "ABSTAINED", "hypotheses": [], "abstention": abstention, "code": "UNKNOWN",
+                "cause": details, "severity": "unknown", "missing": missing, "stale": [],
+                "evidence": [details], "recommendation": abstention["next_check_needed"]}
+    if frozen is not None:
+        out["evidence"] = list(out.get("evidence", [])) + [f"Current reading {frozen} A has not changed; sensor may be stuck."]
     if current["status"] != "FAULT_DETECTED":
         return out  # NORMAL, or the engine's own abstention (missing, contradictory, indistinguishable)
 

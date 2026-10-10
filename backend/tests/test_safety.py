@@ -166,3 +166,24 @@ def test_classroom_reports_guard_reasons_per_room():
     assert rooms["CR1"]["state"] == "UNKNOWN" and rooms["CR1"]["raw_state"] == "INACTIVE" and "1/2" in rooms["CR1"]["guard"]
     assert rooms["CR2"]["state"] == "ACTIVE" and rooms["CR2"]["guard"] is None
     assert rooms["CR3"]["guard"].startswith("conservative fallback")
+
+
+def test_rank_dwell_holds_a_changed_state_until_it_repeats():
+    from app.core.safety import RankDwell
+    dwell = RankDwell(hold=3)
+    active, inactive = {"state": "ACTIVE", "score": 0.9}, {"state": "INACTIVE", "score": 0.1}
+    assert dwell.update("CR1", active, 1)["state"] == "ACTIVE"  # first reading sets the state at once
+    held = dwell.update("CR1", inactive, 2)
+    assert held["state"] == "ACTIVE" and "1/3" in held["guard"]
+    assert dwell.update("CR1", inactive, 2)["state"] == "ACTIVE"  # the same reading is not counted twice
+    assert dwell.update("CR1", active, 3)["state"] == "ACTIVE"  # a one-reading blip never switched anything
+    assert [dwell.update("CR1", inactive, k)["state"] for k in (4, 5, 6)] == ["ACTIVE", "ACTIVE", "INACTIVE"]
+    assert dwell.update("CR2", inactive, 1)["state"] == "INACTIVE"  # rooms are independent
+
+
+def test_rank_dwell_never_holds_a_ranking_without_evidence():
+    from app.core.safety import RankDwell
+    dwell = RankDwell(hold=3)
+    dwell.update("CR1", {"state": "INACTIVE", "score": 0.1}, 1)
+    failed = dwell.update("CR1", normalize_prediction(None), 2)
+    assert failed["state"] == "UNKNOWN" and failed["dwell"] is None

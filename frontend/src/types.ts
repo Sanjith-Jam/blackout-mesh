@@ -40,12 +40,13 @@ export type ClassroomDemoActionName = components['schemas']['ClassroomDemoAction
 export type ClassroomDemoSnapshot = Omit<components['schemas']['ClassroomDemoResponse'], 'hardware'> & {
   hardware?: HardwareStatus | null;
 };
-export type HospitalDemoScenario = components['schemas']['HospitalDemoAction']['scenario'];
+export type HospitalDemoScenario = components['schemas']['HospitalDemoAction']['rehearsal'];
 export type HospitalFaultSnapshot = components['schemas']['HospitalDemoResponse'];
 export type DiagnosticHypothesis = components['schemas']['HospitalDiagnosisResponse']['hypotheses'][number];
 export type DiagnosticAbstention = components['schemas']['HospitalDiagnosisResponse']['abstention'];
 export type HospitalDemoDiagnosis = components['schemas']['HospitalDiagnosisResponse'];
 export type HospitalDemoActionName = NonNullable<components['schemas']['HospitalDemoAction']['action']>;
+export type HospitalDemoFault = NonNullable<components['schemas']['HospitalDemoAction']['fault']>;
 export type HospitalDemoZone = components['schemas']['HospitalDemoTransformerResponse'];
 export type HospitalDemoTransformer = HospitalTransformerView;
 type HospitalTransformerView = Omit<components['schemas']['HospitalDemoTransformerResponse'],

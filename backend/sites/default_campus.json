@@ -43,7 +43,7 @@
     {
       "id": "L2",
       "type": "service",
-      "name": "Water Pump",
+      "name": "Water Pump & HVAC",
       "parent_id": "A",
       "tier": "T2",
       "rating_w": 3000,
