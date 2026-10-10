@@ -59,3 +59,13 @@ def test_invalid_forecast_requests_and_benchmark_provenance():
     assert result['constraint_violations'] == sum(r['constraint_violations'] for r in allocation['runs'])
     assert result['inference_median_ms'] == evidence().inference_median_ms
     assert result['forecast_mae_60s_w'] < result['persistence_mae_60s_w']
+
+
+def test_hardware_reads_do_not_hold_the_site_lock(monkeypatch):
+    from types import SimpleNamespace
+    class Bridge:
+        def status(self):
+            assert not main.app.state.site._lock._is_owned()
+            return {'link': 'NOT_CONFIGURED', 'commanded_mask': None, 'confirmed_mask': None}
+    monkeypatch.setattr(main.app.state, 'gateway', (Bridge(), SimpleNamespace(error=None)))
+    assert TestClient(main.app).get('/api/v1/demo').status_code == 200
