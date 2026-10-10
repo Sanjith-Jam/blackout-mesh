@@ -34,6 +34,7 @@ test.beforeEach(async ({ page }) => {
   await page.request.post(`${BACKEND}/api/v1/site/scenario`, { data: { scenario: 'normal' } });
 });
 test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
   await page.request.post(`${BACKEND}/api/v1/site/scenario`, { data: { scenario: 'normal' } });
 });
 

@@ -26,6 +26,11 @@ test.beforeEach(async ({ page }) => {
   await forward(page);
   await resetClassrooms(page);
 });
+// Polling pages keep requests in flight; drop the forwarding route before the page closes so a late
+// fetch never fails the test that just finished.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
 
 test('keyboard-only classroom journey survives a backend outage and a page reload', async ({ page }) => {
   await page.goto('/classrooms');
