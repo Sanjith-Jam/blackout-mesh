@@ -62,3 +62,7 @@ Optional POST /api/v1/studies/electrical runs a balanced 400-V radial AC study o
 - `cd frontend && npm run build` — passed; existing large-bundle warning remains. No interface redesign.
 - Temporal evaluator rerun from `/tmp/occupancy.zip`; benchmark scripts produced checked-in evidence. Original model binary/manifest/replay diff is empty. No physical hardware tested, no campus labels invented, no GitHub reuse files uploaded.
 - GitHub issues #5/#6/#7 were already marked closed (without linked closing PRs or implementation comments) when inspected. This delivery adds actual local implementation/evidence; it does not rely on those status labels. Commits remain local pending an explicit push.
+
+## Prior art and claim boundaries
+
+Added [docs/NOVELTY_AND_PRIOR_ART.md](docs/NOVELTY_AND_PRIOR_ART.md) to compare the demonstrated prototype with established occupancy, allocation, diagnosis and educational tools. The document explicitly limits the "mesh" name, campus ML generalization, physical switching and energy-savings claims. Novelty here is a prototype integration claim; independent field validation remains future work.

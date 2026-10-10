@@ -201,3 +201,7 @@ The installed engines agree for normal, overload and open-branch cases within 0.
 ### Verification of the combined #5–#7 delivery
 
 Final backend suite: **119 passed** via `PYTHONPATH=backend .venv-ml/bin/python -m pytest backend/tests -q`. Isolated Python 3.12 electrical suite: **16 passed** via `PYTHONPATH=backend .venv-electrical/bin/python -m pytest backend/tests/test_electrical.py -q` (dependency deprecation warning only). Frontend `npm run build` passed; the existing bundle-size warning remains. All three implementation areas are committed locally, with no push. Hardware and independent campus-room validation remain untested/unavailable; the shipped model and four-feature runtime were preserved. No 19-leaf live solver or thermal/protection physics was added.
+
+## Prior art and novelty boundaries — BM-06 / Issue #8
+
+Added `docs/NOVELTY_AND_PRIOR_ART.md` with a comparison to established methods and explicit scope limits. It clarifies that the current project does not demonstrate multi-hop mesh routing, campus-validated occupancy accuracy, real power switching or measured energy savings. The implemented diagnosis and allocation are prototype integration work; any performance-improvement or fairness claim needs defined external baselines and independent evaluation before presentation as a result.
