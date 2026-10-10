@@ -30,7 +30,7 @@ The small occupied-service gain comes with more switches and unmet essential dem
 From the repository root:
 
 ```sh
-uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with-requirements backend/requirements-electrical.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
 In another terminal:
@@ -41,11 +41,11 @@ npm ci --no-audit --no-fund
 npm run dev
 ```
 
-Open [the primary district planning demonstration](http://127.0.0.1:5173/grid). Inspect synthetic loads → inject a modeled line fault → propose recovery → inspect the reason and evidence gate. The current watt-budget calculation does not establish AC feasibility. For the existing appliance controller, use `/demo`; the legacy city/forecast story is `/city`. No API key, training step or paid service is required.
+Open [the primary district planning demonstration](http://127.0.0.1:5173/grid) and click **Simulate emergency**: peak hour, a modeled line fault, affected loads turn red and dead lines grey, and the backend proposes the best permitted tie configuration after an unbalanced AC check. Record two simulated healthy observations at least 5 s apart, then **Apply validated proposal** and read the before/after table. **Rehearse weak tie** shows a watt-feasible tie refused by the AC check. Without `requirements-electrical.txt` the AC engine is absent and recovery is refused as `UNVALIDATED`. "Validated" means declared simulation checks passed with synthetic parameters, not operational safety. For the existing appliance controller, use `/demo`; the legacy city/forecast story is `/city`. No API key, training step or paid service is required.
 
 | Route | Model and demand catalog | Capacity and limits |
 |---|---|---|
-| `/grid` | GNITC real OSM geometry, synthetic district assets and 24 hourly demand/PV samples | Separately configured 6,000 W source; synthetic W limits; no AC authorization or physical commands |
+| `/grid` | GNITC real OSM geometry, synthetic district assets and 24 hourly demand/PV samples | Separately configured 6,000 W source (20 W loss reserve); W limits plus unbalanced AC check on declared synthetic parameters; no physical commands |
 | `/grid` with explicit `DISTRICT_PROFILE` opt-in | Six virtual rooms map all 31 catalog appliances into the synthetic GNITC graph | Separately named 14,000 W inventory study; graph path W budgets; PV/storage disabled |
 | `/demo`, `/city`, `/console` | Existing campus, six services and 31 appliances | 14,000 W rated demand; separately controlled source and feeder budgets |
 | `/hospital`, `/classrooms` | Equipment projections of the existing campus controller | Hospital 6,000 W; classrooms 8,000 W rated demand |
