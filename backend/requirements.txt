@@ -7,3 +7,5 @@ websockets==17.2
 
 sqlmodel==0.0.48
 pyserial==3.5
+# Appliance-level allocation (CP-SAT). Installed and tested on CPython 3.14.6 (2026-10-10).
+ortools==9.15.6755
