@@ -85,3 +85,4 @@
 @media(prefers-reduced-motion:reduce) { .city-wire.is-powered { animation:none; }.city-demo button { transition:none; } }
 .city-forecast-alert { margin: .5rem 0 1rem; padding: .7rem 1rem; border: 2px solid #c0392b; border-radius: .6rem; background: #fdecea; color: #6b1d14; }
 .city-forecast-alert a { color: inherit; font-weight: 700; }
+.city-events .city-emergency { background:#c0392b; color:#fff; border-color:#c0392b; font-weight:700; }

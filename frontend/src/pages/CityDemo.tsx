@@ -59,6 +59,16 @@ export default function CityDemo() {
     {city.isError && <p className="city-warning" role="alert">Connection lost. Controls are disabled; the grid shows the last known snapshot.</p>}
     <section className="city-events" aria-label="City event controls"><span><Zap size={18} aria-hidden="true" /> One event updates the whole grid</span>
       <button disabled={disabled} onClick={() => void act(async () => { for (const { id } of snapshot.zones?.classroom.classrooms ?? []) await changeClassroomLoad(id, true, snapshot.contract.identity.run_id); }, 'All classroom sessions requested.')}>Request all rooms</button>
+      <button className="city-emergency" disabled={disabled} onClick={() => void act(async () => {
+        // Each step awaits the backend acknowledgment before the next one is sent.
+        for (const { id } of snapshot.zones?.classroom.classrooms ?? []) await changeClassroomLoad(id, true, snapshot.contract.identity.run_id);
+        await changeCapacity(6000);
+        await changeFeeder('A', false);
+      }, 'Simulated emergency: all rooms requested, 6 kW shortage, feeder A tripped. Protected loads keep priority; follow the recovery steps below.')}>Simulate emergency</button>
+      <button disabled={disabled} onClick={() => void act(async () => {
+        for (const id of openFeeders) await changeFeeder(id, true);
+        await changeCapacity(14000);
+      }, 'Scenario reset: feeders repaired and 14 kW restored; loads return only after stable evidence.')}>Reset scenario</button>
       <button disabled={disabled} onClick={() => void act(() => changeCapacity(6000), '6,000 W shortage applied. Protected demand takes priority.')}>6 kW shortage</button>
       {['A', 'B'].map(id => <button key={id} disabled={disabled} onClick={() => void act(() => changeFeeder(id, openFeeders.includes(id)), `Feeder ${id} ${openFeeders.includes(id) ? 'repaired' : 'tripped'} in simulation.`)}>{openFeeders.includes(id) ? 'Repair' : 'Trip'} feeder {id}</button>)}
       <button disabled={disabled} onClick={() => void act(() => changeCapacity(14000), '14,000 W supply restored. Loads still wait for stable evidence.')}>Restore supply</button>
