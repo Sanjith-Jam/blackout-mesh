@@ -1,5 +1,9 @@
 import type { components } from './schema';
 
+export type CityDemoSnapshot = components['schemas']['CityDemoResponse'];
+export type DemandForecast = components['schemas']['DemandForecastResponse'];
+export type DemoEvidence = components['schemas']['DemoEvidence'];
+
 export type SourceInfo = components['schemas']['SourceInfo'];
 export type Service = components['schemas']['ServiceSnapshot'];
 export type HospitalRoom = components['schemas']['HospitalRoom'];

@@ -1,6 +1,14 @@
 """A fresh application state and in-memory audit store for each test."""
 import pytest
+from datetime import datetime, timezone
+import uuid
 import app.main as main
+
+
+def session_request(client, payload):
+    run_id = client.get("/api/v1/snapshot").json()["site"]["run_id"]
+    return {**payload, "run_id": run_id, "event_id": str(uuid.uuid4()),
+            "observed_at": datetime.now(timezone.utc).isoformat()}
 
 
 @pytest.fixture(autouse=True)

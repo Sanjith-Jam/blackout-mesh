@@ -75,7 +75,9 @@ class ClassroomDemo:
         self.capacity = NORMAL_CAPACITY_W  # classroom limit (the slider): a named sub-budget
         self.campus_limit_w: int | None = None  # set by the site authority from campus feeder B headroom
         self.campus_feeder_closed: bool | None = None  # set by the site authority: is campus feeder B available?
-        self.scanned: list[str] = []   # scan order; the last entry is the most recent card
+        self._scanned: list[str] = []  # standalone demo fallback; live app binds GridState sessions
+        self._sessions = None
+        self._set_session = None
         self.gate = RestorationGate(clock)
         self.replay_running = self.replay_length > 0
         self.replay_base = 0
@@ -90,6 +92,21 @@ class ClassroomDemo:
         initial = (1 << len(LOAD_KEYS)) - 1
         self.gate.update(initial, self._signature(self._room_order()), range(len(LOAD_KEYS)))
         self.tick()
+
+    @property
+    def scanned(self):
+        sessions = getattr(self, "_sessions", None)
+        if sessions is not None:
+            return [cid for cid in sessions if cid in ROOMS]
+        return getattr(self, "_scanned", [])
+
+    @scanned.setter
+    def scanned(self, value):
+        self._scanned = value
+
+    def bind_sessions(self, sessions, set_session):
+        self._sessions = sessions
+        self._set_session = set_session
 
     # ---- recorded sensor replay and model evidence ----
     def replay_index(self):
@@ -263,13 +280,18 @@ class ClassroomDemo:
                                         requested_w=watts, served_w=watts if key in current else 0, reason=reason))
         return edges
 
-    def act(self, action: str, classroom_id: str | None = None, capacity_w: int | None = None):
+    def act(self, action: str, classroom_id: str | None = None, capacity_w: int | None = None, source: str = "UI",
+            event_id: str | None = None, event_time=None):
         if action == "scan":
-            if classroom_id not in self.scanned:
-                self.scanned.append(classroom_id)
+            if self._set_session:
+                self._set_session(classroom_id, True, source, event_id, event_time)
+            elif classroom_id not in self.scanned:
+                self._scanned.append(classroom_id)
         elif action == "unscan":
-            if classroom_id in self.scanned:
-                self.scanned.remove(classroom_id)
+            if self._set_session:
+                self._set_session(classroom_id, False, source, event_id, event_time)
+            elif classroom_id in self.scanned:
+                self._scanned.remove(classroom_id)
         elif action == "set_capacity":
             self.capacity = capacity_w
         elif action == "normal":
@@ -285,7 +307,12 @@ class ClassroomDemo:
             if self.replay_length:
                 self.replay_base, self.replay_anchor = (self._clock_replay_index() + 1) % self.replay_length, self.gate.clock()
         elif action == "reset":
+            sessions, set_session = self._sessions, self._set_session
+            if set_session:
+                for cid in list(self.scanned):
+                    set_session(cid, False, "UI")
             self.__init__(self.gate.clock, self.model, self.replay)
+            self.bind_sessions(sessions, set_session) if sessions is not None else None
         return self.tick()  # a command wakes control immediately
 
 

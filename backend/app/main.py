@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, FastAPI, HTTPException, WebSocket, WebSo
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from typing import List, Literal
-from pydantic import BaseModel, ConfigDict, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, model_validator
 
 from app.schemas.snapshot import (
     HealthResponse, ModelStatusResponse, ActivityObservationResponse, ReplayActionResponse, CrossRouteContract,
@@ -31,6 +31,8 @@ from app.schemas.snapshot import (
 )
 from app.core.state import GridState
 from app.api.history import attach_history, register_history
+from app.api.demo import register_demo
+from app.forecast import DemandForecast
 from app.core.control_loop import ControlLoop
 from app.core.site import AuditUnavailable, SiteAuthority
 from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
@@ -45,6 +47,20 @@ class ClassroomDemoAction(BaseModel):
                     "replay_pause", "replay_resume", "replay_step"]
     classroom_id: Literal["CR1", "CR2", "CR3"] | None = None
     capacity_w: StrictInt | None = None
+    event_id: StrictStr | None = Field(default=None, min_length=1, max_length=128)
+    observed_at: datetime | None = None
+    run_id: StrictStr | None = Field(default=None, min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_session_identity(self):
+        session_action = self.action in ("scan", "unscan")
+        identity_present = all((self.event_id, self.observed_at, self.run_id))
+        identity_partial = any((self.event_id, self.observed_at, self.run_id))
+        if session_action and not identity_present:
+            raise ValueError("scan and unscan require run_id, event_id and observed_at")
+        if not session_action and identity_partial:
+            raise ValueError("session identity fields are only valid for scan and unscan")
+        return self
 
 class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -86,6 +102,25 @@ def with_site(data: dict, identity: dict) -> dict:
     data["site"] = identity
     return data
 
+
+def session_event_time(value):
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        raise HTTPException(422, "observed_at must include a UTC offset")
+    value = value.astimezone(timezone.utc)
+    now = datetime.now(timezone.utc)
+    if value < now - timedelta(seconds=30) or value > now + timedelta(seconds=2):
+        raise HTTPException(422, "observed_at must be within 30 seconds of server time")
+    return value
+
+
+def check_session_run(requested_run_id, site, event_id, observed_at):
+    if requested_run_id is None or event_id is None or observed_at is None:
+        raise HTTPException(422, "run_id, event_id and observed_at are required for session commands")
+    if requested_run_id is not None and requested_run_id != site.run_id:
+        raise HTTPException(409, "session event belongs to a previous site run")
+
 REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
 
 
@@ -95,6 +130,7 @@ def initialize_state(app: FastAPI):
     app.state.grid = GridState()
     app.state.grid.replay_length = max((len(rows) for rows in app.state.replay_data.values()), default=0)
     app.state.classroom_demo = ClassroomDemo(model=app.state.grid.model, replay=app.state.replay_data)
+    app.state.classroom_demo.bind_sessions(app.state.grid.active_sessions, app.state.grid.set_classroom_load)
     app.state.hospital_demo = HospitalPriorityDemo(model=app.state.grid.model, replay=app.state.replay_data)
     app.state.site = SiteAuthority(app.state.grid, app.state.classroom_demo, app.state.hospital_demo)
     attach_history(app.state.grid, app.state.site.run_id)
@@ -106,7 +142,12 @@ def initialize_state(app: FastAPI):
         if app.state.manager.active_connections:
             snapshot = campus_snapshot(app.state.site, app)
             await app.state.manager.broadcast(socket_payload(snapshot, app.state.site))
-    app.state.control_loop = ControlLoop([app.state.site.tick], publish=publish)
+    app.state.demand_forecast = DemandForecast()
+    def observe_demand():
+        snapshot, identity = app.state.site.read(app.state.grid.build_snapshot)
+        demand_w = sum(service.watts for service in snapshot.services if service.requested)
+        app.state.demand_forecast.observe(identity["run_id"], demand_w)
+    app.state.control_loop = ControlLoop([app.state.site.tick, observe_demand], publish=publish)
 
 
 def campus_snapshot(site, app=None):
@@ -151,7 +192,7 @@ def handle_gateway_event(app, action: str, room) -> bool:
         return False
     name, arg = commands[action]
     demo = app.state.classroom_demo
-    app.state.site.command(f"board_a.{action.lower()}", lambda: demo.act(name, arg), {"action": action, "room": room})
+    app.state.site.command(f"board_a.{action.lower()}", lambda: demo.act(name, arg, source="HARDWARE"), {"action": action, "room": room})
     return True
 
 
@@ -321,14 +362,22 @@ async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     classroom_demo = request.app.state.classroom_demo
     if (req.action in ("scan", "unscan")) != (req.classroom_id is not None):
         raise HTTPException(422, "classroom_id is required only for scan and unscan")
+    observed_at = session_event_time(req.observed_at)
+    if req.action in ("scan", "unscan"):
+        check_session_run(req.run_id, site, req.event_id, req.observed_at)
     if (req.action == "set_capacity") != (req.capacity_w is not None):
         raise HTTPException(422, "capacity_w is required only for set_capacity")
     low, high = CLASSROOM_CAPACITY_RANGE_W
     if req.capacity_w is not None and not low <= req.capacity_w <= high:
         raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    _, receipt = site.command(f"classroom.{req.action}",
-                              lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w),
-                              {"action": req.action, "classroom_id": req.classroom_id, "capacity_w": req.capacity_w})
+    try:
+        _, receipt = site.command(f"classroom.{req.action}",
+                                  lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w,
+                                                             event_id=req.event_id, event_time=observed_at),
+                                  {"action": req.action, "classroom_id": req.classroom_id,
+                                   "capacity_w": req.capacity_w, "event_id": req.event_id, "run_id": req.run_id})
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     data, identity = site.read(classroom_demo.snapshot)
     return with_contract(data, site) | {"command": receipt}
 
@@ -434,8 +483,14 @@ async def replay_action(request: Request, req: ReplayActionRequest):
 async def process_rfid_scan(request: Request, req: RfidScanRequest):
     grid = request.app.state.grid
     site = request.app.state.site
-    evt_type, class_id, class_name, service_id = site.command(
-        "campus.rfid_scan", lambda: grid.process_rfid_scan(req.uid), {"source": "HTTP"})[0]
+    observed_at = session_event_time(req.observed_at)
+    check_session_run(req.run_id, site, req.event_id, req.observed_at)
+    try:
+        evt_type, class_id, class_name, service_id = site.command(
+            "campus.rfid_scan", lambda: grid.process_rfid_scan(req.uid, req.event_id, observed_at),
+            {"source": "HTTP", "event_id": req.event_id, "run_id": req.run_id})[0]
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     return RfidScanResponse(
         accepted=True if evt_type != RfidEventType.DUPLICATE_SUPPRESSED.value else False,
         active_classroom_id=class_id,
@@ -461,8 +516,15 @@ async def change_classroom_load(request: Request, req: ClassroomLoadRequest):
     site = request.app.state.site
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
-    site.command("campus.classroom_load", lambda: grid.set_classroom_load(req.classroom_id, req.active),
-                 {"classroom_id": req.classroom_id, "active": req.active})
+    observed_at = session_event_time(req.observed_at)
+    check_session_run(req.run_id, site, req.event_id, req.observed_at)
+    try:
+        site.command("campus.classroom_load",
+                     lambda: grid.set_classroom_load(req.classroom_id, req.active, "UI", req.event_id, observed_at),
+                     {"classroom_id": req.classroom_id, "active": req.active,
+                      "event_id": req.event_id, "run_id": req.run_id})
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     return ClassroomLoadResponse(
         accepted=True,
         classroom_id=req.classroom_id,
@@ -571,6 +633,7 @@ def create_app():
         allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
     application.include_router(router)
     application.include_router(register_history(lambda request: request.app.state.site))
+    application.include_router(register_demo(campus_snapshot, hardware_status))
     return application
 
 

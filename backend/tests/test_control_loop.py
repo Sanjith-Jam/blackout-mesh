@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.main as main
+from conftest import session_request
 from app.core.control_loop import ControlLoop
 from app.core.restoration import RestorationGate
 from app.core.state import GridState
@@ -72,7 +73,8 @@ def test_reads_never_change_domain_state(grid_clock):
     grid, clock, demo = grid_clock
     client = TestClient(main.app)  # no lifespan: nothing ticks in the background
     client.post("/api/v1/simulation/capacity", json={"capacity_w": 6000})
-    client.post("/api/v1/visualizers/classrooms", json={"action": "scan", "classroom_id": "CR1"})
+    client.post("/api/v1/visualizers/classrooms", json=session_request(
+        client, {"action": "scan", "classroom_id": "CR1"}))
     clock.t += 30
     demo.gate.clock.t += 30
     before = grid_fingerprint(grid), demo_fingerprint(demo)

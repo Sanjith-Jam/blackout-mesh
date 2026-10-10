@@ -9,6 +9,7 @@ from app.core.restoration import RestorationGate
 from app.core.state import SERVICE_CATALOG, GridState
 from app.main import app, get_grid_state
 from app.activity.model import ActivityModel
+from conftest import session_request
 
 
 @pytest.fixture
@@ -61,7 +62,8 @@ def test_activity_observation_requires_current_typed_evidence(client):
     assert client.post("/api/v1/activity/observations", json={**payload, "observed_at": "2000-01-01T00:00:00Z"}).status_code == 422
     assert client.post("/api/v1/simulation/capacity", json={"capacity_w": True}).status_code == 422
     assert client.post("/api/v1/simulation/capacity", json={"capacity_w": 0}).status_code == 200
-    assert client.post("/api/v1/simulation/classroom-load", json={"classroom_id": "CR4", "active": True}).status_code == 422
+    assert client.post("/api/v1/simulation/classroom-load", json=session_request(
+        client, {"classroom_id": "CR4", "active": True})).status_code == 422
     assert client.post("/api/v1/simulation/feeder", json={"feeder": "C", "available": True}).status_code == 422
 
 

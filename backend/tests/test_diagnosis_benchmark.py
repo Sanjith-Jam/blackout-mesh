@@ -76,10 +76,12 @@ def test_leakage_guard_catches_an_oracle_contaminated_detector():
 
 
 def test_heldout_is_sealed_without_unseal():
+    log = DATA / "UNSEALED.log"
+    before = log.read_bytes() if log.exists() else None
     with pytest.raises(SystemExit) as exc:
         run_main(["--split", "heldout"])
     assert "sealed" in str(exc.value)
-    assert not (DATA / "UNSEALED.log").exists()
+    assert (log.read_bytes() if log.exists() else None) == before
 
 
 def test_evaluator_keeps_misses_and_counts_safety_violations():
