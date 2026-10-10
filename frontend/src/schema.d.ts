@@ -401,6 +401,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/power-system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Power System */
+        get: operations["get_api_v1_power_system"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/appliances/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Appliance */
+        post: operations["post_api_v1_appliances_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -417,6 +451,19 @@ export interface components {
             essential_unmet_wh: number;
             /** Critical Unmet Wh */
             critical_unmet_wh: number;
+        };
+        /** ActiveFault */
+        ActiveFault: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Target */
+            target: string;
+            /** Description */
+            description: string;
+            /** Provenance */
+            provenance: string;
         };
         /** ActivityObservationRequest */
         ActivityObservationRequest: {
@@ -532,6 +579,104 @@ export interface components {
             /** Baseline Mask */
             baseline_mask: number;
             safety?: components["schemas"]["SafetySnapshot"] | null;
+        };
+        /** Appliance */
+        Appliance: {
+            /** Id */
+            id: string;
+            /** Asset Id */
+            asset_id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Room Id */
+            room_id: string;
+            /** Zone */
+            zone: string;
+            /** Feeder */
+            feeder: string;
+            /** Service Id */
+            service_id: string;
+            /** Distribution Id */
+            distribution_id: string;
+            /** Demand W */
+            demand_w: number;
+            /** Service Tier */
+            service_tier: string;
+            /** Essential */
+            essential: boolean;
+            /** Protected */
+            protected: boolean;
+            /** Priority Class */
+            priority_class: string;
+            /** Priority Label */
+            priority_label: string;
+            /** Priority Rank */
+            priority_rank: number;
+            /** Requested */
+            requested: boolean;
+            /** Reachable */
+            reachable: boolean;
+            /** Commanded */
+            commanded: boolean;
+            /** Served */
+            served: boolean;
+            /** Served W */
+            served_w: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "SERVED" | "PENDING_RESTORATION" | "SHED" | "UNREACHABLE" | "NOT_REQUESTED";
+            /** Reason Code */
+            reason_code: string;
+            /** Reason */
+            reason: string;
+            /** Path */
+            path: string[];
+            /** Requires */
+            requires: string[];
+            /** Indivisible Group */
+            indivisible_group?: string | null;
+            /** Provenance */
+            provenance: string;
+            /** Events */
+            events: components["schemas"]["ApplianceEvent"][];
+        };
+        /** ApplianceEvent */
+        ApplianceEvent: {
+            /** Timestamp */
+            timestamp: string;
+            /** Appliance Id */
+            appliance_id: string;
+            /** To */
+            to: string;
+            /** From State */
+            from_state?: string | null;
+            /** Reason */
+            reason: string;
+            /** Command */
+            command?: string | null;
+            /** Provenance */
+            provenance: string;
+        };
+        /** ApplianceRequest */
+        ApplianceRequest: {
+            /** Appliance Id */
+            appliance_id: string;
+            /** Requested */
+            requested: boolean;
+        };
+        /** ApplianceRequestResponse */
+        ApplianceRequestResponse: {
+            /** Accepted */
+            accepted: boolean;
+            /** Appliance Id */
+            appliance_id: string;
+            /** Requested */
+            requested: boolean;
+            site: components["schemas"]["SiteIdentityResponse"];
         };
         /** BoardAStatus */
         BoardAStatus: {
@@ -732,6 +877,29 @@ export interface components {
             /** Applied Revision */
             applied_revision: number;
         };
+        /** ConstraintCheck */
+        ConstraintCheck: {
+            /** Id */
+            id: string;
+            /** Scope */
+            scope: string;
+            /** Label */
+            label: string;
+            /** Requested W */
+            requested_w: number;
+            /** Limit W */
+            limit_w: number;
+            /** Served W */
+            served_w: number;
+            /** Exceeded */
+            exceeded: boolean;
+            /** Deficit W */
+            deficit_w: number;
+            /** Headroom W */
+            headroom_w: number;
+            /** Provenance */
+            provenance: string;
+        };
         /** ControlLoopHealth */
         ControlLoopHealth: {
             /** Running */
@@ -859,6 +1027,26 @@ export interface components {
             contradicting_evidence: string[];
             /** Recommendation */
             recommendation: string;
+        };
+        /** Edge */
+        Edge: {
+            /** Id */
+            id: string;
+            /** From Node */
+            from_node: string;
+            /** To Node */
+            to_node: string;
+            /** Kind */
+            kind: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ENERGIZED" | "PENDING_RESTORATION" | "SHED" | "OPEN" | "UNKNOWN";
+            /** Requested W */
+            requested_w: number;
+            /** Served W */
+            served_w: number;
         };
         /** ElectricalInput */
         ElectricalInput: {
@@ -1014,6 +1202,23 @@ export interface components {
             affected_assets?: string[];
             /** Supply Constraint */
             supply_constraint?: string | null;
+        };
+        /** Feeder */
+        Feeder: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Available */
+            available: boolean;
+            /** Limit W */
+            limit_w: number;
+            /** Requested W */
+            requested_w: number;
+            /** Commanded W */
+            commanded_w: number;
+            /** Served W */
+            served_w: number;
         };
         /** FeederChangeRequest */
         FeederChangeRequest: {
@@ -1421,6 +1626,21 @@ export interface components {
             /** Rooms */
             rooms: components["schemas"]["HospitalRoom"][];
         };
+        /** Indicator */
+        Indicator: {
+            /** Led Bit */
+            led_bit: number;
+            /** Room Id */
+            room_id: string;
+            /** Name */
+            name: string;
+            /** Rule */
+            rule: string;
+            /** Commanded */
+            commanded: boolean;
+            /** Confirmed */
+            confirmed?: boolean | null;
+        };
         /** ModelStatusResponse */
         ModelStatusResponse: {
             /** Ready */
@@ -1495,6 +1715,47 @@ export interface components {
             /** Note */
             note: string;
         };
+        /** PowerSystemResponse */
+        PowerSystemResponse: {
+            site: components["schemas"]["SiteIdentityResponse"];
+            /** Generated At */
+            generated_at: string;
+            /** Boundary */
+            boundary: string;
+            source: components["schemas"]["Source"];
+            /** Feeders */
+            feeders: components["schemas"]["Feeder"][];
+            /** Zone Budgets */
+            zone_budgets: components["schemas"]["ZoneBudget"][];
+            /** Rooms */
+            rooms: components["schemas"]["Room"][];
+            /** Appliances */
+            appliances: components["schemas"]["Appliance"][];
+            /** Edges */
+            edges: components["schemas"]["Edge"][];
+            /** Optimizer */
+            optimizer: {
+                [key: string]: unknown;
+            };
+            /** Diagnosis */
+            diagnosis: {
+                [key: string]: unknown;
+            };
+            /** Constraint Checks */
+            constraint_checks: components["schemas"]["ConstraintCheck"][];
+            /** Faults */
+            faults: components["schemas"]["ActiveFault"][];
+            /** Indicators */
+            indicators: components["schemas"]["Indicator"][];
+            /** Hardware Link */
+            hardware_link: string;
+            /** Events */
+            events: {
+                [key: string]: unknown;
+            }[];
+            /** Appliance Events */
+            appliance_events: components["schemas"]["ApplianceEvent"][];
+        };
         /** ReplayActionRequest */
         ReplayActionRequest: {
             /** Action */
@@ -1553,6 +1814,37 @@ export interface components {
             /** Service Id */
             service_id?: string | null;
             event_type: components["schemas"]["RfidEventType"];
+        };
+        /** Room */
+        Room: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Zone */
+            zone: string;
+            /** Feeder */
+            feeder: string;
+            /** Distribution Id */
+            distribution_id: string;
+            /** Distribution Name */
+            distribution_name: string;
+            /** Service Id */
+            service_id?: string | null;
+            /** Requested W */
+            requested_w: number;
+            /** Commanded W */
+            commanded_w: number;
+            /** Served W */
+            served_w: number;
+            /** Session */
+            session?: boolean | null;
+            /** Activity State */
+            activity_state?: string | null;
+            /** Evidence Status */
+            evidence_status: string;
+            /** Evidence Detail */
+            evidence_detail?: string | null;
         };
         /** RunIdentity */
         RunIdentity: {
@@ -1678,6 +1970,25 @@ export interface components {
             /** Scenarios */
             scenarios: components["schemas"]["SiteScenarioInfo"][];
             site: components["schemas"]["SiteIdentityResponse"];
+        };
+        /** Source */
+        Source: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Capacity W */
+            capacity_w: number;
+            /** Normal Capacity W */
+            normal_capacity_w: number;
+            /** Requested W */
+            requested_w: number;
+            /** Commanded W */
+            commanded_w: number;
+            /** Served W */
+            served_w: number;
+            /** Provenance */
+            provenance: string;
         };
         /** SourceInfo */
         SourceInfo: {
@@ -1869,6 +2180,19 @@ export interface components {
             length: number;
             /** Step S */
             step_s: number;
+        };
+        /** ZoneBudget */
+        ZoneBudget: {
+            /** Zone */
+            zone: string;
+            /** Limit W */
+            limit_w: number;
+            /** Normal Limit W */
+            normal_limit_w: number;
+            /** Requested W */
+            requested_w: number;
+            /** Served W */
+            served_w: number;
         };
         /** WebSocketMessageEnvelope */
         WebSocketMessageEnvelope: {
@@ -2841,6 +3165,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CityDemoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_power_system: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PowerSystemResponse"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    post_api_v1_appliances_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplianceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplianceRequestResponse"];
                 };
             };
             /** @description Validation Error */
