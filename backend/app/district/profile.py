@@ -24,6 +24,8 @@ class DistrictProfile(BaseModel):
     id: StrictStr = Field(min_length=1)
     provenance: Literal["CONFIGURED_SIMULATED_ASSUMPTION"]
     source_capacity_w: StrictInt = Field(ge=0, le=1_000_000)
+    # Declared headroom for series losses so a full dispatch still fits the source after AC losses.
+    loss_reserve_w: StrictInt = Field(default=0, ge=0, le=100_000)
     demand_basis: Literal["hourly_trace_weights", "appliance_inventory"]
     local_supply_mode: Literal["grid_following", "disabled"]
     buildings: list[BuildingPolicy]
@@ -31,6 +33,8 @@ class DistrictProfile(BaseModel):
 
     @model_validator(mode="after")
     def validate_buildings(self):
+        if self.loss_reserve_w > self.source_capacity_w:
+            raise ValueError("loss reserve cannot exceed source capacity")
         ids = [row.building_id for row in self.buildings]
         rooms = [row.room_id for row in self.buildings if row.room_id is not None]
         if not ids or len(ids) != len(set(ids)) or len(rooms) != len(set(rooms)):

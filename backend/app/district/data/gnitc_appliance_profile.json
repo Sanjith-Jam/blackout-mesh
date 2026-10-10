@@ -3,6 +3,7 @@
   "id": "gnitc-appliance-14kw-v1",
   "provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
   "source_capacity_w": 14000,
+  "loss_reserve_w": 100,
   "demand_basis": "appliance_inventory",
   "local_supply_mode": "disabled",
   "buildings": [

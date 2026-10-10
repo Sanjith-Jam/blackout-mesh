@@ -73,7 +73,9 @@ def test_opt_in_profile_uses_one_revision_and_validates_the_full_api_contract(mo
     assert first.profile.id == "gnitc-appliance-14kw-v1"
     assert first.identity.profile_hash == first.profile.config_hash
     assert first.profile.catalog_version and first.profile.catalog_hash
-    assert first.state.grid_requested_w == first.state.grid_served_w == 14000
+    assert first.state.grid_requested_w == 14000
+    # Binary appliances must fit the 100 W declared loss reserve, so one 300 W leaf is shed.
+    assert first.state.grid_served_w == 13700 <= 14000 - district.profile.loss_reserve_w
     assert first.energy.grid_import_w == 14000 and first.energy.pv_used_w == 0
     assert first.profile.decision.validation == "PASSED"
     assert first.profile.decision.physical_confirmation is None

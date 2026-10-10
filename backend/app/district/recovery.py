@@ -37,7 +37,7 @@ def source_tree(topology, states):
 
 def evaluate(topology, profile, energy_trace, hour, faults, closed_ties, *, source_budget_w=None):
     """Return (edge states, building loads) for one declared switch configuration."""
-    budget_w = profile.source_capacity_w if source_budget_w is None else source_budget_w
+    budget_w = profile.source_capacity_w - profile.loss_reserve_w if source_budget_w is None else source_budget_w
     edge_by_id = {edge["id"]: edge for edge in topology["edges"]}
     states = edge_states(topology, faults, closed_ties)
     source, parent, parent_edge = source_tree(topology, states)

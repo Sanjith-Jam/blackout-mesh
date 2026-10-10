@@ -51,8 +51,9 @@ def test_citylearn_demand_and_grid_import_balance_into_graph_load_state():
     district.hour = 20
     peak = district.snapshot()
     assert peak["energy"]["grid_import_w"] == peak["state"]["grid_requested_w"] == 6200
-    assert peak["state"]["grid_served_w"] == 6000
-    assert peak["state"]["unmet_w"] == 200
+    # The declared 20 W loss reserve keeps AC losses inside the 6,000 W source budget.
+    assert peak["state"]["grid_served_w"] == 6000 - district.profile.loss_reserve_w == 5980
+    assert peak["state"]["unmet_w"] == 220
     assert sum(load["requested_w"] for load in peak["state"]["loads"]) == sum(
         load["served_w"] for load in peak["state"]["loads"]) + peak["state"]["unmet_w"]
     assert all(edge["flow_w"] <= peak["state"]["grid_served_w"] for edge in peak["state"]["edges"])

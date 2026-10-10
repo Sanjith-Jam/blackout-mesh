@@ -3,6 +3,7 @@
   "id": "gnitc-aggregate-6kw-v1",
   "provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
   "source_capacity_w": 6000,
+  "loss_reserve_w": 20,
   "demand_basis": "hourly_trace_weights",
   "local_supply_mode": "grid_following",
   "buildings": [
