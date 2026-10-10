@@ -9,7 +9,7 @@
    "catalog_version": "1.1",
    "config_hash": "af574a50987d",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T02:42:41.628062+00:00",
+   "observation_time": "2026-10-10T02:45:14.867265+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
@@ -41,6 +41,7 @@
   "profile": "campus",
   "revision": 9,
   "run_id": "<volatile>",
+  "scenario": "custom",
   "site_name": "Default Campus"
  },
  "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; a cause is inferred after two consecutive agreeing readings. Thresholds are not certified protection settings.",

@@ -5,6 +5,8 @@ export type DemandForecast = components['schemas']['DemandForecastResponse'];
 export type DemoEvidence = components['schemas']['DemoEvidence'];
 
 export type SourceInfo = components['schemas']['SourceInfo'];
+export type SiteScenarios = components['schemas']['SiteScenariosResponse'];
+export type SiteScenarioSwitch = components['schemas']['SiteScenarioResponse'];
 export type Service = components['schemas']['ServiceSnapshot'];
 
 /** Modeled watts a service receives; feeder B services can be partly served by the classroom leaves (#33). */

@@ -189,3 +189,45 @@ def test_feeder_b_has_one_decision_with_partial_service_on_every_route():
     assert partial and all("Partly served" in s["model_reason"] for s in partial)
     decisions = {d["service_id"]: d for d in campus["allocation"]["explanation"]["decisions"]}
     assert all(decisions[s]["decided_by"] == "classroom_leaf_allocation" for s in ("L3", "L4", "L5"))
+
+
+def test_named_scenario_switches_every_route_in_one_revision():
+    """#33: teaching scenarios are named and switched by one explicit command."""
+    listing = client.get("/api/v1/site/scenarios").json()
+    assert listing["active"] == listing["site"]["scenario"] == "normal"
+    assert {"normal", "source_shortage", "feeder_b_trip", "classroom_overload", "hospital_overload"} == {
+        p["name"] for p in listing["scenarios"]}
+
+    reply = client.post("/api/v1/site/scenario", json={"scenario": "source_shortage"}).json()
+    assert reply["active"] == reply["site"]["scenario"] == "source_shortage"
+    assert reply["command"]["applied_revision"] == reply["site"]["revision"]
+    campus, classroom, hospital = read_all()
+    assert {(p["site"]["revision"], p["site"]["scenario"]) for p in (campus, classroom, hospital)} == {
+        (reply["site"]["revision"], "source_shortage")}
+    assert campus["source"]["capacity_w"] == 6000 and campus["allocation"]["served_w"] <= 6000
+
+    client.post("/api/v1/site/scenario", json={"scenario": "classroom_overload"})
+    campus, classroom, hospital = read_all()
+    assert campus["source"]["capacity_w"] == 14000  # every budget is set, not just the one that differs
+    assert classroom["classroom_limit_w"] == 3400 and hospital["capacity_w"] == 6000
+
+    client.post("/api/v1/site/scenario", json={"scenario": "feeder_b_trip"})
+    campus, classroom, _ = read_all()
+    assert classroom["served_w"] == 0 and classroom["classroom_limit_w"] == 8000
+    assert all(s["served_w"] == 0 for s in campus["services"] if s["feeder"] == "B")
+
+    # A hand-changed budget no longer matches the scenario, and says so.
+    client.post("/api/v1/visualizers/classrooms", json={"action": "set_capacity", "capacity_w": 5000})
+    assert client.get("/api/v1/snapshot").json()["site"]["scenario"] == "custom"
+    client.post("/api/v1/site/scenario", json={"scenario": "normal"})
+    campus, classroom, _ = read_all()
+    assert campus["site"]["scenario"] == "normal" and classroom["classroom_limit_w"] == 8000
+    assert campus["site"]["profile"] == "campus"  # the site profile (#26) is a separate, restart-only choice
+
+
+def test_unknown_or_malformed_scenario_is_rejected_without_a_change():
+    before = client.get("/api/v1/site/scenarios").json()["site"]["revision"]
+    assert client.post("/api/v1/site/scenario", json={"scenario": "mains_power"}).status_code == 422
+    assert client.post("/api/v1/site/scenario", json={"scenario": "normal", "extra": 1}).status_code == 422
+    assert client.post("/api/v1/site/scenario", json={"scenario": 3}).status_code == 422
+    assert client.get("/api/v1/site/scenarios").json()["site"]["revision"] == before

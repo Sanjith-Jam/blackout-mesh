@@ -12,15 +12,50 @@ from datetime import datetime, timezone
 from sqlmodel import Session
 
 from app.core.active_site import CATALOG
-from app.core.state import CLASSROOMS, SERVICE_CATALOG, site_profile
+from app.core.state import CLASSROOMS, NORMAL_SOURCE_CAPACITY_W, SERVICE_CATALOG, site_profile
 from app.schemas.snapshot import SiteIdentityResponse
 from app.storage.models import Run
-from app.visualizers import HOSP_LOADS, HOSP_PARENT, LOADS as CLASSROOM_LEAVES
+from app.visualizers import (HOSP_LOADS, HOSP_PARENT, LOADS as CLASSROOM_LEAVES, NORMAL_CAPACITY_W as CLASSROOM_NORMAL_W,
+                             OVERLOAD_CAPACITY_W as CLASSROOM_OVERLOAD_W, HospitalPriorityDemo)
 
 # The active site profile names the catalog; its content hash pins exactly which inventory a run used (#26).
 CATALOG_VERSION = f"site-catalog-{CATALOG.version}"
 CONFIG_HASH = CATALOG.config_hash
 PROFILE = "campus"
+DEFAULT_SCENARIO = "normal"
+CUSTOM_SCENARIO = "custom"  # any budget changed by hand after a scenario was applied
+
+
+def _scenarios() -> dict:
+    """Named teaching scenarios (#33), derived from the active site profile's limits and presets.
+
+    Each one sets every budget, so switching is deterministic and never leaves part of the previous
+    scenario behind. Sessions and recorded replay are left alone.
+    """
+    feeders = {f: True for f in CATALOG.feeder_limits_w}
+    base = {"source_w": NORMAL_SOURCE_CAPACITY_W, "feeders": feeders, "classroom_limit_w": CLASSROOM_NORMAL_W,
+            "hospital_limit_w": HospitalPriorityDemo.NORMAL_W}
+    shortage = CATALOG.feeder_limits_w["A"]
+    return {
+        "normal": {**base, "description": "Full supply, every feeder closed, no sub-limits."},
+        "source_shortage": {**base, "source_w": shortage,
+                            "description": f"Source drops to {shortage:,} W; protected services first, the rest "
+                                           "share what is left."},
+        "feeder_b_trip": {**base, "feeders": {**feeders, "B": False},
+                          "description": "Feeder B is open; every classroom load loses supply."},
+        "classroom_overload": {**base, "classroom_limit_w": CLASSROOM_OVERLOAD_W,
+                               "description": f"Classrooms limited to {CLASSROOM_OVERLOAD_W:,} W; essentials first, "
+                                              "then scanned rooms."},
+        "hospital_overload": {**base, "hospital_limit_w": HospitalPriorityDemo.OVERLOAD_W,
+                              "description": f"Hospital limited to {HospitalPriorityDemo.OVERLOAD_W:,} W; essential "
+                                             "equipment first."},
+    }
+
+
+SCENARIOS = _scenarios()
+# Commands that change a budget a scenario sets; after one, the site no longer matches its scenario.
+BUDGET_COMMANDS = {"campus.capacity", "campus.feeder", "classroom.set_capacity", "classroom.normal", "classroom.reset",
+                   "classroom.overload", "hospital.set_capacity", "hospital.normal", "hospital.overload", "hospital.reset"}
 log = logging.getLogger(__name__)
 
 
@@ -106,6 +141,7 @@ class SiteAuthority:
         self.run_id = grid.run_id
         self.revision = 0
         self.last_command = None
+        self.scenario = DEFAULT_SCENARIO
         self._seen = None
         self.tick()
 
@@ -147,6 +183,8 @@ class SiteAuthority:
             if not self.grid.save_command(name, payload or {}, command_id):
                 raise AuditUnavailable("Command audit storage is unavailable; no change was applied")
             result = apply()
+            if name in BUDGET_COMMANDS:
+                self.scenario = CUSTOM_SCENARIO
             revision = self.tick()
             self.last_command = {"command_id": command_id, "name": name, "run_id": self.run_id,
                                  "applied_revision": revision}
@@ -160,6 +198,23 @@ class SiteAuthority:
             revision = self.tick()
             self.last_command = {**receipt, "applied_revision": revision}
             return dict(self.last_command)
+
+    def apply_scenario(self, name: str) -> dict:
+        """Switch the whole site to a named scenario in one command and one revision."""
+        if name not in SCENARIOS:
+            raise ValueError(f"unknown scenario {name!r}")
+        settings = SCENARIOS[name]
+
+        def apply():
+            self.grid.set_capacity(settings["source_w"])
+            for feeder, available in settings["feeders"].items():
+                self.grid.set_feeder(feeder, available)
+            self.classroom.capacity = settings["classroom_limit_w"]
+            self.hospital.capacity = settings["hospital_limit_w"]
+            self.hospital.fault = None
+            self.scenario = name
+
+        return self.command("site.scenario", apply, {"scenario": name})[1]
 
     def commit(self, name: str, payload=None) -> dict:
         """For handlers that already applied their mutation: tick all parts and record the receipt."""
@@ -193,4 +248,5 @@ class SiteAuthority:
     def identity(self) -> dict:
         with self._lock:
             return {"run_id": self.run_id, "revision": self.revision, "profile": PROFILE,
-                    "catalog_version": CATALOG_VERSION, "config_hash": CONFIG_HASH, "site_name": CATALOG.name}
+                    "catalog_version": CATALOG_VERSION, "config_hash": CONFIG_HASH, "site_name": CATALOG.name,
+                    "scenario": self.scenario}

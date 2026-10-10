@@ -244,6 +244,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/site/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Site Scenarios */
+        get: operations["get_api_v1_site_scenarios"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/site/scenario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch Site Scenario
+         * @description Switch the whole site to a named scenario: one command, one revision on every route (#33).
+         */
+        post: operations["post_api_v1_site_scenario"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/allocation/policy": {
         parameters: {
             query?: never;
@@ -1600,6 +1637,47 @@ export interface components {
             config_hash: string;
             /** Site Name */
             site_name: string;
+            /** Scenario */
+            scenario?: string | null;
+        };
+        /** SiteScenarioInfo */
+        SiteScenarioInfo: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Source W */
+            source_w: number;
+            /** Feeders */
+            feeders: {
+                [key: string]: boolean;
+            };
+            /** Classroom Limit W */
+            classroom_limit_w: number;
+            /** Hospital Limit W */
+            hospital_limit_w: number;
+        };
+        /** SiteScenarioRequest */
+        SiteScenarioRequest: {
+            /** Scenario */
+            scenario: string;
+        };
+        /** SiteScenarioResponse */
+        SiteScenarioResponse: {
+            /** Active */
+            active: string;
+            /** Scenarios */
+            scenarios: components["schemas"]["SiteScenarioInfo"][];
+            site: components["schemas"]["SiteIdentityResponse"];
+            command: components["schemas"]["CommandReceipt"];
+        };
+        /** SiteScenariosResponse */
+        SiteScenariosResponse: {
+            /** Active */
+            active: string;
+            /** Scenarios */
+            scenarios: components["schemas"]["SiteScenarioInfo"][];
+            site: components["schemas"]["SiteIdentityResponse"];
         };
         /** SourceInfo */
         SourceInfo: {
@@ -2381,6 +2459,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeederChangeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_site_scenarios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteScenariosResponse"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    post_api_v1_site_scenario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteScenarioRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteScenarioResponse"];
                 };
             };
             /** @description Validation Error */
