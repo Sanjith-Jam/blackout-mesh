@@ -144,6 +144,16 @@ class DistrictEnergyHour(StrictDTO):
     loss_wh: StrictInt
 
 
+class DistrictRestoration(StrictDTO):
+    candidate_edge_id: StrictStr | None
+    applied_edge_id: StrictStr | None
+    physical_confirmed_edge_id: None
+    stable_since: StrictStr | None
+    stable_evidence_count: StrictInt = Field(ge=0)
+    reason: StrictStr
+    provenance: StrictStr
+
+
 class DistrictState(StrictDTO):
     hour: StrictInt
     source_capacity_w: StrictInt
@@ -157,7 +167,7 @@ class DistrictState(StrictDTO):
     loads: list[DistrictLoad]
     critical_shortfall_w: StrictInt
     faults: list[dict]
-    restoration: dict
+    restoration: DistrictRestoration
     transformers: list[dict]
 
 
@@ -217,7 +227,9 @@ def register_district():
             raise HTTPException(409, "district topology generation is in progress")
         result = district.apply_action(body)
         if not result:
-            raise HTTPException(422, "action is invalid for the current district state")
+            reason = district.restoration_reason if body.action in {
+                DistrictActionName.apply_recovery, DistrictActionName.clear_fault} else None
+            raise HTTPException(422, reason or "action is invalid for the current district state")
         district.revision += 1
         return district.snapshot()
 
@@ -230,6 +242,8 @@ def register_district():
             raise HTTPException(422, "unsupported SHIFT secondary strategy")
         if district.generation.get("status") == "GENERATING":
             raise HTTPException(409, "topology generation is already running")
+        if district.faults or district.closed_tie or district.candidate_tie:
+            raise HTTPException(409, "Repair or reset the active fault/recovery study before replacing its topology.")
         python = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
         script = Path(__file__).resolve().parents[2] / "scripts/generate_district_topology.py"
         if not district.generation["available"] or not python.is_file():
@@ -300,7 +314,10 @@ async def _run_generation(district, python, script, body, run_id, task_id, revis
             raise RuntimeError("generated primary topology is disconnected")
         if not current_job():
             return
+        if district.faults or district.closed_tie or district.candidate_tie:
+            raise RuntimeError("Topology replacement cannot clear active fault/recovery state.")
         district.topology = result
+        district._reset_evidence()
         district.generation.update(status="GENERATED", cluster_count=body.cluster_count,
             secondary_strategy=body.secondary_strategy, generated_at=datetime.now(timezone.utc).isoformat(),
             reason=None)

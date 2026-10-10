@@ -87,7 +87,7 @@ type DistrictTopologyEdge = { id: string; from: string; to: string; kind: string
 type DistrictEdgeState = { id: string; closed: boolean; faulted: boolean; energized: boolean; flow_w: number; provenance?: string };
 type DistrictLoad = components['schemas']['DistrictLoad'];
 type DistrictTransformer = { component_id: string; sensor: Record<string, string | number | boolean | null>; diagnosis: { status: string; suspected_part: string | null; evidence: string[] } };
-type DistrictRestoration = { candidate_edge_id?: string | null; applied_edge_id?: string | null; stable_since?: string | null; stable_evidence_count?: number; reason?: string | null; provenance?: string };
+type DistrictRestoration = components['schemas']['DistrictRestoration'];
 type DistrictFault = { component_id: string; kind: string; provenance?: string };
 type DistrictState = Omit<components['schemas']['DistrictState'], 'edges' | 'loads' | 'faults' | 'restoration' | 'transformers'> & {
   edges: DistrictEdgeState[]; loads: DistrictLoad[]; faults: DistrictFault[]; restoration: DistrictRestoration; transformers: DistrictTransformer[];

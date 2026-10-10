@@ -1280,6 +1280,23 @@ export interface components {
             /** Coordinates */
             coordinates: number[][];
         };
+        /** DistrictRestoration */
+        DistrictRestoration: {
+            /** Candidate Edge Id */
+            candidate_edge_id: string | null;
+            /** Applied Edge Id */
+            applied_edge_id: string | null;
+            /** Physical Confirmed Edge Id */
+            physical_confirmed_edge_id: null;
+            /** Stable Since */
+            stable_since: string | null;
+            /** Stable Evidence Count */
+            stable_evidence_count: number;
+            /** Reason */
+            reason: string;
+            /** Provenance */
+            provenance: string;
+        };
         /** DistrictSite */
         DistrictSite: {
             /** Name */
@@ -1333,10 +1350,7 @@ export interface components {
             faults: {
                 [key: string]: unknown;
             }[];
-            /** Restoration */
-            restoration: {
-                [key: string]: unknown;
-            };
+            restoration: components["schemas"]["DistrictRestoration"];
             /** Transformers */
             transformers: {
                 [key: string]: unknown;

@@ -55,6 +55,8 @@ class DistrictAuthority:
         self.candidate_tie: str | None = None
         self.stable_evidence_count = 0
         self.stable_since: str | None = None
+        self.evidence_signature = None
+        self.source_capacity_w = 6000
         self.transformer_scenarios: dict[str, str] = {}
         self.restoration_reason: str | None = None
         self.generation_task_id: str | None = None
@@ -65,11 +67,13 @@ class DistrictAuthority:
             "reason": f"Cached topology is active; {runtime_reason}",
             "generated_at": None}
 
-    def _electrical_state(self):
+    def _electrical_state(self, *, tie_id=..., faults=None, enforce_limits=True):
+        tie_id = self.closed_tie if tie_id is ... else tie_id
+        faults = self.faults if faults is None else faults
         topology = self.topology
         edge_by_id = {edge["id"]: edge for edge in topology["edges"]}
-        states = {edge["id"]: {"id": edge["id"], "closed": (not edge["normally_open"] or edge["id"] == self.closed_tie),
-                             "faulted": edge["id"] in self.faults, "energized": False, "flow_w": 0}
+        states = {edge["id"]: {"id": edge["id"], "closed": (not edge["normally_open"] or edge["id"] == tie_id),
+                             "faulted": edge["id"] in faults, "energized": False, "flow_w": 0}
                   for edge in topology["edges"]}
         adjacency = {}
         for edge in topology["edges"]:
@@ -91,7 +95,7 @@ class DistrictAuthority:
         # Split this hour's whole-district CityLearn totals deterministically by stable building ID.
         loads = []
         flows = {edge_id: 0 for edge_id in states}
-        source_capacity_w = 6000
+        source_capacity_w = self.source_capacity_w
         grid_served_total = 0
         requested = sorted((node for node in topology["nodes"] if node["role"] == "load"),
                            key=lambda node: (node.get("building_id", node["id"])))
@@ -116,6 +120,8 @@ class DistrictAuthority:
             local_supply_w = requested_w - grid_requested_w
             path_capacity = min((edge_by_id[edge_id]["limit_w"] - flows[edge_id] for edge_id in path), default=source_capacity_w)
             grid_served_w = min(grid_requested_w, source_capacity_w - grid_served_total, max(0, path_capacity)) if connected else 0
+            if connected and not enforce_limits:
+                grid_served_w = grid_requested_w
             if grid_served_w:
                 grid_served_total += grid_served_w
                 for edge_id in path:
@@ -138,37 +144,73 @@ class DistrictAuthority:
             state["provenance"] = "MODEL_DERIVED"
         return states, loads
 
-    def _tie_joins_components(self, tie_id):
-        tie = next((edge for edge in self.topology["edges"] if edge["id"] == tie_id and edge["kind"] == "tie"), None)
-        if tie is None:
-            return False
-        states, _ = self._electrical_state()
+    def _configuration_reason(self, tie_id, faults=None):
+        """Check the entire closed graph, including islands, before routing requests."""
+        faults = self.faults if faults is None else faults
         parent = {node["id"]: node["id"] for node in self.topology["nodes"]}
         def root(node):
             while parent[node] != node:
                 parent[node] = parent[parent[node]]
                 node = parent[node]
             return node
+        if sum(node["role"] == "source" for node in self.topology["nodes"]) != 1:
+            return "Restoration requires exactly one declared modeled source."
         for edge in self.topology["edges"]:
-            state = states[edge["id"]]
-            if edge["id"] == tie_id or not state["closed"] or state["faulted"]:
+            if edge["id"] in faults or (edge["normally_open"] and edge["id"] != tie_id):
                 continue
             left, right = root(edge["from"]), root(edge["to"])
-            if left != right:
-                parent[left] = right
-        return root(tie["from"]) != root(tie["to"])
+            if left == right:
+                return "Closing the route would create a loop; the radial constraint rejects it."
+            parent[left] = right
+        # Check requested routing before dispatch clipping hides an overloaded route.
+        states, loads = self._electrical_state(tie_id=tie_id, faults=faults, enforce_limits=False)
+        if sum(load["grid_served_w"] for load in loads) > self.source_capacity_w:
+            return "Source capacity rejects the requested restoration route."
+        for edge in self.topology["edges"]:
+            if states[edge["id"]]["flow_w"] > edge["limit_w"]:
+                return f"Line capacity rejects the requested restoration route: {edge['id']}."
+        return None
+
+    def _candidate_reason(self, tie_id):
+        tie = next((edge for edge in self.topology["edges"] if edge["id"] == tie_id), None)
+        if tie is None or tie["kind"] != "tie" or not tie["normally_open"]:
+            return "Candidate is not a declared normally-open tie in the current topology."
+        if tie_id in self.faults:
+            return "Candidate tie is faulted."
+        reason = self._configuration_reason(tie_id)
+        if reason:
+            return reason
+        _, before = self._electrical_state()
+        _, after = self._electrical_state(tie_id=tie_id)
+        if sum(load["served_w"] for load in after) <= sum(load["served_w"] for load in before):
+            return "The declared tie does not increase served modeled demand."
+        return None
+
+    def _evidence_key(self):
+        return json.dumps([self.topology, sorted(self.faults), self.closed_tie,
+                           self.candidate_tie, self.source_capacity_w], sort_keys=True)
+
+    def _reset_evidence(self):
+        self.stable_evidence_count = 0
+        self.stable_since = None
+        self.evidence_signature = self._evidence_key()
+
+    def _evidence_ready(self):
+        if self.evidence_signature != self._evidence_key():
+            self._reset_evidence()
+            self.restoration_reason = "Topology or capacity changed; fresh stable evidence is required."
+            return False
+        if self.stable_evidence_count < 2:
+            self.restoration_reason = "Two fresh stable modeled evidence intervals are required."
+            return False
+        return True
 
     def _restoration(self, states):
         reason = self.restoration_reason or "No recovery candidate proposed."
         if self.candidate_tie:
-            tie = next((edge for edge in self.topology["edges"] if edge["id"] == self.candidate_tie), None)
-            if tie is None:
-                reason = "Candidate tie is absent from the current topology."
-            elif not self._tie_joins_components(tie["id"]):
-                reason = "Closing the tie would create a loop; the radial constraint rejects it."
-            else:
-                reason = "Candidate joins separate modeled sections within its synthetic rating."
+            reason = self._candidate_reason(self.candidate_tie) or reason
         return {"candidate_edge_id": self.candidate_tie, "applied_edge_id": self.closed_tie,
+                "physical_confirmed_edge_id": None,
                 "stable_since": self.stable_since, "stable_evidence_count": self.stable_evidence_count,
                 "reason": reason, "provenance": "MODEL_DERIVED"}
 
@@ -215,13 +257,13 @@ class DistrictAuthority:
                 "source_sha256": self.map["metadata"].get("source_sha256", ""), "features": features},
             "topology": topology,
             "generation": copy.deepcopy(self.generation),
-            "state": {"hour": self.hour, "source_capacity_w": 6000,
+            "state": {"hour": self.hour, "source_capacity_w": self.source_capacity_w,
                 "source_capacity_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
                 "source_capacity_note": "Synthetic district dispatch limit; not a measured transformer rating.",
                 "grid_requested_w": sum(load["grid_requested_w"] for load in loads),
                 "grid_served_w": sum(load["grid_served_w"] for load in loads),
                 "unmet_w": sum(load["unmet_w"] for load in loads),
-                "source_available": bool(topology["nodes"]),
+                "source_available": any(node["role"] == "source" for node in topology["nodes"]),
                 "edges": list(edge_states.values()), "loads": loads,
                 "critical_shortfall_w": sum(load["unmet_w"] for load in loads if load["tier"] == "critical"),
                 "faults": [{"component_id": edge_id, "kind": "line_open",
@@ -265,6 +307,8 @@ class DistrictAuthority:
                 return False
             self.hour = (self.hour + 1) % 24
             if self.candidate_tie or self.faults:
+                if self.evidence_signature != self._evidence_key():
+                    self._reset_evidence()
                 self.stable_evidence_count += 1
                 self.stable_since = self.stable_since or datetime.now(timezone.utc).isoformat()
             return True
@@ -276,18 +320,20 @@ class DistrictAuthority:
                 if edge["id"] in self.faults:
                     return False
                 self.faults.add(edge["id"])
-                self.stable_evidence_count = 0
-                self.stable_since = None
+                self._reset_evidence()
             else:
                 if edge["id"] not in self.faults:
                     return False
-                if self.stable_evidence_count < 2:
+                if not self._evidence_ready():
+                    return False
+                reason = self._configuration_reason(None, self.faults - {edge["id"]})
+                if reason:
+                    self.restoration_reason = reason
                     return False
                 self.faults.remove(edge["id"])
                 self.candidate_tie = None
                 self.closed_tie = None
-                self.stable_evidence_count = 0
-                self.stable_since = None
+                self._reset_evidence()
             self.restoration_reason = None
             return True
         if name == "propose_recovery":
@@ -295,50 +341,30 @@ class DistrictAuthority:
                 return False
             self.candidate_tie = None
             self.restoration_reason = None
-            states, _ = self._electrical_state()
-            _, before_loads = self._electrical_state()
-            before_served = sum(load["served_w"] for load in before_loads)
-            for candidate in (edge for edge in self.topology["edges"] if edge["kind"] == "tie"):
-                if not self._tie_joins_components(candidate["id"]):
-                    self.restoration_reason = "Closing the declared tie would create a loop; radial constraint rejects the route."
-                    continue
-                previous_tie = self.closed_tie
-                self.closed_tie = candidate["id"]
-                _, proposed_loads = self._electrical_state()
-                self.closed_tie = previous_tie
-                if sum(load["served_w"] for load in proposed_loads) <= before_served:
-                    self.restoration_reason = "The declared tie does not increase served modeled load under source and line limits."
+            for candidate in sorted((edge for edge in self.topology["edges"] if edge["kind"] == "tie"),
+                                    key=lambda edge: edge["id"]):
+                reason = self._candidate_reason(candidate["id"])
+                if reason:
+                    self.restoration_reason = reason
                     continue
                 self.candidate_tie = candidate["id"]
-                self.restoration_reason = "Candidate joins separate modeled sections and increases served load within synthetic ratings."
+                self.restoration_reason = "Candidate increases served demand within radial/source/line limits."
                 break
-            if self.candidate_tie is None:
-                self.stable_evidence_count = 0
-                self.stable_since = None
-                return True
-            self.stable_evidence_count = 0
-            self.stable_since = None
+            self._reset_evidence()
             return True
         if name == "apply_recovery":
             if action.component_id is not None or action.fault_kind is not None or not self.candidate_tie:
                 return False
-            if self.stable_evidence_count < 2:
+            if not self._evidence_ready():
                 return False
-            if not self._tie_joins_components(self.candidate_tie):
-                self.restoration_reason = "Fresh topology evidence shows the candidate would create a loop."
+            reason = self._candidate_reason(self.candidate_tie)
+            if reason:
+                self.restoration_reason = reason
+                self._reset_evidence()
                 return False
-            candidate = self.candidate_tie
-            previous_tie = self.closed_tie
-            self.closed_tie = candidate
-            proposed_states, proposed_loads = self._electrical_state()
-            edge_limits = {edge["id"]: edge["limit_w"] for edge in self.topology["edges"]}
-            if (sum(load["grid_served_w"] for load in proposed_loads) > 6000
-                    or any(state["flow_w"] > edge_limits[edge_id] for edge_id, state in proposed_states.items())):
-                self.closed_tie = previous_tie
-                self.restoration_reason = "Fresh capacity evidence rejects the candidate under source or line limits."
-                return False
+            self.closed_tie = self.candidate_tie
             self.candidate_tie = None
-            self.stable_evidence_count = 0
+            self._reset_evidence()
             self.restoration_reason = "Recovery applied to modeled state; no physical switch confirmation is available."
             return True
         if name == "transformer_scenario":

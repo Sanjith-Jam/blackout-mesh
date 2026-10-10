@@ -3,6 +3,11 @@ from types import SimpleNamespace
 
 import pytest
 
+# Regeneration uses the separately provisioned, pinned .venv-city runtime.
+# The normal backend and CI run the cached graph without these optional packages.
+pytest.importorskip("gdm", reason="Optional SHIFT generation runtime is not installed", exc_type=ModuleNotFoundError)
+pytest.importorskip("shift", reason="Optional pinned SHIFT runtime is not installed", exc_type=ModuleNotFoundError)
+
 from gdm.distribution.components import (
     DistributionBranchBase,
     DistributionLoad,
