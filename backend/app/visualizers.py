@@ -11,7 +11,7 @@ from app.core.restoration import RestorationGate
 from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
 from app.diagnosis.observations import validate as validate_observation
 from app.simulation.sensors import HOSPITAL_ASSETS, HOSPITAL_FAULTS, TRANSFORMER_FIELDS, add_noise, apply_fault, envelopes as sensor_envelopes, hospital_readings, zone_readings
-from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
+from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, RankDwell, shortfall_status
 
 from app.core.state import site_profile
 from app.core.config import AssetType
@@ -84,6 +84,7 @@ class ClassroomDemo:
         self._replay_index = 0
         self._activity: dict[str, dict] = {}
         self.guard = ActivityGuard()
+        self.dwell = RankDwell()
         self.published: dict | None = None
         self.published_revision = 0
         self._advance_evidence()
@@ -106,7 +107,9 @@ class ClassroomDemo:
         """Move the replay cursor to the current time and run (cached) inference. Tick-only."""
         self._replay_index = self._clock_replay_index()
         # Each replay row is one reading; the guard confirms INACTIVE before it can lower a rank.
-        self._activity = {cid: self.guard.update(cid, self._infer(cid), self._replay_index) for cid in ROOMS}
+        # RankDwell then holds a changed state until it repeats, so single noisy readings cannot switch loads.
+        self._activity = {cid: self.dwell.update(cid, self.guard.update(cid, self._infer(cid), self._replay_index),
+                                                 self._replay_index) for cid in ROOMS}
 
     def activity(self, cid):
         """Model evidence for a room as of the last tick (read-only)."""
@@ -229,7 +232,8 @@ class ClassroomDemo:
                 "policy": "Classroom-only: lighting and computers in every room are protected and served first, "
                           "whatever the model says. Scanned rooms' other equipment next, ranked by the activity "
                           "model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE "
-                          f"counts only after {self.guard.confirmations} consecutive readings. Unscanned rooms' "
+                          f"counts only after {self.guard.confirmations} consecutive readings, and any change of state "
+                          f"reorders loads only after it repeats on {self.dwell.hold} readings. Unscanned rooms' "
                           f"optional loads last. Safety policy {SAFETY_POLICY_VERSION}."}
 
     def _edges(self, target, current, shortfall_note):

@@ -151,10 +151,13 @@ def test_activity_prediction_updates_allocation_policy(client, monkeypatch):
     cr1_priority_mask = grid.proposed_mask
     assert cr1_priority_mask & (1 << 3)
     assert not cr1_priority_mask & (1 << 4)
-    grid.model = StubModel("ACTIVE")
-    print(send("CR2"))
-    grid.model = StubModel("INACTIVE")
-    print(send("CR1"))
+    # A changed state reorders loads only after it repeats on RANK_DWELL_READINGS readings.
+    from app.core.safety import RANK_DWELL_READINGS
+    for _ in range(RANK_DWELL_READINGS + 1):
+        grid.model = StubModel("ACTIVE")
+        send("CR2")
+        grid.model = StubModel("INACTIVE")
+        send("CR1")
     print('ACTIVITY:', grid.activity); grid.compute_allocation()
     cr2_priority_mask = grid.proposed_mask
     assert cr2_priority_mask & (1 << 4)

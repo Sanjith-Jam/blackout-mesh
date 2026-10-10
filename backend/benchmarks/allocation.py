@@ -19,10 +19,10 @@ from dataclasses import dataclass, field
 
 from app.core.allocator import allocate, feasible, fixed_priority_mask
 from app.core.restoration import RestorationGate
-from app.core.safety import SAFETY_POLICY_VERSION, ActivityGuard
+from app.core.safety import RANK_DWELL_READINGS, SAFETY_POLICY_VERSION, ActivityGuard, RankDwell
 from app.core.state import SERVICE_CATALOG
 
-BENCHMARK_VERSION = "alloc-bench-2026-10-10.1"
+BENCHMARK_VERSION = "alloc-bench-2026-10-10.2"
 STEP_S = 5.0
 ROOMS = ("CR1", "CR2", "CR3")
 ROOM_BIT = {"CR1": 3, "CR2": 4, "CR3": 5}
@@ -166,13 +166,18 @@ class RoundRobin:
 
 
 class Proposed:
-    """The deployed path: classifier output -> ActivityGuard (#22) -> exact allocator."""
+    """The deployed path: classifier output -> ActivityGuard (#22) -> RankDwell -> exact allocator.
+
+    dwell=False is the previous path without rank hysteresis, kept as an ablation.
+    """
     deployable = True
 
-    def __init__(self, classifier: str | None):
+    def __init__(self, classifier: str | None, dwell: bool = True):
         self.classifier = classifier
-        self.name = f"proposed[{classifier}]" if classifier else "proposed[no_ml_unknown]"
+        base = f"proposed[{classifier}]" if classifier else "proposed[no_ml_unknown]"
+        self.name = base if dwell or classifier is None else base.replace("proposed[", "proposed_no_dwell[")
         self.guard = ActivityGuard()
+        self.dwell = RankDwell(RANK_DWELL_READINGS) if dwell else None
 
     def decide(self, k, step, timeline, previous):
         if self.classifier is None:
@@ -180,6 +185,8 @@ class Proposed:
         else:
             raw = timeline.predictions[self.classifier][k]
             activity = {r: self.guard.update(r, raw[r], k) for r in ROOMS}
+            if self.dwell:
+                activity = {r: self.dwell.update(r, activity[r], k) for r in ROOMS}
         return allocate(SERVICE_CATALOG, step.capacity_w, LIMITS, dict(step.feeders), requested_mask(step), activity, previous)
 
 
@@ -195,7 +202,7 @@ class Oracle:
 
 def all_policies():
     return [FixedPriority(), EssentialsFirstNoML(), RoundRobin(), Proposed(None),
-            *(Proposed(c) for c in CLASSIFIERS), Oracle()]
+            *(Proposed(c) for c in CLASSIFIERS), *(Proposed(c, dwell=False) for c in CLASSIFIERS), Oracle()]
 
 
 # ---- execution with the shared restoration gate --------------------------------------------

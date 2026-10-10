@@ -182,24 +182,28 @@ def test_model_ranks_scanned_rooms_under_a_tight_supply():
 
 
 def test_ties_keep_scan_order_and_unknown_sits_between():
-    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500, 500], CR2=[500, 500], CR3=[200, 200]))
+    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500] * 4, CR2=[500] * 4, CR3=[200] * 4))
     for cid in ("CR3", "CR2", "CR1"):
         demo.act("scan", cid)
     assert demo.snapshot()["priority_order"] == ["CR3", "CR2", "CR1"]  # one INACTIVE reading is not enough
     demo.act("replay_pause")
-    assert demo.act("replay_step")["priority_order"] == ["CR2", "CR1", "CR3"]  # confirmed on the second reading
+    # Confirmed INACTIVE on the second reading, then held by the rank dwell until it repeats on 3 readings.
+    assert [demo.act("replay_step")["priority_order"][-1] for _ in range(3)] == ["CR1", "CR1", "CR3"]
 
 
 def test_replay_steps_change_the_ranking():
     now = [0.0]
-    demo = ClassroomDemo(lambda: now[0], StubModel(), stub_replay(CR1=[900, 300], CR2=[300, 900], CR3=[500, 500]))
+    demo = ClassroomDemo(lambda: now[0], StubModel(), stub_replay(CR1=[900] + [300] * 4, CR2=[300] + [900] * 4, CR3=[500] * 5))
     demo.act("scan", "CR1")
     demo.act("scan", "CR2")
     assert demo.snapshot()["priority_order"] == ["CR1", "CR2"]
     demo.act("replay_pause")
     now[0] = 60.0
     assert demo.snapshot()["replay"]["index"] == 0
-    assert demo.act("replay_step")["priority_order"] == ["CR2", "CR1"]
+    # One changed reading does not reorder rooms; the change holds after it repeats (rank dwell).
+    assert demo.act("replay_step")["priority_order"] == ["CR1", "CR2"]
+    orders = [demo.act("replay_step")["priority_order"] for _ in range(3)]
+    assert orders[-1] == ["CR2", "CR1"]
 
 
 def test_capacity_slider_validation():

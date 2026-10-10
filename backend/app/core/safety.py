@@ -19,6 +19,11 @@ INACTIVE_CONFIRMATIONS = 2
 
 VALID_STATES = ("ACTIVE", "UNKNOWN", "INACTIVE")
 
+# A changed (guarded) state reorders optional loads only after it repeats on this many consecutive readings.
+# Single-reading classifier errors therefore cannot switch loads back and forth. Readings without any valid
+# evidence (failed inference, no score) skip the hold and fall back to UNKNOWN at once.
+RANK_DWELL_READINGS = 3
+
 FALLBACK_ORDER = ("hospital critical (L0, L1)", "classroom essentials in room rank order",
                   "optional loads in room rank order")
 
@@ -86,6 +91,51 @@ class ActivityGuard:
     def get(self, room: str):
         value = self._effective.get(room)
         return None if value is None else dict(value)
+
+
+class RankDwell:
+    """Hysteresis on the state used to rank optional loads; protected demand never depends on it."""
+
+    def __init__(self, hold: int = RANK_DWELL_READINGS):
+        self.hold = hold
+        self._held: dict[str, str] = {}
+        self._pending: dict[str, tuple[str, int]] = {}
+        self._last_reading: dict[str, object] = {}
+        self._out: dict[str, dict] = {}
+
+    def reset(self, room=None):
+        for store in (self._held, self._pending, self._last_reading, self._out):
+            if room is None:
+                store.clear()
+            else:
+                store.pop(room, None)
+
+    def update(self, room: str, guarded: dict, reading_id) -> dict:
+        if room in self._last_reading and self._last_reading[room] == reading_id:
+            return dict(self._out[room])
+        self._last_reading[room] = reading_id
+        state = guarded["state"]
+        held = self._held.get(room)
+        no_evidence = state == "UNKNOWN" and guarded.get("score") is None
+        if held is None or state == held or no_evidence:
+            self._held[room] = state
+            self._pending.pop(room, None)
+        else:
+            pending, count = self._pending.get(room, (state, 0))
+            count = count + 1 if pending == state else 1
+            self._pending[room] = (state, count)
+            if count >= self.hold:
+                self._held[room] = state
+                self._pending.pop(room, None)
+        out = dict(guarded)
+        out["dwell"] = None
+        if self._held[room] != state:
+            out["state"] = self._held[room]
+            out["dwell"] = (f"ranking keeps {self._held[room]} until {state} repeats on {self.hold} readings "
+                            f"({self._pending[room][1]}/{self.hold})")
+            out["guard"] = "; ".join(x for x in (guarded.get("guard"), out["dwell"]) if x)
+        self._out[room] = out
+        return dict(out)
 
 
 def shortfall_status(protected_requested_w: int, protected_served_w: int) -> dict:
