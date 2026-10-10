@@ -42,12 +42,13 @@ def build() -> dict:
         post("/api/v1/visualizers/hospital", {"action": "reset"})
         hospital = client.get("/api/v1/visualizers/hospital").json()
         abstained = post("/api/v1/visualizers/hospital", {"scenario": "missing_sensor"}).json()
+        stuck = post("/api/v1/visualizers/hospital", {"scenario": "stuck_sensor"}).json()
         campus = client.get("/api/v1/snapshot").json()
         city = client.get("/api/v1/demo?source=SYNTHETIC_REPLAY").json()
         post("/api/v1/visualizers/classrooms", {"action": "reset"})
     return {name: scrub(data) for name, data in
             {"classrooms": classrooms, "hospital": hospital, "hospital_missing_sensor": abstained, "campus": campus,
-             "city": city}.items()}
+             "city": city, "hospital_stuck_sensor": stuck}.items()}
 
 
 def main():

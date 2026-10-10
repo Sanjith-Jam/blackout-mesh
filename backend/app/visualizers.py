@@ -536,7 +536,7 @@ class HospitalTelemetry:
 
     def sample(self, scenario, zone, now):
         self.sequence += 1
-        readings = hospital_readings(scenario, zone)
+        readings = hospital_readings(scenario, zone, self.sequence)
         for raw in sensor_envelopes(readings, self.sequence, now):
             self.window.add(validate_observation(raw, set(HOSPITAL_ASSETS), now))
         return readings
@@ -577,11 +577,12 @@ def hospital_projection(readings, diagnoses, scenario="normal", zone="Theatre"):
 
 
 def hospital_snapshot(scenario="normal", zone="Theatre"):
-    """Steady-state view for a scenario (two samples), used outside the live control loop."""
+    """Three observed samples for a diagnostic rehearsal, outside the live control loop."""
     from datetime import datetime, timedelta, timezone
 
     telemetry = HospitalTelemetry()
     now = datetime.now(timezone.utc)
+    telemetry.sample(scenario, zone, now - timedelta(milliseconds=500))
     telemetry.sample(scenario, zone, now - timedelta(milliseconds=250))
     readings = telemetry.sample(scenario, zone, now)
     return hospital_projection(readings, telemetry.diagnoses(now), scenario, zone)

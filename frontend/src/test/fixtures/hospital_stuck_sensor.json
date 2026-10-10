@@ -119,25 +119,28 @@
    "diagnosis": {
     "abstention": {
      "asset_id": "TX2",
-     "contradictory_readings": [],
-     "details": "Insufficient sensor evidence to evaluate transformer state.",
-     "indistinguishable_candidates": [],
-     "missing_sensors": [
-      "current"
+     "contradictory_readings": [
+      "Current remained flat across three observations.",
+      "Temperature rose 16.0 \u00b0C."
      ],
-     "next_check_needed": "Restore sensor telemetry for: current.",
-     "reason": "INSUFFICIENT_TELEMETRY"
+     "details": "Current is flat while transformer temperature is rising; a stuck current sensor is indistinguishable from a true load change.",
+     "indistinguishable_candidates": [
+      "CURRENT_SENSOR_STUCK",
+      "UNOBSERVED_LOAD_CHANGE"
+     ],
+     "missing_sensors": [],
+     "next_check_needed": "Verify the current sensor with an independent meter before attributing or clearing the fault.",
+     "reason": "CONTRADICTORY_EVIDENCE"
     },
-    "cause": "Insufficient sensor evidence to evaluate transformer state.",
+    "cause": "Current is flat while transformer temperature is rising; a stuck current sensor is indistinguishable from a true load change.",
     "code": "UNKNOWN",
     "evidence": [
-     "Missing sensors: current"
+     "Current remained flat across three observations.",
+     "Temperature rose 16.0 \u00b0C."
     ],
     "hypotheses": [],
-    "missing": [
-     "current_a"
-    ],
-    "recommendation": "Restore sensor telemetry for: current.",
+    "missing": [],
+    "recommendation": "Verify the current sensor with an independent meter before attributing or clearing the fault.",
     "severity": "unknown",
     "stale": [],
     "status": "ABSTAINED"
@@ -192,10 +195,10 @@
    "rfid_active": null,
    "sensors": {
     "cooling_ok": true,
-    "current_a": null,
+    "current_a": 45.0,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
-    "temperature_c": 55.0
+    "temperature_c": 82.0
    },
    "zone": "Theatre"
   },

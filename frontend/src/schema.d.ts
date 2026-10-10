@@ -1236,7 +1236,7 @@ export interface components {
             /** Capacity W */
             capacity_w?: number | null;
             /** Scenario */
-            scenario?: ("normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor") | null;
+            scenario?: ("normal" | "overload" | "cooling_failure" | "overload_cooling" | "upstream_loss" | "missing_sensor" | "stuck_sensor") | null;
         };
         /** HospitalDemoResponse */
         HospitalDemoResponse: {

@@ -41,6 +41,7 @@ export type ClassroomDemoSnapshot = Omit<components['schemas']['ClassroomDemoRes
   hardware?: HardwareStatus | null;
 };
 export type HospitalDemoScenario = components['schemas']['HospitalDemoAction']['scenario'];
+export type HospitalFaultSnapshot = components['schemas']['HospitalDemoResponse'];
 export type DiagnosticHypothesis = components['schemas']['HospitalDiagnosisResponse']['hypotheses'][number];
 export type DiagnosticAbstention = components['schemas']['HospitalDiagnosisResponse']['abstention'];
 export type HospitalDemoDiagnosis = components['schemas']['HospitalDiagnosisResponse'];

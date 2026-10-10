@@ -67,7 +67,7 @@ class HospitalDemoAction(BaseModel):
     action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step"] | None = None
     zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
     capacity_w: StrictInt | None = None
-    scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"] | None = None
+    scenario: Literal["normal", "overload", "cooling_failure", "overload_cooling", "upstream_loss", "missing_sensor", "stuck_sensor"] | None = None
 
 
 class ConnectionManager:

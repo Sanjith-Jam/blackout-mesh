@@ -3634,8 +3634,10 @@
                   "normal",
                   "overload",
                   "cooling_failure",
+                  "overload_cooling",
                   "upstream_loss",
-                  "missing_sensor"
+                  "missing_sensor",
+                  "stuck_sensor"
                 ]
               },
               {
