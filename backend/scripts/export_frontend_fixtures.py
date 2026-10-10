@@ -45,10 +45,17 @@ def build() -> dict:
         stuck = post("/api/v1/visualizers/hospital", {"rehearsal": "stuck_sensor"}).json()
         campus = client.get("/api/v1/snapshot").json()
         city = client.get("/api/v1/demo?source=SYNTHETIC_REPLAY").json()
+        power_system = client.get("/api/v1/power-system").json()
+        post("/api/v1/simulation/feeder", {"feeder": "A", "available": False})
+        post("/api/v1/simulation/capacity", {"capacity_w": 6000})
+        power_system_fault = client.get("/api/v1/power-system").json()
+        post("/api/v1/simulation/feeder", {"feeder": "A", "available": True})
+        post("/api/v1/simulation/capacity", {"capacity_w": 14000})
         post("/api/v1/visualizers/classrooms", {"action": "reset"})
     return {name: scrub(data) for name, data in
             {"classrooms": classrooms, "hospital": hospital, "hospital_missing_sensor": abstained, "campus": campus,
-             "city": city, "hospital_stuck_sensor": stuck}.items()}
+             "city": city, "hospital_stuck_sensor": stuck, "power_system": power_system,
+             "power_system_fault": power_system_fault}.items()}
 
 
 def main():
