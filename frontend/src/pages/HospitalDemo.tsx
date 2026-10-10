@@ -1,3 +1,5 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { Slider } from '@/components/ui/slider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, AlertTriangle, Zap } from 'lucide-react';
@@ -119,9 +121,10 @@ export default function HospitalDemo() {
             </div>
           </header>
           <div className="classroom-demo__ml-grid">
-            {snapshot.transformers.map(tx => {
+            <AnimatePresence>
+            {snapshot.transformers.map((tx, i) => {
               const act = tx.activity;
-              return <article key={tx.zone} className={`classroom-demo__ml-card ${tx.rfid_active ? 'is-scanned' : ''}`} aria-label={`${tx.zone} activity estimate`}>
+              return <motion.article initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:20}} transition={{delay: i * 0.05}} key={tx.zone} className={`classroom-demo__ml-card ${tx.rfid_active ? 'is-scanned' : ''}`} aria-label={`${tx.zone} activity estimate`}>
                 <header><strong>{tx.zone}</strong><span>{tx.priority_rank ? `Priority #${tx.priority_rank}` : 'Not scanned'}</span></header>
                 <span className={`classroom-demo__state classroom-demo__state--${act.state.toLowerCase()}`}>{act.state}</span>
                 <dl>
@@ -151,15 +154,17 @@ export default function HospitalDemo() {
                     )}
                   </div>
                 )}
-              </article>;
-
-            })}
+              </motion.article>
+              ;})}
+            </AnimatePresence>
           </div>
           <p className="classroom-demo__ml-note">Only scanned zones are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the zone scanned first goes first. The model is an office-occupancy proxy, not a measurement of these hospital zones.</p>
         </section>
         <section aria-label="Hospital floor plans" aria-describedby="classzone-blueprint-key">
           <p id="classzone-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three hospital zones. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
-          <HospitalBlueprint snapshot={snapshot} connected={!error} />
+          <div className="overflow-x-auto whitespace-nowrap scrollbar-hide pb-4 w-full">
+            <HospitalBlueprint snapshot={snapshot} connected={!error} />
+          </div>
         </section>
       </section>
       <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="classzone-controls-title" aria-busy={pending}>
@@ -177,7 +182,7 @@ export default function HospitalDemo() {
           const value = capacityDraft ?? snapshot.capacity_w;
           return <div className="classroom-demo__slider">
             <label htmlFor="hospital-capacity">Supply limit <strong>{value.toLocaleString()} W</strong></label>
-            <input id="hospital-capacity" type="range" min={low} max={high} step={100} value={value} onChange={event => onCapacityChange(Number(event.target.value))} aria-valuetext={`${value} watts`} />
+            <Slider value={[value]} min={low} max={high} step={100} onValueChange={(vals: number[]) => onCapacityChange(vals[0])} />
             <div className="classroom-demo__slider-scale"><span>{low.toLocaleString()} W</span><span>{high.toLocaleString()} W</span></div>
           </div>;
         })()}
@@ -193,3 +198,12 @@ export default function HospitalDemo() {
     </div>
   </main>;
 }
+
+
+
+
+
+
+
+
+

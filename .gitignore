@@ -42,3 +42,5 @@ firmware/.local/
 
 # Optional isolated electrical studies
 .venv-electrical/
+
+venv/
