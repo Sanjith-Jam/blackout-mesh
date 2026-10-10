@@ -40,6 +40,7 @@ from app.api.power_system import register_power_system
 from app.forecast import DemandForecast
 from app.core.control_loop import ControlLoop
 from app.core.site import SCENARIOS, AuditUnavailable, SiteAuthority
+from app.hardware.board_b_direct import BoardBDirectTransport
 from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.core.policy import AllocationPolicy
 from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
@@ -226,9 +227,12 @@ def hardware_status(app) -> dict:
     return status
 
 
-def connect_gateway(app, port: str, transport=None):
+def connect_gateway(app, port: str, transport=None, board: str = "A"):
+    """board "A": board A's USB gateway. board "B": board B alone on USB, with a software stand-in for A."""
     disconnect_gateway(app)
-    bridge = GatewayBridge(transport or SerialTransport(port), lambda action, room: handle_gateway_event(app, action, room),
+    if transport is None:
+        transport = BoardBDirectTransport(port) if board == "B" else SerialTransport(port)
+    bridge = GatewayBridge(transport, lambda action, room: handle_gateway_event(app, action, room),
                            lambda: desired_led_mask(app))
     thread = GatewayThread(bridge)
     thread.start()
@@ -287,7 +291,7 @@ async def lifespan(app: FastAPI):
     app.state.control_loop.start()
     if os.environ.get("BLACKOUT_GATEWAY_PORT"):
         try:
-            connect_gateway(app, os.environ["BLACKOUT_GATEWAY_PORT"])
+            connect_gateway(app, os.environ["BLACKOUT_GATEWAY_PORT"], board=os.environ.get("BLACKOUT_GATEWAY_BOARD", "A"))
         except Exception as exc:
             print(f"Board A gateway not connected: {exc}")
     try:
@@ -355,6 +359,7 @@ async def get_classroom_demo(request: Request):
 class GatewayConnect(BaseModel):
     model_config = ConfigDict(extra="forbid")
     port: str
+    board: Literal["A", "B"] = "A"
 
 
 @router.get("/api/v1/hardware", response_model=HardwareStatusResponse)
@@ -365,7 +370,7 @@ async def get_hardware(request: Request):
 @router.post("/api/v1/hardware/connect", response_model=HardwareStatusResponse)
 async def post_hardware_connect(request: Request, req: GatewayConnect):
     try:
-        request.app.state.site.command("hardware.connect", lambda: connect_gateway(request.app, req.port), {})
+        request.app.state.site.command("hardware.connect", lambda: connect_gateway(request.app, req.port, board=req.board), {})
     except Exception as exc:
         raise HTTPException(409, f"could not open {req.port}: {exc}")
     return hardware_status(request.app)
