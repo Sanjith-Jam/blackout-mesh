@@ -198,8 +198,9 @@ export default function DistrictDemo() {
     const tie = (latest.topology.edges as DistrictEdge[]).find(edge => edge.kind === 'tie');
     const candidates = (latest.topology.edges as DistrictEdge[]).filter(edge => edge.kind !== 'tie');
     const preferred = candidates.find(edge => edge.id === EMERGENCY_EDGE) ?? candidates[0];
+    const before = impactOf(latest);  // same peak hour as the fault, so the comparison is like-for-like
     latest = await action(latest, 'inject_fault', preferred.id, 'line_open');
-    setIncident({ before: impactOf(current), fault: impactOf(latest) });
+    setIncident({ before, fault: impactOf(latest) });
     if (tie) latest = await action(latest, 'propose_recovery');
     setSelected(preferred.id);
     setTab('healing');
