@@ -78,6 +78,28 @@ export type ElectricalStudyInput = components['schemas']['ElectricalInput'];
 export type ElectricalStudyResponse = components['schemas']['ElectricalStudyResponse'];
 export type HistoryRecord = components['schemas']['HistoryEventRecord'] |
   components['schemas']['HistoryDecisionRecord'] | components['schemas']['HistoryTelemetryRecord'];
+
+export type DistrictActionName = components['schemas']['DistrictActionName'];
+export type DistrictActionRequest = components['schemas']['DistrictAction'];
+export type DistrictGenerationRequest = components['schemas']['GenerationRequest'];
+type DistrictNode = { id: string; role: string; lon: number; lat: number; building_id?: string | null };
+type DistrictTopologyEdge = { id: string; from: string; to: string; kind: string };
+type DistrictEdgeState = { id: string; closed: boolean; faulted: boolean; energized: boolean; flow_w: number; provenance?: string };
+type DistrictLoad = components['schemas']['DistrictLoad'];
+type DistrictTransformer = { component_id: string; sensor: Record<string, string | number | boolean | null>; diagnosis: { status: string; suspected_part: string | null; evidence: string[] } };
+type DistrictRestoration = { candidate_edge_id?: string | null; applied_edge_id?: string | null; stable_since?: string | null; stable_evidence_count?: number; reason?: string | null; provenance?: string };
+type DistrictFault = { component_id: string; kind: string; provenance?: string };
+type DistrictState = Omit<components['schemas']['DistrictState'], 'edges' | 'loads' | 'faults' | 'restoration' | 'transformers'> & {
+  edges: DistrictEdgeState[]; loads: DistrictLoad[]; faults: DistrictFault[]; restoration: DistrictRestoration; transformers: DistrictTransformer[];
+};
+type DistrictTopology = Omit<components['schemas']['DistrictTopology'], 'nodes' | 'edges'> & {
+  nodes: DistrictNode[]; edges: DistrictTopologyEdge[];
+};
+type DistrictProfileRow = { hour: number; demand_w: number; pv_w: number; baseline_grid_w: number; dispatch_grid_w: number; battery_soc_wh: number; pv_used_w: number; battery_charge_w: number; battery_discharge_w: number; grid_import_w: number; loss_wh: number };
+export type DistrictSnapshot = Omit<components['schemas']['DistrictSnapshot'], 'topology' | 'state' | 'energy'> & {
+  topology: DistrictTopology; state: DistrictState;
+  energy: Omit<components['schemas']['DistrictEnergy'], 'profile'> & { profile: DistrictProfileRow[] };
+};
 export type HistoryPage = components['schemas']['HistoryPageResponse'];
 export type HistoryRuns = components['schemas']['HistoryRunsResponse'];
 export type WebSocketEnvelope = components['schemas']['WebSocketMessageEnvelope'];

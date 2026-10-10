@@ -16,7 +16,7 @@ import {
   HardwareStatus
 } from './types';
 import type { CityDemoSnapshot, DemoEvidence, DemandForecast, SiteScenarios, SiteScenarioSwitch } from './types';
-import type { HospitalDemoScenario, HospitalFaultSnapshot } from './types';
+import type { HospitalDemoScenario, HospitalFaultSnapshot, DistrictActionRequest, DistrictGenerationRequest, DistrictSnapshot } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -77,6 +77,18 @@ export function getDemoEvidence(signal?: AbortSignal): Promise<DemoEvidence> {
 
 export async function fetchModelStatus(signal?: AbortSignal): Promise<ModelStatus> {
   return fetchJson<ModelStatus>('/api/v1/model/status', { signal });
+}
+
+export function getDistrictSnapshot(signal?: AbortSignal): Promise<DistrictSnapshot> {
+  return fetchJson<DistrictSnapshot>('/api/v1/district', { signal });
+}
+
+export function districtAction(action: DistrictActionRequest): Promise<DistrictSnapshot> {
+  return fetchJson<DistrictSnapshot>('/api/v1/district/action', { method: 'POST', body: JSON.stringify(action) });
+}
+
+export function generateDistrictTopology(request: DistrictGenerationRequest): Promise<DistrictSnapshot> {
+  return fetchJson<DistrictSnapshot>('/api/v1/district/generation', { method: 'POST', body: JSON.stringify(request) });
 }
 
 export async function setReplayAction(action: 'start' | 'pause' | 'reset'): Promise<void> {

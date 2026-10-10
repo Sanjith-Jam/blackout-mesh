@@ -1243,6 +1243,139 @@
           }
         }
       }
+    },
+    "/api/v1/district": {
+      "get": {
+        "tags": [
+          "district study"
+        ],
+        "summary": "District Snapshot",
+        "operationId": "get_api_v1_district",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistrictSnapshot"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/district/action": {
+      "post": {
+        "tags": [
+          "district study"
+        ],
+        "summary": "District Action",
+        "operationId": "post_api_v1_district_action",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistrictAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistrictSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/district/generation": {
+      "post": {
+        "tags": [
+          "district study"
+        ],
+        "summary": "Generate Topology",
+        "operationId": "post_api_v1_district_generation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistrictSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3067,6 +3200,692 @@
         ],
         "title": "DiagnosticHypothesisResponse"
       },
+      "DistrictAction": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "action": {
+            "$ref": "#/components/schemas/DistrictActionName"
+          },
+          "component_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Component Id"
+          },
+          "fault_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fault Kind"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "expected_revision",
+          "action"
+        ],
+        "title": "DistrictAction"
+      },
+      "DistrictActionName": {
+        "type": "string",
+        "enum": [
+          "inject_fault",
+          "clear_fault",
+          "propose_recovery",
+          "apply_recovery",
+          "advance_hour",
+          "transformer_scenario",
+          "reset"
+        ],
+        "title": "DistrictActionName"
+      },
+      "DistrictEnergy": {
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "title": "Hour"
+          },
+          "profile": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictEnergyHour"
+            },
+            "type": "array",
+            "title": "Profile"
+          },
+          "battery_soc_wh": {
+            "type": "integer",
+            "title": "Battery Soc Wh"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "pv_used_w": {
+            "type": "integer",
+            "title": "Pv Used W"
+          },
+          "battery_charge_w": {
+            "type": "integer",
+            "title": "Battery Charge W"
+          },
+          "battery_discharge_w": {
+            "type": "integer",
+            "title": "Battery Discharge W"
+          },
+          "grid_import_w": {
+            "type": "integer",
+            "title": "Grid Import W"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hour",
+          "profile",
+          "battery_soc_wh",
+          "engine",
+          "provenance",
+          "pv_used_w",
+          "battery_charge_w",
+          "battery_discharge_w",
+          "grid_import_w"
+        ],
+        "title": "DistrictEnergy"
+      },
+      "DistrictEnergyHour": {
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "title": "Hour"
+          },
+          "demand_w": {
+            "type": "integer",
+            "title": "Demand W"
+          },
+          "pv_w": {
+            "type": "integer",
+            "title": "Pv W"
+          },
+          "baseline_grid_w": {
+            "type": "integer",
+            "title": "Baseline Grid W"
+          },
+          "dispatch_grid_w": {
+            "type": "integer",
+            "title": "Dispatch Grid W"
+          },
+          "battery_soc_wh": {
+            "type": "integer",
+            "title": "Battery Soc Wh"
+          },
+          "pv_used_w": {
+            "type": "integer",
+            "title": "Pv Used W"
+          },
+          "battery_charge_w": {
+            "type": "integer",
+            "title": "Battery Charge W"
+          },
+          "battery_discharge_w": {
+            "type": "integer",
+            "title": "Battery Discharge W"
+          },
+          "grid_import_w": {
+            "type": "integer",
+            "title": "Grid Import W"
+          },
+          "loss_wh": {
+            "type": "integer",
+            "title": "Loss Wh"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hour",
+          "demand_w",
+          "pv_w",
+          "baseline_grid_w",
+          "dispatch_grid_w",
+          "battery_soc_wh",
+          "pv_used_w",
+          "battery_charge_w",
+          "battery_discharge_w",
+          "grid_import_w",
+          "loss_wh"
+        ],
+        "title": "DistrictEnergyHour"
+      },
+      "DistrictGeneration": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "cluster_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cluster Count"
+          },
+          "secondary_strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Strategy"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "available",
+          "cluster_count",
+          "secondary_strategy",
+          "reason",
+          "generated_at"
+        ],
+        "title": "DistrictGeneration"
+      },
+      "DistrictIdentity": {
+        "properties": {
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "site_id",
+          "run_id",
+          "revision"
+        ],
+        "title": "DistrictIdentity"
+      },
+      "DistrictLoad": {
+        "properties": {
+          "building_id": {
+            "type": "string",
+            "title": "Building Id"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "local_supply_w": {
+            "type": "integer",
+            "title": "Local Supply W"
+          },
+          "grid_requested_w": {
+            "type": "integer",
+            "title": "Grid Requested W"
+          },
+          "grid_served_w": {
+            "type": "integer",
+            "title": "Grid Served W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "unmet_w": {
+            "type": "integer",
+            "title": "Unmet W"
+          },
+          "demand_provenance": {
+            "type": "string",
+            "title": "Demand Provenance"
+          },
+          "local_supply_provenance": {
+            "type": "string",
+            "title": "Local Supply Provenance"
+          },
+          "grid_service_provenance": {
+            "type": "string",
+            "title": "Grid Service Provenance"
+          },
+          "unmet_provenance": {
+            "type": "string",
+            "title": "Unmet Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "building_id",
+          "tier",
+          "requested_w",
+          "local_supply_w",
+          "grid_requested_w",
+          "grid_served_w",
+          "served_w",
+          "unmet_w",
+          "demand_provenance",
+          "local_supply_provenance",
+          "grid_service_provenance",
+          "unmet_provenance"
+        ],
+        "title": "DistrictLoad"
+      },
+      "DistrictMap": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "attribution": {
+            "type": "string",
+            "title": "Attribution"
+          },
+          "license": {
+            "type": "string",
+            "title": "License"
+          },
+          "source_sha256": {
+            "type": "string",
+            "title": "Source Sha256"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictMapFeature"
+            },
+            "type": "array",
+            "title": "Features"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "source_url",
+          "attribution",
+          "license",
+          "source_sha256",
+          "features"
+        ],
+        "title": "DistrictMap"
+      },
+      "DistrictMapFeature": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "geometry_type": {
+            "type": "string",
+            "title": "Geometry Type"
+          },
+          "paths": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictPath"
+            },
+            "type": "array",
+            "title": "Paths"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "geometry_type",
+          "paths"
+        ],
+        "title": "DistrictMapFeature"
+      },
+      "DistrictPath": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Coordinates"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "coordinates"
+        ],
+        "title": "DistrictPath"
+      },
+      "DistrictSite": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "center": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Center"
+          },
+          "radius_m": {
+            "type": "integer",
+            "title": "Radius M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "center",
+          "radius_m"
+        ],
+        "title": "DistrictSite"
+      },
+      "DistrictSnapshot": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/DistrictIdentity"
+          },
+          "site": {
+            "$ref": "#/components/schemas/DistrictSite"
+          },
+          "map": {
+            "$ref": "#/components/schemas/DistrictMap"
+          },
+          "topology": {
+            "$ref": "#/components/schemas/DistrictTopology"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/DistrictGeneration"
+          },
+          "state": {
+            "$ref": "#/components/schemas/DistrictState"
+          },
+          "energy": {
+            "$ref": "#/components/schemas/DistrictEnergy"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "identity",
+          "site",
+          "map",
+          "topology",
+          "generation",
+          "state",
+          "energy"
+        ],
+        "title": "DistrictSnapshot"
+      },
+      "DistrictState": {
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "title": "Hour"
+          },
+          "source_capacity_w": {
+            "type": "integer",
+            "title": "Source Capacity W"
+          },
+          "source_capacity_provenance": {
+            "type": "string",
+            "title": "Source Capacity Provenance"
+          },
+          "source_capacity_note": {
+            "type": "string",
+            "title": "Source Capacity Note"
+          },
+          "grid_requested_w": {
+            "type": "integer",
+            "title": "Grid Requested W"
+          },
+          "grid_served_w": {
+            "type": "integer",
+            "title": "Grid Served W"
+          },
+          "unmet_w": {
+            "type": "integer",
+            "title": "Unmet W"
+          },
+          "source_available": {
+            "type": "boolean",
+            "title": "Source Available"
+          },
+          "edges": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "loads": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictLoad"
+            },
+            "type": "array",
+            "title": "Loads"
+          },
+          "critical_shortfall_w": {
+            "type": "integer",
+            "title": "Critical Shortfall W"
+          },
+          "faults": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Faults"
+          },
+          "restoration": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Restoration"
+          },
+          "transformers": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Transformers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hour",
+          "source_capacity_w",
+          "source_capacity_provenance",
+          "source_capacity_note",
+          "grid_requested_w",
+          "grid_served_w",
+          "unmet_w",
+          "source_available",
+          "edges",
+          "loads",
+          "critical_shortfall_w",
+          "faults",
+          "restoration",
+          "transformers"
+        ],
+        "title": "DistrictState"
+      },
+      "DistrictTopology": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "engine_license": {
+            "type": "string",
+            "title": "Engine License"
+          },
+          "secondary_strategy": {
+            "type": "string",
+            "title": "Secondary Strategy"
+          },
+          "cluster_count": {
+            "type": "integer",
+            "title": "Cluster Count"
+          },
+          "group_members": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Group Members"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "equipment_stage": {
+            "type": "string",
+            "title": "Equipment Stage"
+          },
+          "nodes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "engine",
+          "engine_version",
+          "engine_license",
+          "secondary_strategy",
+          "cluster_count",
+          "group_members",
+          "provenance",
+          "equipment_stage",
+          "nodes",
+          "edges"
+        ],
+        "title": "DistrictTopology"
+      },
       "Edge": {
         "properties": {
           "id": {
@@ -3585,6 +4404,38 @@
           "port"
         ],
         "title": "GatewayConnect"
+      },
+      "GenerationRequest": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "cluster_count": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 2.0,
+            "title": "Cluster Count"
+          },
+          "secondary_strategy": {
+            "type": "string",
+            "title": "Secondary Strategy"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "expected_revision",
+          "cluster_count",
+          "secondary_strategy"
+        ],
+        "title": "GenerationRequest"
       },
       "HTTPValidationError": {
         "properties": {
