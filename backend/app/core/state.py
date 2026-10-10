@@ -717,13 +717,13 @@ class GridState:
 
             requested_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i))
             served_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i))
-            campus_totals = ScopeTotals(capacity_w=self.source_capacity_w, requested_w=requested_w, served_w=served_w)
+            campus_totals = ScopeTotals(scope="campus", capacity_w=self.source_capacity_w, requested_w=requested_w, served_w=served_w)
 
             zone_totals = {}
             for z in ["hospital", "classroom"]:
                 z_req = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i) and s["zone"] == z)
                 z_srv = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i) and s["zone"] == z)
-                zone_totals[z] = ScopeTotals(capacity_w=None, requested_w=z_req, served_w=z_srv)
+                zone_totals[z] = ScopeTotals(scope=f"zone:{z}", capacity_w=None, requested_w=z_req, served_w=z_srv)
 
             contract_dict = {
                 "identity": self.identity(),

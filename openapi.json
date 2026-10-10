@@ -2213,6 +2213,16 @@
             "type": "object",
             "title": "Zone Totals",
             "default": {}
+          },
+          "view_totals": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeTotals"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4716,6 +4726,16 @@
       },
       "ScopeTotals": {
         "properties": {
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "unit": {
+            "type": "string",
+            "const": "W",
+            "title": "Unit",
+            "default": "W"
+          },
           "capacity_w": {
             "anyOf": [
               {
@@ -4738,10 +4758,12 @@
         },
         "type": "object",
         "required": [
+          "scope",
           "requested_w",
           "served_w"
         ],
-        "title": "ScopeTotals"
+        "title": "ScopeTotals",
+        "description": "Power totals over one declared scope (#24). Integer W; capacity is null when the scope has none."
       },
       "ServiceSnapshot": {
         "properties": {

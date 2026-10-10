@@ -414,29 +414,36 @@
   "campus_totals": {
    "capacity_w": 14000,
    "requested_w": 10000,
-   "served_w": 8000
+   "scope": "campus",
+   "served_w": 8000,
+   "unit": "W"
   },
   "identity": {
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:48:49.143155+00:00",
+   "observation_time": "2026-10-10T02:19:18.453110+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
    "site_id": "Default Campus",
    "state_revision": 9
   },
+  "view_totals": null,
   "zone_totals": {
    "classroom": {
     "capacity_w": null,
     "requested_w": 4000,
-    "served_w": 2000
+    "scope": "zone:classroom",
+    "served_w": 2000,
+    "unit": "W"
    },
    "hospital": {
     "capacity_w": null,
     "requested_w": 6000,
-    "served_w": 6000
+    "scope": "zone:hospital",
+    "served_w": 6000,
+    "unit": "W"
    }
   }
  },

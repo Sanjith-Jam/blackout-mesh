@@ -168,7 +168,7 @@ def campus_snapshot(site, app=None):
             snapshot.indicator_confirmed_mask = hw["confirmed_mask"]
     if snapshot is not None:
         snapshot.site = SiteIdentityResponse.model_validate(identity)
-        snapshot.contract = snapshot.contract.model_copy(update={"identity": snapshot.contract.identity.model_copy(update={"run_id": site.run_id, "state_revision": site.revision, "observation_time": snapshot.generated_at.isoformat()})})
+        snapshot.contract = CrossRouteContract.model_validate(site.contract())
     return snapshot
 
 
@@ -337,7 +337,7 @@ async def model_status(request: Request):
 async def get_classroom_demo(request: Request):
     site = request.app.state.site
     classroom_demo = request.app.state.classroom_demo
-    return visualizer_snapshot(site, classroom_demo) | {"hardware": hardware_status(request.app)}
+    return visualizer_snapshot(site, classroom_demo, "classroom_demo") | {"hardware": hardware_status(request.app)}
 
 
 class GatewayConnect(BaseModel):
@@ -386,14 +386,13 @@ async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
                                    "capacity_w": req.capacity_w, "event_id": req.event_id, "run_id": req.run_id})
     except ValueError as exc:
         raise HTTPException(409, str(exc))
-    data, identity = site.read(classroom_demo.snapshot)
-    return with_contract(data, site) | {"command": receipt}
+    return visualizer_snapshot(site, classroom_demo, "classroom_demo") | {"command": receipt}
 
 @router.get("/api/v1/visualizers/hospital", response_model=HospitalDemoResponse)
 async def get_hospital_demo(request: Request):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
-    return visualizer_snapshot(site, hospital_demo)
+    return visualizer_snapshot(site, hospital_demo, "hospital_demo")
 
 @router.post("/api/v1/visualizers/hospital", response_model=HospitalDemoResponse)
 async def act_hospital_demo(request: Request, req: HospitalDemoAction):
@@ -402,7 +401,7 @@ async def act_hospital_demo(request: Request, req: HospitalDemoAction):
     if req.rehearsal is not None:
         if any(value is not None for value in (req.action, req.fault, req.scenario, req.zone_id, req.capacity_w)):
             raise HTTPException(422, "rehearsal cannot be combined with live controls")
-        return with_contract(hospital_snapshot(req.rehearsal), site)
+        return with_contract(hospital_snapshot(req.rehearsal), site, "hospital_rehearsal")
     action, fault = req.action, req.fault
     if req.scenario is not None:
         if action is not None or fault is not None:
@@ -418,8 +417,7 @@ async def act_hospital_demo(request: Request, req: HospitalDemoAction):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
     _, receipt = site.command(f"hospital.{action}", lambda: hospital_demo.act(action, req.zone_id, req.capacity_w, fault),
                               {"action": action, "zone_id": req.zone_id, "capacity_w": req.capacity_w, "fault": fault})
-    data, identity = site.read(hospital_demo.snapshot)
-    return with_contract(data, site) | {"command": receipt}
+    return visualizer_snapshot(site, hospital_demo, "hospital_demo") | {"command": receipt}
 
 @router.post("/api/v1/activity/observations", response_model=ActivityObservationResponse)
 async def post_activity_observation(request: Request, req: ActivityObservationRequest):
@@ -617,16 +615,19 @@ async def electrical_study(request: Request, inputs: ElectricalInput):
         raise HTTPException(409, "Site run/revision changed during study; discard and retry")
     return {"site": identity, "result": result.model_dump(), "diagnosis": diagnose_study(result)}
 
-def with_contract(data, site):
+def with_contract(data, site, view: str):
     data = with_site(data, site.identity())
-    data["contract"] = {"identity": {**site.grid.identity(), "run_id": site.run_id,
-        "state_revision": site.revision}, "zone_totals": {}}
+    view_totals = None
+    if data.get("requested_w") is not None and data.get("served_w") is not None:
+        view_totals = {"scope": f"view:{view}", "capacity_w": data.get("effective_capacity_w"),
+                       "requested_w": data["requested_w"], "served_w": data["served_w"]}
+    data["contract"] = site.contract(view_totals)
     return data
 
 
-def visualizer_snapshot(site, demo):
+def visualizer_snapshot(site, demo, view):
     with site._lock:
-        return with_contract(demo.snapshot(), site)
+        return with_contract(demo.snapshot(), site, view)
 
 
 @router.post("/api/v1/hardware/ack", response_model=HardwareAckResponse)

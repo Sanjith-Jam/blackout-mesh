@@ -725,6 +725,7 @@ export interface components {
             zone_totals: {
                 [key: string]: components["schemas"]["ScopeTotals"];
             };
+            view_totals?: components["schemas"]["ScopeTotals"] | null;
         };
         /** DemandForecastResponse */
         DemandForecastResponse: {
@@ -1553,8 +1554,19 @@ export interface components {
             /** Fallback Order */
             fallback_order: string[];
         };
-        /** ScopeTotals */
+        /**
+         * ScopeTotals
+         * @description Power totals over one declared scope (#24). Integer W; capacity is null when the scope has none.
+         */
         ScopeTotals: {
+            /** Scope */
+            scope: string;
+            /**
+             * Unit
+             * @default W
+             * @constant
+             */
+            unit: "W";
             /** Capacity W */
             capacity_w?: number | null;
             /** Requested W */

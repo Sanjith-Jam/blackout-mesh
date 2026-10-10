@@ -88,6 +88,9 @@ class FaultDiagnosis(BaseModel):
     supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
 class ScopeTotals(BaseModel):
+    """Power totals over one declared scope (#24). Integer W; capacity is null when the scope has none."""
+    scope: str  # "campus", "zone:<id>" (additive into campus) or "view:<route>" (route-local, not additive)
+    unit: Literal["W"] = "W"
     capacity_w: Optional[int] = None
     requested_w: int
     served_w: int
@@ -114,6 +117,7 @@ class CrossRouteContract(BaseModel):
     identity: RunIdentity
     campus_totals: Optional[ScopeTotals] = None
     zone_totals: Dict[str, ScopeTotals] = {}
+    view_totals: Optional[ScopeTotals] = None  # only on facility views; never compare with campus_totals
 
 class SystemSnapshot(BaseModel):
     contract: CrossRouteContract

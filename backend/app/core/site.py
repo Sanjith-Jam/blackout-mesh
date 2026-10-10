@@ -168,6 +168,19 @@ class SiteAuthority:
             self.tick()
             return self.run_id
 
+    def contract(self, view_totals: dict | None = None) -> dict:
+        """The cross-route contract (#24): one identity and one set of campus/zone totals for every route.
+
+        Totals come from the campus model's published snapshot, so all routes at one revision agree.
+        view_totals is the calling route's own scoped total and is not additive into campus_totals.
+        """
+        with self._lock:
+            published = self.grid.published
+            identity = {**self.grid.identity(), "run_id": self.run_id, "state_revision": self.revision}
+            shared = published.contract.model_dump(include={"campus_totals", "zone_totals"}) if published else {}
+            return {"identity": identity, "campus_totals": shared.get("campus_totals"),
+                    "zone_totals": shared.get("zone_totals", {}), "view_totals": view_totals}
+
     def identity(self) -> dict:
         with self._lock:
             return {"run_id": self.run_id, "revision": self.revision, "profile": PROFILE,
