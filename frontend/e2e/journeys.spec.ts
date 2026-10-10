@@ -79,7 +79,7 @@ test('backend unavailable on first load shows a retry that recovers', async ({ p
 const settled = (page: Page) => page.waitForFunction(() => document.getAnimations()
   .every(a => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity));
 
-const ROUTES = ['/', '/demo', '/classrooms', '/hospital', '/console'];
+const ROUTES = ['/', '/demo', '/city', '/classrooms', '/hospital', '/console'];
 const WIDTHS = [375, 1280];
 
 for (const route of ROUTES) {
@@ -101,7 +101,7 @@ for (const route of ROUTES) {
 test('reduced motion stops looping and moving animations on every visualizer', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.request.post(`${BACKEND}/api/v1/visualizers/classrooms`, { data: { action: 'scan', classroom_id: 'CR1' } });
-  for (const route of ['/demo', '/classrooms', '/hospital']) {
+  for (const route of ['/demo', '/city', '/classrooms', '/hospital']) {
     await page.goto(route);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1500);
