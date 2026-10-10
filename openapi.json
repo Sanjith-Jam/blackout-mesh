@@ -2,7 +2,6 @@
   "openapi": "3.1.0",
   "info": {
     "title": "PriorityGrid API",
-    "description": "Backend API for the PriorityGrid decision-and-control application.",
     "version": "1.0.0"
   },
   "paths": {
@@ -69,9 +68,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClassroomDemoSnapshot"
-                }
+                "schema": {}
               }
             }
           }
@@ -95,9 +92,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClassroomDemoSnapshot"
-                }
+                "schema": {}
               }
             }
           },
@@ -123,9 +118,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HospitalDemoSnapshot"
-                }
+                "schema": {}
               }
             }
           }
@@ -149,9 +142,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HospitalDemoSnapshot"
-                }
+                "schema": {}
               }
             }
           },
@@ -395,6 +386,132 @@
           }
         }
       }
+    },
+    "/api/v1/allocation/policy": {
+      "get": {
+        "summary": "Read Allocation Policy",
+        "operationId": "ReadAllocationPolicy",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Change Allocation Policy",
+        "operationId": "ChangeAllocationPolicy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllocationPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/studies/electrical": {
+      "post": {
+        "summary": "Electrical Study",
+        "operationId": "ElectricalStudy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ElectricalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElectricalStudyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hardware/ack": {
+      "post": {
+        "summary": "Hardware Ack",
+        "operationId": "HardwareAck",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HardwareAckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareAckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -578,6 +695,28 @@
               }
             ],
             "title": "Evidence"
+          },
+          "raw_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw State"
+          },
+          "guard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guard"
           }
         },
         "type": "object",
@@ -589,8 +728,49 @@
         ],
         "title": "ActivitySnapshot"
       },
+      "AllocationPolicy": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "activity_first",
+              "water_first"
+            ],
+            "title": "Name",
+            "default": "activity_first"
+          },
+          "version": {
+            "type": "string",
+            "const": "allocation-v1",
+            "title": "Version",
+            "default": "allocation-v1"
+          },
+          "fairness_weight": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Fairness Weight",
+            "default": 0
+          },
+          "switching_penalty": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Switching Penalty",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AllocationPolicy"
+      },
       "AllocationSnapshot": {
         "properties": {
+          "explanation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Explanation"
+          },
           "objective": {
             "type": "string",
             "title": "Objective"
@@ -606,6 +786,16 @@
           "baseline_mask": {
             "type": "integer",
             "title": "Baseline Mask"
+          },
+          "safety": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetySnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -645,11 +835,6 @@
           "control_revision": {
             "type": "integer",
             "title": "Control Revision"
-          },
-          "config_hash": {
-            "type": "string",
-            "title": "Config Hash",
-            "default": ""
           }
         },
         "type": "object",
@@ -667,9 +852,13 @@
             "enum": [
               "scan",
               "unscan",
+              "set_capacity",
               "normal",
               "overload",
-              "reset"
+              "reset",
+              "replay_pause",
+              "replay_resume",
+              "replay_step"
             ],
             "title": "Action"
           },
@@ -688,6 +877,17 @@
               }
             ],
             "title": "Classroom Id"
+          },
+          "capacity_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity W"
           }
         },
         "additionalProperties": false,
@@ -696,136 +896,6 @@
           "action"
         ],
         "title": "ClassroomDemoAction"
-      },
-      "ClassroomDemoLoad": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "watts": {
-            "type": "integer",
-            "title": "Watts"
-          },
-          "essential": {
-            "type": "boolean",
-            "title": "Essential"
-          },
-          "served": {
-            "type": "boolean",
-            "title": "Served"
-          },
-          "reason": {
-            "type": "string",
-            "title": "Reason"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "watts",
-          "essential",
-          "served",
-          "reason"
-        ],
-        "title": "ClassroomDemoLoad"
-      },
-      "ClassroomDemoRoom": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "rfid_active": {
-            "type": "boolean",
-            "title": "Rfid Active"
-          },
-          "loads": {
-            "items": {
-              "$ref": "#/components/schemas/ClassroomDemoLoad"
-            },
-            "type": "array",
-            "title": "Loads"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "rfid_active",
-          "loads"
-        ],
-        "title": "ClassroomDemoRoom"
-      },
-      "ClassroomDemoSnapshot": {
-        "properties": {
-          "contract": {
-            "$ref": "#/components/schemas/CrossRouteContract"
-          },
-          "capacity_w": {
-            "type": "integer",
-            "title": "Capacity W"
-          },
-          "requested_w": {
-            "type": "integer",
-            "title": "Requested W"
-          },
-          "served_w": {
-            "type": "integer",
-            "title": "Served W"
-          },
-          "shortfall_w": {
-            "type": "integer",
-            "title": "Shortfall W"
-          },
-          "selected_classroom_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Selected Classroom Id"
-          },
-          "rooms": {
-            "items": {
-              "$ref": "#/components/schemas/ClassroomDemoRoom"
-            },
-            "type": "array",
-            "title": "Rooms"
-          },
-          "mode": {
-            "type": "string",
-            "title": "Mode"
-          },
-          "policy": {
-            "type": "string",
-            "title": "Policy"
-          }
-        },
-        "type": "object",
-        "required": [
-          "contract",
-          "capacity_w",
-          "requested_w",
-          "served_w",
-          "shortfall_w",
-          "rooms",
-          "mode",
-          "policy"
-        ],
-        "title": "ClassroomDemoSnapshot"
       },
       "ClassroomInfo": {
         "properties": {
@@ -978,6 +1048,274 @@
         ],
         "title": "CrossRouteContract"
       },
+      "ElectricalInput": {
+        "properties": {
+          "topology_version": {
+            "type": "string",
+            "const": "radial-400v-v1",
+            "title": "Topology Version",
+            "default": "radial-400v-v1"
+          },
+          "balanced": {
+            "type": "boolean",
+            "title": "Balanced",
+            "default": true
+          },
+          "load_a_w": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Load A W",
+            "default": 6000
+          },
+          "load_b_w": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Load B W",
+            "default": 8000
+          },
+          "source_on": {
+            "type": "boolean",
+            "title": "Source On",
+            "default": true
+          },
+          "feeder_a_closed": {
+            "type": "boolean",
+            "title": "Feeder A Closed",
+            "default": true
+          },
+          "feeder_b_closed": {
+            "type": "boolean",
+            "title": "Feeder B Closed",
+            "default": true
+          },
+          "power_factor": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.8,
+            "title": "Power Factor",
+            "default": 0.95
+          },
+          "resistance_ohm": {
+            "type": "number",
+            "maximum": 10.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Resistance Ohm",
+            "default": 0.04
+          },
+          "reactance_ohm": {
+            "type": "number",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Reactance Ohm",
+            "default": 0.015
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ElectricalInput"
+      },
+      "ElectricalResult": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "const": "balanced_ac_study",
+            "title": "Mode",
+            "default": "balanced_ac_study"
+          },
+          "topology_version": {
+            "type": "string",
+            "title": "Topology Version",
+            "default": "radial-400v-v1"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "converged",
+              "deenergized",
+              "failed",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "converged": {
+            "type": "boolean",
+            "title": "Converged"
+          },
+          "restoration_authorized": {
+            "type": "boolean",
+            "const": false,
+            "title": "Restoration Authorized",
+            "default": false
+          },
+          "observed_at": {
+            "type": "string",
+            "title": "Observed At"
+          },
+          "inputs": {
+            "$ref": "#/components/schemas/ElectricalInput"
+          },
+          "units": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Units"
+          },
+          "buses": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Buses"
+          },
+          "branches": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Branches"
+          },
+          "source_p_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source P W"
+          },
+          "source_q_var": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Q Var"
+          },
+          "loss_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loss W"
+          },
+          "power_balance_residual_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Balance Residual W"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance",
+            "default": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "status",
+          "converged",
+          "observed_at",
+          "inputs",
+          "units",
+          "buses",
+          "branches"
+        ],
+        "title": "ElectricalResult"
+      },
+      "ElectricalStudyResponse": {
+        "properties": {
+          "site": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Site"
+          },
+          "result": {
+            "$ref": "#/components/schemas/ElectricalResult"
+          },
+          "diagnosis": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Diagnosis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "site",
+          "result",
+          "diagnosis"
+        ],
+        "title": "ElectricalStudyResponse"
+      },
       "FacilityZones": {
         "properties": {
           "hospital": {
@@ -993,6 +1331,60 @@
           "classroom"
         ],
         "title": "FacilityZones"
+      },
+      "FaultDiagnosis": {
+        "properties": {
+          "has_fault": {
+            "type": "boolean",
+            "title": "Has Fault"
+          },
+          "diagnosis": {
+            "type": "string",
+            "title": "Diagnosis"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "hypotheses": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Hypotheses"
+          },
+          "affected_assets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Affected Assets"
+          },
+          "supply_constraint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supply Constraint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_fault",
+          "diagnosis",
+          "severity",
+          "status"
+        ],
+        "title": "FaultDiagnosis"
       },
       "FeederChangeRequest": {
         "properties": {
@@ -1029,11 +1421,6 @@
           "control_revision": {
             "type": "integer",
             "title": "Control Revision"
-          },
-          "config_hash": {
-            "type": "string",
-            "title": "Config Hash",
-            "default": ""
           }
         },
         "type": "object",
@@ -1058,6 +1445,53 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HardwareAckRequest": {
+        "properties": {
+          "device_boot": {
+            "type": "string",
+            "title": "Device Boot"
+          },
+          "sequence": {
+            "type": "integer",
+            "title": "Sequence"
+          },
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "confirmed_mask": {
+            "type": "integer",
+            "title": "Confirmed Mask"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "device_boot",
+          "sequence",
+          "session",
+          "confirmed_mask",
+          "provenance"
+        ],
+        "title": "HardwareAckRequest"
+      },
+      "HardwareAckResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted"
+        ],
+        "title": "HardwareAckResponse"
+      },
       "HardwareLinkStatus": {
         "type": "string",
         "enum": [
@@ -1069,6 +1503,11 @@
       },
       "HealthResponse": {
         "properties": {
+          "control_loop": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Control Loop"
+          },
           "status": {
             "type": "string",
             "title": "Status"
@@ -1087,200 +1526,77 @@
       },
       "HospitalDemoAction": {
         "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "scan",
+                  "unscan",
+                  "set_capacity",
+                  "normal",
+                  "overload",
+                  "reset",
+                  "replay_pause",
+                  "replay_resume",
+                  "replay_step"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "zone_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ICU",
+                  "Theatre",
+                  "Wards"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Id"
+          },
+          "capacity_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity W"
+          },
           "scenario": {
-            "type": "string",
-            "enum": [
-              "normal",
-              "overload",
-              "cooling_failure",
-              "upstream_loss",
-              "missing_sensor"
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "overload",
+                  "cooling_failure",
+                  "upstream_loss",
+                  "missing_sensor"
+                ]
+              },
+              {
+                "type": "null"
+              }
             ],
             "title": "Scenario"
           }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "scenario"
-        ],
         "title": "HospitalDemoAction"
-      },
-      "HospitalDemoDiagnosis": {
-        "properties": {
-          "code": {
-            "type": "string",
-            "title": "Code"
-          },
-          "cause": {
-            "type": "string",
-            "title": "Cause"
-          },
-          "severity": {
-            "type": "string",
-            "title": "Severity"
-          },
-          "evidence": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Evidence"
-          },
-          "recommendation": {
-            "type": "string",
-            "title": "Recommendation"
-          },
-          "hypotheses": {
-            "items": {
-              "$ref": "#/components/schemas/Hypothesis"
-            },
-            "type": "array",
-            "title": "Hypotheses"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "cause",
-          "severity",
-          "evidence",
-          "recommendation",
-          "hypotheses"
-        ],
-        "title": "HospitalDemoDiagnosis"
-      },
-      "HospitalDemoSensors": {
-        "properties": {
-          "current_a": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current A"
-          },
-          "temperature_c": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature C"
-          },
-          "input_voltage_v": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Voltage V"
-          },
-          "output_voltage_v": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Voltage V"
-          },
-          "cooling_ok": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cooling Ok"
-          }
-        },
-        "type": "object",
-        "title": "HospitalDemoSensors"
-      },
-      "HospitalDemoSnapshot": {
-        "properties": {
-          "contract": {
-            "$ref": "#/components/schemas/CrossRouteContract"
-          },
-          "mode": {
-            "type": "string",
-            "title": "Mode"
-          },
-          "transformers": {
-            "items": {
-              "$ref": "#/components/schemas/HospitalDemoTransformer"
-            },
-            "type": "array",
-            "title": "Transformers"
-          },
-          "summary": {
-            "type": "string",
-            "title": "Summary"
-          }
-        },
-        "type": "object",
-        "required": [
-          "contract",
-          "mode",
-          "transformers",
-          "summary"
-        ],
-        "title": "HospitalDemoSnapshot"
-      },
-      "HospitalDemoTransformer": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "zone": {
-            "type": "string",
-            "title": "Zone"
-          },
-          "rated_current_a": {
-            "type": "number",
-            "title": "Rated Current A"
-          },
-          "sensors": {
-            "$ref": "#/components/schemas/HospitalDemoSensors"
-          },
-          "diagnosis": {
-            "$ref": "#/components/schemas/HospitalDemoDiagnosis"
-          },
-          "energized": {
-            "type": "boolean",
-            "title": "Energized"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "zone",
-          "rated_current_a",
-          "sensors",
-          "diagnosis",
-          "energized"
-        ],
-        "title": "HospitalDemoTransformer"
       },
       "HospitalRoom": {
         "properties": {
@@ -1325,76 +1641,6 @@
           "rooms"
         ],
         "title": "HospitalZone"
-      },
-      "Hypothesis": {
-        "properties": {
-          "code": {
-            "type": "string",
-            "title": "Code"
-          },
-          "cause": {
-            "type": "string",
-            "title": "Cause"
-          },
-          "asset_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Asset Id"
-          },
-          "supporting_evidence": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Supporting Evidence"
-          },
-          "contradicting_evidence": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Contradicting Evidence"
-          },
-          "time_window": {
-            "type": "string",
-            "title": "Time Window"
-          },
-          "sufficiency": {
-            "type": "string",
-            "title": "Sufficiency"
-          },
-          "score": {
-            "type": "number",
-            "title": "Score"
-          },
-          "severity": {
-            "type": "string",
-            "title": "Severity"
-          },
-          "recommendation": {
-            "type": "string",
-            "title": "Recommendation"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "cause",
-          "supporting_evidence",
-          "contradicting_evidence",
-          "time_window",
-          "sufficiency",
-          "score",
-          "severity",
-          "recommendation"
-        ],
-        "title": "Hypothesis"
       },
       "ModelStatusResponse": {
         "properties": {
@@ -1447,38 +1693,6 @@
           "data_source"
         ],
         "title": "ModelStatusResponse"
-      },
-      "RankedDiagnosis": {
-        "properties": {
-          "is_fault": {
-            "type": "boolean",
-            "title": "Is Fault"
-          },
-          "hypotheses": {
-            "items": {
-              "$ref": "#/components/schemas/Hypothesis"
-            },
-            "type": "array",
-            "title": "Hypotheses"
-          },
-          "abstention_reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Abstention Reason"
-          }
-        },
-        "type": "object",
-        "required": [
-          "is_fault",
-          "hypotheses"
-        ],
-        "title": "RankedDiagnosis"
       },
       "ReplayActionRequest": {
         "properties": {
@@ -1545,8 +1759,7 @@
         "enum": [
           "CARD_RECOGNIZED",
           "UNKNOWN_CARD",
-          "DUPLICATE_SUPPRESSED",
-          "SESSION_ENDED"
+          "DUPLICATE_SUPPRESSED"
         ],
         "title": "RfidEventType"
       },
@@ -1686,6 +1899,47 @@
         ],
         "title": "RunIdentity"
       },
+      "SafetySnapshot": {
+        "properties": {
+          "policy_version": {
+            "type": "string",
+            "title": "Policy Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "protected_requested_w": {
+            "type": "integer",
+            "title": "Protected Requested W"
+          },
+          "protected_served_w": {
+            "type": "integer",
+            "title": "Protected Served W"
+          },
+          "protected_shortfall_w": {
+            "type": "integer",
+            "title": "Protected Shortfall W"
+          },
+          "fallback_order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fallback Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy_version",
+          "status",
+          "protected_requested_w",
+          "protected_served_w",
+          "protected_shortfall_w",
+          "fallback_order"
+        ],
+        "title": "SafetySnapshot"
+      },
       "ScopeTotals": {
         "properties": {
           "capacity_w": {
@@ -1775,6 +2029,17 @@
       },
       "SourceInfo": {
         "properties": {
+          "model": {
+            "type": "string",
+            "const": "watt_budget",
+            "title": "Model",
+            "default": "watt_budget"
+          },
+          "limitations": {
+            "type": "string",
+            "title": "Limitations",
+            "default": "Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics"
+          },
           "kind": {
             "$ref": "#/components/schemas/SourceKind"
           },
@@ -1825,19 +2090,24 @@
           "contract": {
             "$ref": "#/components/schemas/CrossRouteContract"
           },
-          "control_revision": {
-            "type": "integer",
-            "title": "Control Revision"
-          },
           "config_hash": {
             "type": "string",
             "title": "Config Hash",
             "default": ""
           },
+          "control_revision": {
+            "type": "integer",
+            "title": "Control Revision"
+          },
           "generated_at": {
             "type": "string",
             "format": "date-time",
             "title": "Generated At"
+          },
+          "published_revision": {
+            "type": "integer",
+            "title": "Published Revision",
+            "default": 0
           },
           "source": {
             "$ref": "#/components/schemas/SourceInfo"
@@ -1926,7 +2196,7 @@
           "fault_diagnosis": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RankedDiagnosis"
+                "$ref": "#/components/schemas/FaultDiagnosis"
               },
               {
                 "type": "null"
@@ -1950,6 +2220,26 @@
           },
           "allocation": {
             "$ref": "#/components/schemas/AllocationSnapshot"
+          },
+          "site": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site"
+          },
+          "edges": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Edges"
           }
         },
         "type": "object",
@@ -2019,6 +2309,11 @@
       },
       "WebSocketMessageEnvelope": {
         "properties": {
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          },
           "type": {
             "title": "Type",
             "type": "string"
@@ -2028,6 +2323,7 @@
           }
         },
         "required": [
+          "sent_at",
           "type",
           "payload"
         ],

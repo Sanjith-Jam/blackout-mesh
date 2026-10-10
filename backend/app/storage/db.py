@@ -1,57 +1,39 @@
-import threading
-import sqlite3
-from sqlalchemy import create_engine, text
-from sqlmodel import SQLModel, Session
+"""One database lifecycle and serialized writer per application instance."""
 import logging
+import os
+import threading
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import StaticPool
+from sqlmodel import SQLModel
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
-DATABASE_URL = "sqlite:///prioritygrid.db"
+class Storage:
+    def __init__(self, url=None):
+        url = url or os.environ.get('DATABASE_URL', 'sqlite:///prioritygrid.db')
+        options = {'poolclass': StaticPool} if url == 'sqlite://' else {}
+        self.engine = create_engine(url, connect_args={'check_same_thread': False, 'timeout': 15}, **options)
+        self.lock = threading.Lock()
+        self.degraded = False
 
-# Using a single serialized writer engine for all writes
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False, "timeout": 15},
-    pool_size=5,
-    max_overflow=10
-)
-
-_db_lock = threading.Lock()
-_db_degraded = False
-
-def init_db():
-    try:
-        with engine.begin() as conn:
-            # Enable WAL mode for concurrency
-            conn.execute(text("PRAGMA journal_mode=WAL;"))
-            conn.execute(text("PRAGMA synchronous=NORMAL;"))
-        SQLModel.metadata.create_all(engine)
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
-        global _db_degraded
-        _db_degraded = True
-
-def is_degraded() -> bool:
-    return _db_degraded
-
-def set_degraded(status: bool):
-    global _db_degraded
-    _db_degraded = status
-
-def commit_safely(session: Session):
-    """Commits a session with a serialized writer lock and handles degradation."""
-    global _db_degraded
-    if _db_degraded:
-        # DB is in a degraded state, do not attempt to write
-        # Wait, if we're degraded, we might retry or just drop. The issue says "Handle full disk/busy/corruption with a visible degraded state and conservative restoration policy"
-        return False
-        
-    with _db_lock:
+    def init(self):
         try:
-            session.commit()
-            return True
-        except Exception as e:
-            logger.error(f"DB write failed: {e}")
-            session.rollback()
-            _db_degraded = True
+            with self.engine.begin() as connection:
+                connection.execute(text('PRAGMA journal_mode=WAL'))
+            SQLModel.metadata.create_all(self.engine)
+        except Exception:
+            self.degraded = True
+            log.exception('Database initialization failed')
+
+    def commit(self, session):
+        if self.degraded:
             return False
+        with self.lock:
+            try:
+                session.commit()
+                return True
+            except Exception:
+                session.rollback()
+                self.degraded = True
+                log.exception('Database write failed')
+                return False

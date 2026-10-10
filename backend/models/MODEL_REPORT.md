@@ -44,3 +44,9 @@ This was a bounded feasibility trial, not a full-dataset TabICL evaluation. The 
 The packaged logistic artifact SHA-256 is recorded in [manifest.json](manifest.json). On this machine, loading the model took 0.733 s, the first prediction took 2.94 ms, and warm single-row prediction took 0.172 ms median / 0.212 ms p95 over 100 calls.
 
 `replay.json` contains 40 observations per CR1/CR2/CR3 drawn only from validation days. For a visibly varied demo, the offline exporter samples 20 rows from each validation truth class per stream with a fixed seed, then sorts them by their original timestamp. Labels are used only for that offline selection; the replay contains no labels or `Light`. The sparse timestamps are compressed into a short replay and do not represent a natural sampling cadence. The model produces ACTIVE, INACTIVE, and UNKNOWN outputs in each stream; each stream is a presentation copy of recorded office observations, not an independent room measurement.
+
+## Temporal audit follow-up — issue #5
+
+See [rolling-origin protocol and results](../benchmarks/occupancy/REPORT.md). Four complete-day rolling folds compared majority, CO2 rule, logistic and tree candidates; an offline Light-feature experiment is reported separately. All UCI results remain exploratory. No candidate was promoted and the shipped artifact, manifest, four-feature schema and replay remain unchanged. Independent campus-room sessions are unavailable, so campus generalization remains unvalidated and conservative UNKNOWN guards stay enabled.
+
+Occupancy means human presence. Room use means an observed/requested session. Equipment demand means configured/requested watts. The office presence labels do not establish the other two quantities.

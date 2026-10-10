@@ -31,7 +31,7 @@ export default function DemoDashboard() {
 
   const [history, setHistory] = useState<TimeSeriesPoint[]>([]);
   const MAX_HISTORY = 50;
-  
+
   const lastRunId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function DemoDashboard() {
   }
 
   const { services, zones, source, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
-  
+
   const servedWatts = services.filter(s => s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
   const servedCount = services.filter(s => s.modeled_served).length;
 
@@ -116,7 +116,7 @@ export default function DemoDashboard() {
             <span className="brand-badge">Live Console</span>
           </div>
         </div>
-        
+
         <div className="dash-status-indicators">
           <div className={`status-pill ${isConnected && !isStale ? 'ok' : 'error'}`}>
             <Server size={14} /> Backend {isConnected && !isStale ? 'Live' : 'Stale/Disconnected'}
@@ -173,7 +173,7 @@ export default function DemoDashboard() {
       </section>
 
       {/* TOPOLOGY & ZONES ROW */}
-      
+
       <div className="demo-tabs" style={{ display: 'flex', gap: '1rem', padding: '0 0', borderBottom: '1px solid #e2e8f0', background: 'transparent', marginBottom: '1.5rem' }}>
         <button className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'overview' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Overview</button>
         <button className={`tab-btn ${activeTab === 'hospital' ? 'active' : ''}`} onClick={() => setActiveTab('hospital')} style={{ padding: '0.75rem 1.5rem', border: 'none', background: 'none', borderBottom: activeTab === 'hospital' ? '2px solid #0f172a' : '2px solid transparent', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>Hospital Zone</button>
@@ -182,7 +182,7 @@ export default function DemoDashboard() {
 
       <div className="zones-layout">
         <div className="main-zones">
-          
+
           {/* NETWORK TOPOLOGY */}
           {activeTab === "overview" && <section className="zone-section">
             <div className="zone-header">
@@ -198,7 +198,7 @@ export default function DemoDashboard() {
               <h2>Hospital Zone</h2>
               <p>Three rooms with shared essential lighting and priority-aware support services.</p>
             </div>
-            
+
             <div className="hospital-rooms-grid">
               {zones?.hospital.rooms.map(room => {
                 const cmdOn = checkBit(indicator_command_mask ?? null, room.led_bit);
@@ -244,7 +244,7 @@ export default function DemoDashboard() {
               <h2>RFID Classroom Zone</h2>
               <p>Select a classroom, activate a simulated load event, and observe the backend's allocation decision and indicator state.</p>
             </div>
-            
+
             <div className="classrooms-grid">
               {zones?.classroom.classrooms.map(cr => {
                 const isSelected = zones.classroom.active_classroom_id === cr.id;
@@ -258,7 +258,7 @@ export default function DemoDashboard() {
                       <h3>{cr.name}</h3>
                       {isSelected && <span className="cr-active-badge">Active Selection</span>}
                     </div>
-                    
+
                     <div className="cr-props">
                       <span>Service {cr.service_id}</span>
                       <span>Priority {svc?.tier}</span>
@@ -292,14 +292,14 @@ export default function DemoDashboard() {
               })}
             </div>
           </section>}
-          
+
         </div>
 
         {/* DEMO CONTROLS SIDEBAR */}
         <aside className="demo-controls-sidebar">
           <div className="controls-panel">
             <h2>Demo Controls</h2>
-            
+
             {actionFeedback && (
               <div className={`feedback-toast ${actionFeedback.isError ? 'error' : 'success'}`}>
                 {actionFeedback.msg}
@@ -336,7 +336,7 @@ export default function DemoDashboard() {
                 doFeeder('A', true);
                 doFeeder('B', true);
               }}>Normal Conditions</button>
-              
+
               <button className="btn-outline warn" disabled={actionPending} onClick={() => doCapacity(6000)}>Shortage (6000W)</button>
               <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('A', false)}>Feeder A Loss</button>
               <button className="btn-outline err" disabled={actionPending} onClick={() => doFeeder('B', false)}>Feeder B Loss</button>

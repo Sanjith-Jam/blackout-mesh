@@ -39,3 +39,6 @@ firmware/.local/
 # Isolated ML benchmark environment
 .venv-ml/
 *.tsbuildinfo
+
+# Optional isolated electrical studies
+.venv-electrical/

@@ -2,7 +2,7 @@
   "model_version": "uci-occ-logistic-2026-10-09",
   "model_type": "StandardScaler + LogisticRegression",
   "artifact": "activity-logistic.joblib",
-  "sha256": "3bb3555f7fb982fcd5fc089d47325dff723ee80a69583da95c5b3dc810f0d118",
+  "sha256": "b552641e908e6c1011c61223401f6e527d9d87aebc247025cf4812c1243efdf9",
   "features": [
     "temperature_c",
     "humidity_pct",
@@ -86,12 +86,12 @@
     "scope": "UCI Occupancy Detection, office occupancy proxy; labels are not campus lab activity"
   },
   "runtime_inference": {
-    "model_init_seconds_includes_hash_and_artifact_load": 0.00034895899443654343,
-    "first_prediction_ms": 0.184834,
+    "model_init_seconds_includes_hash_and_artifact_load": 0.7330393310003274,
+    "first_prediction_ms": 2.9384909976215567,
     "warm_single_prediction_ms": {
       "n": 100,
-      "median_ms": 0.0724795,
-      "p95_ms": 0.07835179999999999
+      "median_ms": 0.17187599999999997,
+      "p95_ms": 0.212255
     }
   }
 }

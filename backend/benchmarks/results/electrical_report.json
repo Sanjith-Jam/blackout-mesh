@@ -1,0 +1,720 @@
+{
+  "environment": "Linux-7.2.8-2-cachyos-x86_64-with-glibc2.44",
+  "python": "3.12.15",
+  "engines": {
+    "power-grid-model": {
+      "first_import_build_solve_ms": 433.16977199719986,
+      "cases": {
+        "normal": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "power-grid-model",
+          "engine_version": "1.13.193",
+          "status": "converged",
+          "converged": true,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:09.566073+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 6000,
+            "load_b_w": 8000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": true,
+              "voltage_v": 400.0
+            },
+            "A": {
+              "energized": true,
+              "voltage_v": 399.32490572869193
+            },
+            "B": {
+              "energized": true,
+              "voltage_v": 399.099365190795
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": true,
+              "current_a": 9.131468386933761,
+              "p_w": 6010.0060457886075,
+              "q_var": 1975.8568982439763,
+              "loading_pct": 91.31468386933761
+            },
+            "B": {
+              "energized": true,
+              "current_a": 12.182171729033039,
+              "p_w": 8017.808636964663,
+              "q_var": 2636.1510802925804,
+              "loading_pct": 87.015512350236
+            }
+          },
+          "source_p_w": 14027.814682752825,
+          "source_q_var": 4612.007978536779,
+          "loss_w": 27.814682752466698,
+          "power_balance_residual_w": 3.5862157687915897e-10,
+          "reason": null,
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "overload": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "power-grid-model",
+          "engine_version": "1.13.193",
+          "status": "converged",
+          "converged": true,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:09.570024+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 12000,
+            "load_b_w": 16000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": true,
+              "voltage_v": 400.0
+            },
+            "A": {
+              "energized": true,
+              "voltage_v": 398.6475152407173
+            },
+            "B": {
+              "energized": true,
+              "voltage_v": 398.1946342777735
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": true,
+              "current_a": 18.293969551395495,
+              "p_w": 12040.160318633754,
+              "q_var": 3959.2693816337087,
+              "loading_pct": 182.93969551395494
+            },
+            "B": {
+              "energized": true,
+              "current_a": 24.419701247458317,
+              "p_w": 16071.55861708165,
+              "q_var": 5285.780164267613,
+              "loading_pct": 174.4264374818451
+            }
+          },
+          "source_p_w": 28111.718935715406,
+          "source_q_var": 9245.049545901542,
+          "loss_w": 111.71893571550034,
+          "power_balance_residual_w": -9.465850325796055e-11,
+          "reason": null,
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "open_branch": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "power-grid-model",
+          "engine_version": "1.13.193",
+          "status": "converged",
+          "converged": true,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:09.573486+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 6000,
+            "load_b_w": 8000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": false,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": true,
+              "voltage_v": 400.0
+            },
+            "A": {
+              "energized": true,
+              "voltage_v": 399.324905728692
+            },
+            "B": {
+              "energized": false,
+              "voltage_v": null
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": true,
+              "current_a": 9.131468386933152,
+              "p_w": 6010.006045788164,
+              "q_var": 1975.8568982439767,
+              "loading_pct": 91.31468386933153
+            },
+            "B": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            }
+          },
+          "source_p_w": 6010.006045788164,
+          "source_q_var": 1975.8568982439767,
+          "loss_w": 10.006045788187146,
+          "power_balance_residual_w": -2.3499424628425913e-11,
+          "reason": null,
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "upstream_loss": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "power-grid-model",
+          "engine_version": "1.13.193",
+          "status": "deenergized",
+          "converged": false,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:09.576632+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 6000,
+            "load_b_w": 8000,
+            "source_on": false,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "A": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "B": {
+              "energized": false,
+              "voltage_v": null
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            },
+            "B": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            }
+          },
+          "source_p_w": null,
+          "source_q_var": null,
+          "loss_w": null,
+          "power_balance_residual_w": null,
+          "reason": "No connected source; no AC solution or restoration permission",
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "nonconvergence": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "power-grid-model",
+          "engine_version": "1.13.193",
+          "status": "failed",
+          "converged": false,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:09.577535+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 100000,
+            "load_b_w": 100000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 10.0,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "A": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "B": {
+              "energized": false,
+              "voltage_v": null
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            },
+            "B": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            }
+          },
+          "source_p_w": null,
+          "source_q_var": null,
+          "loss_w": null,
+          "power_balance_residual_w": null,
+          "reason": "IterationDiverge: Iteration failed to converge after 30 iterations! Max deviation: 4.854879414766465, error tolerance: 1e-10.\n\nTry validate_input_data() or validate_batch_data() to validate your data.\n",
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        }
+      },
+      "single": {
+        "n": 20,
+        "p50_ms": 3.075649499805877,
+        "p95_ms": 3.226406995963771
+      },
+      "serial_batch16": {
+        "n": 5,
+        "p50_ms": 51.663102000020444,
+        "p95_ms": 57.237492997956
+      }
+    },
+    "pandapower": {
+      "first_import_build_solve_ms": 2433.87198200071,
+      "cases": {
+        "normal": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "pandapower",
+          "engine_version": "3.5.6",
+          "status": "converged",
+          "converged": true,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:12.387103+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 6000,
+            "load_b_w": 8000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": true,
+              "voltage_v": 400.0
+            },
+            "A": {
+              "energized": true,
+              "voltage_v": 399.32490573236964
+            },
+            "B": {
+              "energized": true,
+              "voltage_v": 399.0993652024547
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": true,
+              "current_a": 9.131468337820058,
+              "p_w": 6010.006016787362,
+              "q_var": 1975.8568775072315,
+              "loading_pct": 91.3146833782006
+            },
+            "B": {
+              "energized": true,
+              "current_a": 12.182171573324421,
+              "p_w": 8017.808545000004,
+              "q_var": 2636.151014612675,
+              "loading_pct": 87.01551123803159
+            }
+          },
+          "source_p_w": 14027.814561787367,
+          "source_q_var": 4612.007892119907,
+          "loss_w": 27.814682189582857,
+          "power_balance_residual_w": -0.00012040221587383826,
+          "reason": null,
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "overload": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "pandapower",
+          "engine_version": "3.5.6",
+          "status": "converged",
+          "converged": true,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:12.698141+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 12000,
+            "load_b_w": 16000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": true,
+              "voltage_v": 400.0
+            },
+            "A": {
+              "energized": true,
+              "voltage_v": 398.6475152407173
+            },
+            "B": {
+              "energized": true,
+              "voltage_v": 398.19463427777345
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": true,
+              "current_a": 18.293969551394987,
+              "p_w": 12040.160318633309,
+              "q_var": 3959.2693816339342,
+              "loading_pct": 182.93969551394983
+            },
+            "B": {
+              "energized": true,
+              "current_a": 24.41970124745944,
+              "p_w": 16071.558617082537,
+              "q_var": 5285.780164267395,
+              "loading_pct": 174.42643748185313
+            }
+          },
+          "source_p_w": 28111.718935715846,
+          "source_q_var": 9245.04954590133,
+          "loss_w": 111.71893571550468,
+          "power_balance_residual_w": 3.411884108572849e-10,
+          "reason": null,
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "open_branch": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "pandapower",
+          "engine_version": "3.5.6",
+          "status": "converged",
+          "converged": true,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:12.941765+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 6000,
+            "load_b_w": 8000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": false,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": true,
+              "voltage_v": 400.0
+            },
+            "A": {
+              "energized": true,
+              "voltage_v": 399.32490573236964
+            },
+            "B": {
+              "energized": false,
+              "voltage_v": null
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": true,
+              "current_a": 9.131468337820058,
+              "p_w": 6010.006016787362,
+              "q_var": 1975.8568775072315,
+              "loading_pct": 91.3146833782006
+            },
+            "B": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            }
+          },
+          "source_p_w": 6010.006016787362,
+          "source_q_var": 1975.8568775072315,
+          "loss_w": 10.006045680553225,
+          "power_balance_residual_w": -2.8893191565515508e-05,
+          "reason": null,
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "upstream_loss": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "pandapower",
+          "engine_version": "3.5.6",
+          "status": "deenergized",
+          "converged": false,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:13.175275+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 6000,
+            "load_b_w": 8000,
+            "source_on": false,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 0.04,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "A": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "B": {
+              "energized": false,
+              "voltage_v": null
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            },
+            "B": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            }
+          },
+          "source_p_w": null,
+          "source_q_var": null,
+          "loss_w": null,
+          "power_balance_residual_w": null,
+          "reason": "No connected source; no AC solution or restoration permission",
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        },
+        "nonconvergence": {
+          "mode": "balanced_ac_study",
+          "topology_version": "radial-400v-v1",
+          "engine": "pandapower",
+          "engine_version": "3.5.6",
+          "status": "failed",
+          "converged": false,
+          "restoration_authorized": false,
+          "observed_at": "2026-10-09T20:08:13.176649+00:00",
+          "inputs": {
+            "topology_version": "radial-400v-v1",
+            "balanced": true,
+            "load_a_w": 100000,
+            "load_b_w": 100000,
+            "source_on": true,
+            "feeder_a_closed": true,
+            "feeder_b_closed": true,
+            "power_factor": 0.95,
+            "resistance_ohm": 10.0,
+            "reactance_ohm": 0.015
+          },
+          "units": {
+            "voltage_v": "V line-to-line RMS",
+            "current_a": "A RMS",
+            "p_w": "W total three-phase",
+            "q_var": "var total three-phase",
+            "loading_pct": "% ampacity",
+            "loss_w": "W"
+          },
+          "buses": {
+            "source": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "A": {
+              "energized": false,
+              "voltage_v": null
+            },
+            "B": {
+              "energized": false,
+              "voltage_v": null
+            }
+          },
+          "branches": {
+            "A": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            },
+            "B": {
+              "energized": false,
+              "current_a": null,
+              "p_w": null,
+              "q_var": null,
+              "loading_pct": null
+            }
+          },
+          "source_p_w": null,
+          "source_q_var": null,
+          "loss_w": null,
+          "power_balance_residual_w": null,
+          "reason": "LoadflowNotConverged: Power Flow nr did not converge after 30 iterations!",
+          "provenance": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+        }
+      },
+      "single": {
+        "n": 20,
+        "p50_ms": 241.37191499539767,
+        "p95_ms": 309.97662599838804
+      },
+      "serial_batch16": {
+        "n": 5,
+        "p50_ms": 1445.8931560002384,
+        "p95_ms": 1448.3414989954326
+      }
+    }
+  },
+  "tolerances": {
+    "voltage_v": 0.01,
+    "current_a": 0.001,
+    "power_w": 0.1
+  },
+  "comparisons": {
+    "normal": {
+      "max_voltage_difference_v": 1.165966523331008e-08,
+      "max_current_difference_a": 1.5570861755520582e-07,
+      "source_power_difference_w": 0.00012096545833628625
+    },
+    "overload": {
+      "max_voltage_difference_v": 5.684341886080802e-14,
+      "max_current_difference_a": 1.1226575225009583e-12,
+      "source_power_difference_w": 4.4019543565809727e-10
+    },
+    "open_branch": {
+      "max_voltage_difference_v": 3.677655513456557e-09,
+      "max_current_difference_a": 4.9113094036101757e-08,
+      "source_power_difference_w": 2.9000801987422165e-05
+    }
+  },
+  "selected_runtime": "power-grid-model",
+  "batch_method": "16 serial adapter calls, including graph/build/validation; not native vectorized batch"
+}

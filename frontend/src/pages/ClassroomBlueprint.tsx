@@ -1,20 +1,20 @@
 import { ClassroomDemoLoad, ClassroomDemoSnapshot } from '../types';
 import './ClassroomBlueprint.css';
+import { EDGE_FOOTNOTE, EDGE_LABEL, EdgeLegend, PowerWire, edgeIndex } from './PowerEdges';
 
 type Props = { snapshot: ClassroomDemoSnapshot; connected: boolean };
 
 export default function ClassroomBlueprint({ snapshot, connected }: Props) {
-  const wire = (id: string, d: string, on: boolean, main = false) => <g key={id} data-circuit={id} className={`power-map__circuit ${on ? 'is-on' : 'is-off'} ${main ? 'is-main' : ''}`}>
-    <path className="power-map__cable-bed" d={d} />
-    <path className="power-map__cable" d={d} />
-    {on && connected && <path className="power-map__current" d={d} />}
-  </g>;
-  const status = (load: ClassroomDemoLoad) => load.served ? 'ON' : /restor/i.test(load.reason) ? 'WAIT' : 'OFF';
+  const edges = edgeIndex(snapshot.edges);
+  // Every wire is one canonical edge from the backend (#23); its state, not a served flag, drives the drawing.
+  const wire = (edgeId: string, d: string, main = false) => <PowerWire key={edgeId} edge={edges[edgeId]} d={d} main={main} live={connected} />;
+  const loadEdge = (roomId: string, loadId: string) => edges[`classroom:${roomId}>${loadId}`];
+  const status = (roomId: string, load: ClassroomDemoLoad) => EDGE_LABEL[loadEdge(roomId, load.id)?.state ?? 'UNKNOWN'];
 
   return <section className={`power-map ${connected ? '' : 'is-stale'}`} aria-label="Classroom electricity map">
-    <header className="power-map__toolbar"><div><span className="power-map__eyebrow">Campus / electrical layer</span><h2>Follow the current</h2></div><div className="power-map__legend"><span><i className="live" />Live current</span><span><i />Cut circuit</span></div></header>
+    <header className="power-map__toolbar"><div><span className="power-map__eyebrow">Campus / electrical layer</span><h2>Follow the current</h2></div><EdgeLegend stale={!connected} /></header>
     <div className="power-map__viewport" tabIndex={0} role="region" aria-label="Scrollable campus power map">
-      <svg className="power-map__drawing" viewBox="0 0 1080 460" role="img" aria-label={`Three classrooms connected to a shared simulated supply. ${snapshot.rooms.map(room => `${room.name}: ${room.loads.map(load => `${load.name} ${status(load)}`).join(', ')}`).join('. ')}`}>
+      <svg className="power-map__drawing" viewBox="0 0 1080 460" role="img" aria-label={`Three classrooms connected to a shared simulated supply. ${snapshot.rooms.map(room => `${room.name}: ${room.loads.map(load => `${load.name} ${status(room.id, load)}`).join(', ')}`).join('. ')}`}>
         <defs>
           <pattern id="campus-tiles" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#edece5" /><path d="M20 0H0V20" fill="none" stroke="#d9dad2" strokeWidth=".7" /></pattern>
           <pattern id="classroom-tiles" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#f5efdd" /><path d="M20 0H0V20" fill="none" stroke="#e6dfcb" strokeWidth=".8" /></pattern>
@@ -34,20 +34,19 @@ export default function ClassroomBlueprint({ snapshot, connected }: Props) {
             <text x={x + 12} y="88" className="power-map__map-note">{room.rfid_active ? 'RFID ACTIVE' : 'NO RECENT SCAN'}</text>
           </g>;
         })}
-        {wire('supply-bus', 'M150 408H1040', snapshot.served_w > 0, true)}
+        {wire('classroom:SUPPLY>BUS', 'M150 408H1040', true)}
         {snapshot.rooms.map((room, index) => {
           const x = 30 + index * 350;
           const loads = Object.fromEntries(room.loads.map(load => [load.id, load]));
-          const on = (id: string) => !!loads[id]?.served;
-          const roomOn = room.loads.some(load => load.served);
+          const on = (id: string) => loadEdge(room.id, id)?.state === 'ENERGIZED';
           return <g key={room.id} data-room={room.id}>
-            {wire(`${room.id}-feed`, `M${x + 32} 408V96`, roomOn, true)}
-            {wire(`${room.id}-lighting`, `M${x + 32} 112H${x + 95}`, on('lighting'))}
-            {wire(`${room.id}-computers`, `M${x + 32} 290H${x + 132}V152H${x + 270}M${x + 132} 222H${x + 270}`, on('computers'))}
-            {wire(`${room.id}-fans`, `M${x + 32} 192H${x + 88}`, on('fans'))}
-            {wire(`${room.id}-projector`, `M${x + 32} 96H${x + 238}V112`, on('projector'))}
-            {wire(`${room.id}-ac`, `M${x + 32} 298H${x + 288}V270`, on('ac'))}
-            {loads.instruments && wire(`${room.id}-instruments`, `M${x + 32} 306H${x + 88}V264`, on('instruments'))}
+            {wire(`classroom:BUS>${room.id}`, `M${x + 32} 408V96`, true)}
+            {wire(`classroom:${room.id}>lighting`, `M${x + 32} 112H${x + 95}`)}
+            {wire(`classroom:${room.id}>computers`, `M${x + 32} 290H${x + 132}V152H${x + 270}M${x + 132} 222H${x + 270}`)}
+            {wire(`classroom:${room.id}>fans`, `M${x + 32} 192H${x + 88}`)}
+            {wire(`classroom:${room.id}>projector`, `M${x + 32} 96H${x + 238}V112`)}
+            {wire(`classroom:${room.id}>ac`, `M${x + 32} 298H${x + 288}V270`)}
+            {loads.instruments && wire(`classroom:${room.id}>instruments`, `M${x + 32} 306H${x + 88}V264`)}
             <g className={`power-map__lamp ${on('lighting') ? 'is-on' : ''}`} transform={`translate(${x + 95} 112)`}>
               {on('lighting') && <rect x="-27" y="-21" width="54" height="42" rx="8" fill="#ffe295" opacity=".45" />}
               <rect x="-18" y="-6" width="36" height="12" fill={on('lighting') ? '#ffdc64' : '#a6aaa2'} stroke="#797762" strokeWidth="2" />
@@ -79,7 +78,7 @@ export default function ClassroomBlueprint({ snapshot, connected }: Props) {
             {loads.instruments && <g transform={`translate(${x + 88} 260)`}><rect x="-20" y="-14" width="40" height="28" fill="#aab2aa" stroke="#6a786e" strokeWidth="2" /><rect x="-14" y="-9" width="20" height="16" fill={on('instruments') ? '#70b9b0' : '#68716d'} /><path d="M-11 0h3l3-5 4 9 4-4" fill="none" stroke={on('instruments') ? '#b4ffee' : '#939b94'} strokeWidth="2" /><text y="31" textAnchor="middle" className="power-map__fixture-label">LAB KIT</text></g>}
             <rect x={x + 20} y="282" width="24" height="29" fill="#e1c971" stroke="#8e7d40" strokeWidth="2" /><path d={`m${x + 34} 286-9 12h7l-4 9 12-14h-7Z`} fill="#82632b" />
             <g transform={`translate(${x + 65} 318)`}><rect x="-7" y="-10" width="14" height="20" fill={room.rfid_active ? '#6abca0' : '#a2aaa1'} stroke="#5f7569" strokeWidth="2" /><circle r="2" fill={room.rfid_active ? '#d9fff0' : '#d0d4cb'} /></g>
-            <text x={x + 80} y="363" className="power-map__feed-label">{room.loads.filter(load => load.served).reduce((sum, load) => sum + load.watts, 0).toLocaleString()} W / {room.rfid_active ? 'ACTIVE ROOM' : 'ESSENTIALS FIRST'}</text>
+            <text x={x + 80} y="363" className="power-map__feed-label">{room.loads.filter(load => load.served).reduce((sum, load) => sum + load.watts, 0).toLocaleString()} W MODELED / {room.rfid_active ? 'ACTIVE ROOM' : 'ESSENTIALS FIRST'}</text>
           </g>;
         })}
         <g transform="translate(25 380)"><rect width="125" height="56" fill="#677c6e" stroke="#3e5647" strokeWidth="3" /><rect x="9" y="10" width="22" height="35" fill="#3c5144" /><path d="M13 19h14m-14 7h14m-14 7h14" stroke="#a7b6a6" strokeWidth="2" /><text x="40" y="24" className="power-map__source-text">SUPPLY</text><text x="40" y="42" className="power-map__source-text">{snapshot.capacity_w.toLocaleString()} W</text></g>
@@ -87,7 +86,8 @@ export default function ClassroomBlueprint({ snapshot, connected }: Props) {
       </svg>
     </div>
     <div className="power-map__room-ledger">
-      {snapshot.rooms.map(room => <article key={room.id} className={room.rfid_active ? 'is-selected' : ''} aria-label={`${room.name} equipment status`}><header><strong>{room.name}</strong><span>{room.rfid_active ? 'RFID active' : 'Unscanned'}</span></header><div className="power-map__loads">{room.loads.map(load => <span key={load.id} className={load.served ? 'is-on' : 'is-off'} title={`${load.watts} W · ${load.reason}`}><i />{load.name}<b>{status(load)}</b></span>)}</div></article>)}
+      {snapshot.rooms.map(room => <article key={room.id} className={room.rfid_active ? 'is-selected' : ''} aria-label={`${room.name} equipment status`}><header><strong>{room.name}</strong><span>{room.rfid_active ? 'RFID active' : 'Unscanned'}</span></header><div className="power-map__loads">{room.loads.map(load => <span key={load.id} data-edge-state={loadEdge(room.id, load.id)?.state ?? 'UNKNOWN'} className={load.served ? 'is-on' : 'is-off'} title={`${load.watts} W modeled · ${loadEdge(room.id, load.id)?.reason ?? load.reason}`}><i />{load.name}<b>{status(room.id, load)}</b></span>)}</div></article>)}
     </div>
+    <p className="power-map__footnote">{EDGE_FOOTNOTE}</p>
   </section>;
 }

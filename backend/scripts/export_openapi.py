@@ -14,7 +14,7 @@ def export():
         description=app.description,
         routes=app.routes,
     )
-    
+
     # Generate operation IDs
     for path, path_item in openapi_schema.get("paths", {}).items():
         for method, operation in path_item.items():
@@ -29,7 +29,7 @@ def export():
         for k, v in envelope_schema.pop("$defs").items():
             if k not in openapi_schema["components"]["schemas"]:
                 openapi_schema["components"]["schemas"][k] = v
-                
+
     openapi_schema["components"]["schemas"]["WebSocketMessageEnvelope"] = envelope_schema
 
     out_path = Path(__file__).resolve().parents[2] / "openapi.json"

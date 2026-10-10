@@ -1,0 +1,17 @@
+{
+  "services6": {
+    "n": 50,
+    "masks": 64,
+    "median_ms": 1.5947480023896787,
+    "max_ms": 2.1655809978256,
+    "selected_mask": 31
+  },
+  "experimental_leaves19": {
+    "n": 3,
+    "masks": 524288,
+    "median_ms": 11954.80306299578,
+    "max_ms": 17586.65430200199,
+    "selected_mask": 393211
+  },
+  "decision": "Keep exact 64-mask runtime. 19-leaf enumeration is offline only; do not expand the control catalog without a bounded solver and safety-equivalence tests."
+}
