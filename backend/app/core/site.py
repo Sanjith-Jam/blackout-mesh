@@ -11,6 +11,7 @@ import threading
 import uuid
 
 from app.core.state import CLASSROOMS, SERVICE_CATALOG
+from app.schemas.snapshot import SiteIdentityResponse
 from app.visualizers import LOADS as CLASSROOM_LEAVES
 
 CATALOG_VERSION = "site-catalog-2026-10-10.1"
@@ -78,7 +79,7 @@ class SiteAuthority:
             if self.grid.history:
                 self._sync_history_run()
                 snapshot = self.grid.build_snapshot()
-                snapshot.site = self.identity()
+                snapshot.site = SiteIdentityResponse.model_validate(self.identity())
                 try:
                     self.grid.history.capture(snapshot, self.grid.history_inputs())
                 except Exception:

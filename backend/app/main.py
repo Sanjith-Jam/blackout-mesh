@@ -13,7 +13,9 @@ from pydantic import BaseModel, ConfigDict, StrictInt
 from app.schemas.snapshot import (
     HealthResponse, ModelStatusResponse, ActivityObservationResponse, ReplayActionResponse, CrossRouteContract,
     WebSocketMessageEnvelope, HardwareAckRequest, HardwareAckResponse,
-    SystemSnapshot,
+    SystemSnapshot, ClassroomDemoResponse, HospitalDemoResponse, HardwareStatusResponse,
+    SiteIdentityResponse, HardwareLinkStatus,
+    AllocationPolicyResponse, AllocationPolicyUpdateResponse,
     RfidScanRequest,
     RfidScanResponse,
     RfidEventType,
@@ -111,11 +113,11 @@ def campus_snapshot(site, app=None):
     if snapshot is not None and app is not None:
         hw = hardware_status(app)
         if hw["link"] != "NOT_CONFIGURED":  # physical board B state, applied at read time only
-            snapshot.hardware_link = "CONNECTED" if hw["link"] == "CONNECTED" else "ERROR"
+            snapshot.hardware_link = HardwareLinkStatus.CONNECTED if hw["link"] == "CONNECTED" else HardwareLinkStatus.ERROR
             snapshot.indicator_command_mask = hw["commanded_mask"]
             snapshot.indicator_confirmed_mask = hw["confirmed_mask"]
     if snapshot is not None:
-        snapshot.site = identity
+        snapshot.site = SiteIdentityResponse.model_validate(identity)
         snapshot.contract = snapshot.contract.model_copy(update={"identity": snapshot.contract.identity.model_copy(update={"run_id": site.run_id, "state_revision": site.revision, "observation_time": snapshot.generated_at.isoformat()})})
     return snapshot
 
@@ -185,7 +187,7 @@ def disconnect_gateway(app):
 
 
 def socket_payload(snapshot, site):
-    snapshot.site = site.identity()
+    snapshot.site = SiteIdentityResponse.model_validate(site.identity())
     return WebSocketMessageEnvelope(type="snapshot", payload=snapshot,
         sent_at=datetime.now(timezone.utc)).model_dump_json()
 
@@ -275,7 +277,7 @@ async def model_status(request: Request):
     grid = request.app.state.grid
     return grid.model.status()
 
-@router.get("/api/v1/visualizers/classrooms")
+@router.get("/api/v1/visualizers/classrooms", response_model=ClassroomDemoResponse)
 async def get_classroom_demo(request: Request):
     site = request.app.state.site
     classroom_demo = request.app.state.classroom_demo
@@ -287,12 +289,12 @@ class GatewayConnect(BaseModel):
     port: str
 
 
-@router.get("/api/v1/hardware")
+@router.get("/api/v1/hardware", response_model=HardwareStatusResponse)
 async def get_hardware(request: Request):
     return hardware_status(request.app)
 
 
-@router.post("/api/v1/hardware/connect")
+@router.post("/api/v1/hardware/connect", response_model=HardwareStatusResponse)
 async def post_hardware_connect(request: Request, req: GatewayConnect):
     try:
         connect_gateway(request.app, req.port)
@@ -301,12 +303,12 @@ async def post_hardware_connect(request: Request, req: GatewayConnect):
     return hardware_status(request.app)
 
 
-@router.post("/api/v1/hardware/disconnect")
+@router.post("/api/v1/hardware/disconnect", response_model=HardwareStatusResponse)
 async def post_hardware_disconnect(request: Request):
     disconnect_gateway(request.app)
     return hardware_status(request.app)
 
-@router.post("/api/v1/visualizers/classrooms")
+@router.post("/api/v1/visualizers/classrooms", response_model=ClassroomDemoResponse)
 async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     site = request.app.state.site
     classroom_demo = request.app.state.classroom_demo
@@ -322,13 +324,13 @@ async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     data, identity = site.read(classroom_demo.snapshot)
     return with_contract(data, site) | {"command": receipt}
 
-@router.get("/api/v1/visualizers/hospital")
+@router.get("/api/v1/visualizers/hospital", response_model=HospitalDemoResponse)
 async def get_hospital_demo(request: Request):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
     return visualizer_snapshot(site, hospital_demo)
 
-@router.post("/api/v1/visualizers/hospital")
+@router.post("/api/v1/visualizers/hospital", response_model=HospitalDemoResponse)
 async def act_hospital_demo(request: Request, req: HospitalDemoAction):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
@@ -484,13 +486,13 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-@router.get("/api/v1/allocation/policy")
+@router.get("/api/v1/allocation/policy", response_model=AllocationPolicyResponse)
 async def read_allocation_policy(request: Request):
     grid = request.app.state.grid
     site = request.app.state.site
     return site.read(lambda: grid.policy.model_dump())[0]
 
-@router.put("/api/v1/allocation/policy")
+@router.put("/api/v1/allocation/policy", response_model=AllocationPolicyUpdateResponse)
 async def change_allocation_policy(request: Request, policy: AllocationPolicy):
     grid = request.app.state.grid
     site = request.app.state.site

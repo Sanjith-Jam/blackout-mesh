@@ -2,13 +2,14 @@
   "openapi": "3.1.0",
   "info": {
     "title": "PriorityGrid API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "x-contract-version": "1.0.0"
   },
   "paths": {
     "/api/v1/health": {
       "get": {
         "summary": "Health Check",
-        "operationId": "HealthCheck",
+        "operationId": "get_api_v1_health",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -19,6 +20,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -26,7 +37,7 @@
     "/api/v1/snapshot": {
       "get": {
         "summary": "Get Snapshot",
-        "operationId": "GetSnapshot",
+        "operationId": "get_api_v1_snapshot",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -37,6 +48,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -44,7 +65,7 @@
     "/api/v1/model/status": {
       "get": {
         "summary": "Model Status",
-        "operationId": "ModelStatus",
+        "operationId": "get_api_v1_model_status",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -55,6 +76,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -62,13 +93,25 @@
     "/api/v1/visualizers/classrooms": {
       "get": {
         "summary": "Get Classroom Demo",
-        "operationId": "GetClassroomDemo",
+        "operationId": "get_api_v1_visualizers_classrooms",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomDemoResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
               }
             }
           }
@@ -76,7 +119,7 @@
       },
       "post": {
         "summary": "Act Classroom Demo",
-        "operationId": "ActClassroomDemo",
+        "operationId": "post_api_v1_visualizers_classrooms",
         "requestBody": {
           "content": {
             "application/json": {
@@ -92,7 +135,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ClassroomDemoResponse"
+                }
               }
             }
           },
@@ -105,6 +150,120 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hardware": {
+      "get": {
+        "summary": "Get Hardware",
+        "operationId": "get_api_v1_hardware",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareStatusResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hardware/connect": {
+      "post": {
+        "summary": "Post Hardware Connect",
+        "operationId": "post_api_v1_hardware_connect",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayConnect"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hardware/disconnect": {
+      "post": {
+        "summary": "Post Hardware Disconnect",
+        "operationId": "post_api_v1_hardware_disconnect",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareStatusResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -112,13 +271,25 @@
     "/api/v1/visualizers/hospital": {
       "get": {
         "summary": "Get Hospital Demo",
-        "operationId": "GetHospitalDemo",
+        "operationId": "get_api_v1_visualizers_hospital",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HospitalDemoResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
               }
             }
           }
@@ -126,7 +297,7 @@
       },
       "post": {
         "summary": "Act Hospital Demo",
-        "operationId": "ActHospitalDemo",
+        "operationId": "post_api_v1_visualizers_hospital",
         "requestBody": {
           "content": {
             "application/json": {
@@ -142,7 +313,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HospitalDemoResponse"
+                }
               }
             }
           },
@@ -155,6 +328,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -162,7 +345,7 @@
     "/api/v1/activity/observations": {
       "post": {
         "summary": "Post Activity Observation",
-        "operationId": "PostActivityObservation",
+        "operationId": "post_api_v1_activity_observations",
         "requestBody": {
           "content": {
             "application/json": {
@@ -193,6 +376,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -200,7 +393,7 @@
     "/api/v1/replay": {
       "post": {
         "summary": "Replay Action",
-        "operationId": "ReplayAction",
+        "operationId": "post_api_v1_replay",
         "requestBody": {
           "content": {
             "application/json": {
@@ -231,6 +424,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -238,7 +441,7 @@
     "/api/v1/rfid/scan": {
       "post": {
         "summary": "Process Rfid Scan",
-        "operationId": "ProcessRfidScan",
+        "operationId": "post_api_v1_rfid_scan",
         "requestBody": {
           "content": {
             "application/json": {
@@ -269,6 +472,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -276,7 +489,7 @@
     "/api/v1/simulation/capacity": {
       "post": {
         "summary": "Change Capacity",
-        "operationId": "ChangeCapacity",
+        "operationId": "post_api_v1_simulation_capacity",
         "requestBody": {
           "content": {
             "application/json": {
@@ -307,6 +520,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -314,7 +537,7 @@
     "/api/v1/simulation/classroom-load": {
       "post": {
         "summary": "Change Classroom Load",
-        "operationId": "ChangeClassroomLoad",
+        "operationId": "post_api_v1_simulation_classroom_load",
         "requestBody": {
           "content": {
             "application/json": {
@@ -345,6 +568,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -352,7 +585,7 @@
     "/api/v1/simulation/feeder": {
       "post": {
         "summary": "Change Feeder",
-        "operationId": "ChangeFeeder",
+        "operationId": "post_api_v1_simulation_feeder",
         "requestBody": {
           "content": {
             "application/json": {
@@ -383,6 +616,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -390,13 +633,25 @@
     "/api/v1/allocation/policy": {
       "get": {
         "summary": "Read Allocation Policy",
-        "operationId": "ReadAllocationPolicy",
+        "operationId": "get_api_v1_allocation_policy",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationPolicyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
               }
             }
           }
@@ -404,7 +659,7 @@
       },
       "put": {
         "summary": "Change Allocation Policy",
-        "operationId": "ChangeAllocationPolicy",
+        "operationId": "put_api_v1_allocation_policy",
         "requestBody": {
           "content": {
             "application/json": {
@@ -420,7 +675,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AllocationPolicyUpdateResponse"
+                }
               }
             }
           },
@@ -433,6 +690,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -440,7 +707,7 @@
     "/api/v1/studies/electrical": {
       "post": {
         "summary": "Electrical Study",
-        "operationId": "ElectricalStudy",
+        "operationId": "post_api_v1_studies_electrical",
         "requestBody": {
           "content": {
             "application/json": {
@@ -471,6 +738,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -478,7 +755,7 @@
     "/api/v1/hardware/ack": {
       "post": {
         "summary": "Hardware Ack",
-        "operationId": "HardwareAck",
+        "operationId": "post_api_v1_hardware_ack",
         "requestBody": {
           "content": {
             "application/json": {
@@ -506,6 +783,213 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/runs": {
+      "get": {
+        "tags": [
+          "read-only history"
+        ],
+        "summary": "Runs",
+        "operationId": "get_api_v1_history_runs",
+        "parameters": [
+          {
+            "name": "site_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "campus",
+              "type": "string",
+              "default": "campus",
+              "title": "Site Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryRunsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/records": {
+      "get": {
+        "tags": [
+          "read-only history"
+        ],
+        "summary": "Records",
+        "operationId": "get_api_v1_history_records",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "site_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "campus",
+              "type": "string",
+              "default": "campus",
+              "title": "Site Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "event",
+                    "decision",
+                    "telemetry"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "After"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
                 }
               }
             }
@@ -764,6 +1248,55 @@
         "type": "object",
         "title": "AllocationPolicy"
       },
+      "AllocationPolicyResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "activity_first",
+              "water_first"
+            ],
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "const": "allocation-v1",
+            "title": "Version"
+          },
+          "fairness_weight": {
+            "type": "integer",
+            "title": "Fairness Weight"
+          },
+          "switching_penalty": {
+            "type": "integer",
+            "title": "Switching Penalty"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "fairness_weight",
+          "switching_penalty"
+        ],
+        "title": "AllocationPolicyResponse"
+      },
+      "AllocationPolicyUpdateResponse": {
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/AllocationPolicyResponse"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/CommandReceipt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy",
+          "receipt"
+        ],
+        "title": "AllocationPolicyUpdateResponse"
+      },
       "AllocationSnapshot": {
         "properties": {
           "explanation": {
@@ -806,6 +1339,74 @@
           "baseline_mask"
         ],
         "title": "AllocationSnapshot"
+      },
+      "BoardAStatus": {
+        "properties": {
+          "boot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boot"
+          },
+          "reader_ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reader Ok"
+          },
+          "radio_configured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radio Configured"
+          }
+        },
+        "type": "object",
+        "title": "BoardAStatus"
+      },
+      "BoardBStatus": {
+        "properties": {
+          "online": {
+            "type": "boolean",
+            "title": "Online"
+          },
+          "boot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boot"
+          },
+          "radio_ready": {
+            "type": "boolean",
+            "title": "Radio Ready"
+          }
+        },
+        "type": "object",
+        "required": [
+          "online",
+          "radio_ready"
+        ],
+        "title": "BoardBStatus"
       },
       "CapacityChangeRequest": {
         "properties": {
@@ -896,6 +1497,278 @@
           "action"
         ],
         "title": "ClassroomDemoAction"
+      },
+      "ClassroomDemoLoadResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "watts": {
+            "type": "integer",
+            "title": "Watts"
+          },
+          "essential": {
+            "type": "boolean",
+            "title": "Essential"
+          },
+          "served": {
+            "type": "boolean",
+            "title": "Served"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "watts",
+          "essential",
+          "served",
+          "reason"
+        ],
+        "title": "ClassroomDemoLoadResponse"
+      },
+      "ClassroomDemoResponse": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/CrossRouteContract"
+          },
+          "site": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteIdentityResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Revision"
+          },
+          "capacity_w": {
+            "type": "integer",
+            "title": "Capacity W"
+          },
+          "capacity_range_w": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Capacity Range W"
+          },
+          "classroom_limit_w": {
+            "type": "integer",
+            "title": "Classroom Limit W"
+          },
+          "campus_limit_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Limit W"
+          },
+          "effective_capacity_w": {
+            "type": "integer",
+            "title": "Effective Capacity W"
+          },
+          "limited_by": {
+            "type": "string",
+            "enum": [
+              "classroom limit",
+              "campus feeder B"
+            ],
+            "title": "Limited By"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "shortfall_w": {
+            "type": "integer",
+            "title": "Shortfall W"
+          },
+          "selected_classroom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Classroom Id"
+          },
+          "scanned_classroom_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scanned Classroom Ids"
+          },
+          "priority_order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Priority Order"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/ClassroomDemoRoomResponse"
+            },
+            "type": "array",
+            "title": "Rooms"
+          },
+          "mode": {
+            "type": "string",
+            "const": "SIMULATED",
+            "title": "Mode"
+          },
+          "safety": {
+            "$ref": "#/components/schemas/SafetySnapshot"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/PowerEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommandReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hardware": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HardwareStatusResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "$ref": "#/components/schemas/VisualizerModelStatus"
+          },
+          "replay": {
+            "$ref": "#/components/schemas/VisualizerReplay"
+          },
+          "policy": {
+            "type": "string",
+            "title": "Policy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract",
+          "capacity_w",
+          "capacity_range_w",
+          "classroom_limit_w",
+          "effective_capacity_w",
+          "limited_by",
+          "requested_w",
+          "served_w",
+          "shortfall_w",
+          "scanned_classroom_ids",
+          "priority_order",
+          "rooms",
+          "mode",
+          "safety",
+          "model",
+          "replay",
+          "policy"
+        ],
+        "title": "ClassroomDemoResponse"
+      },
+      "ClassroomDemoRoomResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "rfid_active": {
+            "type": "boolean",
+            "title": "Rfid Active"
+          },
+          "priority_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Rank"
+          },
+          "activity": {
+            "$ref": "#/components/schemas/VisualizerActivity"
+          },
+          "loads": {
+            "items": {
+              "$ref": "#/components/schemas/ClassroomDemoLoadResponse"
+            },
+            "type": "array",
+            "title": "Loads"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "rfid_active",
+          "activity",
+          "loads"
+        ],
+        "title": "ClassroomDemoRoomResponse"
       },
       "ClassroomInfo": {
         "properties": {
@@ -1018,6 +1891,101 @@
         ],
         "title": "ClassroomZone"
       },
+      "CommandReceipt": {
+        "properties": {
+          "command_id": {
+            "type": "integer",
+            "title": "Command Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "applied_revision": {
+            "type": "integer",
+            "title": "Applied Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "command_id",
+          "name",
+          "run_id",
+          "applied_revision"
+        ],
+        "title": "CommandReceipt"
+      },
+      "ControlLoopHealth": {
+        "properties": {
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "period_s": {
+            "type": "number",
+            "title": "Period S"
+          },
+          "tick_count": {
+            "type": "integer",
+            "title": "Tick Count"
+          },
+          "missed_ticks": {
+            "type": "integer",
+            "title": "Missed Ticks"
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "last_tick_age_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tick Age S"
+          },
+          "last_tick_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tick At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "running",
+          "period_s",
+          "tick_count",
+          "missed_ticks",
+          "errors"
+        ],
+        "title": "ControlLoopHealth"
+      },
       "CrossRouteContract": {
         "properties": {
           "identity": {
@@ -1047,6 +2015,122 @@
           "identity"
         ],
         "title": "CrossRouteContract"
+      },
+      "DiagnosticAbstentionResponse": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "details": {
+            "type": "string",
+            "title": "Details"
+          },
+          "missing_sensors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Sensors"
+          },
+          "contradictory_readings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contradictory Readings"
+          },
+          "indistinguishable_candidates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Indistinguishable Candidates"
+          },
+          "next_check_needed": {
+            "type": "string",
+            "title": "Next Check Needed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id",
+          "reason",
+          "details",
+          "missing_sensors",
+          "contradictory_readings",
+          "indistinguishable_candidates",
+          "next_check_needed"
+        ],
+        "title": "DiagnosticAbstentionResponse"
+      },
+      "DiagnosticHypothesisResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "cause": {
+            "type": "string",
+            "title": "Cause"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "evidence_score": {
+            "type": "number",
+            "title": "Evidence Score"
+          },
+          "sufficiency": {
+            "type": "string",
+            "title": "Sufficiency"
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence"
+          },
+          "contradicting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contradicting Evidence"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "asset_id",
+          "cause",
+          "severity",
+          "evidence_score",
+          "sufficiency",
+          "supporting_evidence",
+          "contradicting_evidence",
+          "recommendation"
+        ],
+        "title": "DiagnosticHypothesisResponse"
       },
       "ElectricalInput": {
         "properties": {
@@ -1432,6 +2516,20 @@
         ],
         "title": "FeederChangeResponse"
       },
+      "GatewayConnect": {
+        "properties": {
+          "port": {
+            "type": "string",
+            "title": "Port"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "port"
+        ],
+        "title": "GatewayConnect"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1492,6 +2590,40 @@
         ],
         "title": "HardwareAckResponse"
       },
+      "HardwareEvent": {
+        "properties": {
+          "event": {
+            "type": "integer",
+            "title": "Event"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event",
+          "action",
+          "accepted"
+        ],
+        "title": "HardwareEvent"
+      },
       "HardwareLinkStatus": {
         "type": "string",
         "enum": [
@@ -1501,12 +2633,133 @@
         ],
         "title": "HardwareLinkStatus"
       },
+      "HardwareStatusResponse": {
+        "properties": {
+          "link": {
+            "type": "string",
+            "enum": [
+              "NOT_CONFIGURED",
+              "CONNECTING",
+              "SYNCING",
+              "CONNECTED",
+              "STALE"
+            ],
+            "title": "Link"
+          },
+          "commanded_mask": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commanded Mask"
+          },
+          "confirmed_mask": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Mask"
+          },
+          "led_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Led Confirmed"
+          },
+          "board_a": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardAStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "board_b": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardBStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session"
+          },
+          "last_radio_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Radio Result"
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/HardwareEvent"
+            },
+            "type": "array",
+            "title": "Recent Events"
+          },
+          "recent_status": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recent Status"
+          },
+          "port_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "link"
+        ],
+        "title": "HardwareStatusResponse"
+      },
       "HealthResponse": {
         "properties": {
           "control_loop": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Control Loop"
+            "$ref": "#/components/schemas/ControlLoopHealth"
           },
           "status": {
             "type": "string",
@@ -1519,10 +2772,360 @@
         },
         "type": "object",
         "required": [
+          "control_loop",
           "status",
           "application"
         ],
         "title": "HealthResponse"
+      },
+      "HistoryDecisionPayload": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/SystemSnapshot"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Inputs"
+          },
+          "policy": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Policy"
+          },
+          "model": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Model"
+          },
+          "event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Event Ids"
+          },
+          "trail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Trail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "snapshot",
+          "inputs",
+          "policy",
+          "model",
+          "event_ids",
+          "trail"
+        ],
+        "title": "HistoryDecisionPayload"
+      },
+      "HistoryDecisionRecord": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "kind": {
+            "type": "string",
+            "const": "decision",
+            "title": "Kind"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/HistoryDecisionPayload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "record_id",
+          "site_id",
+          "run_id",
+          "timestamp",
+          "revision",
+          "provenance",
+          "kind",
+          "payload"
+        ],
+        "title": "HistoryDecisionRecord"
+      },
+      "HistoryEventPayload": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/SystemEvent"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Inputs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event"
+        ],
+        "title": "HistoryEventPayload"
+      },
+      "HistoryEventRecord": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "kind": {
+            "type": "string",
+            "const": "event",
+            "title": "Kind"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/HistoryEventPayload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "record_id",
+          "site_id",
+          "run_id",
+          "timestamp",
+          "revision",
+          "provenance",
+          "kind",
+          "payload"
+        ],
+        "title": "HistoryEventRecord"
+      },
+      "HistoryPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HistoryEventRecord"
+                },
+                {
+                  "$ref": "#/components/schemas/HistoryDecisionRecord"
+                },
+                {
+                  "$ref": "#/components/schemas/HistoryTelemetryRecord"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "retention_gap": {
+            "type": "boolean",
+            "title": "Retention Gap"
+          },
+          "pruned_through": {
+            "type": "integer",
+            "title": "Pruned Through"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "retention_gap",
+          "pruned_through"
+        ],
+        "title": "HistoryPageResponse"
+      },
+      "HistoryRunResponse": {
+        "properties": {
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "pruned_through": {
+            "type": "integer",
+            "title": "Pruned Through"
+          }
+        },
+        "type": "object",
+        "required": [
+          "site_id",
+          "run_id",
+          "started_at",
+          "pruned_through"
+        ],
+        "title": "HistoryRunResponse"
+      },
+      "HistoryRunsResponse": {
+        "properties": {
+          "current_run_id": {
+            "type": "string",
+            "title": "Current Run Id"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryRunResponse"
+            },
+            "type": "array",
+            "title": "Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_run_id",
+          "runs"
+        ],
+        "title": "HistoryRunsResponse"
+      },
+      "HistoryTelemetryPayload": {
+        "properties": {
+          "state_generated_at": {
+            "type": "string",
+            "title": "State Generated At"
+          },
+          "capacity": {
+            "type": "integer",
+            "title": "Capacity"
+          },
+          "demand": {
+            "type": "integer",
+            "title": "Demand"
+          },
+          "servedCount": {
+            "type": "integer",
+            "title": "Servedcount"
+          },
+          "shedCount": {
+            "type": "integer",
+            "title": "Shedcount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state_generated_at",
+          "capacity",
+          "demand",
+          "servedCount",
+          "shedCount"
+        ],
+        "title": "HistoryTelemetryPayload"
+      },
+      "HistoryTelemetryRecord": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "kind": {
+            "type": "string",
+            "const": "telemetry",
+            "title": "Kind"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/HistoryTelemetryPayload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "record_id",
+          "site_id",
+          "run_id",
+          "timestamp",
+          "revision",
+          "provenance",
+          "kind",
+          "payload"
+        ],
+        "title": "HistoryTelemetryRecord"
       },
       "HospitalDemoAction": {
         "properties": {
@@ -1597,6 +3200,435 @@
         "additionalProperties": false,
         "type": "object",
         "title": "HospitalDemoAction"
+      },
+      "HospitalDemoResponse": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/CrossRouteContract"
+          },
+          "site": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteIdentityResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "const": "SIMULATED",
+            "title": "Mode"
+          },
+          "transformers": {
+            "items": {
+              "$ref": "#/components/schemas/HospitalDemoTransformerResponse"
+            },
+            "type": "array",
+            "title": "Transformers"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "capacity_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity W"
+          },
+          "capacity_range_w": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity Range W"
+          },
+          "requested_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested W"
+          },
+          "served_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Served W"
+          },
+          "shortfall_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shortfall W"
+          },
+          "selected_zone_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Zone Id"
+          },
+          "scanned_zone_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scanned Zone Ids"
+          },
+          "priority_order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Priority Order"
+          },
+          "safety": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/PowerEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommandReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisualizerModelStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisualizerReplay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract",
+          "mode",
+          "transformers"
+        ],
+        "title": "HospitalDemoResponse"
+      },
+      "HospitalDemoSensors": {
+        "properties": {
+          "current_a": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current A"
+          },
+          "temperature_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature C"
+          },
+          "input_voltage_v": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Voltage V"
+          },
+          "output_voltage_v": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Voltage V"
+          },
+          "cooling_ok": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooling Ok"
+          }
+        },
+        "type": "object",
+        "title": "HospitalDemoSensors"
+      },
+      "HospitalDemoTransformerResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "rated_current_a": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rated Current A"
+          },
+          "sensors": {
+            "$ref": "#/components/schemas/HospitalDemoSensors"
+          },
+          "diagnosis": {
+            "$ref": "#/components/schemas/HospitalDiagnosisResponse"
+          },
+          "energized": {
+            "type": "boolean",
+            "title": "Energized"
+          },
+          "rfid_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rfid Active"
+          },
+          "priority_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Rank"
+          },
+          "activity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisualizerActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "loads": {
+            "items": {
+              "$ref": "#/components/schemas/VisualizerLoad"
+            },
+            "type": "array",
+            "title": "Loads"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "zone",
+          "sensors",
+          "diagnosis",
+          "energized",
+          "loads"
+        ],
+        "title": "HospitalDemoTransformerResponse"
+      },
+      "HospitalDiagnosisResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "cause": {
+            "type": "string",
+            "title": "Cause"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation"
+          },
+          "hypotheses": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticHypothesisResponse"
+            },
+            "type": "array",
+            "title": "Hypotheses"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "abstention": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagnosticAbstentionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "stale": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Stale"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "cause",
+          "severity",
+          "evidence",
+          "recommendation",
+          "hypotheses"
+        ],
+        "title": "HospitalDiagnosisResponse"
       },
       "HospitalRoom": {
         "properties": {
@@ -1693,6 +3725,153 @@
           "data_source"
         ],
         "title": "ModelStatusResponse"
+      },
+      "PowerEdge": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ENERGIZED",
+              "PENDING_RESTORATION",
+              "SHED",
+              "OPEN",
+              "UNKNOWN"
+            ],
+            "title": "State"
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "commanded": {
+            "type": "boolean",
+            "title": "Commanded"
+          },
+          "applied": {
+            "type": "boolean",
+            "title": "Applied"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "unit": {
+            "type": "string",
+            "const": "W",
+            "title": "Unit"
+          },
+          "provenance": {
+            "type": "string",
+            "const": "MODELED",
+            "title": "Provenance"
+          },
+          "physical": {
+            "type": "string",
+            "enum": [
+              "NOT_CONNECTED",
+              "CONFIRMED"
+            ],
+            "title": "Physical"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "observed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PowerEdgeObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "from",
+          "to",
+          "state",
+          "connected",
+          "commanded",
+          "applied",
+          "requested_w",
+          "served_w",
+          "unit",
+          "provenance",
+          "physical",
+          "reason"
+        ],
+        "title": "PowerEdge"
+      },
+      "PowerEdgeObservation": {
+        "properties": {
+          "output_voltage_v": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Voltage V"
+          },
+          "energized": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energized"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "diagnosis_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnosis Status"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provenance",
+          "note"
+        ],
+        "title": "PowerEdgeObservation"
       },
       "ReplayActionRequest": {
         "properties": {
@@ -2027,6 +4206,34 @@
         ],
         "title": "ServiceSnapshot"
       },
+      "SiteIdentityResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "profile": {
+            "type": "string",
+            "title": "Profile"
+          },
+          "catalog_version": {
+            "type": "string",
+            "title": "Catalog Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "revision",
+          "profile",
+          "catalog_version"
+        ],
+        "title": "SiteIdentityResponse"
+      },
       "SourceInfo": {
         "properties": {
           "model": {
@@ -2064,6 +4271,33 @@
       },
       "SystemEvent": {
         "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision",
+            "default": 0
+          },
           "timestamp": {
             "type": "string",
             "title": "Timestamp"
@@ -2224,14 +4458,12 @@
           "site": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/SiteIdentityResponse"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Site"
+            ]
           },
           "edges": {
             "items": {
@@ -2307,6 +4539,207 @@
         ],
         "title": "ValidationError"
       },
+      "VisualizerActivity": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "UNKNOWN"
+            ],
+            "title": "State"
+          },
+          "raw_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ACTIVE",
+                  "INACTIVE",
+                  "UNKNOWN"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw State"
+          },
+          "guard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guard"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "evidence": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Evidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "score",
+          "reason",
+          "model_version",
+          "evidence"
+        ],
+        "title": "VisualizerActivity"
+      },
+      "VisualizerLoad": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "watts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Watts"
+          },
+          "essential": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Essential"
+          },
+          "served": {
+            "type": "boolean",
+            "title": "Served"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "served"
+        ],
+        "title": "VisualizerLoad"
+      },
+      "VisualizerModelStatus": {
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ready",
+          "model_version"
+        ],
+        "title": "VisualizerModelStatus"
+      },
+      "VisualizerReplay": {
+        "properties": {
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "length": {
+            "type": "integer",
+            "title": "Length"
+          },
+          "step_s": {
+            "type": "number",
+            "title": "Step S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "running",
+          "index",
+          "length",
+          "step_s"
+        ],
+        "title": "VisualizerReplay"
+      },
       "WebSocketMessageEnvelope": {
         "properties": {
           "sent_at": {
@@ -2315,6 +4748,7 @@
             "type": "string"
           },
           "type": {
+            "const": "snapshot",
             "title": "Type",
             "type": "string"
           },
@@ -2328,6 +4762,30 @@
           "payload"
         ],
         "title": "WebSocketMessageEnvelope",
+        "type": "object"
+      },
+      "APIErrorResponse": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "APIErrorResponse",
         "type": "object"
       }
     }

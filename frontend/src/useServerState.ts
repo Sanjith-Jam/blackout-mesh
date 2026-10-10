@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getWebSocketUrl, fetchSnapshot } from './api';
-import { WebSocketEnvelope } from './types';
+import { isWebSocketEnvelope } from './runtime-contract';
 import { useAppStore } from './store';
 
 async function fetchCurrentSnapshot(queryClient: QueryClient, signal: AbortSignal) {
@@ -53,8 +53,9 @@ export function useWebSocketSync() {
       ws.onmessage = (event) => {
         if (disposed) return;
         try {
-          const envelope: WebSocketEnvelope = JSON.parse(event.data);
-          if (!envelope || typeof envelope !== 'object' || envelope.type !== 'snapshot' || !envelope.payload) return;
+          const value: unknown = JSON.parse(event.data);
+          if (!isWebSocketEnvelope(value)) return;
+          const envelope = value;
 
           const data = envelope.payload;
           const identity = data.contract?.identity;

@@ -171,7 +171,7 @@ export default function ClassroomsDemo() {
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
         <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating classroom state…' : feedback ?? ''}</p>
-        <HardwarePanel hardware={snapshot.hardware} />
+        <HardwarePanel hardware={snapshot.hardware ?? undefined} />
         <p><strong>Policy:</strong> {snapshot.policy}</p>
         <p>RFID scan state is shown as session evidence. The 8,000 W budget belongs to this classroom demo and is separate from the six-service campus model.</p>
       </aside>

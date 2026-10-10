@@ -8,8 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test:history": "node scripts/test-history.mjs",
+    "test:contract": "node scripts/test-contract.mjs",
     "generate-client": "PYTHONPATH=../backend python3 ../backend/scripts/export_openapi.py && npx openapi-typescript ../openapi.json -o src/schema.d.ts",
-    "check-client": "npm run generate-client && git diff --exit-code src/schema.d.ts || (echo 'Generated schema is out of sync! Please run generate-client.' && exit 1)"
+    "check-client": "npm run generate-client && git diff --exit-code ../openapi.json src/schema.d.ts || (echo 'Generated API contract is out of sync! Please run generate-client.' && exit 1)"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
