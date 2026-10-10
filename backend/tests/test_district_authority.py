@@ -32,6 +32,8 @@ def test_citylearn_demand_and_grid_import_balance_into_graph_load_state():
     normal = district.snapshot()
     profile = normal["energy"]["profile"][0]
     loads = normal["state"]["loads"]
+    assert {load["tier_provenance"] for load in loads} == {"CONFIGURED_SIMULATED_ASSUMPTION"}
+    assert all("does not represent verified building criticality" in load["tier_rationale"] for load in loads)
     assert sum(load["requested_w"] for load in loads) == profile["demand_w"]
     assert sum(load["grid_requested_w"] for load in loads) == profile["grid_import_w"]
     assert sum(load["local_supply_w"] for load in loads) == profile["demand_w"] - profile["grid_import_w"]
@@ -127,6 +129,26 @@ def test_transformer_scenario_is_labeled_simulated_and_clear_returns_unknown():
     assert district.snapshot()["state"]["transformers"][0]["diagnosis"]["status"] == "SUSPECTED"
     assert district.apply_action(action(DistrictActionName.transformer_scenario, transformer_id, "clear"))
     assert district.snapshot()["state"]["transformers"][0]["diagnosis"]["status"] == "UNKNOWN"
+
+
+def test_district_api_can_represent_stale_transformer_observations_as_unknown():
+    from app.main import create_app
+
+    with TestClient(create_app()) as client:
+        snapshot = client.get("/api/v1/district").json()
+        transformer_id = snapshot["state"]["transformers"][0]["component_id"]
+        response = client.post("/api/v1/district/action", json={
+            "run_id": snapshot["identity"]["run_id"],
+            "expected_revision": snapshot["identity"]["revision"],
+            "action": "transformer_scenario", "component_id": transformer_id,
+            "fault_kind": "stale_sensor"})
+
+        assert response.status_code == 200
+        transformer = next(item for item in response.json()["state"]["transformers"]
+                           if item["component_id"] == transformer_id)
+        assert transformer["sensor"]["status"] == "STALE"
+        assert transformer["sensor"]["oil_temperature_c"] == 105.0
+        assert transformer["diagnosis"]["status"] == "UNKNOWN"
 
 
 def test_district_api_validates_snapshot_and_rejects_stale_actions():

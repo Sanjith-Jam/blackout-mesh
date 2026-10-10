@@ -126,6 +126,8 @@ class DistrictAuthority:
                           "grid_requested_w": grid_requested_w, "grid_served_w": grid_served_w,
                           "served_w": served_w, "unmet_w": requested_w - served_w,
                           "demand_provenance": self.energy_trace["provenance"],
+                          "tier_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
+                          "tier_rationale": "First three loads in stable building-ID order are labeled critical for this demo; this does not represent verified building criticality.",
                           "local_supply_provenance": "MODEL_DERIVED",
                           "local_supply_basis": "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING",
                           "local_supply_semantics": "BEHIND_THE_METER_ALLOCATION_NO_FEEDER_PATH_REQUIRED",
@@ -200,6 +202,10 @@ class DistrictAuthority:
             if scenario in ("overload", "cooling_failure"):
                 sensor.update(oil_temperature_c=105.0, voltage_v=380.0, current_a=60.0,
                               cooling_ok=scenario != "cooling_failure", status="SIMULATED",
+                              provenance="CONFIGURED_SIMULATED_ASSUMPTION")
+            elif scenario == "stale_sensor":
+                sensor.update(oil_temperature_c=105.0, voltage_v=380.0, current_a=60.0,
+                              cooling_ok=False, status="STALE",
                               provenance="CONFIGURED_SIMULATED_ASSUMPTION")
             diagnosis = diagnose_transformer(sensor)
             transformers.append({"component_id": node["id"], "sensor": sensor, "diagnosis": diagnosis})
@@ -344,7 +350,7 @@ class DistrictAuthority:
         if name == "transformer_scenario":
             if action.component_id not in nodes or nodes[action.component_id]["role"] != "transformer":
                 return False
-            if action.fault_kind not in ("overload", "cooling_failure", "missing_sensor", "clear"):
+            if action.fault_kind not in ("overload", "cooling_failure", "missing_sensor", "stale_sensor", "clear"):
                 return False
             if action.fault_kind == "clear":
                 self.transformer_scenarios.pop(action.component_id, None)

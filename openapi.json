@@ -3558,6 +3558,14 @@
             "type": "string",
             "title": "Tier"
           },
+          "tier_provenance": {
+            "type": "string",
+            "title": "Tier Provenance"
+          },
+          "tier_rationale": {
+            "type": "string",
+            "title": "Tier Rationale"
+          },
           "requested_w": {
             "type": "integer",
             "title": "Requested W"
@@ -3612,6 +3620,8 @@
         "required": [
           "building_id",
           "tier",
+          "tier_provenance",
+          "tier_rationale",
           "requested_w",
           "local_supply_w",
           "grid_requested_w",

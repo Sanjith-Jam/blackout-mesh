@@ -116,6 +116,8 @@ class DistrictGeneration(StrictDTO):
 class DistrictLoad(StrictDTO):
     building_id: StrictStr
     tier: StrictStr
+    tier_provenance: StrictStr
+    tier_rationale: StrictStr
     requested_w: StrictInt
     local_supply_w: StrictInt
     grid_requested_w: StrictInt

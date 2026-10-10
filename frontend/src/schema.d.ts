@@ -1201,6 +1201,10 @@ export interface components {
             building_id: string;
             /** Tier */
             tier: string;
+            /** Tier Provenance */
+            tier_provenance: string;
+            /** Tier Rationale */
+            tier_rationale: string;
             /** Requested W */
             requested_w: number;
             /** Local Supply W */

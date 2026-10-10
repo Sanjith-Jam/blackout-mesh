@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { DistrictSnapshot } from '../types';
-import { clearFaultGate, generationTransitionFeedback, TransformerCutaway } from './DistrictDemo';
+import { clearFaultGate, generationTransitionFeedback, TransformerCutaway, transformerReading } from './DistrictDemo';
 
 const generationSnapshot = (status: string): DistrictSnapshot => ({
   generation: { status, reason: 'test result' },
@@ -33,5 +33,14 @@ describe('district study evidence views', () => {
     expect(screen.getByRole('img', { name: 'Illustrative synthetic transformer cutaway for TX-1' })).toBeVisible();
     expect(container.querySelectorAll('.cutaway-part.is-suspected')).toHaveLength(1);
     expect(container.querySelector('.cutaway-part.is-suspected')).toHaveTextContent('Winding');
+  });
+
+  it('labels populated stale transformer values as old readings', () => {
+    const { rerender } = render(<div>{transformerReading({ status: 'STALE', oil_temperature_c: 105 }, 'oil_temperature_c', '°C')}</div>);
+    expect(screen.getByText('Unknown')).toBeVisible();
+    expect(screen.getByText('Stale last reading: 105 °C')).toBeVisible();
+    rerender(<div>{transformerReading({ status: 'SIMULATED', oil_temperature_c: 105 }, 'oil_temperature_c', '°C')}</div>);
+    expect(transformerReading({ status: 'SIMULATED', oil_temperature_c: 105 }, 'oil_temperature_c', '°C'))
+      .toBe('105 °C');
   });
 });
