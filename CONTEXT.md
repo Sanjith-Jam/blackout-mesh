@@ -1,5 +1,9 @@
 # Blackout Mesh — implementation context
 
+## Issue #15 cleanup — 2026-10-10
+
+Removed three empty `.gitkeep` placeholders, pinned backend runtime/test dependencies from a clean Python 3.14 install (195 passed, 2 skipped) and fixed the stale `--with httpx` test command in `AGENTS.md`. Every other script and both firmware trees have callers and stay. Inventory and evidence: [docs/ISSUE_15_DELIVERY.md](docs/ISSUE_15_DELIVERY.md).
+
 ## Person A sprint: evidence and backend — 2026-10-10
 
 Answers to the adversarial review, in five commits on `claude/peaceful-volta-r0k5cd`:
