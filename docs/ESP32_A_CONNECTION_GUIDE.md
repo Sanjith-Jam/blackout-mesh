@@ -1,6 +1,6 @@
 # Board A (ESP32 A) — connection guide
 
-Board A is the **input station**: it reads the RFID cards and five buttons, sends what happened to the laptop over USB, and passes the laptop's LED commands to board B by radio. Board A has no classroom LEDs; board B has those.
+Board A is the **input station**: it reads the RFID cards and three room buttons, sends what happened to the laptop over USB, and passes the laptop's LED commands to board B by radio. Board A has no classroom LEDs; board B has those.
 
 ```
  cards ─► RFID reader ─► ESP32 A ──USB──► laptop (backend + website)
@@ -36,19 +36,17 @@ Always wire with USB unplugged. Never connect the reader or buttons to 5 V or VI
 
 The ESP32 pins may be printed as `D21`, `G21` or just `21`.
 
-## 4. Five buttons
+## 4. Three room buttons
 
 Each button has **one side to its GPIO pin and the other side to GND**. That's all.
 
 | Button label | ESP32 pin | What it does in the demo |
 |---|---|---|
-| **DEPRIVED (kW shortage)** | GPIO 26 | Drops the classroom supply to the 3,400 W shortage level |
-| **NORMAL** | GPIO 27 | Restores the full 8,000 W supply |
 | **ROOM A** | GPIO 33 | Starts room A's session exactly as card A would; press again to end it |
 | **ROOM B** | GPIO 13 | Same for room B |
 | **ROOM C** | GPIO 14 | Same for room C |
 
-There are no END or RESET buttons: press a room button again to end that room, and reset from the website.
+Only the three room buttons are fitted. Press a room button again to end that room; deprived, normal and reset are on the website.
 
 How to wire one button on a breadboard:
 1. Put the button across the breadboard's centre gap so its legs are in two different row groups.
@@ -110,8 +108,8 @@ The two boards only talk to each other, encrypted. They need each other's addres
 |---|---|
 | Tap card A | Room A scanned on the page; board B's LED A turns on; panel shows A **ON** confirmed |
 | Tap card B | Rooms A and B on |
-| Press **DEPRIVED** | Supply drops to 3,400 W; only room A stays fully powered, so LED B goes off |
-| Press **NORMAL** | Supply back to 8,000 W; LED B comes back about 5–7 s later (staged restoration) |
+| Press **Overload preset** on the website | Supply drops to 3,400 W; only room A stays fully powered, so LED B goes off |
+| Press **Full supply** on the website | Supply back to 8,000 W; LED B comes back about 5–7 s later (staged restoration) |
 | Press a room button again | That room ends; its LED goes off |
 | Press **Reset demo** on the website | All rooms cleared, all LEDs off |
 | **RFID failure:** unplug the reader's SDA wire (USB unplugged first), then power up | Panel shows "Card reader: FAULT" |
