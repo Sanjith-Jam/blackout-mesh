@@ -195,3 +195,19 @@ flow conservation, zero flow on open/faulted edges, and source/line limits.
 Verification: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
 backend/tests/test_district_recovery_fixtures.py -q`: **2 passed in 2.94 s**.
 Next: land restoration revalidation regressions, then run the bounded evaluation.
+
+### Issue #65 ? restoration boundary
+
+Restoration now evaluates the whole closed graph for loops and checks requested
+routing before dispatch clipping. Normal dispatch still sheds to source/line
+limits. Applying a tie rechecks served-demand improvement; clearing a fault
+checks the resulting radial/source/line constraints with the applied tie opened.
+Topology, fault-set, tie, and capacity changes invalidate accumulated evidence.
+No proposal trial mutates the applied tie. Two fresh modeled intervals remain
+required for both apply and clear; snapshot reads never count as evidence.
+Verification: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
+backend/tests/test_district_authority.py backend/tests/test_district_recovery.py
+backend/tests/test_district_evidence.py -q`: **17 passed in 5.20 s**. The first
+run found an evidence-accounting bug (1 failed, 16 passed); corrected so an
+invalid candidate cannot prevent fresh fault-clear evidence. Next: explicit
+physical-confirmation contract and bounded deterministic stress report.
