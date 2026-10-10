@@ -8,10 +8,12 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/20 via-background to-background"></div>
       
       <div className="relative z-10 mx-auto max-w-4xl space-y-8">
-        <AnimatedText
-          text="Navigate a City Power Outage with Blackout Mesh"
-          className="text-5xl font-extrabold tracking-tight sm:text-7xl lg:text-8xl text-foreground"
-        />
+        <h1 aria-label="Navigate a City Power Outage with Blackout Mesh">
+          <AnimatedText
+            text="Navigate a City Power Outage with Blackout Mesh"
+            className="text-5xl font-extrabold tracking-tight sm:text-7xl lg:text-8xl text-foreground"
+          />
+        </h1>
         
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
           Predictive AI for demand warnings, an interactive city grid, and guided outage recovery.

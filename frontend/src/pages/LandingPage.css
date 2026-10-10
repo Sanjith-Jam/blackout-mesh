@@ -453,3 +453,6 @@
 .footer-links a:hover {
   text-decoration: none;
 }
+.landing-story { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; list-style: none; padding: 0; margin: 1.5rem 0; }
+.landing-story li { border: 1px solid rgba(0, 0, 0, .1); border-radius: .75rem; padding: 1rem; background: rgba(255, 255, 255, .7); line-height: 1.5; }
+.landing-story strong { display: block; margin-bottom: .35rem; font-size: 1.05rem; }
