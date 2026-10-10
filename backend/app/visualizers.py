@@ -13,14 +13,36 @@ from app.diagnosis.observations import validate as validate_observation
 from app.simulation.sensors import HOSPITAL_ASSETS, TRANSFORMER_FIELDS, envelopes as sensor_envelopes, hospital_readings, zone_readings
 from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
 
-ROOMS = ("CR1", "CR2", "CR3")
-LOADS = {
-    "CR1": [("lighting", "Lighting", 100, True), ("computers", "Computers", 600, True), ("fans", "Fans", 100, False), ("projector", "Projector", 200, False), ("ac", "Air conditioning", 1000, False)],
-    "CR2": [("lighting", "Lighting", 100, True), ("computers", "Computers", 600, True), ("fans", "Fans", 100, False), ("projector", "Projector", 200, False), ("ac", "Air conditioning", 1000, False)],
-    "CR3": [("lighting", "Lighting", 100, True), ("computers", "Computers", 600, True), ("fans", "Fans", 100, False), ("projector", "Projector", 200, False), ("ac", "Air conditioning", 1000, False), ("instruments", "Instruments", 2000, False)],
-}
+from app.core.state import site_profile
+from app.core.config import AssetType
+ROOMS = []
+LOADS = {}
+ZONES = []
+TRANSFORMERS_CONFIG = []
+
+for asset in site_profile.assets:
+    if asset.type == AssetType.CLASSROOM:
+        ROOMS.append(asset.id)
+        LOADS[asset.id] = []
+    elif asset.type == AssetType.TRANSFORMER:
+        ZONES.append(asset.zone)
+        TRANSFORMERS_CONFIG.append({
+            "id": asset.id,
+            "name": asset.name,
+            "zone": asset.zone,
+            "rated_current_a": float(asset.rating_w or 100.0)
+        })
+
+for asset in site_profile.assets:
+    if asset.type == AssetType.LOAD and asset.parent_id in LOADS:
+        # id like L_CR1_lighting -> strip L_CR1_ to get 'lighting'
+        short_id = asset.id.split("_", 2)[-1]
+        LOADS[asset.parent_id].append((short_id, asset.name, asset.rating_w, asset.essential))
+
+ROOMS = tuple(ROOMS)
+ZONES = tuple(ZONES)
 LOAD_KEYS = tuple((room, item[0]) for room in ROOMS for item in LOADS[room])
-ZONES = ("ICU", "Theatre", "Wards")
+
 
 
 NORMAL_CAPACITY_W = 8000

@@ -77,7 +77,7 @@ def test_hospital_commands_share_the_site_revision_and_reads_never_bump_it():
 
 
 def test_headroom_is_zero_without_feeder_b_and_capped_by_its_limit():
-    grid = main.site.grid
+    grid = main.app.state.site.grid
     assert classroom_headroom_w(grid) == 8000
     grid.set_feeder("B", False)
     assert classroom_headroom_w(grid) == 0

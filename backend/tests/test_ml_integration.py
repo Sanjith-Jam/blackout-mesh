@@ -7,15 +7,22 @@ from fastapi.testclient import TestClient
 from app.core.allocator import feasible
 from app.core.restoration import RestorationGate
 from app.core.state import SERVICE_CATALOG, GridState
-from app.main import app
+from app.main import app, get_grid_state
 from app.activity.model import ActivityModel
 
-client = TestClient(app)
+
+@pytest.fixture
+def client():
+    app.dependency_overrides.clear()
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
 
 
 @pytest.fixture(autouse=True)
 def clean_grid():
-    grid = GridState()
+    grid = app.state.grid
     saved_model = grid.model
     with grid._lock:
         grid.source_capacity_w = 14000
@@ -42,7 +49,7 @@ def clean_grid():
     grid.model = saved_model
 
 
-def test_activity_observation_requires_current_typed_evidence():
+def test_activity_observation_requires_current_typed_evidence(client):
     now = datetime.now(timezone.utc).isoformat()
     payload = {"classroom_id": "CR1", "temperature_c": 22.5, "humidity_pct": 40,
                "co2_ppm": 700, "humidity_ratio": 0.007, "observed_at": now,
@@ -58,9 +65,8 @@ def test_activity_observation_requires_current_typed_evidence():
     assert client.post("/api/v1/simulation/feeder", json={"feeder": "C", "available": True}).status_code == 422
 
 
-def test_real_model_observation_endpoint_returns_evidence_and_prediction(clean_grid, monkeypatch):
+def test_real_model_observation_endpoint_returns_evidence_and_prediction(clean_grid, client, monkeypatch):
     import app.main as main
-    monkeypatch.setattr(main, "grid", clean_grid)
     monkeypatch.setattr(clean_grid, "model", ActivityModel())
     payload = {"classroom_id": "CR2", "temperature_c": 22.0, "humidity_pct": 40.0,
                "co2_ppm": 700.0, "humidity_ratio": 0.007,
@@ -73,7 +79,7 @@ def test_real_model_observation_endpoint_returns_evidence_and_prediction(clean_g
     assert result["evidence"]["co2_ppm"] == 700.0
 
 
-def test_snapshot_exposes_activity_contract_and_honest_hardware_status():
+def test_snapshot_exposes_activity_contract_and_honest_hardware_status(client):
     snapshot = client.get("/api/v1/snapshot").json()
     assert set(snapshot["activity"]) == {"CR1", "CR2", "CR3"}
     assert {"ready", "model_type", "model_version", "features", "data_source", "evaluation", "fallback_reason"} <= set(snapshot["model"])
@@ -81,7 +87,7 @@ def test_snapshot_exposes_activity_contract_and_honest_hardware_status():
     assert snapshot["indicator_confirmed_mask"] is None
 
 
-def test_feasibility_matches_independent_constraint_oracle_for_all_masks():
+def test_feasibility_matches_independent_constraint_oracle_for_all_masks(client):
     limits, capacity, feeders = {"A": 6000, "B": 8000}, 9000, {"A": True, "B": False}
     for mask in range(64):
         selected = [svc for bit, svc in enumerate(SERVICE_CATALOG) if mask & (1 << bit)]
@@ -92,7 +98,7 @@ def test_feasibility_matches_independent_constraint_oracle_for_all_masks():
         assert feasible(mask, SERVICE_CATALOG, capacity, limits, feeders) is expected
 
 
-def test_restoration_sheds_immediately_then_waits_and_adds_one_per_second():
+def test_restoration_sheds_immediately_then_waits_and_adds_one_per_second(client):
     now = [0.0]
     gate = RestorationGate(lambda: now[0])
     assert gate.update(0b111, (14000, "connected"), [0, 1, 2]) == 0b111
@@ -110,8 +116,8 @@ def test_restoration_sheds_immediately_then_waits_and_adds_one_per_second():
     assert gate.update(0b1111, (14000, "connected"), [0, 1, 2, 3]) == 0b1111
 
 
-def test_activity_prediction_updates_allocation_policy(monkeypatch):
-    grid = GridState()
+def test_activity_prediction_updates_allocation_policy(client, monkeypatch):
+    grid = app.state.grid
 
     class StubModel:
         def __init__(self, state):
@@ -125,38 +131,38 @@ def test_activity_prediction_updates_allocation_policy(monkeypatch):
             return {"ready": True, "model_type": "test", "model_version": "test", "features": [],
                     "data_source": "test", "evaluation": {}, "fallback_reason": None}
 
-    monkeypatch.setattr("app.main.grid", grid)
+    app.dependency_overrides[get_grid_state] = lambda: grid
     with grid._lock:
         grid.source_capacity_w = 5000
         grid.feeder_available = {"A": True, "B": True}
         grid.feeder_limits_w = {"A": 6000, "B": 8000}
-        grid.classroom_load_events = {"CR1": True, "CR2": True, "CR3": True}
+        grid.active_sessions = {"CR1": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}, "CR2": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}, "CR3": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}}
         grid.software_mode = True
         grid.model = StubModel("ACTIVE")
-    now = datetime.now(timezone.utc).isoformat()
     features = {"temperature_c": 22.0, "humidity_pct": 40.0, "co2_ppm": 700.0, "humidity_ratio": 0.007}
     def send(cid):
+        time.sleep(0.001)
         return client.post("/api/v1/activity/observations", json={"classroom_id": cid, **features,
-                            "observed_at": now, "source": "SIMULATED"}).json()
-    send("CR1")
+                            "observed_at": datetime.now(timezone.utc).isoformat(), "source": "SIMULATED"}).json()
+    print(send("CR1"))
     grid.model = StubModel("INACTIVE")
-    send("CR2")
-    grid.compute_allocation()
+    print(send("CR2"))
+    print('ACTIVITY:', grid.activity); grid.compute_allocation()
     cr1_priority_mask = grid.proposed_mask
     assert cr1_priority_mask & (1 << 3)
     assert not cr1_priority_mask & (1 << 4)
     grid.model = StubModel("ACTIVE")
-    send("CR2")
+    print(send("CR2"))
     grid.model = StubModel("INACTIVE")
-    send("CR1")
-    grid.compute_allocation()
+    print(send("CR1"))
+    print('ACTIVITY:', grid.activity); grid.compute_allocation()
     cr2_priority_mask = grid.proposed_mask
     assert cr2_priority_mask & (1 << 4)
     assert not cr2_priority_mask & (1 << 3)
     assert grid.activity["CR2"]["state"] == "ACTIVE"
 
 
-def test_failed_inference_and_stale_evidence_become_unknown(clean_grid, monkeypatch):
+def test_failed_inference_and_stale_evidence_become_unknown(clean_grid, client, monkeypatch):
     class BrokenModel:
         def predict(self, _features):
             raise RuntimeError("model failed")
@@ -164,7 +170,7 @@ def test_failed_inference_and_stale_evidence_become_unknown(clean_grid, monkeypa
             return {"ready": False, "model_type": "test", "model_version": "test", "features": [],
                     "data_source": "test", "evaluation": {}, "fallback_reason": "model failed"}
     grid = clean_grid
-    monkeypatch.setattr("app.main.grid", grid)
+    app.dependency_overrides[get_grid_state] = lambda: grid
     monkeypatch.setattr(grid, "model", BrokenModel())
     now = datetime.now(timezone.utc).isoformat()
     payload = {"classroom_id": "CR1", "temperature_c": 22.0, "humidity_pct": 40.0,
@@ -191,19 +197,19 @@ def test_replay_start_is_single_owner_and_pause_reset_invalidate(clean_grid, mon
 
     row = {"temperature_c": 22.0, "humidity_pct": 40.0, "co2_ppm": 700.0,
            "humidity_ratio": 0.007, "observed_at": "2016-01-01T00:00:00Z"}
-    monkeypatch.setattr(main, "replay_data", {cid: [row] for cid in ("CR1", "CR2", "CR3")})
-    monkeypatch.setattr(main, "grid", clean_grid)
     model = ReplayModel()
-    monkeypatch.setattr(clean_grid, "model", model)
+    app.state.replay_data = {cid: [row] for cid in ("CR1", "CR2", "CR3")}
+    app.state.grid.replay_length = 1
     with TestClient(app) as replay_client:
+        app.state.grid.model = model
         started = replay_client.post("/api/v1/replay", json={"action": "start"}).json()
         assert started["running"] is True and started["length"] == 1
         replay_client.post("/api/v1/replay", json={"action": "start"})
         time.sleep(0.1)
         assert model.calls == 3
-        assert clean_grid.replay_index == 0  # one-row stream wraps without exceeding its length
-        assert clean_grid.activity["CR1"]["source"] == "RECORDED_REPLAY"
-        assert clean_grid.activity["CR1"]["recorded_at"] == row["observed_at"]
+        assert app.state.grid.replay_index == 0  # one-row stream wraps without exceeding its length
+        assert app.state.grid.activity["CR1"]["source"] == "RECORDED_REPLAY"
+        assert app.state.grid.activity["CR1"]["recorded_at"] == row["observed_at"]
         paused = replay_client.post("/api/v1/replay", json={"action": "pause"}).json()
         assert paused["running"] is False
         reset = replay_client.post("/api/v1/replay", json={"action": "reset"}).json()

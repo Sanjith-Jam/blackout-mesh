@@ -25,7 +25,7 @@ class FakeClock:
 @pytest.fixture
 def grid_clock(monkeypatch):
     """The singleton grid on a frozen virtual clock, reset to the normal 14 kW campus."""
-    grid = GridState()
+    grid = main.app.state.grid
     clock = FakeClock(1000.0)
     with grid._lock:
         grid.clock = clock
@@ -41,9 +41,9 @@ def grid_clock(monkeypatch):
         grid.last_allocation_mask = 0b111111
         grid.tick()
     demo = ClassroomDemo(FakeClock(0.0))
-    monkeypatch.setattr(main, "grid", grid)
-    monkeypatch.setattr(main, "classroom_demo", demo)
-    monkeypatch.setattr(main.site, "classroom", demo)
+    monkeypatch.setattr(main.app.state, "grid", grid)
+    monkeypatch.setattr(main.app.state, "classroom_demo", demo)
+    monkeypatch.setattr(main.app.state.site, "classroom", demo)
     yield grid, clock, demo
     grid.clock = time.monotonic
     grid.restoration_gate = RestorationGate(time.monotonic)
@@ -126,9 +126,9 @@ def test_protective_shedding_applies_in_the_command_response(grid_clock):
 
 def test_socket_payload_keeps_state_time_and_adds_transport_time(grid_clock):
     grid, _, _ = grid_clock
-    a = json.loads(main.socket_payload(grid.build_snapshot()))
-    b = json.loads(main.socket_payload(grid.build_snapshot()))
-    assert a["generated_at"] == b["generated_at"] and a["published_revision"] == b["published_revision"]
+    a = json.loads(main.socket_payload(grid.build_snapshot(), main.app.state.site))
+    b = json.loads(main.socket_payload(grid.build_snapshot(), main.app.state.site))
+    assert a["payload"]["generated_at"] == b["payload"]["generated_at"] and a["payload"]["published_revision"] == b["payload"]["published_revision"]
     assert "sent_at" in a
 
 
@@ -165,4 +165,4 @@ def test_lifespan_runs_exactly_one_loop_and_health_reports_it():
         time.sleep(0.6)
         health = client.get("/api/v1/health").json()["control_loop"]
         assert health["running"] and health["tick_count"] >= 2 and health["errors"] == 0
-    assert main.control_loop.task is None
+    assert main.app.state.control_loop.task is None

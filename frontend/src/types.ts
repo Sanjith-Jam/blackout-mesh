@@ -1,3 +1,4 @@
+import { components } from './schema';
 export interface SourceInfo {
   model: "watt_budget";
   limitations: string;
@@ -126,6 +127,7 @@ export interface ActivityObservation {
 }
 
 export interface Snapshot {
+  contract: components["schemas"]["CrossRouteContract"];
   activity: Record<string, ActivityPrediction>;
   model: ModelStatus;
   replay: ReplayStatus;
@@ -416,3 +418,5 @@ export interface ElectricalStudyResponse {
   };
   diagnosis: Record<string, unknown>;
 }
+
+export type WebSocketEnvelope = components["schemas"]["WebSocketMessageEnvelope"];

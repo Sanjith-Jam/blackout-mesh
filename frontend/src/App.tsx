@@ -4,10 +4,17 @@ import DemoDashboard from './pages/DemoDashboard';
 import HospitalPage from './pages/HospitalDemo';
 import ClassroomsPage from './pages/ClassroomsDemo';
 import './App.css';
+import { useWebSocketSync } from './useServerState';
+
+function AppShell({ children }: { children: React.ReactNode }) {
+  useWebSocketSync();
+  return <>{children}</>;
+}
 
 function App() {
   return (
     <Router>
+      <AppShell>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/hospital" element={<HospitalPage />} />
@@ -15,6 +22,7 @@ function App() {
         <Route path="/demo" element={<DemoDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+          </AppShell>
     </Router>
   );
 }

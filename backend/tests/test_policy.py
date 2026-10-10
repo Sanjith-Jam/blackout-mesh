@@ -48,10 +48,10 @@ def test_fairness_breaks_optional_tie():
 
 def test_policy_api_validation_and_restoration():
     with TestClient(main.app) as client:
-        before = main.grid.last_allocation_mask
+        before = main.app.state.grid.last_allocation_mask
         r = client.put('/api/v1/allocation/policy', json={"name": "water_first", "fairness_weight": 1})
         assert r.status_code == 200
-        assert main.grid.last_allocation_mask & ~before == 0
+        assert main.app.state.grid.last_allocation_mask & ~before == 0
         snapshot = client.get('/api/v1/snapshot').json()
         assert snapshot['allocation']['explanation']['policy']['name'] == 'water_first'
         assert client.put('/api/v1/allocation/policy', json={"name": "unsafe"}).status_code == 422
@@ -73,7 +73,7 @@ def test_applied_decision_restoration_replay():
 
 
 def test_waiting_age_only_accumulates_for_unserved_requests():
-    grid = main.grid
+    grid = main.app.state.grid
     now = [0.]
     grid.clock = lambda: now[0]
     grid.last_policy_tick = 0
@@ -97,7 +97,7 @@ def test_explanation_inputs_do_not_follow_live_mutation():
 
 def test_idle_tick_preserves_the_decision_trace():
     now = [100.]
-    grid = main.grid
+    grid = main.app.state.grid
     grid.clock = lambda: now[0]
     grid.tick()
     before = grid.build_snapshot().allocation.explanation

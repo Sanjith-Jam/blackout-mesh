@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 import app.main as main
+from starlette.requests import Request
 from app.simulation.electrical import ElectricalInput, solve, telemetry, diagnose_study
 
 
@@ -56,14 +57,14 @@ def test_study_api_and_stale_revision(monkeypatch):
         return solve(inputs, 'invalid')
     monkeypatch.setattr(main, 'solve_electrical', fake)
     with TestClient(main.app) as client:
-        before = main.grid.last_allocation_mask
+        before = main.app.state.grid.last_allocation_mask
         result = client.post('/api/v1/studies/electrical', json={})
         assert result.status_code == 200
         assert result.json()['result']['restoration_authorized'] is False
-        assert main.grid.last_allocation_mask == before
+        assert main.app.state.grid.last_allocation_mask == before
         assert client.post('/api/v1/studies/electrical', json={'load_a_w': '6000'}).status_code == 422
     def stale(inputs):
-        main.site.new_run()
+        main.app.state.site.new_run()
         return fake(inputs)
     monkeypatch.setattr(main, 'solve_electrical', stale)
     with TestClient(main.app) as client:
@@ -77,12 +78,12 @@ def test_slow_study_does_not_block_event_loop(monkeypatch):
         return solve(inputs, 'invalid')
     monkeypatch.setattr(main, 'solve_electrical', slow)
     async def run():
-        main.electrical_study_lock = asyncio.Lock()
-        pending = asyncio.create_task(main.electrical_study(ElectricalInput()))
+        main.app.state.electrical_study_lock = asyncio.Lock()
+        pending = asyncio.create_task(main.electrical_study(Request({"type": "http", "app": main.app}), ElectricalInput()))
         await asyncio.sleep(.02)
         assert not pending.done()
         with pytest.raises(HTTPException) as busy:
-            await main.electrical_study(ElectricalInput())
+            await main.electrical_study(Request({"type": "http", "app": main.app}), ElectricalInput())
         assert busy.value.status_code == 503
         await pending
     asyncio.run(run())
@@ -96,18 +97,18 @@ def test_timeout_keeps_worker_slot_and_never_applies_result(monkeypatch):
     monkeypatch.setattr(main, 'solve_electrical', slow)
     monkeypatch.setattr(main, 'ELECTRICAL_TIMEOUT_S', .01)
     async def run():
-        main.electrical_study_lock = asyncio.Lock()
-        before = main.grid.last_allocation_mask
+        main.app.state.electrical_study_lock = asyncio.Lock()
+        before = main.app.state.grid.last_allocation_mask
         with pytest.raises(HTTPException) as timeout:
-            await main.electrical_study(ElectricalInput())
+            await main.electrical_study(Request({"type": "http", "app": main.app}), ElectricalInput())
         assert timeout.value.status_code == 504
-        assert main.electrical_study_lock.locked()
+        assert main.app.state.electrical_study_lock.locked()
         with pytest.raises(HTTPException) as busy:
-            await main.electrical_study(ElectricalInput())
+            await main.electrical_study(Request({"type": "http", "app": main.app}), ElectricalInput())
         assert busy.value.status_code == 503
         await asyncio.sleep(.1)
-        assert not main.electrical_study_lock.locked()
-        assert main.grid.last_allocation_mask == before
+        assert not main.app.state.electrical_study_lock.locked()
+        assert main.app.state.grid.last_allocation_mask == before
     asyncio.run(run())
 
 
@@ -131,9 +132,9 @@ def test_simultaneous_requests_cannot_queue_a_second_worker(monkeypatch):
         return solve(inputs, 'invalid')
     monkeypatch.setattr(main, 'solve_electrical', slow)
     async def run():
-        main.electrical_study_lock = asyncio.Lock()
-        results = await asyncio.gather(main.electrical_study(ElectricalInput()),
-                                       main.electrical_study(ElectricalInput()), return_exceptions=True)
+        main.app.state.electrical_study_lock = asyncio.Lock()
+        results = await asyncio.gather(main.electrical_study(Request({"type": "http", "app": main.app}), ElectricalInput()),
+                                       main.electrical_study(Request({"type": "http", "app": main.app}), ElectricalInput()), return_exceptions=True)
         assert sum(isinstance(r, dict) for r in results) == 1
         errors = [r for r in results if isinstance(r, HTTPException)]
         assert len(errors) == 1 and errors[0].status_code == 503

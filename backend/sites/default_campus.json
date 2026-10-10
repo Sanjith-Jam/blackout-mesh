@@ -1,0 +1,271 @@
+{
+  "version": "1.0",
+  "name": "Default Campus",
+  "assets": [
+    {
+      "id": "SOURCE",
+      "type": "source",
+      "name": "Main Grid",
+      "capacity_w": 14000
+    },
+    {
+      "id": "A",
+      "type": "feeder",
+      "name": "Feeder A",
+      "parent_id": "SOURCE",
+      "capacity_w": 6000
+    },
+    {
+      "id": "B",
+      "type": "feeder",
+      "name": "Feeder B",
+      "parent_id": "SOURCE",
+      "capacity_w": 8000
+    },
+    {
+      "id": "L0",
+      "type": "service",
+      "name": "Hospital Essential Circuit",
+      "parent_id": "A",
+      "tier": "T1",
+      "rating_w": 2000,
+      "zone": "hospital"
+    },
+    {
+      "id": "L1",
+      "type": "service",
+      "name": "Emergency Lighting",
+      "parent_id": "A",
+      "tier": "T1",
+      "rating_w": 1000,
+      "zone": "hospital"
+    },
+    {
+      "id": "L2",
+      "type": "service",
+      "name": "Water Pump",
+      "parent_id": "A",
+      "tier": "T2",
+      "rating_w": 3000,
+      "zone": "hospital"
+    },
+    {
+      "id": "L3",
+      "type": "service",
+      "name": "Classroom 1",
+      "parent_id": "B",
+      "tier": "T2",
+      "rating_w": 2000,
+      "zone": "classroom"
+    },
+    {
+      "id": "L4",
+      "type": "service",
+      "name": "Classroom 2",
+      "parent_id": "B",
+      "tier": "T2",
+      "rating_w": 2000,
+      "zone": "classroom"
+    },
+    {
+      "id": "L5",
+      "type": "service",
+      "name": "Classroom 3",
+      "parent_id": "B",
+      "tier": "T3",
+      "rating_w": 4000,
+      "zone": "classroom"
+    },
+    {
+      "id": "HR1",
+      "type": "hospital_room",
+      "name": "Hospital Room 1",
+      "parent_id": "L0",
+      "led_bit": 0
+    },
+    {
+      "id": "HR2",
+      "type": "hospital_room",
+      "name": "Hospital Room 2",
+      "parent_id": "L0",
+      "led_bit": 1
+    },
+    {
+      "id": "HR3",
+      "type": "hospital_room",
+      "name": "Hospital Room 3",
+      "parent_id": "L0",
+      "led_bit": 2
+    },
+    {
+      "id": "CR1",
+      "type": "classroom",
+      "name": "Classroom 1",
+      "parent_id": "L3",
+      "led_bit": 3
+    },
+    {
+      "id": "CR2",
+      "type": "classroom",
+      "name": "Classroom 2",
+      "parent_id": "L4",
+      "led_bit": 4
+    },
+    {
+      "id": "CR3",
+      "type": "classroom",
+      "name": "Classroom 3",
+      "parent_id": "L5",
+      "led_bit": 5
+    },
+    {
+      "id": "L_CR1_lighting",
+      "type": "load",
+      "name": "Lighting",
+      "parent_id": "CR1",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_CR1_computers",
+      "type": "load",
+      "name": "Computers",
+      "parent_id": "CR1",
+      "rating_w": 600,
+      "essential": true
+    },
+    {
+      "id": "L_CR1_fans",
+      "type": "load",
+      "name": "Fans",
+      "parent_id": "CR1",
+      "rating_w": 100,
+      "essential": false
+    },
+    {
+      "id": "L_CR1_projector",
+      "type": "load",
+      "name": "Projector",
+      "parent_id": "CR1",
+      "rating_w": 200,
+      "essential": false
+    },
+    {
+      "id": "L_CR1_ac",
+      "type": "load",
+      "name": "Air conditioning",
+      "parent_id": "CR1",
+      "rating_w": 1000,
+      "essential": false
+    },
+    {
+      "id": "L_CR2_lighting",
+      "type": "load",
+      "name": "Lighting",
+      "parent_id": "CR2",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_CR2_computers",
+      "type": "load",
+      "name": "Computers",
+      "parent_id": "CR2",
+      "rating_w": 600,
+      "essential": true
+    },
+    {
+      "id": "L_CR2_fans",
+      "type": "load",
+      "name": "Fans",
+      "parent_id": "CR2",
+      "rating_w": 100,
+      "essential": false
+    },
+    {
+      "id": "L_CR2_projector",
+      "type": "load",
+      "name": "Projector",
+      "parent_id": "CR2",
+      "rating_w": 200,
+      "essential": false
+    },
+    {
+      "id": "L_CR2_ac",
+      "type": "load",
+      "name": "Air conditioning",
+      "parent_id": "CR2",
+      "rating_w": 1000,
+      "essential": false
+    },
+    {
+      "id": "L_CR3_lighting",
+      "type": "load",
+      "name": "Lighting",
+      "parent_id": "CR3",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_CR3_computers",
+      "type": "load",
+      "name": "Computers",
+      "parent_id": "CR3",
+      "rating_w": 600,
+      "essential": true
+    },
+    {
+      "id": "L_CR3_fans",
+      "type": "load",
+      "name": "Fans",
+      "parent_id": "CR3",
+      "rating_w": 100,
+      "essential": false
+    },
+    {
+      "id": "L_CR3_projector",
+      "type": "load",
+      "name": "Projector",
+      "parent_id": "CR3",
+      "rating_w": 200,
+      "essential": false
+    },
+    {
+      "id": "L_CR3_ac",
+      "type": "load",
+      "name": "Air conditioning",
+      "parent_id": "CR3",
+      "rating_w": 1000,
+      "essential": false
+    },
+    {
+      "id": "L_CR3_instruments",
+      "type": "load",
+      "name": "Instruments",
+      "parent_id": "CR3",
+      "rating_w": 2000,
+      "essential": false
+    },
+    {
+      "id": "TX1",
+      "type": "transformer",
+      "name": "Transformer 1",
+      "zone": "ICU",
+      "rating_w": 100
+    },
+    {
+      "id": "TX2",
+      "type": "transformer",
+      "name": "Transformer 2",
+      "zone": "Theatre",
+      "rating_w": 100
+    },
+    {
+      "id": "TX3",
+      "type": "transformer",
+      "name": "Transformer 3",
+      "zone": "Wards",
+      "rating_w": 100
+    }
+  ]
+}

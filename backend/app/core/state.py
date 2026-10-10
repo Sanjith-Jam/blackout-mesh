@@ -1,3 +1,9 @@
+
+from app.storage.db import Storage
+from app.storage.models import Run, Command, Decision, Transition, Incident, Acknowledgment, Observation
+from sqlmodel import Session, select
+import uuid
+
 import threading
 import time
 from datetime import datetime, timezone
@@ -7,7 +13,7 @@ from app.schemas.snapshot import (
     SystemSnapshot, SourceInfo, SourceKind, HardwareLinkStatus,
     ServiceSnapshot, Tier, FacilityZones, HospitalZone, HospitalRoom,
     ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType,
-    SystemEvent, FaultDiagnosis
+    SystemEvent, FaultDiagnosis,
 )
 from app.core.allocator import allocate, fixed_priority_mask, explain
 from app.core.edges import edge as power_edge
@@ -19,51 +25,56 @@ from app.diagnosis.observations import validate as validate_observation
 from app.simulation.sensors import CAMPUS_BUS, CAMPUS_FEEDERS, campus_readings, envelopes as sensor_envelopes
 from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, normalize_prediction, shortfall_status
 
-SERVICE_CATALOG = [
-    {"id": "L0", "name": "Hospital Essential Circuit", "tier": "T1", "feeder": "A", "watts": 2000, "zone": "hospital"},
-    {"id": "L1", "name": "Emergency Lighting", "tier": "T1", "feeder": "A", "watts": 1000, "zone": "hospital"},
-    {"id": "L2", "name": "Water Pump", "tier": "T2", "feeder": "A", "watts": 3000, "zone": "hospital"},
-    {"id": "L3", "name": "Classroom 1", "tier": "T2", "feeder": "B", "watts": 2000, "zone": "classroom"},
-    {"id": "L4", "name": "Classroom 2", "tier": "T2", "feeder": "B", "watts": 2000, "zone": "classroom"},
-    {"id": "L5", "name": "Classroom 3", "tier": "T3", "feeder": "B", "watts": 4000, "zone": "classroom"},
-]
+from app.schemas.snapshot import CrossRouteContract, ScopeTotals
+from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
+import os
 
-HOSPITAL_ROOMS = [
-    {"id": "HR1", "name": "Hospital Room 1", "lighting_service": "L0", "led_bit": 0},
-    {"id": "HR2", "name": "Hospital Room 2", "lighting_service": "L0", "led_bit": 1},
-    {"id": "HR3", "name": "Hospital Room 3", "lighting_service": "L0", "led_bit": 2},
-]
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DEFAULT_SITE_PATH = os.environ.get("SITE_PROFILE", os.path.join(_BASE_DIR, "sites", "default_campus.json"))
+RFID_ENROLLMENT_PATH = os.environ.get("RFID_ENROLLMENT", os.path.join(_BASE_DIR, "sites", "rfid_enrollment.json"))
 
-CLASSROOMS = [
-    {"id": "CR1", "name": "Classroom 1", "service_id": "L3", "led_bit": 3},
-    {"id": "CR2", "name": "Classroom 2", "service_id": "L4", "led_bit": 4},
-    {"id": "CR3", "name": "Classroom 3", "service_id": "L5", "led_bit": 5},
-]
+site_profile = load_site_profile(DEFAULT_SITE_PATH)
+rfid_enrollment = load_rfid_enrollment(RFID_ENROLLMENT_PATH)
 
-# Configurable RFID UID mapping. Replace with real UIDs during hardware registration.
-DEFAULT_RFID_MAP = {
-    "CARD_1_UID": "CR1",
-    "CARD_2_UID": "CR2",
-    "CARD_3_UID": "CR3",
-}
+SERVICE_CATALOG = []
+HOSPITAL_ROOMS = []
+CLASSROOMS = []
+
+for asset in site_profile.assets:
+    if asset.type == AssetType.SERVICE:
+        SERVICE_CATALOG.append({
+            "id": asset.id,
+            "name": asset.name,
+            "tier": asset.tier.value if asset.tier else "T3",
+            "feeder": asset.parent_id,
+            "watts": asset.rating_w or 0,
+            "zone": asset.zone
+        })
+    elif asset.type == AssetType.HOSPITAL_ROOM:
+        HOSPITAL_ROOMS.append({
+            "id": asset.id,
+            "name": asset.name,
+            "lighting_service": asset.parent_id,
+            "led_bit": asset.led_bit
+        })
+    elif asset.type == AssetType.CLASSROOM:
+        CLASSROOMS.append({
+            "id": asset.id,
+            "name": asset.name,
+            "service_id": asset.parent_id,
+            "led_bit": asset.led_bit
+        })
+
+
+DEFAULT_RFID_MAP = rfid_enrollment.tag_to_room
+SITE_CONFIG_HASH = get_config_hash(site_profile)
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
+SESSION_EXPIRY_SECONDS = 7200
 NORMAL_SOURCE_CAPACITY_W = 14000
 
 class GridState:
-    _instance = None
-    _init_lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
-        with cls._init_lock:
-            if cls._instance is None:
-                cls._instance = super(GridState, cls).__new__(cls)
-                cls._instance._initialized = False
-        return cls._instance
-
-    def __init__(self):
-        if getattr(self, '_initialized', False):
-            return
+    def __init__(self, storage=None):
         self._lock = threading.RLock()
         self.clock = time.monotonic
         self.published: Optional[SystemSnapshot] = None
@@ -73,11 +84,7 @@ class GridState:
         self.feeder_limits_w = {"A": 6000, "B": 8000}
         self.feeder_available = {"A": True, "B": True}
         self.control_revision = 0
-        self.active_classroom_id = None
-        self.recent_rfid_scan = None
-        self.last_rfid_scan_time = None
-        self.last_rfid_uid = None
-        self.classroom_load_events = {"CR1": False, "CR2": False, "CR3": False}
+        self.active_sessions = {}
         self.rfid_map = DEFAULT_RFID_MAP.copy()
         self.indicator_confirmed_mask = None
         self.model = ActivityModel()
@@ -101,7 +108,25 @@ class GridState:
         self.last_allocation_key = None
         self.proposed_mask = 0
         self.restoration_gate = RestorationGate(lambda: self.clock())
-        self.events = []
+
+        self.storage = storage or Storage()
+        self.storage.init()
+        self.run_id = str(uuid.uuid4())
+        self.server_epoch = int(time.time())
+        try:
+            with Session(self.storage.engine) as session:
+                run = Run(site_id=site_profile.name, run_id=self.run_id, server_epoch=self.server_epoch, started_at=datetime.now(timezone.utc))
+                session.add(run)
+                self.storage.commit(session)
+
+                # Load last 50 transitions as events
+                trans = session.exec(select(Transition).order_by(Transition.timestamp.desc()).limit(50)).all()
+                self.events = []
+                for t in reversed(trans):
+                    self.events.append(SystemEvent(timestamp=t.timestamp.isoformat(), type=t.type, description=t.description))
+        except Exception:
+            self.events = []
+
         self.fault_diagnosis = None
         self.telemetry_window = ObservationWindow()
         self.telemetry_sequence = 0
@@ -111,16 +136,60 @@ class GridState:
         self._initialized = True
         self.tick()  # initial publication so the first read is never empty
 
+
+
+    def identity(self):
+        return dict(site_id=site_profile.name, run_id=self.run_id, server_epoch=self.server_epoch,
+            config_hash=SITE_CONFIG_HASH, catalog_version=site_profile.version,
+            policy_version=self.policy.version, model_version=self.model.status()["model_version"],
+            state_revision=self.published_revision, observation_time=self.published.generated_at.isoformat()
+                if self.published else datetime.now(timezone.utc).isoformat())
+
+    def save_command(self, action: str, payload: dict):
+        if self.storage.degraded:
+            return
+        try:
+            with Session(self.storage.engine) as session:
+                cmd = Command(
+                    command_id=str(uuid.uuid4()),
+                    run_id=self.run_id,
+                    revision=self.control_revision,
+                    timestamp=datetime.now(timezone.utc),
+                    action=action,
+                    payload=payload
+                )
+                session.add(cmd)
+                self.storage.commit(session)
+        except Exception:
+            pass
+
     def add_event(self, event_type: str, desc: str):
         with self._lock:
+            now = datetime.now(timezone.utc)
             event = SystemEvent(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=now.isoformat(),
                 type=event_type,
                 description=desc
             )
             self.events.append(event)
             if len(self.events) > 50:
                 self.events.pop(0)
+
+
+            try:
+                with Session(self.storage.engine) as session:
+                    t = Transition(run_id=self.run_id, revision=self.control_revision, timestamp=now, type=event_type, description=desc)
+                    session.add(t)
+                    if not self.storage.commit(session):
+                        if not getattr(self, '_notified_degraded', False):
+                            self._notified_degraded = True
+                            self.events.append(SystemEvent(timestamp=now.isoformat(), type="DB_DEGRADED", description="Database is degraded. Auditing paused."))
+            except Exception:
+                if not getattr(self, '_notified_degraded', False):
+                    self._notified_degraded = True
+                    self.events.append(SystemEvent(timestamp=now.isoformat(), type="DB_DEGRADED", description="Database is degraded. Auditing paused."))
+
+
 
     def sample_telemetry(self, now: datetime):
         """Simulation side: turn the modeled campus state into bus/feeder sensor envelopes."""
@@ -156,30 +225,32 @@ class GridState:
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:
             now = time.time()
-            if self.last_rfid_uid == uid and self.last_rfid_scan_time is not None:
-                if now - self.last_rfid_scan_time < RFID_SCAN_COOLDOWN_SECONDS:
-                    self.last_rfid_scan_time = now
-                    return RfidEventType.DUPLICATE_SUPPRESSED.value, None, None, None
-            
-            self.last_rfid_uid = uid
-            self.last_rfid_scan_time = now
-            self.recent_rfid_scan = uid
 
             classroom_id = self.rfid_map.get(uid)
             if not classroom_id:
-                self.active_classroom_id = None
                 self.control_revision += 1
-                self.add_event("RFID_SCAN", f"Unknown RFID card scanned: {uid}")
+                self.add_event("RFID_SCAN", f"Unknown RFID card scanned: {uid[:4] + '***' if uid else 'none'}")
                 return RfidEventType.UNKNOWN_CARD.value, None, None, None
 
-            self.active_classroom_id = classroom_id
-            self.control_revision += 1
-            
-            classroom = next((c for c in CLASSROOMS if c["id"] == classroom_id), None)
-            if classroom:
-                self.add_event("RFID_SCAN", f"RFID scan recognized for {classroom['name']}")
-                return RfidEventType.CARD_RECOGNIZED.value, classroom_id, classroom["name"], classroom["service_id"]
-            
+            if classroom_id in self.active_sessions:
+                session = self.active_sessions[classroom_id]
+                if now - session["last_scan"] < RFID_SCAN_COOLDOWN_SECONDS:
+                    session["last_scan"] = now
+                    return RfidEventType.DUPLICATE_SUPPRESSED.value, None, None, None
+                else:
+                    del self.active_sessions[classroom_id]
+                    self.control_revision += 1
+                    self.save_command('end_rfid_session', {'uid': uid[:4] + '***' if uid else 'none', 'classroom_id': classroom_id})
+                    self.add_event("SESSION_END", f"Session ended for {classroom_id} via RFID")
+                    return "SESSION_ENDED", classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
+            else:
+                self.active_sessions[classroom_id] = {"source": "RFID", "started_at": now, "last_scan": now}
+                self.control_revision += 1
+                self.save_command('start_rfid_session', {'uid': uid[:4] + '***' if uid else 'none', 'classroom_id': classroom_id})
+                self.add_event("SESSION_START", f"Session started for {classroom_id} via RFID")
+                return RfidEventType.CARD_RECOGNIZED.value, classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
+
+
             self.add_event("RFID_SCAN", f"RFID scan recognized for unknown classroom ID: {classroom_id}")
             return RfidEventType.CARD_RECOGNIZED.value, classroom_id, None, None
 
@@ -187,6 +258,7 @@ class GridState:
         with self._lock:
             self.source_capacity_w = capacity_w
             self.control_revision += 1
+            self.save_command('set_capacity', {'capacity_w': capacity_w})
             self.add_event("CAPACITY_CHANGE", f"Source capacity set to {capacity_w}W")
 
     def set_feeder(self, feeder: str, available: bool):
@@ -199,17 +271,36 @@ class GridState:
 
     def set_classroom_load(self, classroom_id: str, active: bool):
         with self._lock:
-            if classroom_id in self.classroom_load_events:
-                self.classroom_load_events[classroom_id] = active
-                self.control_revision += 1
-                status = "active" if active else "inactive"
-                self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
+            now = time.time()
+            if active:
+                self.active_sessions[classroom_id] = {"source": "UI", "started_at": now, "last_scan": now}
+            else:
+                if classroom_id in self.active_sessions:
+                    del self.active_sessions[classroom_id]
+            self.control_revision += 1
+            status = "active" if active else "inactive"
+            self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
 
     def record_activity(self, classroom_id, features, observed_at, source, recorded_at=None):
         """Store evidence and apply only the inference matching its current revision."""
         with self._lock:
             self.software_mode = True
             self.control_revision += 1
+
+            if not self.storage.degraded:
+                try:
+                    with Session(self.storage.engine) as db_session:
+                        obs = Observation(
+                            run_id=self.run_id,
+                            asset_id=classroom_id,
+                            timestamp=observed_at,
+                            payload=features
+                        )
+                        db_session.add(obs)
+                        self.storage.commit(db_session)
+                except Exception:
+                    pass
+
             self.activity_tokens[classroom_id] += 1
             current_revision = self.activity_tokens[classroom_id]
             self.activity[classroom_id] = {"state": "UNKNOWN", "score": None, "reason": "inference pending",
@@ -242,8 +333,27 @@ class GridState:
                                      guard="conservative fallback: evidence older than 600 s")
         return activity
 
+
+    def expire_sessions(self):
+        now = time.time()
+        expired = [cid for cid, session in self.active_sessions.items() if now - session["last_scan"] > SESSION_EXPIRY_SECONDS]
+        for cid in expired:
+            del self.active_sessions[cid]
+            self.control_revision += 1
+            self.save_command('session_expired', {'classroom_id': cid})
+            self.add_event("SESSION_EXPIRED", f"Session expired for {cid}")
+
+
     def compute_allocation(self) -> int:
+        """
+        Compute allocation based on priority and capacity constraints.
+        - Essential loads (bits 0, 1, 2) are requested independent of a session by default.
+        - Uncertainty protects essentials: even without clear occupancy evidence, they are never silently cut.
+        - Session evidence (RFID/UI) explicitly adds optional equipment demand (bits 3, 4, 5).
+        - Occupancy prediction (from sensors) can further rank active/unknown ties, but does NOT override the safety of essentials.
+        """
         with self._lock:
+            self.expire_sessions()
             now = self.clock()
             freshness = tuple(received is not None and now - received > 600
                               for received in self.activity_received_monotonic.values())
@@ -251,7 +361,7 @@ class GridState:
             if self.software_mode:
                 requested = 0b111
                 for c in CLASSROOMS:
-                    if self.classroom_load_events[c["id"]]:
+                    if c["id"] in self.active_sessions:
                         requested |= 1 << int(c["service_id"][1:])
             elapsed = max(0, now - self.last_policy_tick)
             self.last_policy_tick = now
@@ -275,6 +385,8 @@ class GridState:
                 (2 if self.policy.name == "water_first" else 4) if bit == 2 else 5, bit))
             signature = (self.policy.model_dump_json(), self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
                          tuple(sorted(self.feeder_available.items())))
+            if self.storage.degraded:
+                self.proposed_mask &= self.last_allocation_mask
             gate_before = {k: v for k, v in vars(self.restoration_gate).items() if k != "clock"}
             self.last_allocation_mask = self.restoration_gate.update(self.proposed_mask, signature, order, now=now)
             explanation = explain(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
@@ -287,7 +399,16 @@ class GridState:
                     "signature": signature, "order": order}
                 explanation["control_revision"] = self.control_revision
                 self.allocation_explanation = explanation
+                if not self.storage.degraded:
+                    with Session(self.storage.engine) as session:
+                        session.add(Decision(decision_id=str(uuid.uuid4()), run_id=self.run_id,
+                            revision=self.control_revision, timestamp=datetime.now(timezone.utc),
+                            modeled_mask=self.last_allocation_mask, proposed_mask=self.proposed_mask,
+                            indicator_command_mask=self.compute_indicator_command_mask(self.last_allocation_mask),
+                            reason="Protected-first allocation", context=explanation))
+                        self.storage.commit(session)
             return self.last_allocation_mask
+
 
     def compute_indicator_command_mask(self, modeled_mask: int) -> int:
         with self._lock:
@@ -297,25 +418,50 @@ class GridState:
             if l0_served:
                 for room in HOSPITAL_ROOMS:
                     mask |= (1 << room["led_bit"])
-                    
+
             # Classroom logic
-            if self.active_classroom_id:
-                classroom = next((c for c in CLASSROOMS if c["id"] == self.active_classroom_id), None)
+            for cid, session in self.active_sessions.items():
+                classroom = next((c for c in CLASSROOMS if c["id"] == cid), None)
                 if classroom:
                     cr_svc = classroom["service_id"]
                     svc_bit = int(cr_svc[1:])
                     svc_served = bool((modeled_mask >> svc_bit) & 1)
-                    load_active = self.classroom_load_events.get(self.active_classroom_id, False)
-                    
+
                     cr_svc_obj = next((s for s in SERVICE_CATALOG if s["id"] == cr_svc), None)
                     feeder_avail = False
                     if cr_svc_obj:
                         feeder_avail = self.feeder_available.get(cr_svc_obj["feeder"], False)
-                    
-                    if svc_served and load_active and feeder_avail:
+
+                    if svc_served and feeder_avail:
                         mask |= (1 << classroom["led_bit"])
-                        
+
             return mask
+
+    def record_ack(self, device_boot: str, sequence: int, session: str, confirmed_mask: int, provenance: str):
+        with self._lock:
+            if provenance != "SIMULATED":
+                raise ValueError("No physical command/session identity has been provisioned")
+            # Record it in the DB
+            now = datetime.now(timezone.utc)
+            if not self.storage.degraded:
+                try:
+                    with Session(self.storage.engine) as db_session:
+                        ack = Acknowledgment(
+                            run_id=self.run_id,
+                            device_boot=device_boot,
+                            sequence=sequence,
+                            session=session,
+                            timestamp=now,
+                            confirmed_mask=confirmed_mask
+                        )
+                        db_session.add(ack)
+                        self.storage.commit(db_session)
+                except Exception:
+                    pass
+
+            # Simulation history never confirms physical GPIO output.
+            self.control_revision += 1
+            self.add_event("HARDWARE_ACK", f"ACK received via {provenance}")
 
     def tick(self) -> SystemSnapshot:
         """Advance control (evidence freshness, allocation, staged restoration) and publish.
@@ -346,14 +492,14 @@ class GridState:
             if self.software_mode:
                 requested_mask = 0b111
                 for c in CLASSROOMS:
-                    if self.classroom_load_events[c["id"]]:
+                    if c["id"] in self.active_sessions:
                         requested_mask |= 1 << int(c["service_id"][1:])
-            
+
             services_out = []
             for svc in SERVICE_CATALOG:
                 bit = int(svc["id"][1:])
                 served = bool((modeled_mask >> bit) & 1)
-                
+
                 if served:
                     reason = "Served by allocation policy"
                 elif self.proposed_mask & (1 << bit):
@@ -380,7 +526,7 @@ class GridState:
                 HospitalRoom(id=r["id"], name=r["name"], lighting_service=r["lighting_service"], led_bit=r["led_bit"])
                 for r in HOSPITAL_ROOMS
             ]
-            
+
             classroom_infos = []
             for c in CLASSROOMS:
                 cid = c["id"]
@@ -391,21 +537,39 @@ class GridState:
                     service_id=c["service_id"],
                     rfid_card_registered=is_registered,
                     led_bit=c["led_bit"],
-                    load_event_active=self.classroom_load_events.get(cid, False)
+                    load_event_active=(cid in self.active_sessions)
                 )
                 classroom_infos.append(cinfo)
-            
+
             zones = FacilityZones(
                 hospital=HospitalZone(rooms=hospital_rooms),
                 classroom=ClassroomZone(
-                    active_classroom_id=self.active_classroom_id,
-                    recent_rfid_scan=self.recent_rfid_scan,
+                    active_classroom_id=next(iter(self.active_sessions.keys()), None) if self.active_sessions else None,
+                    recent_rfid_scan=None,
                     rfid_reader_status=RfidReaderStatus.NOT_CONNECTED,
                     classrooms=classroom_infos
                 )
             )
 
             activity = self.current_activity()
+
+
+            requested_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i))
+            served_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i))
+            campus_totals = ScopeTotals(capacity_w=self.source_capacity_w, requested_w=requested_w, served_w=served_w)
+
+            zone_totals = {}
+            for z in ["hospital", "classroom"]:
+                z_req = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i) and s["zone"] == z)
+                z_srv = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i) and s["zone"] == z)
+                zone_totals[z] = ScopeTotals(capacity_w=None, requested_w=z_req, served_w=z_srv)
+
+            contract_dict = {
+                "identity": self.identity(),
+                "campus_totals": campus_totals,
+                "zone_totals": zone_totals
+            }
+            contract = CrossRouteContract(**contract_dict)
 
             edges = [power_edge(f"campus:SRC>{f}", "SRC", f, connected=self.source_capacity_w > 0,
                                 commanded=any(self.proposed_mask & (1 << i) for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
@@ -424,6 +588,8 @@ class GridState:
                                                 else services_out[i].model_reason)))
 
             return SystemSnapshot(
+                contract=contract,
+                config_hash=SITE_CONFIG_HASH,
                 edges=edges,
                 control_revision=self.control_revision,
                 generated_at=datetime.now(timezone.utc),
@@ -460,4 +626,4 @@ class GridState:
 
 def _content(snapshot: SystemSnapshot) -> dict:
     """Snapshot fields that define state, excluding publication bookkeeping."""
-    return snapshot.model_dump(exclude={"generated_at", "published_revision"})
+    return snapshot.model_dump(exclude={"generated_at", "published_revision", "contract"})

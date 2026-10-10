@@ -4,12 +4,14 @@ import math
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Literal
 from pydantic import BaseModel, ConfigDict, StrictInt
 
 from app.schemas.snapshot import (
+    HealthResponse, ModelStatusResponse, ActivityObservationResponse, ReplayActionResponse, CrossRouteContract,
+    WebSocketMessageEnvelope, HardwareAckRequest, HardwareAckResponse,
     SystemSnapshot,
     RfidScanRequest,
     RfidScanResponse,
@@ -65,11 +67,6 @@ class ConnectionManager:
             except Exception:
                 self.disconnect(connection)
 
-manager = ConnectionManager()
-replay_task = None
-replay_generation = 0
-
-REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
 
 def load_replay():
     try:
@@ -78,133 +75,132 @@ def load_replay():
     except (OSError, ValueError):
         return {}
 
-replay_data = load_replay()
-grid = GridState()
-grid.replay_length = max((len(rows) for rows in replay_data.values()), default=0)
-classroom_demo = ClassroomDemo(model=grid.model, replay=replay_data)
-hospital_demo = HospitalPriorityDemo(model=grid.model, replay=replay_data)
-# One authority: every command goes through `site`, and every projection carries its run/revision.
-site = SiteAuthority(grid, classroom_demo, hospital_demo)
-
-
 def with_site(data: dict, identity: dict) -> dict:
     data = dict(data)
     data["site"] = identity
     return data
 
-def socket_payload(snapshot) -> str:
-    """Published state plus a transport timestamp; the state's generated_at is never rewritten."""
-    payload = json.loads(snapshot.model_dump_json())
-    if payload.get("site") is None:
-        payload["site"] = site.identity()
-    payload["sent_at"] = datetime.now(timezone.utc).isoformat()
-    return json.dumps(payload)
+REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
 
 
-async def publish_to_sockets():
-    if manager.active_connections:
-        snapshot = campus_snapshot()
-        if snapshot is not None:
-            await manager.broadcast(socket_payload(snapshot))
+def initialize_state(app: FastAPI):
+    app.state.manager = ConnectionManager()
+    app.state.replay_data = load_replay()
+    app.state.grid = GridState()
+    app.state.grid.replay_length = max((len(rows) for rows in app.state.replay_data.values()), default=0)
+    app.state.classroom_demo = ClassroomDemo(model=app.state.grid.model, replay=app.state.replay_data)
+    app.state.hospital_demo = HospitalPriorityDemo(model=app.state.grid.model, replay=app.state.replay_data)
+    app.state.site = SiteAuthority(app.state.grid, app.state.classroom_demo, app.state.hospital_demo)
+    app.state.replay_generation = 0
+    app.state.replay_task = None
+    app.state.electrical_study_lock = asyncio.Lock()
+    async def publish():
+        if app.state.manager.active_connections:
+            snapshot = campus_snapshot(app.state.site)
+            await app.state.manager.broadcast(socket_payload(snapshot, app.state.site))
+    app.state.control_loop = ControlLoop([app.state.site.tick], publish=publish)
 
 
-def control_tickers():
-    # Looked up at call time so tests that swap app.main.site are honoured.
-    return [lambda: site.tick()]
-
-
-def campus_snapshot():
-    snapshot, identity = site.read(grid.build_snapshot)
+def campus_snapshot(site):
+    snapshot, identity = site.read(site.grid.build_snapshot)
     if snapshot is not None:
         snapshot.site = identity
+        snapshot.contract = snapshot.contract.model_copy(update={"identity": snapshot.contract.identity.model_copy(update={"run_id": site.run_id, "state_revision": site.revision, "observation_time": snapshot.generated_at.isoformat()})})
     return snapshot
 
 
-control_loop = ControlLoop(control_tickers(), publish=publish_to_sockets)
+def socket_payload(snapshot, site):
+    snapshot.site = site.identity()
+    return WebSocketMessageEnvelope(type="snapshot", payload=snapshot,
+        sent_at=datetime.now(timezone.utc)).model_dump_json()
 
-async def run_replay(generation):
-    while grid.replay_running and generation == replay_generation:
+
+async def run_replay(app, generation):
+    grid, replay_data = app.state.grid, app.state.replay_data
+    while grid.replay_running and generation == app.state.replay_generation:
         max_len = max((len(rows) for rows in replay_data.values()), default=0)
         if not max_len:
             grid.replay_running = False
             return
         index = grid.replay_index % max_len
-        for cid in ("CR1", "CR2", "CR3"):
-            rows = replay_data.get(cid, [])
+        for cid, rows in replay_data.items():
             if not rows:
                 continue
             row = rows[index % len(rows)]
             features = {key: row.get(key) for key in FEATURES}
-            observed_at = datetime.now(timezone.utc)
-            rev = grid.record_activity(cid, features, observed_at, "RECORDED_REPLAY", row.get("observed_at"))
+            rev = grid.record_activity(cid, features, datetime.now(timezone.utc), "RECORDED_REPLAY", row.get("observed_at"))
             try:
                 pred = await asyncio.to_thread(grid.model.predict, features)
             except Exception as exc:
                 pred = {"state": "UNKNOWN", "score": None, "reason": f"inference failed: {type(exc).__name__}", "model_version": "unavailable"}
-            if generation != replay_generation or not grid.replay_running:
+            if generation != app.state.replay_generation or not grid.replay_running:
                 return
             grid.apply_prediction(cid, rev, pred)
-        site.tick()
         grid.replay_index = (index + 1) % max_len
+        app.state.site.tick()
         await asyncio.sleep(1)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    control_loop.tick_once()  # initial publication before serving reads
-    control_loop.start()
+    initialize_state(app)
+    app.state.control_loop.start()
     try:
         yield
     finally:
-        await control_loop.stop()
-        if replay_task:
-            replay_task.cancel()
+        await app.state.control_loop.stop()
+        if app.state.replay_task:
+            app.state.replay_task.cancel()
+            try:
+                await app.state.replay_task
+            except asyncio.CancelledError:
+                pass
+        for connection in list(app.state.manager.active_connections):
+            await connection.close()
+        app.state.manager.active_connections.clear()
+        app.state.grid.storage.engine.dispose()
 
-app = FastAPI(
-    title="PriorityGrid API",
-    description="Backend API for the PriorityGrid decision-and-control application.",
-    version="1.0.0",
-    lifespan=lifespan
-)
 
-# CORS Configuration
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+def get_grid_state(request: Request) -> GridState:
+    return request.app.state.grid
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-@app.get("/api/v1/health")
-async def health_check():
+router = APIRouter()
+ELECTRICAL_TIMEOUT_S = 5
+
+
+@router.get("/api/v1/health", response_model=HealthResponse)
+async def health_check(request: Request):
+    control_loop = request.app.state.control_loop
     return {
         "status": "ok",
         "application": "PriorityGrid",
         "control_loop": control_loop.health(),
     }
 
-@app.get("/api/v1/snapshot", response_model=SystemSnapshot)
-async def get_snapshot():
-    snapshot = campus_snapshot()
+@router.get("/api/v1/snapshot", response_model=SystemSnapshot)
+async def get_snapshot(request: Request):
+    site = request.app.state.site
+    snapshot = campus_snapshot(site)
     if snapshot is None:
         raise HTTPException(503, "control state not published yet")
     return snapshot
 
-@app.get("/api/v1/model/status")
-async def model_status():
+@router.get("/api/v1/model/status", response_model=ModelStatusResponse)
+async def model_status(request: Request):
+    grid = request.app.state.grid
     return grid.model.status()
 
-@app.get("/api/v1/visualizers/classrooms")
-async def get_classroom_demo():
-    return with_site(*site.read(classroom_demo.snapshot))
+@router.get("/api/v1/visualizers/classrooms")
+async def get_classroom_demo(request: Request):
+    site = request.app.state.site
+    classroom_demo = request.app.state.classroom_demo
+    return visualizer_snapshot(site, classroom_demo)
 
-@app.post("/api/v1/visualizers/classrooms")
-async def act_classroom_demo(req: ClassroomDemoAction):
+@router.post("/api/v1/visualizers/classrooms")
+async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
+    site = request.app.state.site
+    classroom_demo = request.app.state.classroom_demo
     if (req.action in ("scan", "unscan")) != (req.classroom_id is not None):
         raise HTTPException(422, "classroom_id is required only for scan and unscan")
     if (req.action == "set_capacity") != (req.capacity_w is not None):
@@ -215,16 +211,20 @@ async def act_classroom_demo(req: ClassroomDemoAction):
     _, receipt = site.command(f"classroom.{req.action}",
                               lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w))
     data, identity = site.read(classroom_demo.snapshot)
-    return with_site(data, identity) | {"command": receipt}
+    return with_contract(data, site) | {"command": receipt}
 
-@app.get("/api/v1/visualizers/hospital")
-async def get_hospital_demo():
-    return with_site(*site.read(hospital_demo.snapshot))
+@router.get("/api/v1/visualizers/hospital")
+async def get_hospital_demo(request: Request):
+    site = request.app.state.site
+    hospital_demo = request.app.state.hospital_demo
+    return visualizer_snapshot(site, hospital_demo)
 
-@app.post("/api/v1/visualizers/hospital")
-async def act_hospital_demo(req: HospitalDemoAction):
+@router.post("/api/v1/visualizers/hospital")
+async def act_hospital_demo(request: Request, req: HospitalDemoAction):
+    site = request.app.state.site
+    hospital_demo = request.app.state.hospital_demo
     if req.scenario is not None:
-        return hospital_snapshot(req.scenario)
+        return with_contract(hospital_snapshot(req.scenario), site)
     if req.action is None:
         raise HTTPException(422, "either action or scenario must be provided")
     if req.capacity_w is not None:
@@ -233,11 +233,12 @@ async def act_hospital_demo(req: HospitalDemoAction):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
     _, receipt = site.command(f"hospital.{req.action}", lambda: hospital_demo.act(req.action, req.zone_id, req.capacity_w))
     data, identity = site.read(hospital_demo.snapshot)
-    return with_site(data, identity) | {"command": receipt}
+    return with_contract(data, site) | {"command": receipt}
 
-
-@app.post("/api/v1/activity/observations")
-async def post_activity_observation(req: ActivityObservationRequest):
+@router.post("/api/v1/activity/observations", response_model=ActivityObservationResponse)
+async def post_activity_observation(request: Request, req: ActivityObservationRequest):
+    grid = request.app.state.grid
+    site = request.app.state.site
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
     if req.source not in ("RECORDED_REPLAY", "SIMULATED"):
@@ -267,18 +268,20 @@ async def post_activity_observation(req: ActivityObservationRequest):
     return {"accepted": True, "applied": applied, "revision": revision,
             "activity": grid.activity[req.classroom_id]}
 
-@app.post("/api/v1/replay")
-async def replay_action(req: ReplayActionRequest):
-    global replay_task, replay_generation
+@router.post("/api/v1/replay", response_model=ReplayActionResponse)
+async def replay_action(request: Request, req: ReplayActionRequest):
+    grid = request.app.state.grid
+    site = request.app.state.site
+    replay_data = request.app.state.replay_data
     if req.action not in ("start", "pause", "reset"):
         raise HTTPException(422, "action must be start, pause, or reset")
     max_len = max((len(rows) for rows in replay_data.values()), default=0)
     if req.action == "start" and not max_len:
         raise HTTPException(409, "recorded replay data is unavailable")
     if req.action == "reset":
-        replay_generation += 1
-        if replay_task and not replay_task.done():
-            replay_task.cancel()
+        request.app.state.replay_generation += 1
+        if request.app.state.replay_task and not request.app.state.replay_task.done():
+            request.app.state.replay_task.cancel()
         grid.replay_index = 0
         grid.replay_running = False
         for cid in ("CR1", "CR2", "CR3"):
@@ -291,20 +294,22 @@ async def replay_action(req: ReplayActionRequest):
                                   "model_version": "unavailable", "priority": "UNKNOWN",
                                   "evidence": {key: None for key in FEATURES}}
     elif req.action == "pause":
-        replay_generation += 1
+        request.app.state.replay_generation += 1
         grid.replay_running = False
     elif not grid.replay_running:
         for cid in ("CR1", "CR2", "CR3"):
             grid.set_classroom_load(cid, True)
         grid.replay_running = True
-        replay_generation += 1
-        replay_task = asyncio.create_task(run_replay(replay_generation))
+        request.app.state.replay_generation += 1
+        request.app.state.replay_task = asyncio.create_task(run_replay(request.app, request.app.state.replay_generation))
     grid.replay_length = max_len
     site.commit(f"campus.replay_{req.action}")
     return {"running": grid.replay_running, "index": grid.replay_index, "length": max_len}
 
-@app.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
-async def process_rfid_scan(req: RfidScanRequest):
+@router.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
+async def process_rfid_scan(request: Request, req: RfidScanRequest):
+    grid = request.app.state.grid
+    site = request.app.state.site
     evt_type, class_id, class_name, service_id = grid.process_rfid_scan(req.uid)
     site.commit("campus.rfid_scan")
     return RfidScanResponse(
@@ -315,8 +320,10 @@ async def process_rfid_scan(req: RfidScanRequest):
         event_type=evt_type
     )
 
-@app.post("/api/v1/simulation/capacity", response_model=CapacityChangeResponse)
-async def change_capacity(req: CapacityChangeRequest):
+@router.post("/api/v1/simulation/capacity", response_model=CapacityChangeResponse)
+async def change_capacity(request: Request, req: CapacityChangeRequest):
+    grid = request.app.state.grid
+    site = request.app.state.site
     grid.set_capacity(req.capacity_w)
     site.commit("campus.capacity")
     return CapacityChangeResponse(
@@ -325,8 +332,10 @@ async def change_capacity(req: CapacityChangeRequest):
         control_revision=grid.control_revision
     )
 
-@app.post("/api/v1/simulation/classroom-load", response_model=ClassroomLoadResponse)
-async def change_classroom_load(req: ClassroomLoadRequest):
+@router.post("/api/v1/simulation/classroom-load", response_model=ClassroomLoadResponse)
+async def change_classroom_load(request: Request, req: ClassroomLoadRequest):
+    grid = request.app.state.grid
+    site = request.app.state.site
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
     grid.set_classroom_load(req.classroom_id, req.active)
@@ -337,8 +346,10 @@ async def change_classroom_load(req: ClassroomLoadRequest):
         load_event_active=req.active
     )
 
-@app.post("/api/v1/simulation/feeder", response_model=FeederChangeResponse)
-async def change_feeder(req: FeederChangeRequest):
+@router.post("/api/v1/simulation/feeder", response_model=FeederChangeResponse)
+async def change_feeder(request: Request, req: FeederChangeRequest):
+    grid = request.app.state.grid
+    site = request.app.state.site
     if req.feeder not in ("A", "B"):
         raise HTTPException(422, "feeder must be A or B")
     grid.set_feeder(req.feeder, req.available)
@@ -350,26 +361,30 @@ async def change_feeder(req: FeederChangeRequest):
         control_revision=grid.control_revision
     )
 
-@app.websocket("/ws/live")
+@router.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
+    site = websocket.app.state.site
+    manager = websocket.app.state.manager
     await manager.connect(websocket)
-    snapshot = campus_snapshot()
+    snapshot = campus_snapshot(site)
     if snapshot is not None:
-        await websocket.send_text(socket_payload(snapshot))
+        await websocket.send_text(socket_payload(snapshot, site))
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-
-@app.get("/api/v1/allocation/policy")
-async def read_allocation_policy():
+@router.get("/api/v1/allocation/policy")
+async def read_allocation_policy(request: Request):
+    grid = request.app.state.grid
+    site = request.app.state.site
     return site.read(lambda: grid.policy.model_dump())[0]
 
-
-@app.put("/api/v1/allocation/policy")
-async def change_allocation_policy(policy: AllocationPolicy):
+@router.put("/api/v1/allocation/policy")
+async def change_allocation_policy(request: Request, policy: AllocationPolicy):
+    grid = request.app.state.grid
+    site = request.app.state.site
     def apply():
         with grid._lock:
             grid.policy = policy
@@ -378,14 +393,10 @@ async def change_allocation_policy(policy: AllocationPolicy):
     _, receipt = site.command("allocation_policy", apply)
     return {"policy": policy.model_dump(), "receipt": receipt}
 
-
-# Optional studies serialize independently of the control loop. Timed-out work keeps the lock until done.
-ELECTRICAL_TIMEOUT_S = 5
-electrical_study_lock = asyncio.Lock()
-
-
-@app.post("/api/v1/studies/electrical", response_model=ElectricalStudyResponse)
-async def electrical_study(inputs: ElectricalInput):
+@router.post("/api/v1/studies/electrical", response_model=ElectricalStudyResponse)
+async def electrical_study(request: Request, inputs: ElectricalInput):
+    site = request.app.state.site
+    electrical_study_lock = request.app.state.electrical_study_lock
     if electrical_study_lock.locked():
         raise HTTPException(503, "Electrical study busy; retry later")
     await electrical_study_lock.acquire()
@@ -403,3 +414,35 @@ async def electrical_study(inputs: ElectricalInput):
     if site.identity() != identity:
         raise HTTPException(409, "Site run/revision changed during study; discard and retry")
     return {"site": identity, "result": result.model_dump(), "diagnosis": diagnose_study(result)}
+
+def with_contract(data, site):
+    data = with_site(data, site.identity())
+    data["contract"] = {"identity": {**site.grid.identity(), "run_id": site.run_id,
+        "state_revision": site.revision}, "zone_totals": {}}
+    return data
+
+
+def visualizer_snapshot(site, demo):
+    with site._lock:
+        return with_contract(demo.snapshot(), site)
+
+
+@router.post("/api/v1/hardware/ack", response_model=HardwareAckResponse)
+async def hardware_ack(request: Request, req: HardwareAckRequest):
+    try:
+        request.app.state.site.command("hardware_ack", lambda: request.app.state.grid.record_ack(
+            req.device_boot, req.sequence, req.session, req.confirmed_mask, req.provenance))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return {"accepted": True}
+
+
+def create_app():
+    application = FastAPI(title="PriorityGrid API", version="1.0.0", lifespan=lifespan)
+    application.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+    application.include_router(router)
+    return application
+
+
+app = create_app()

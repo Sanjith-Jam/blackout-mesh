@@ -203,7 +203,7 @@ def test_live_campus_reports_constraint_separately(monkeypatch):
     assert fault["has_fault"] is False and "not a diagnosed fault" in fault["supply_constraint"]
     client.post("/api/v1/simulation/capacity", json={"capacity_w": 14000})
     client.post("/api/v1/simulation/feeder", json={"feeder": "A", "available": False})
-    main.site.tick()
+    main.app.state.site.tick()
     fault = client.get("/api/v1/snapshot").json()["fault_diagnosis"]
     assert fault["has_fault"] and fault["affected_assets"] == ["FEEDER_A"] and fault["status"] == "FAULT_DETECTED"
 
