@@ -16,6 +16,7 @@ const LINK_TEXT: Record<string, string> = {
 /** Physical boards: board A (reader + buttons) and board B (LEDs), as reported by the gateway bridge. */
 export default function HardwarePanel({ hardware }: { hardware?: HardwareStatus }) {
   const [port, setPort] = useState('COM4');
+  const [board, setBoard] = useState<'A' | 'B'>('A');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hw = hardware ?? { link: 'NOT_CONFIGURED', commanded_mask: null, confirmed_mask: null };
@@ -49,13 +50,18 @@ export default function HardwarePanel({ hardware }: { hardware?: HardwareStatus 
       </div>
       <p className="hardware-panel__note">{confirmedFresh ? 'LEDs confirmed by board B.' : 'Waiting for board B to confirm the latest command.'}</p>
       {hw.recent_events && hw.recent_events.length > 0 && <p className="hardware-panel__note">Last input: {hw.recent_events[hw.recent_events.length - 1].action.replace(/_/g, ' ').toLowerCase()}{hw.recent_events[hw.recent_events.length - 1].room ? ` (room ${hw.recent_events[hw.recent_events.length - 1].room})` : ''}</p>}
-      <button className="classroom-demo__button" disabled={busy} onClick={() => void run(disconnectHardware)}>Disconnect board A</button>
+      <button className="classroom-demo__button" disabled={busy} onClick={() => void run(disconnectHardware)}>Disconnect</button>
     </> : <>
-      <p className="hardware-panel__note">Plug board A in by USB, enter its port and connect.</p>
+      <p className="hardware-panel__note">Plug board A in by USB, enter its port and connect. With only board B, choose "Board B only": the website's controls drive its LEDs and there is no card reader.</p>
       <div className="hardware-panel__connect">
         <label htmlFor="gateway-port">Board A port</label>
         <input id="gateway-port" value={port} onChange={e => setPort(e.target.value)} />
-        <button className="classroom-demo__button" disabled={busy || !port.trim()} onClick={() => void run(() => connectHardware(port.trim()))}>Connect</button>
+        <label htmlFor="gateway-board">Board on this port</label>
+        <select id="gateway-board" value={board} onChange={e => setBoard(e.target.value as 'A' | 'B')}>
+          <option value="A">Board A (reader + buttons)</option>
+          <option value="B">Board B only (LEDs)</option>
+        </select>
+        <button className="classroom-demo__button" disabled={busy || !port.trim()} onClick={() => void run(() => connectHardware(port.trim(), board))}>Connect</button>
       </div>
     </>}
     {(error || hw.port_error) && <p className="hardware-panel__error" role="alert">{error ?? hw.port_error}</p>}

@@ -1253,6 +1253,12 @@ export interface components {
         GatewayConnect: {
             /** Port */
             port: string;
+            /**
+             * Board
+             * @default A
+             * @enum {string}
+             */
+            board: "A" | "B";
         };
         /** HTTPValidationError */
         HTTPValidationError: {

@@ -131,8 +131,8 @@ export async function getClassroomDemo(signal?: AbortSignal): Promise<ClassroomD
   return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', { signal });
 }
 
-export async function connectHardware(port: string): Promise<HardwareStatus> {
-  return fetchJson<HardwareStatus>('/api/v1/hardware/connect', { method: 'POST', body: JSON.stringify({ port }) });
+export async function connectHardware(port: string, board: 'A' | 'B' = 'A'): Promise<HardwareStatus> {
+  return fetchJson<HardwareStatus>('/api/v1/hardware/connect', { method: 'POST', body: JSON.stringify({ port, board }) });
 }
 
 export async function disconnectHardware(): Promise<HardwareStatus> {

@@ -3577,6 +3577,15 @@
           "port": {
             "type": "string",
             "title": "Port"
+          },
+          "board": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B"
+            ],
+            "title": "Board",
+            "default": "A"
           }
         },
         "additionalProperties": false,

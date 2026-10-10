@@ -32,3 +32,17 @@ Arduino IDE: board "ESP32 Dev Module", **Upload Speed 115200** (921600 fails on 
 ```
 
 Pairing with board A, running the full demo and the test cases: [docs/ESP32_A_CONNECTION_GUIDE.md](../docs/ESP32_A_CONNECTION_GUIDE.md).
+
+## Drive board B from the website without board A
+
+With only board B plugged in, the backend can stand in for board A in software and send LED
+commands over B's USB bench interface. No `secrets.h` is needed for this mode.
+
+1. Flash board B (above) and start the backend and frontend.
+2. On the Classrooms page, open **Physical boards**, enter B's port (for example `COM3`), choose
+   **Board B only (LEDs)** and press **Connect**. Or start the backend with
+   `BLACKOUT_GATEWAY_PORT=COM3` and `BLACKOUT_GATEWAY_BOARD=B`.
+3. Scan rooms and change the supply. A room's LED is on when the room has a session and all its
+   equipment is served, and the panel shows it confirmed only after board B's own ACK.
+
+There is no card reader or buttons in this mode; the website's controls are the inputs.
