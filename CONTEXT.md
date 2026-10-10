@@ -1,5 +1,13 @@
 # Blackout Mesh — implementation context
 
+## One-authority migration follow-up (#33) — 2026-10-10
+
+- **One feeder B decision.** The campus allocator decides feeder A and grants feeder B a budget; the classroom leaf allocation is the only decision inside it. L3–L5 now publish `requested_w`/`served_w` from their leaves (partial service), and every total reconciles from leaves through feeders to the source on `/demo`, `/classrooms` and `/hospital`. Frontend totals use `served_w`.
+- **Named teaching scenarios.** `GET /api/v1/site/scenarios`, `POST /api/v1/site/scenario` (`normal`, `source_shortage`, `feeder_b_trip`, `classroom_overload`, `hospital_overload`), derived from the active site profile (#26). The identity's `scenario` shows the active one or `custom`.
+- Sessions (#21/#45), hospital mapping (#48) and per-app lifecycle (#11) had already landed. Details and what is left: `docs/CATALOG_MIGRATION.md`.
+
+Verification: backend suite **224 passed, 2 skipped**; frontend `npm run build`, `npm test` (18) and `npm run test:contract` pass; generated client in sync. No browser or hardware run.
+
 ## Issue #15 cleanup — 2026-10-10
 
 Removed three empty `.gitkeep` placeholders, pinned backend runtime/test dependencies from a clean Python 3.14 install (195 passed, 2 skipped) and fixed the stale `--with httpx` test command in `AGENTS.md`. Every other script and both firmware trees have callers and stay. Inventory and evidence: [docs/ISSUE_15_DELIVERY.md](docs/ISSUE_15_DELIVERY.md).
