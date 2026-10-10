@@ -318,7 +318,7 @@ def register_district():
             before = district.mutable_state()
             result = await asyncio.to_thread(district.apply_action, body)
             if not result:
-                raise HTTPException(422, "action is invalid for the current district state")
+                raise HTTPException(422, refusal_reason(district, body))
             district.revision += 1
             district.accepted_actions[body.action_id] = district.revision
             try:
@@ -374,6 +374,18 @@ def register_district():
             return await asyncio.to_thread(district.snapshot)
 
     return router
+
+
+def refusal_reason(district, body):
+    """Specific, safe explanation for a refused action."""
+    restoration = district._restoration(None)
+    if body.action in (DistrictActionName.apply_recovery, DistrictActionName.clear_fault) and not district._evidence_ready():
+        return f"evidence gate not satisfied: {restoration['evidence_rule']}; {restoration['stable_evidence_count']} healthy sample(s) counted"
+    if body.action == DistrictActionName.apply_recovery:
+        return restoration["reason"] if district.proposal else "no validated recovery proposal to apply"
+    if body.action == DistrictActionName.record_observation:
+        return "observation is duplicate, reordered, stale or malformed; it was not counted"
+    return "action is invalid for the current district state"
 
 
 def commit_revision(district, record_id, action, snapshot):

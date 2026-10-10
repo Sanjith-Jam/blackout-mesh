@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { districtAction, generateDistrictTopology, getDistrictSnapshot, ApiError } from '../api';
 import type { DistrictActionName, DistrictSnapshot } from '../types';
-import DistrictMap, { type DistrictEdge, type DistrictEdgeState, type DistrictFeature, type DistrictNode } from './DistrictMap';
+import DistrictMap, { type LoadStatus, type DistrictEdge, type DistrictEdgeState, type DistrictFeature, type DistrictNode } from './DistrictMap';
 import './DistrictDemo.css';
 import DistrictApplianceTrace from './DistrictApplianceTrace';
 import DistrictRecoveryProposal from './DistrictRecoveryProposal';
@@ -31,6 +31,7 @@ export function transformerReading(sensor: DistrictSnapshot['state']['transforme
 
 function errorMessage(error: unknown) {
   if (error instanceof ApiError && error.status === 409) return 'State changed before this action was applied. The latest snapshot has been refreshed.';
+  if (error instanceof ApiError) return `Refused: ${error.message}`;
   return error instanceof Error ? error.message : 'District action failed.';
 }
 
@@ -62,6 +63,40 @@ export function clearFaultGate(selectedEdgeId: string | null, faultedEdgeIds: st
 
 export function observationRequest(lastSequence: number | null | undefined, healthy: boolean, now = new Date()) {
   return { sequence: (lastSequence ?? 0) + 1, observed_at: now.toISOString(), healthy, source: 'SIMULATED_OBSERVATION_ADAPTER' as const };
+}
+
+export function loadStatuses(nodes: DistrictNode[], loads: DistrictSnapshot['state']['loads']) {
+  const byBuilding = new Map(loads.map(load => [load.building_id, load]));
+  const result: Record<string, LoadStatus> = {};
+  for (const node of nodes) {
+    const load = node.building_id ? byBuilding.get(node.building_id) : undefined;
+    if (!load) continue;
+    result[node.id] = load.requested_w <= 0 ? 'idle' : load.served_w >= load.requested_w ? 'served' : load.served_w > 0 ? 'partial' : 'unserved';
+  }
+  return result;
+}
+
+type Impact = { served_w: number; unmet_w: number; critical_unmet_w: number; affected: number };
+export function impactOf(snapshot: DistrictSnapshot): Impact {
+  const loads = snapshot.state.loads;
+  return { served_w: loads.reduce((sum, load) => sum + load.served_w, 0), unmet_w: snapshot.state.unmet_w,
+    critical_unmet_w: snapshot.state.critical_shortfall_w, affected: loads.filter(load => load.unmet_w > 0).length };
+}
+
+export function recoverySteps(snapshot: DistrictSnapshot) {
+  const r = snapshot.state.restoration;
+  const faulted = snapshot.state.faults.length > 0;
+  const applied = (r.applied_edge_ids?.length ?? 0) > 0;
+  const proposal = r.proposal;
+  const proposed = !!r.candidate_edge_id && !r.proposal_stale;
+  const blocked = !!proposal && !proposal.candidate_edge_ids;
+  return [
+    { label: 'Fault', state: faulted ? 'done' : 'todo', detail: faulted ? `${snapshot.state.faults.length} open` : 'None injected' },
+    { label: 'Proposal', state: applied || proposed ? 'done' : blocked || r.proposal_stale ? 'blocked' : 'todo',
+      detail: applied ? 'Applied' : proposed ? `${proposal?.solver_status} · AC ${proposal?.ac?.status ?? 'unknown'}` : r.proposal_stale ? 'Stale; propose again' : blocked ? (proposal?.solver_status ?? 'Refused') : 'Not proposed' },
+    { label: 'Evidence', state: applied || r.evidence_ready ? 'done' : 'todo', detail: applied ? 'Satisfied' : `${r.stable_evidence_count ?? 0} / 2 fresh samples` },
+    { label: 'Apply', state: applied ? 'done' : proposed && r.evidence_ready ? 'todo' : 'blocked', detail: applied ? `Modeled: ${r.applied_edge_ids?.join(', ')}` : proposed && r.evidence_ready ? 'Permitted' : 'Locked' },
+  ] as const;
 }
 
 export function TransformerCutaway({ componentId, suspectedPart }: { componentId: string; suspectedPart: string | null }) {
@@ -112,6 +147,7 @@ export default function DistrictDemo() {
   const [transformerScenario, setTransformerScenario] = useState('overload');
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [incident, setIncident] = useState<{ before?: Impact; fault?: Impact; recovered?: Impact }>({});
   const previousGenerationStatus = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -127,8 +163,12 @@ export default function DistrictDemo() {
     setFeedback('Applying simulated action…');
     await client.cancelQueries({ queryKey: QUERY_KEY });
     try {
+      const before = impactOf(snapshot);
       const updated = await operation(snapshot);
       client.setQueryData(QUERY_KEY, updated);
+      if (updated.state.faults.length > snapshot.state.faults.length && !snapshot.state.faults.length) setIncident({ before, fault: impactOf(updated) });
+      else if ((updated.state.restoration.applied_edge_ids?.length ?? 0) > (snapshot.state.restoration.applied_edge_ids?.length ?? 0)) setIncident(current => ({ ...current, recovered: impactOf(updated) }));
+      else if (updated.identity.run_id !== snapshot.identity.run_id) setIncident({});
       setFeedback(typeof success === 'function' ? success(updated) : success);
     } catch (error) {
       setFeedback(errorMessage(error));
@@ -185,7 +225,8 @@ export default function DistrictDemo() {
       aria-selected={tab === item.id} aria-controls={`district-panel-${item.id}`} onClick={() => setTab(item.id)}>{item.label}</button>)}</div>
     <div className="district-workspace" id={`district-panel-${tab}`} role="tabpanel" aria-labelledby={`district-tab-${tab}`}>
       <section className="district-card" aria-label="District map"><div className="district-card-header"><h2>{snapshot.site.name} · {snapshot.map.radius_m.toLocaleString()} m OSM context</h2><p>{buildings.length} cached building footprints · {features.filter(feature => feature.kind === 'road').length} road features. Synthetic network generation still uses the preserved 500 m cache.</p></div>
-        <DistrictMap features={features} nodes={nodes} edges={edges} edgeStates={edgeStates} selected={selected} onSelect={setSelected} mode={tab} />
+        <p className="district-impact" role="status" aria-label="Outage impact"><span className={snapshot.state.loads.some(load => load.unmet_w > 0) ? 'is-bad' : ''}>{snapshot.state.loads.filter(load => load.unmet_w > 0).length} of {snapshot.state.loads.length} loads affected</span><span className={snapshot.state.critical_shortfall_w > 0 ? 'is-bad' : ''}>Critical unmet {number(snapshot.state.critical_shortfall_w, 'W')}</span><span>Total unmet {number(snapshot.state.unmet_w, 'W')}</span><span>{snapshot.state.faults.length} simulated fault{snapshot.state.faults.length === 1 ? '' : 's'}</span></p>
+        <DistrictMap features={features} nodes={nodes} edges={edges} edgeStates={edgeStates} selected={selected} onSelect={setSelected} mode={tab} loadStatus={loadStatuses(nodes, snapshot.state.loads)} />
         <div className="district-legend" aria-label="Map legend"><span className="district-key is-source">Synthetic source</span><span className="district-key is-transformer">Synthetic transformer</span><span className="district-key is-load">Synthetic load endpoint</span><span className="district-key is-junction">Synthetic junction</span><span className="district-key is-fault">Simulated fault</span><span className="district-key is-open">Open line</span><span className="district-key is-tie">Declared tie</span><span className="district-key is-road">Cached road</span><span>Sand shapes: cached building footprints</span></div>
         <p className="district-attribution">{snapshot.map.attribution} · {snapshot.map.license} · <a href={snapshot.map.source_url} target="_blank" rel="noreferrer">map source</a>, retrieved {snapshot.map.retrieved}. Source snapshot {snapshot.map.source_sha256.slice(0, 12)}. Synthetic wires do not represent real feeders.</p>
       </section>
@@ -211,6 +252,8 @@ export default function DistrictDemo() {
           <div className="district-data-table"><table><caption>Profile hourly energy profile · imports are scheduled requests; W over each one-hour interval equals Wh</caption><thead><tr><th>Hour</th><th>Demand (W)</th><th>PV (W)</th><th>Baseline scheduled import (W)</th><th>Dispatch scheduled import (W)</th><th>Battery state (Wh)</th><th>Loss (Wh)</th></tr></thead><tbody>{snapshot.energy.profile.map(row => <tr key={row.hour} aria-current={row.hour === snapshot.energy.hour ? 'time' : undefined}><th>{row.hour}:00</th><td>{number(row.demand_w, 'W')}</td><td>{number(row.pv_w, 'W')}</td><td>{number(row.baseline_grid_w, 'W')}</td><td>{number(row.dispatch_grid_w, 'W')}</td><td>{number(row.battery_soc_wh, 'Wh')}</td><td>{number(row.loss_wh, 'Wh')}</td></tr>)}</tbody></table></div>
           <p>Import values are model output; a profile comparison is not a real-world savings claim.</p><div className="district-actions"><button disabled={disabled} onClick={() => void submit(current => action(current, 'advance_hour'), 'Advanced the simulated energy interval.')}>Advance one hour</button><button className="is-secondary" disabled={disabled} onClick={() => void submit(current => action(current, 'reset'), 'District simulation reset.')}>Reset simulation</button></div></>}
         {tab === 'healing' && <><h2>Fault isolation and recovery</h2><p>Inject a line-open fault, propose the best permitted tie configuration, and apply only after fresh sequenced observations and AC revalidation. Simulated state stays separate from physical confirmation.</p><p className="district-action-help">Priority tiers · {snapshot.state.loads[0]?.tier_provenance || 'provenance unavailable'}: {snapshot.state.loads[0]?.tier_rationale || 'Priority policy rationale unavailable.'}</p>
+          <ol className="district-steps" aria-label="Modeled recovery workflow">{recoverySteps(snapshot).map((step, index) => <li key={step.label} className={step.state === 'done' ? 'is-done' : step.state === 'blocked' ? 'is-blocked' : ''}><strong>{index + 1}. {step.label}</strong>{step.detail}</li>)}</ol>
+          {incident.before && <div className="district-data-table"><table><caption>Incident impact comparison · captured backend snapshots from this session</caption><thead><tr><th>Stage</th><th>Served</th><th>Critical unmet</th><th>Total unmet</th><th>Affected loads</th></tr></thead><tbody>{([['Before fault', incident.before], ['After fault', incident.fault], ['After recovery', incident.recovered]] as const).filter(([, row]) => row).map(([label, row]) => <tr key={label}><th>{label}</th><td>{number(row!.served_w, 'W')}</td><td>{number(row!.critical_unmet_w, 'W')}</td><td>{number(row!.unmet_w, 'W')}</td><td>{row!.affected}</td></tr>)}</tbody></table></div>}
           <div className="district-kpis"><Kpi label="Synthetic critical shortfall" value={number(snapshot.state.critical_shortfall_w, 'W')} /><Kpi label="Open faults" value={String(snapshot.state.faults.length)} /><Kpi label="Recovery proposal" value={String(restoration.candidate_edge_id || 'None')} /><Kpi label="Applied modeled ties" value={restoration.applied_edge_ids?.join(', ') || 'None'} /></div>
           <p>Source capacity: {number(snapshot.state.source_capacity_w, 'W')} · {snapshot.state.source_capacity_provenance} · {snapshot.state.source_capacity_note}. {snapshot.state.source_available ? 'Available in model.' : 'Unavailable in model.'} Evidence: {String(restoration.stable_evidence_count ?? 0)} healthy sample(s); rule: {restoration.evidence_rule || 'unknown'}; {restoration.evidence_ready ? 'satisfied' : 'not satisfied'}. {restoration.reason || ''}</p>
           <div className="district-actions"><button className="is-danger" disabled={disabled || !selectedEdge || selectedEdge.kind === 'tie' || !!selectedState?.faulted} onClick={() => selectedEdge && void submit(current => action(current, 'inject_fault', selectedEdge.id, 'line_open'), 'Simulated line fault injected; state recalculated.')}>Inject selected line fault</button>

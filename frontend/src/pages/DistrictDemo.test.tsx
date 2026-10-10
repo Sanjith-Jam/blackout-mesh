@@ -52,3 +52,14 @@ describe('district study evidence views', () => {
       .toBe('105 °C');
   });
 });
+
+import { wireState } from './DistrictMap';
+describe('outage visibility', () => {
+  it('never renders a closed de-energized line as live', () => {
+    const base = { id: 'e', closed: true, faulted: false, energized: true, flow_w: 0 };
+    expect(wireState(base)).toBe('');
+    expect(wireState({ ...base, energized: false })).toBe(' is-dead');
+    expect(wireState({ ...base, closed: false, energized: false })).toBe(' is-open');
+    expect(wireState({ ...base, faulted: true })).toBe(' is-faulted');
+  });
+});

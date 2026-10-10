@@ -35,6 +35,16 @@ export class ApiError extends Error {
   }
 }
 
+/** FastAPI `detail` as readable text (string, or the first validation message). */
+async function errorDetail(response: Response) {
+  try {
+    const body = await response.json() as { detail?: unknown };
+    if (typeof body.detail === 'string') return body.detail;
+    if (Array.isArray(body.detail) && body.detail[0]?.msg) return String(body.detail[0].msg);
+  } catch { /* non-JSON body */ }
+  return `HTTP error ${response.status}`;
+}
+
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -47,7 +57,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T>
     });
 
     if (!response.ok) {
-      throw new ApiError(response.status, `HTTP error ${response.status}`);
+      throw new ApiError(response.status, await errorDetail(response));
     }
 
     return await response.json() as T;
