@@ -180,8 +180,8 @@ export default function HospitalDemo() {
           const [low, high] = snapshot.capacity_range_w;
           const value = capacityDraft ?? snapshot.capacity_w;
           return <div className="classroom-demo__slider">
-            <label htmlFor="hospital-capacity">Supply limit <strong>{value.toLocaleString()} W</strong></label>
-            <Slider value={[value]} min={low} max={high} step={100} onValueChange={(vals: number[]) => onCapacityChange(vals[0])} />
+            <label id="hospital-capacity-label">Supply limit <strong>{value.toLocaleString()} W</strong></label>
+            <Slider aria-labelledby="hospital-capacity-label" value={[value]} min={low} max={high} step={100} onValueChange={(vals: number[]) => onCapacityChange(vals[0])} />
             <div className="classroom-demo__slider-scale"><span>{low.toLocaleString()} W</span><span>{high.toLocaleString()} W</span></div>
           </div>;
         })()}

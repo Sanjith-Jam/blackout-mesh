@@ -59,14 +59,14 @@ describe('Classrooms page (#16)', () => {
   it('debounces the supply slider into one validated command', async () => {
     const api = mockFetch({ [`GET ${PATH}`]: () => ({ json: classrooms }), [`POST ${PATH}`]: () => ({ json: classrooms }) });
     renderPage();
-    const slider = await screen.findByLabelText(/Supply limit/);
-    fireEvent.change(slider, { target: { value: '4000' } });
-    fireEvent.change(slider, { target: { value: '4500' } });
-    fireEvent.change(slider, { target: { value: '5000' } });
+    const slider = await screen.findByRole('slider', { name: /Supply limit/ });
+    fireEvent.keyDown(slider, { key: 'ArrowRight', code: 'ArrowRight' });
+    fireEvent.keyDown(slider, { key: 'ArrowRight', code: 'ArrowRight' });
+    fireEvent.keyDown(slider, { key: 'ArrowRight', code: 'ArrowRight' });
     expect(api.posts()).toHaveLength(0);
     await act(async () => { vi.advanceTimersByTime(350); });
     await waitFor(() => expect(api.posts()).toHaveLength(1));
-    expect(api.posts()[0].body).toEqual({ action: 'set_capacity', capacity_w: 5000 });
+    expect(api.posts()[0].body).toEqual({ action: 'set_capacity', capacity_w: 3300 });
   });
 
   it('keeps the last state and shows an alert when a command is rejected', async () => {
