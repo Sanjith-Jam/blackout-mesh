@@ -8,6 +8,7 @@ import DistrictApplianceTrace from './DistrictApplianceTrace';
 import DistrictRecoveryProposal from './DistrictRecoveryProposal';
 import DistrictAuditReplay from './DistrictAuditReplay';
 import DistrictEnergyCharts from './DistrictEnergyCharts';
+import DistrictAssetInspector from './DistrictAssetInspector';
 
 const TABS = [
   { id: 'shift', label: 'SHIFT network' }, { id: 'energy', label: 'Energy' },
@@ -261,6 +262,7 @@ export default function DistrictDemo() {
       <section className="district-card" aria-label="District map"><div className="district-card-header"><h2>{snapshot.site.name} · {snapshot.map.radius_m.toLocaleString()} m OSM context</h2><p>{buildings.length} cached building footprints · {features.filter(feature => feature.kind === 'road').length} road features. Synthetic network generation still uses the preserved 500 m cache.</p></div>
         <p className="district-impact" role="status" aria-label="Outage impact"><span className={snapshot.state.loads.some(load => load.unmet_w > 0) ? 'is-bad' : ''}>{snapshot.state.loads.filter(load => load.unmet_w > 0).length} of {snapshot.state.loads.length} loads affected</span><span className={snapshot.state.critical_shortfall_w > 0 ? 'is-bad' : ''}>Critical unmet {number(snapshot.state.critical_shortfall_w, 'W')}</span><span>Total unmet {number(snapshot.state.unmet_w, 'W')}</span><span>{snapshot.state.faults.length} simulated fault{snapshot.state.faults.length === 1 ? '' : 's'}</span></p>
         <DistrictMap features={features} nodes={nodes} edges={edges} edgeStates={edgeStates} selected={selected} onSelect={setSelected} mode={tab} loadStatus={loadStatuses(nodes, snapshot.state.loads)} />
+        <DistrictAssetInspector snapshot={snapshot} selected={selected} />
         <div className="district-legend" aria-label="Map legend"><span className="district-key is-source">Synthetic source</span><span className="district-key is-transformer">Synthetic transformer</span><span className="district-key is-load">Synthetic load endpoint</span><span className="district-key is-junction">Synthetic junction</span><span className="district-key is-fault">Simulated fault</span><span className="district-key is-open">Open line</span><span className="district-key is-tie">Declared tie</span><span className="district-key is-road">Cached road</span><span>Sand shapes: cached building footprints</span></div>
         <p className="district-attribution">{snapshot.map.attribution} · {snapshot.map.license} · <a href={snapshot.map.source_url} target="_blank" rel="noreferrer">map source</a>, retrieved {snapshot.map.retrieved}. Source snapshot {snapshot.map.source_sha256.slice(0, 12)}. Synthetic wires do not represent real feeders.</p>
       </section>
