@@ -101,6 +101,7 @@
 .district-list { margin: .75rem 0; padding-left: 1.2rem; line-height: 1.5; }
 .district-list li + li { margin-top: .35rem; }
 .district-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .9rem 0; }
+.district-action-help { margin: -.45rem 0 .9rem; color: var(--district-muted); font-size: .82rem; }
 .district-actions button { min-height: 44px; padding: .55rem .8rem; border: 1px solid var(--district-forest); border-radius: .5rem; background: var(--district-forest); color: #fff; font-weight: 700; }
 .district-actions button.is-secondary { background: transparent; color: var(--district-forest); }
 .district-actions button.is-danger { background: #842a29; border-color: #842a29; }
@@ -120,9 +121,14 @@
 .district-data-table td { font-variant-numeric: tabular-nums; }
 .district-meter { width: 100%; height: .65rem; border-radius: 99px; background: #dce2d8; overflow: hidden; }
 .district-meter > span { display: block; height: 100%; background: var(--district-forest); }
-.district-cutaway { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: 1rem 0; }
-.district-cutaway div { min-height: 3rem; display: grid; place-items: center; background: #e6e0d0; border: 2px solid #a89874; border-radius: .4rem; font-size: .75rem; font-weight: 700; }
-.district-cutaway .is-suspected { background: #f8b9a5; border-color: var(--district-alert); color: #54201d; }
+.district-cutaway { display: block; width: 100%; height: auto; max-height: 19rem; margin: 1rem 0; overflow: visible; }
+.district-cutaway .cutaway-tank { fill: #e6e0d0; stroke: #776b53; stroke-width: 3; }
+.district-cutaway .cutaway-oil { fill: #d8c99a; opacity: .7; }
+.district-cutaway .cutaway-part { fill: none; stroke: #594f3d; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.district-cutaway .cutaway-part text, .district-cutaway .cutaway-label, .district-cutaway > text { fill: #302c24; stroke: none; font: 700 13px sans-serif; }
+.district-cutaway .cutaway-part text { font-size: 12px; }
+.district-cutaway .cutaway-part.is-suspected { fill: #f8b9a5; stroke: var(--district-alert); }
+.district-cutaway .cutaway-part.is-suspected text { fill: #54201d; }
 .district-empty { padding: 2rem; text-align: center; color: var(--district-muted); }
 
 @media (max-width: 900px) {

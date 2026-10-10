@@ -59,10 +59,20 @@ export default function DistrictMap({ features, nodes, edges, edgeStates, select
         if (!a || !b) return null;
         const state = statesById.get(e.id);
         const [x1, y1] = project(a.lon, a.lat), [x2, y2] = project(b.lon, b.lat);
-        return <g key={e.id} role="button" tabIndex={0} aria-pressed={selected === e.id} aria-label={`${e.id} · ${e.kind} · ${state?.faulted ? 'faulted' : state?.closed === false ? 'open' : state?.energized ? 'energized' : 'unenergized'}`}
-          onClick={() => onSelect(e.id)} onKeyDown={event => activate(event, e.id)}>
+        return <g key={e.id}>
           <path d={`M${x1} ${y1} L${x2} ${y2}`} className={`wire${e.kind === 'tie' ? ' is-tie' : ''}${state?.faulted ? ' is-faulted' : state?.closed === false ? ' is-open' : ''}${selected === e.id ? ' is-selected' : ''}`} />
-          <path d={`M${x1} ${y1} L${x2} ${y2}`} stroke="transparent" strokeWidth="14" fill="none" />
+        </g>;
+      })}
+      {edges.map(e => {
+        const a = nodesById.get(e.from), b = nodesById.get(e.to);
+        if (!a || !b) return null;
+        const state = statesById.get(e.id);
+        const [x1, y1] = project(a.lon, a.lat), [x2, y2] = project(b.lon, b.lat);
+        return <g key={`hit-${e.id}`} className="edge-hit" role="button" tabIndex={0}
+          aria-pressed={selected === e.id}
+          aria-label={`${e.id} · ${e.kind} · ${state?.faulted ? 'faulted' : state?.closed === false ? 'open' : state?.energized ? 'energized' : 'unenergized'}`}
+          onClick={() => onSelect(e.id)} onKeyDown={event => activate(event, e.id)}>
+          <path d={`M${x1} ${y1} L${x2} ${y2}`} stroke="transparent" strokeWidth="18" fill="none" pointerEvents="stroke" />
         </g>;
       })}
       {nodes.map(n => {
