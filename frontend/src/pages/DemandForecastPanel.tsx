@@ -1,5 +1,17 @@
 import type { DemandForecast, DemoEvidence } from '../types';
 
+/** Compact top-of-page alert; advisory only, never changes allocation. */
+export function ForecastAlert({ forecast }: { forecast: DemandForecast }) {
+  if (forecast.status !== 'SHORTAGE_RISK') return null;
+  const last = forecast.points[forecast.points.length - 1];
+  const now = forecast.observations_w[forecast.observations_w.length - 1];
+  return <p className="city-forecast-alert" role="alert">
+    <strong>Early warning · possible shortfall within {forecast.first_shortage_s} s.</strong>{' '}
+    Now {now?.toLocaleString() ?? 'unknown'} W → forecast {last?.demand_w.toLocaleString() ?? 'unknown'} W at +60 s vs {forecast.capacity_w.toLocaleString()} W capacity.{' '}
+    <a href="#city-forecast">See forecast</a> · Advisory; trained on synthetic data.
+  </p>;
+}
+
 export default function DemandForecastPanel({ forecast, evidence, source, onSource, onNext, replayIndex }: {
   forecast: DemandForecast; evidence?: DemoEvidence; source: DemandForecast['source'];
   onSource: (source: DemandForecast['source']) => void; onNext: () => void; replayIndex: number;
@@ -12,7 +24,7 @@ export default function DemandForecastPanel({ forecast, evidence, source, onSour
   const predicted = points.map(p => `${x(p.ahead_s)},${y(p.demand_w)}`).join(' ');
   const band = [...points.map(p => `${x(p.ahead_s)},${y(p.upper_w)}`), ...[...points].reverse().map(p => `${x(p.ahead_s)},${y(p.lower_w)}`)].join(' ');
   const last = points[points.length - 1];
-  return <section className="city-panel" aria-label="Predictive demand forecast">
+  return <section className="city-panel" id="city-forecast" aria-label="Predictive demand forecast">
     <header className="city-panel-heading"><div><h2>Predictive AI · next 60 seconds</h2><p>Ridge regression trained on synthetic demand sessions</p></div></header>
     <div className="city-forecast-controls"><label>Observation source<select value={source} onChange={event => onSource(event.target.value as DemandForecast['source'])}>
       <option value="LIVE_REQUESTED_DEMAND">Live simulated demand</option><option value="SYNTHETIC_REPLAY">Synthetic rising-demand rehearsal</option>

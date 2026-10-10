@@ -7,7 +7,7 @@ import { servedWatts, type DemandForecast, type Snapshot } from '../types';
 import { BenchmarkCard } from '../components/ui/benchmark-card';
 import HardwarePanel from './HardwarePanel';
 import CityGrid, { feederState } from './CityGrid';
-import DemandForecastPanel from './DemandForecastPanel';
+import DemandForecastPanel, { ForecastAlert } from './DemandForecastPanel';
 import './CityDemo.css';
 
 export function decisionReason(snapshot: Snapshot, serviceId: string) {
@@ -54,6 +54,7 @@ export default function CityDemo() {
   ];
   return <div className="city-demo">
     <header className="city-heading"><div><span className="city-eyebrow">Blackout Mesh / city command center</span><h1>Navigate the outage.</h1><p>See what lost power, why it was cut, and what can safely recover next.</p></div><div className="city-live"><span className={`city-dot ${city.isError ? 'is-shed' : 'is-served'}`} />{city.isError ? 'Stale · last known state' : 'Live simulation'}<small>Run {snapshot.site?.run_id}</small></div></header>
+    <ForecastAlert forecast={city.data.forecast} />
     <p className="city-boundary">Illustrative city; electrical demand and outages are simulated at lab scale. USB / ESP-NOW status is physical only when a device reports it.</p>
     {city.isError && <p className="city-warning" role="alert">Connection lost. Controls are disabled; the grid shows the last known snapshot.</p>}
     <section className="city-events" aria-label="City event controls"><span><Zap size={18} aria-hidden="true" /> One event updates the whole grid</span>
