@@ -24,7 +24,7 @@ jobs:
         working-directory: frontend
       - run: npm audit --audit-level=moderate
         working-directory: frontend
-      - run: PYTHONPATH=backend python -m pytest backend/tests/test_frontend_contract.py -q
+      - run: PYTHONPATH=backend python -m pytest backend/tests -q
       - run: npm run build && npm run test:contract && npm test
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
