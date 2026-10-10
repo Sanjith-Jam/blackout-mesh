@@ -1135,7 +1135,7 @@ export interface components {
          * DistrictActionName
          * @enum {string}
          */
-        DistrictActionName: "inject_fault" | "clear_fault" | "propose_recovery" | "apply_recovery" | "advance_hour" | "transformer_scenario" | "record_observation" | "reset";
+        DistrictActionName: "inject_fault" | "clear_fault" | "propose_recovery" | "apply_recovery" | "advance_hour" | "transformer_scenario" | "record_observation" | "weak_tie_rehearsal" | "reset";
         /** DistrictAppliance */
         DistrictAppliance: {
             /** Id */

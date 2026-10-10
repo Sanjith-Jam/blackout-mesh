@@ -22,6 +22,7 @@ class DistrictActionName(StrEnum):
     advance_hour = "advance_hour"
     transformer_scenario = "transformer_scenario"
     record_observation = "record_observation"
+    weak_tie_rehearsal = "weak_tie_rehearsal"
     reset = "reset"
 
 

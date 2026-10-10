@@ -88,6 +88,7 @@ class DistrictAuthority:
         self.transformer_scenarios: dict[str, str] = {}
         self.stale_transformers: set[str] = set()
         self.accepted_actions: dict[str, int] = {}
+        self.weak_ties: dict[str, int] = {}
         self.journal = None
         self.rehydration: dict | None = None
         self.restoration_reason: str | None = None
@@ -107,7 +108,7 @@ class DistrictAuthority:
         return states, loads
 
     MUTABLE = ("revision", "hour", "faults", "closed_ties", "proposal", "transformer_scenarios", "stale_transformers",
-               "restoration_reason", "last_observation", "evidence", "topology", "generation", "accepted_actions")
+               "restoration_reason", "last_observation", "evidence", "topology", "generation", "accepted_actions", "weak_ties")
 
     def mutable_state(self):
         """Deep copy of everything an action may change, for rollback when the audit commit fails."""
@@ -124,7 +125,8 @@ class DistrictAuthority:
                 "proposal": copy.deepcopy(self.proposal), "transformer_scenarios": dict(self.transformer_scenarios),
                 "restoration_reason": self.restoration_reason,
                 "last_observation_sequence": self.last_observation[0] if self.last_observation else None,
-                "generation": copy.deepcopy(self.generation), "topology": copy.deepcopy(self.topology) if generated else None,
+                "generation": copy.deepcopy(self.generation), "topology": copy.deepcopy(self.topology) if generated or self.weak_ties else None,
+                "weak_ties": dict(self.weak_ties),
                 "hashes": {"profile": self.profile.config_hash,
                            "electrical": self.electrical.config_hash if self.electrical else None,
                            "topology": hashlib.sha256(json.dumps(self.topology, sort_keys=True).encode()).hexdigest()}}
@@ -144,6 +146,7 @@ class DistrictAuthority:
             self.rehydration = {"status": "REJECTED", "from_run_id": record["run_id"], "from_revision": record["revision"],
                                 "reason": "Recorded cached-topology hash differs from the shipped topology; starting fresh."}
             return False
+        self.weak_ties = dict(state.get("weak_ties", {}))
         self.revision = record["revision"]
         self.hour, self.faults, self.closed_ties = state["hour"], set(state["faults"]), frozenset(state["closed_ties"])
         self.proposal, self.transformer_scenarios = state["proposal"], dict(state["transformer_scenarios"])
@@ -336,6 +339,19 @@ class DistrictAuthority:
             return True
         if name == "record_observation":
             return self._record_observation(action)
+        if name == "weak_tie_rehearsal":
+            # Labeled rehearsal: declare a 1 A tie ampacity while leaving its W budget unchanged, so the
+            # watt check still admits the tie and only the AC loading check can refuse it.
+            tie = next((edge for edge in self.topology["edges"] if edge["id"] == action.component_id and edge["kind"] == "tie"), None)
+            if tie is None or action.fault_kind not in ("weak", "clear"):
+                return False
+            original = self.weak_ties.pop(tie["id"], None)
+            if action.fault_kind == "weak":
+                self.weak_ties[tie["id"]] = original if original is not None else tie["rating_a"]
+                tie.update(rating_a=1, rating_provenance="WEAK_TIE_REHEARSAL")
+            elif original is not None:
+                tie.update(rating_a=original, rating_provenance="SYNTHETIC_DEMO_ASSUMPTION")
+            return True
         if name in ("inject_fault", "clear_fault"):
             edge = edges.get(action.component_id)
             if edge is None or edge["kind"] == "tie" or action.fault_kind != "line_open":
@@ -364,7 +380,10 @@ class DistrictAuthority:
             candidate = result["candidate_edge_ids"]
             if candidate is not None and frozenset(candidate) == self.closed_ties:
                 result.update(candidate_edge_ids=None, switching_sequence=[])
-                self.restoration_reason = "The current switch configuration is already the best validated configuration."
+                refused = [row for row in result["evaluations"] if row["ac_status"] != "PASSED"]
+                self.restoration_reason = ("Electrical refusal: closing " + ", ".join(refused[0]["edge_ids"]) + " would serve more load but "
+                                           + refused[0]["ac_reason"] + " Current switches are kept.") if refused else \
+                    "The current switch configuration is already the best validated configuration."
             elif candidate is None:
                 self.restoration_reason = {"UNVALIDATED": "No candidate can be electrically validated: "
                                            + (result["evaluations"][-1]["ac_reason"] if result["evaluations"] else "no permitted configuration."),

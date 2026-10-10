@@ -272,3 +272,17 @@ def test_hidden_transformer_scenarios_do_not_change_the_plan():
         assert district.apply_action(act(DistrictActionName.transformer_scenario, transformer, "overload"))
     assert district.apply_action(act(DistrictActionName.propose_recovery))
     assert {key: district.proposal[key] for key in before} == before
+
+
+def test_weak_tie_rehearsal_is_watt_feasible_but_refused_by_the_ac_check():
+    pytest.importorskip("power_grid_model")
+    district, tie, _ = gnitc_outage()
+    assert district.apply_action(act(DistrictActionName.weak_tie_rehearsal, tie, "weak"))
+    assert district.apply_action(act(DistrictActionName.propose_recovery))
+    top = district.proposal["evaluations"][0]
+    assert top["edge_ids"] == [tie] and top["ac_status"] == "REJECTED"
+    assert any(v["limit"] == "line_loading" and v["component_id"] == tie for v in top["violations"])
+    assert not district.proposal["candidate_edge_ids"]
+    assert district.apply_action(act(DistrictActionName.weak_tie_rehearsal, tie, "clear"))
+    assert district.apply_action(act(DistrictActionName.propose_recovery))
+    assert district.proposal["candidate_edge_ids"] == [tie]
