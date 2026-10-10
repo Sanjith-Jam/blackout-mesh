@@ -3787,6 +3787,72 @@
         ],
         "title": "DistrictPath"
       },
+      "DistrictRestoration": {
+        "properties": {
+          "candidate_edge_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Edge Id"
+          },
+          "applied_edge_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Edge Id"
+          },
+          "physical_confirmed_edge_id": {
+            "type": "null",
+            "title": "Physical Confirmed Edge Id"
+          },
+          "stable_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stable Since"
+          },
+          "stable_evidence_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Stable Evidence Count"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "candidate_edge_id",
+          "applied_edge_id",
+          "physical_confirmed_edge_id",
+          "stable_since",
+          "stable_evidence_count",
+          "reason",
+          "provenance"
+        ],
+        "title": "DistrictRestoration"
+      },
       "DistrictSite": {
         "properties": {
           "name": {
@@ -3916,9 +3982,7 @@
             "title": "Faults"
           },
           "restoration": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Restoration"
+            "$ref": "#/components/schemas/DistrictRestoration"
           },
           "transformers": {
             "items": {

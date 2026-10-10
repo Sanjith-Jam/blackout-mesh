@@ -184,3 +184,97 @@ The active site is one validated JSON profile (`SITE_PROFILE`, default `backend/
 ## Main sync on issue #19 branch — 2026-10-10
 
 Merged `origin/main` into `codex/issue-19-ranked-evaluation` after the ranked v3 evaluation. The merge brings the configurable site profiles, appliance-level allocator and power-system `/demo` into the same branch as the held-out results. No unresolved paths or conflict markers remain; `git diff --check` passes. Full backend tests pass with a temporary `PRIORITYGRID_HISTORY_DB`: **395 passed, 2 skipped**. Frontend build and component tests passed during merge verification. No hardware checks or physical acceptance were run. Next: review the combined app in a browser, then continue the pending hardware A/B transport and catalog reconciliation work.
+
+## Issue #65 ? deterministic district fixtures
+
+Added two offline radial SHIFT-schema fixture shapes (star and chain), each with
+six virtual loads and two explicitly declared normally-open ties. These fixtures
+are synthetic test graphs, not newly executed SHIFT output or campus wiring.
+An independent traversal checks closed-graph radiality, grid reachability,
+flow conservation, zero flow on open/faulted edges, and source/line limits.
+Verification: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
+backend/tests/test_district_recovery_fixtures.py -q`: **2 passed in 2.94 s**.
+Next: land restoration revalidation regressions, then run the bounded evaluation.
+
+### Issue #65 ? restoration boundary
+
+Restoration now evaluates the whole closed graph for loops and checks requested
+routing before dispatch clipping. Normal dispatch still sheds to source/line
+limits. Applying a tie rechecks served-demand improvement; clearing a fault
+checks the resulting radial/source/line constraints with the applied tie opened.
+Topology, fault-set, tie, and capacity changes invalidate accumulated evidence.
+No proposal trial mutates the applied tie. Two fresh modeled intervals remain
+required for both apply and clear; snapshot reads never count as evidence.
+Verification: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
+backend/tests/test_district_authority.py backend/tests/test_district_recovery.py
+backend/tests/test_district_evidence.py -q`: **17 passed in 5.20 s**. The first
+run found an evidence-accounting bug (1 failed, 16 passed); corrected so an
+invalid candidate cannot prevent fresh fault-clear evidence. Next: explicit
+physical-confirmation contract and bounded deterministic stress report.
+
+### Issue #65 ? shared restoration contract and topology lifecycle
+
+DistrictRestoration is now a strict API DTO, generated into TypeScript in the
+same change as its frontend fixture. Candidate, applied modeled tie and physical
+confirmation are separate; physical_confirmed_edge_id is constrained to null.
+District snapshots have no serial translation or physical-switch consumer.
+Generation rejects an active fault/recovery study and a completing generation
+job cannot silently clear faults or apply a replacement graph. Apply/clear API
+rejections expose the evidence/capacity explanation.
+Final focused district + benchmark + OpenAPI/frontend fixture checks:
+`PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
+backend/tests/test_district_authority.py backend/tests/test_district_recovery.py
+backend/tests/test_district_recovery_fixtures.py
+backend/tests/test_district_recovery_benchmark.py
+backend/tests/test_district_evidence.py backend/tests/test_district_fixtures.py
+backend/tests/test_district_energy_fixture.py backend/tests/test_openapi_contract.py
+backend/tests/test_frontend_contract.py -q`: **31 passed in 18.53 s**.
+Tests use temporary history storage. Generated OpenAPI/TypeScript export passed;
+`npm.cmd run build --prefix frontend` passed (existing large-chunk warning), and
+`npm.cmd run test:contract --prefix frontend` passed. Next: commit the bounded
+benchmark and its reproducible per-case reports; hardware remains paused.
+
+### Issue #65 ? final bounded evaluation (2026-10-10)
+
+Delivered `backend/benchmarks/run_district_recovery.py` and the checked-in
+`backend/benchmarks/results/district_recovery_report.{json,md}`. Enumerated all
+zero/one/two-line fault sets on the cached 30-line SHIFT tree and generated
+10-line star/chain fixtures, plus seven named boundary cases. Candidate tie
+universes are explicit. All cases carry four one-hour intervals, critical and
+total requested/unmet Wh and fractions, input digest, rejection explanations,
+and separate proposed/applied/null physical-confirmation fields. Normal dispatch
+remains capacity-clipped; restoration conservatively rejects a route whose full
+connected grid request would exceed a source or line rating. Only one modeled
+tie can be applied at a time; multiple declared candidates are tested.
+Exact command: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m
+benchmarks.run_district_recovery` ? **585 passed / 585 cases, 0 failures,
+232 applied, 353 rejected, 532 two-fault cases, 0 constraint violations**;
+exit 0. Report JSON parsed successfully. The two-run repeatability test passed;
+optimized Python is rejected so safety assertions cannot be skipped.
+Final focused command is the nine-file pytest command immediately above, with
+`test_district_recovery_benchmark.py` now containing the optimized-Python check:
+**32 passed in 13.68 s**. Benchmark-only rerun: **2 passed in 9.14 s**.
+`git diff --check` passed. Earlier frontend build/contract results remain valid.
+No new SHIFT execution, held-out evaluation, hardware connection, flashing,
+physical switching, or physical acceptance was performed. Optional SHIFT-runtime
+integration tests were outside these focused runtime checks. Next: review the
+local issue-65-district-stress commits; no push, PR merge or issue closure yet.
+
+## PR #73 CI collection fix - 2026-10-10
+
+GitHub Actions run 38036290933 failed before backend tests ran: the optional
+SHIFT topology-generator test imported gdm, which the normal CI requirements
+do not install. Generated-client drift and npm audit passed. Added explicit
+module-level importorskip guards for gdm/shift; provisioned SHIFT runtimes still
+execute those integration tests. Runtime district and stress tests remain active.
+Broader Windows verification (`PYTHONPATH=backend backend/.venv/Scripts/python.exe
+-m pytest backend/tests -q --ignore=backend/tests/test_temporal_evaluation.py`):
+425 passed, 3 skipped, 1 failed in 125.40 s. The failure was CRLF conversion of
+the frozen demand-forecast.json, not model drift: its Git blob matches the
+recorded SHA-256. Added a -text attribute and restored identical Git blob bytes;
+no model/report content or recorded hash changed. The temporal test is excluded
+locally because its existing audit imports POSIX-only resource; Linux CI retains it.
+Targeted recheck (test_demand_training.py, test_district_topology_generator.py,
+test_district_recovery.py): 14 passed, 1 optional-runtime module skipped in 3.20 s.
+Frontend `npm.cmd test --prefix frontend`: 38 tests across 10 files passed.
+`git diff --check` passed. Next: push these fixes and verify the full Linux CI run.
