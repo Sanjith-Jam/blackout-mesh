@@ -1274,11 +1274,41 @@
    "served_w": 3000
   }
  ],
+ "contract": {
+  "campus_totals": {
+   "capacity_w": 14000,
+   "requested_w": 14000,
+   "served_w": 9000
+  },
+  "identity": {
+   "catalog_version": "1.1",
+   "config_hash": "af574a50987d",
+   "model_version": "uci-occ-logistic-2026-10-09",
+   "observation_time": "2026-10-10T08:04:22.091256Z",
+   "policy_version": "allocation-v1",
+   "run_id": "<volatile>",
+   "server_epoch": "<volatile>",
+   "site_id": "Default Campus",
+   "state_revision": 10
+  },
+  "zone_totals": {
+   "classroom": {
+    "capacity_w": null,
+    "requested_w": 8000,
+    "served_w": 3000
+   },
+   "hospital": {
+    "capacity_w": null,
+    "requested_w": 6000,
+    "served_w": 6000
+   }
+  }
+ },
  "diagnosis": {
   "campus": {
    "affected_assets": [],
    "detail": "Bus and feeder voltages normal.",
-   "evaluated_at": "2026-10-10T03:15:55.532814+00:00",
+   "evaluated_at": "2026-10-10T08:04:22.180927+00:00",
    "hypotheses": [],
    "inputs": "Bus and feeder voltage envelopes only; configured capacity is not fault evidence.",
    "provenance": "SIMULATED_TELEMETRY",
@@ -1916,12 +1946,12 @@
   "proposed_violations": [],
   "restoration": {
    "after_shed_required_s": 3,
-   "since_last_shed_s": 0.06,
-   "stable_for_s": 0.06,
+   "since_last_shed_s": 0.09,
+   "stable_for_s": 0.09,
    "stable_required_s": 5,
    "step_s": 1
   },
-  "solve_ms": 7.33,
+  "solve_ms": 12.67,
   "solver": "OR-Tools CP-SAT 9.15.6755",
   "solves": 6,
   "stages": [
@@ -2076,7 +2106,7 @@
   "catalog_version": "site-catalog-1.1",
   "config_hash": "af574a50987d",
   "profile": "campus",
-  "revision": 9,
+  "revision": 10,
   "run_id": "<volatile>",
   "scenario": "custom",
   "site_name": "Default Campus"

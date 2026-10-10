@@ -92,22 +92,7 @@ class FaultDiagnosis(BaseModel):
     affected_assets: List[str] = Field(default_factory=list)
     supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
-class ScopeTotals(BaseModel):
-    capacity_w: Optional[int] = None
-    requested_w: int
-    served_w: int
-
-class RunIdentity(BaseModel):
-    site_id: str
-    run_id: str
-    server_epoch: int
-    config_hash: str
-    catalog_version: str
-    policy_version: str
-    model_version: str
-    state_revision: int
-    observation_time: str
-
+from app.schemas.contract import ScopeTotals, RunIdentity, CrossRouteContract
 
 class SiteIdentityResponse(BaseModel):
     run_id: str
@@ -117,11 +102,6 @@ class SiteIdentityResponse(BaseModel):
     config_hash: str
     site_name: str
     scenario: Optional[str] = None  # named teaching scenario (#33), or "custom"; None in older history
-
-class CrossRouteContract(BaseModel):
-    identity: RunIdentity
-    campus_totals: Optional[ScopeTotals] = None
-    zone_totals: Dict[str, ScopeTotals] = {}
 
 class SystemSnapshot(BaseModel):
     contract: CrossRouteContract

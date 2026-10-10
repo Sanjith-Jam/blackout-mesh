@@ -661,8 +661,14 @@ async def electrical_study(request: Request, inputs: ElectricalInput):
 
 def with_contract(data, site):
     data = with_site(data, site.identity())
+    campus_totals = None
+    zone_totals = {}
+    if site.grid.published and site.grid.published.contract:
+        c = site.grid.published.contract
+        campus_totals = c.campus_totals.model_dump() if hasattr(c.campus_totals, "model_dump") else dict(c.campus_totals) if c.campus_totals else None
+        zone_totals = {k: v.model_dump() if hasattr(v, "model_dump") else dict(v) for k, v in c.zone_totals.items()}
     data["contract"] = {"identity": {**site.grid.identity(), "run_id": site.run_id,
-        "state_revision": site.revision}, "zone_totals": {}}
+        "state_revision": site.revision}, "campus_totals": campus_totals, "zone_totals": zone_totals}
     return data
 
 
