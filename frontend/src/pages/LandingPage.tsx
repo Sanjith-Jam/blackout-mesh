@@ -12,51 +12,30 @@ export default function LandingPage() {
       
       {/* HERO SECTION */}
       <HeroSection />
-      {/* WHY BLACKOUT MESH */}
+      {/* HOW IT DECIDES */}
       <section id="problem" className="content-section alternate">
         <div className="container">
-          <h2 className="section-heading">Why Blackout Mesh?</h2>
-          <p className="section-text large">
-            When available capacity becomes limited, not every modeled service can necessarily run. Blackout Mesh evaluates simulated conditions, protects essential services wherever constraints permit, and explains the decisions.
-          </p>
+          <h2 className="section-heading">How it decides</h2>
+          <ol className="landing-steps">
+            <li><span className="type-eyebrow">01 · Sense</span><h3>Read the grid and the rooms</h3><p>Feeder voltages, transformer readings, card taps and room sensors arrive as timestamped observations. Missing data stays unknown, never zero.</p></li>
+            <li><span className="type-eyebrow">02 · Decide</span><h3>Protect first, then rank</h3><p>Every one of the 64 possible plans is checked. Critical circuits and classroom essentials come first; occupancy evidence only reorders optional loads.</p></li>
+            <li><span className="type-eyebrow">03 · Explain</span><h3>Say why, or say “I don’t know”</h3><p>Each cut gets a reason and a counterfactual. Diagnosis ranks likely causes and abstains when sensors disagree or freeze.</p></li>
+          </ol>
         </div>
       </section>
 
-      {/* TWO DEMONSTRATION ENVIRONMENTS */}
+      {/* WHERE TO LOOK */}
       <section id="hospital" className="content-section">
         <div className="container">
-          <h2 className="section-heading">Two Demonstration Environments</h2>
-          <div className="features-grid">
-            
-            {/* Hospital Panel */}
-            <div className="feature-panel">
-              <div className="feature-icon"><HeartPulse size={32} /></div>
-              <h3>Hospital Demonstration</h3>
-              <ul className="feature-list">
-                <li>Three hospital rooms with required room lighting</li>
-                <li>Emergency lighting & Water pump operations</li>
-                <li>Essential services strictly prioritized</li>
-                <li><strong>Note:</strong> The three room lights share the L0 modeled service group.</li>
-              </ul>
-            </div>
-
-            {/* Classroom Panel */}
-            <div id="classrooms" className="feature-panel">
-              <div className="feature-icon"><BookOpen size={32} /></div>
-              <h3>Classroom Demonstration</h3>
-              <ul className="feature-list">
-                <li>Three independent classrooms</li>
-                <li>One registered RFID card per classroom</li>
-                <li>Simulated load events via interactive dashboard</li>
-                <li>Only the selected, active, modeled-served classroom may have its indicator commanded ON.</li>
-              </ul>
-            </div>
-
+          <h2 className="section-heading">Where to look</h2>
+          <div className="features-grid landing-routes">
+            <Link to="/demo" className="feature-panel"><div className="feature-icon"><Zap size={28} /></div><h3>City demo</h3><p>One event, the whole grid: request rooms, cause a shortage, trip a feeder and follow staged recovery.</p></Link>
+            <Link to="/hospital" className="feature-panel"><div className="feature-icon"><HeartPulse size={28} /></div><h3>Hospital · feeder A</h3><p>Equipment behind three transformers. Inject overload, cooling failure or a stuck sensor and read the ranked causes.</p></Link>
+            <Link to="/classrooms" className="feature-panel"><div className="feature-icon"><BookOpen size={28} /></div><h3>Classrooms · feeder B</h3><p>Scan a room card, lower supply and watch occupancy evidence decide which optional equipment stays on.</p></Link>
+            <Link to="/console" className="feature-panel"><div className="feature-icon"><Activity size={28} /></div><h3>Engineering console</h3><p>Recorded history, playback and the raw controls behind every view.</p></Link>
           </div>
         </div>
       </section>
-
-
 
       {/* LIMITATIONS */}
       <section className="content-section limitations-section">
@@ -64,7 +43,7 @@ export default function LandingPage() {
           <div className="limitations-box">
             <ShieldAlert className="warning-icon" size={32} />
             <div>
-              <h3>Prototype Limitations</h3>
+              <h3>What is real and what is simulated</h3>
               <p>
                 Blackout Mesh is a locally hosted prototype. Electrical capacity, demand, fault conditions, load availability, and load shedding are <strong>simulated</strong>. RFID scans, ESP32 communication, and LED outputs are physical interactions when connected and verified.
                 <br /><br />

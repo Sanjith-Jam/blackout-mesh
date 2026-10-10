@@ -33,7 +33,7 @@ export default function CityGrid({ snapshot, selected, onSelect }: {
       </svg>
       <div className="city-source" style={{ left: '3%', top: '40%' }}><Zap size={24} aria-hidden="true" /><strong>City source</strong><b>{source.capacity_w.toLocaleString()} W</b><span>Synthetic supply</span></div>
       {['A', 'B'].map((feeder, row) => <div className={`city-substation ${feederOpen(feeder) ? 'is-outage' : ''}`} key={feeder} style={{ left: '27%', top: row ? '64%' : '16%' }}>
-        <strong>Feeder {feeder}</strong><span>{feederState(snapshot, feeder) === 'OPEN' ? 'OPEN · no supply' : feederState(snapshot, feeder)}</span><b>{served(feeder).toLocaleString()} / {snapshot.feeder_limits_w[feeder].toLocaleString()} W</b>
+        <strong>Feeder {feeder}</strong><span>{{ OPEN: 'Tripped · no supply', CLOSED: 'Energized', UNKNOWN: 'Unknown' }[feederState(snapshot, feeder)]}</span><b>{served(feeder).toLocaleString()} / {snapshot.feeder_limits_w[feeder].toLocaleString()} W</b>
       </div>)}
       {services.map((service, i) => {
         const Icon = ICONS[i] ?? School;

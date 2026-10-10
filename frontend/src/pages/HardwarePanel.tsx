@@ -15,7 +15,7 @@ const LINK_TEXT: Record<string, string> = {
 
 /** Physical boards: board A (reader + buttons) and board B (LEDs), as reported by the gateway bridge. */
 export default function HardwarePanel({ hardware }: { hardware?: HardwareStatus }) {
-  const [port, setPort] = useState('COM4');
+  const [port, setPort] = useState(() => /Win/i.test(navigator.userAgent) ? 'COM4' : '/dev/ttyUSB0');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hw = hardware ?? { link: 'NOT_CONFIGURED', commanded_mask: null, confirmed_mask: null };

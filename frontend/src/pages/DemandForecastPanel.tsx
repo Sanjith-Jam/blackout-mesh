@@ -13,7 +13,7 @@ export default function DemandForecastPanel({ forecast, evidence, source, onSour
   const band = [...points.map(p => `${x(p.ahead_s)},${y(p.upper_w)}`), ...[...points].reverse().map(p => `${x(p.ahead_s)},${y(p.lower_w)}`)].join(' ');
   const last = points[points.length - 1];
   return <section className="city-panel" aria-label="Predictive demand forecast">
-    <header className="city-panel-heading"><div><h2>Predictive AI · next 60 seconds</h2><p>Ridge regression trained on synthetic demand sessions</p></div></header>
+    <header className="city-panel-heading"><div><h2>Demand forecast · next 60 s</h2><p>Ridge regression trained on synthetic demand sessions</p></div></header>
     <div className="city-forecast-controls"><label>Observation source<select value={source} onChange={event => onSource(event.target.value as DemandForecast['source'])}>
       <option value="LIVE_REQUESTED_DEMAND">Live simulated demand</option><option value="SYNTHETIC_REPLAY">Synthetic rising-demand rehearsal</option>
     </select></label>{source === 'SYNTHETIC_REPLAY' && <button onClick={onNext}>{replayIndex === 7 ? 'Restart rehearsal' : 'Next 10 s sample'}</button>}</div>

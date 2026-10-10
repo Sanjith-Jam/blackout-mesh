@@ -115,12 +115,14 @@ export default function HospitalDemo() {
         </div>
         <section className="classroom-demo__panel classroom-demo__ml" aria-labelledby="classzone-ml-title">
           <header className="classroom-demo__ml-head">
+            {!snapshot.replay.length ? <div><h2 id="classzone-ml-title">Transformer diagnosis</h2>
+              <p>Live diagnosis from simulated transformer sensor readings. Critical hospital equipment is never ranked by the occupancy model.</p></div> :
             <div><h2 id="classzone-ml-title">ML priority for scanned zones</h2>
-              <p>{snapshot.model.ready ? `Activity model ${snapshot.model.model_version}` : `Model unavailable: ${snapshot.model.fallback_reason ?? 'unknown reason'}`} · recorded office sensor replay, reading {snapshot.replay.length ? snapshot.replay.index + 1 : 0} of {snapshot.replay.length}{snapshot.replay.running ? `, changes every ${snapshot.replay.step_s} s` : ', paused'}</p></div>
-            <div className="classroom-demo__ml-actions">
+              <p>{snapshot.model.ready ? `Activity model ${snapshot.model.model_version}` : `Model unavailable: ${snapshot.model.fallback_reason ?? 'unknown reason'}`} · recorded office sensor replay, reading {snapshot.replay.length ? snapshot.replay.index + 1 : 0} of {snapshot.replay.length}{snapshot.replay.running ? `, changes every ${snapshot.replay.step_s} s` : ', paused'}</p></div>}
+            {snapshot.replay.length > 0 && <div className="classroom-demo__ml-actions">
               <button className="classroom-demo__button" disabled={pending || !snapshot.replay.length} onClick={() => void runAction(snapshot.replay.running ? 'replay_pause' : 'replay_resume')}>{snapshot.replay.running ? 'Pause readings' : 'Resume readings'}</button>
               <button className="classroom-demo__button" disabled={pending || !snapshot.replay.length} onClick={() => void runAction('replay_step')}>Next reading</button>
-            </div>
+            </div>}
           </header>
           <div className="classroom-demo__ml-grid">
             <AnimatePresence>
@@ -128,13 +130,21 @@ export default function HospitalDemo() {
               const act = tx.activity;
               return <motion.article initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:20}} transition={{delay: i * 0.05}} key={tx.zone} className={`classroom-demo__ml-card ${tx.rfid_active ? 'is-scanned' : ''}`} aria-label={`${tx.zone} activity estimate`}>
                 <header><strong>{tx.zone}</strong><span>{tx.priority_rank ? `Priority #${tx.priority_rank}` : 'Not scanned'}</span></header>
+                {!snapshot.replay.length ? <>
+                <span className={`hospital-diagnosis-badge severity-${tx.diagnosis.severity}`}>{tx.diagnosis.code === 'NORMAL' ? 'Normal' : tx.diagnosis.code.replace(/_/g, ' ')}</span>
+                <dl>
+                  <div><dt>Current</dt><dd>{tx.sensors.current_a == null ? '—' : `${tx.sensors.current_a.toFixed(1)} A`}</dd></div>
+                  <div><dt>Temp</dt><dd>{tx.sensors.temperature_c == null ? '—' : `${tx.sensors.temperature_c.toFixed(0)} °C`}</dd></div>
+                  <div><dt>Cooling</dt><dd>{tx.sensors.cooling_ok == null ? '—' : tx.sensors.cooling_ok ? 'OK' : 'Failed'}</dd></div>
+                </dl>
+                <p>{tx.diagnosis.cause}</p></> : <>
                 <span className={`classroom-demo__state classroom-demo__state--${act.state.toLowerCase()}`}>{act.state}</span>
                 <dl>
                   <div><dt>Score</dt><dd>{act.score === null ? '—' : act.score.toFixed(2)}</dd></div>
                   <div><dt>CO₂</dt><dd>{act.evidence.co2_ppm == null ? '—' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
                   <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
                 </dl>
-                <p>{act.reason}</p>
+                <p>{act.reason}</p></>}
                 {tx.diagnosis && tx.diagnosis.code !== 'NORMAL' && (
                   <div style={{ marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid #ddd' }}>
                     <span className={`hospital-diagnosis-badge severity-${tx.diagnosis.severity}`}>
@@ -160,7 +170,7 @@ export default function HospitalDemo() {
               ;})}
             </AnimatePresence>
           </div>
-          <p className="classroom-demo__ml-note">Only scanned zones are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the zone scanned first goes first. The model is an office-occupancy proxy, not a measurement of these hospital zones.</p>
+          {snapshot.replay.length > 0 && <p className="classroom-demo__ml-note">Only scanned zones are ranked: ACTIVE first, then UNKNOWN, then INACTIVE; within the same state, the zone scanned first goes first. The model is an office-occupancy proxy, not a measurement of these hospital zones.</p>}
         </section>
         <section aria-label="Hospital floor plans" aria-describedby="classzone-blueprint-key">
           <p id="classzone-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three hospital zones. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
