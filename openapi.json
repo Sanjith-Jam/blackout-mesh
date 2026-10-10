@@ -3299,6 +3299,12 @@
           "grid_import_w": {
             "type": "integer",
             "title": "Grid Import W"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/DistrictEnergyTotals"
+          },
+          "network_interval": {
+            "$ref": "#/components/schemas/DistrictNetworkEnergyInterval"
           }
         },
         "additionalProperties": false,
@@ -3312,7 +3318,9 @@
           "pv_used_w",
           "battery_charge_w",
           "battery_discharge_w",
-          "grid_import_w"
+          "grid_import_w",
+          "totals",
+          "network_interval"
         ],
         "title": "DistrictEnergy"
       },
@@ -3379,6 +3387,75 @@
           "loss_wh"
         ],
         "title": "DistrictEnergyHour"
+      },
+      "DistrictEnergyTotals": {
+        "properties": {
+          "period_hours": {
+            "type": "integer",
+            "title": "Period Hours"
+          },
+          "demand_wh": {
+            "type": "integer",
+            "title": "Demand Wh"
+          },
+          "pv_generated_wh": {
+            "type": "integer",
+            "title": "Pv Generated Wh"
+          },
+          "pv_used_wh": {
+            "type": "integer",
+            "title": "Pv Used Wh"
+          },
+          "pv_curtailed_wh": {
+            "type": "integer",
+            "title": "Pv Curtailed Wh"
+          },
+          "baseline_import_scheduled_wh": {
+            "type": "integer",
+            "title": "Baseline Import Scheduled Wh"
+          },
+          "dispatch_import_scheduled_wh": {
+            "type": "integer",
+            "title": "Dispatch Import Scheduled Wh"
+          },
+          "grid_export_wh": {
+            "type": "integer",
+            "title": "Grid Export Wh"
+          },
+          "battery_charge_wh": {
+            "type": "integer",
+            "title": "Battery Charge Wh"
+          },
+          "battery_discharge_wh": {
+            "type": "integer",
+            "title": "Battery Discharge Wh"
+          },
+          "battery_loss_wh": {
+            "type": "integer",
+            "title": "Battery Loss Wh"
+          },
+          "battery_round_trip_efficiency": {
+            "type": "number",
+            "title": "Battery Round Trip Efficiency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "period_hours",
+          "demand_wh",
+          "pv_generated_wh",
+          "pv_used_wh",
+          "pv_curtailed_wh",
+          "baseline_import_scheduled_wh",
+          "dispatch_import_scheduled_wh",
+          "grid_export_wh",
+          "battery_charge_wh",
+          "battery_discharge_wh",
+          "battery_loss_wh",
+          "battery_round_trip_efficiency"
+        ],
+        "title": "DistrictEnergyTotals"
       },
       "DistrictGeneration": {
         "properties": {
@@ -3513,6 +3590,14 @@
             "type": "string",
             "title": "Local Supply Provenance"
           },
+          "local_supply_basis": {
+            "type": "string",
+            "title": "Local Supply Basis"
+          },
+          "local_supply_semantics": {
+            "type": "string",
+            "title": "Local Supply Semantics"
+          },
           "grid_service_provenance": {
             "type": "string",
             "title": "Grid Service Provenance"
@@ -3535,6 +3620,8 @@
           "unmet_w",
           "demand_provenance",
           "local_supply_provenance",
+          "local_supply_basis",
+          "local_supply_semantics",
           "grid_service_provenance",
           "unmet_provenance"
         ],
@@ -3558,6 +3645,10 @@
             "type": "string",
             "title": "License"
           },
+          "retrieved": {
+            "type": "string",
+            "title": "Retrieved"
+          },
           "source_sha256": {
             "type": "string",
             "title": "Source Sha256"
@@ -3577,6 +3668,7 @@
           "source_url",
           "attribution",
           "license",
+          "retrieved",
           "source_sha256",
           "features"
         ],
@@ -3625,6 +3717,55 @@
           "paths"
         ],
         "title": "DistrictMapFeature"
+      },
+      "DistrictNetworkEnergyInterval": {
+        "properties": {
+          "duration_hours": {
+            "type": "integer",
+            "title": "Duration Hours"
+          },
+          "requested_wh": {
+            "type": "integer",
+            "title": "Requested Wh"
+          },
+          "local_supply_wh": {
+            "type": "integer",
+            "title": "Local Supply Wh"
+          },
+          "grid_import_requested_wh": {
+            "type": "integer",
+            "title": "Grid Import Requested Wh"
+          },
+          "grid_served_wh": {
+            "type": "integer",
+            "title": "Grid Served Wh"
+          },
+          "served_wh": {
+            "type": "integer",
+            "title": "Served Wh"
+          },
+          "unmet_wh": {
+            "type": "integer",
+            "title": "Unmet Wh"
+          },
+          "unmet_fraction_of_requested": {
+            "type": "number",
+            "title": "Unmet Fraction Of Requested"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "duration_hours",
+          "requested_wh",
+          "local_supply_wh",
+          "grid_import_requested_wh",
+          "grid_served_wh",
+          "served_wh",
+          "unmet_wh",
+          "unmet_fraction_of_requested"
+        ],
+        "title": "DistrictNetworkEnergyInterval"
       },
       "DistrictPath": {
         "properties": {

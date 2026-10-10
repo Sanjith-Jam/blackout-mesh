@@ -1116,6 +1116,8 @@ export interface components {
             battery_discharge_w: number;
             /** Grid Import W */
             grid_import_w: number;
+            totals: components["schemas"]["DistrictEnergyTotals"];
+            network_interval: components["schemas"]["DistrictNetworkEnergyInterval"];
         };
         /** DistrictEnergyHour */
         DistrictEnergyHour: {
@@ -1141,6 +1143,33 @@ export interface components {
             grid_import_w: number;
             /** Loss Wh */
             loss_wh: number;
+        };
+        /** DistrictEnergyTotals */
+        DistrictEnergyTotals: {
+            /** Period Hours */
+            period_hours: number;
+            /** Demand Wh */
+            demand_wh: number;
+            /** Pv Generated Wh */
+            pv_generated_wh: number;
+            /** Pv Used Wh */
+            pv_used_wh: number;
+            /** Pv Curtailed Wh */
+            pv_curtailed_wh: number;
+            /** Baseline Import Scheduled Wh */
+            baseline_import_scheduled_wh: number;
+            /** Dispatch Import Scheduled Wh */
+            dispatch_import_scheduled_wh: number;
+            /** Grid Export Wh */
+            grid_export_wh: number;
+            /** Battery Charge Wh */
+            battery_charge_wh: number;
+            /** Battery Discharge Wh */
+            battery_discharge_wh: number;
+            /** Battery Loss Wh */
+            battery_loss_wh: number;
+            /** Battery Round Trip Efficiency */
+            battery_round_trip_efficiency: number;
         };
         /** DistrictGeneration */
         DistrictGeneration: {
@@ -1188,6 +1217,10 @@ export interface components {
             demand_provenance: string;
             /** Local Supply Provenance */
             local_supply_provenance: string;
+            /** Local Supply Basis */
+            local_supply_basis: string;
+            /** Local Supply Semantics */
+            local_supply_semantics: string;
             /** Grid Service Provenance */
             grid_service_provenance: string;
             /** Unmet Provenance */
@@ -1203,6 +1236,8 @@ export interface components {
             attribution: string;
             /** License */
             license: string;
+            /** Retrieved */
+            retrieved: string;
             /** Source Sha256 */
             source_sha256: string;
             /** Features */
@@ -1220,6 +1255,25 @@ export interface components {
             geometry_type: string;
             /** Paths */
             paths: components["schemas"]["DistrictPath"][];
+        };
+        /** DistrictNetworkEnergyInterval */
+        DistrictNetworkEnergyInterval: {
+            /** Duration Hours */
+            duration_hours: number;
+            /** Requested Wh */
+            requested_wh: number;
+            /** Local Supply Wh */
+            local_supply_wh: number;
+            /** Grid Import Requested Wh */
+            grid_import_requested_wh: number;
+            /** Grid Served Wh */
+            grid_served_wh: number;
+            /** Served Wh */
+            served_wh: number;
+            /** Unmet Wh */
+            unmet_wh: number;
+            /** Unmet Fraction Of Requested */
+            unmet_fraction_of_requested: number;
         };
         /** DistrictPath */
         DistrictPath: {
