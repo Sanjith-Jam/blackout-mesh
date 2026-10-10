@@ -64,7 +64,7 @@ def test_mapping_rejects_missing_rooms_and_overrated_requests():
 
 def test_opt_in_profile_uses_one_revision_and_validates_the_full_api_contract(monkeypatch):
     from app.api.district import DistrictSnapshot
-    from app.district import authority
+    from app.district import recovery
 
     monkeypatch.setenv("DISTRICT_PROFILE", str(DATA / "gnitc_appliance_profile.json"))
     district = DistrictAuthority()
@@ -77,7 +77,7 @@ def test_opt_in_profile_uses_one_revision_and_validates_the_full_api_contract(mo
     assert first.energy.grid_import_w == 14000 and first.energy.pv_used_w == 0
     assert first.profile.decision.validation == "PASSED"
     assert first.profile.decision.physical_confirmation is None
-    monkeypatch.setattr(authority, "dispatch", lambda *args: pytest.fail("unchanged snapshot ran a second allocation"))
+    monkeypatch.setattr(recovery, "dispatch", lambda *args: pytest.fail("unchanged snapshot ran a second allocation"))
     second = DistrictSnapshot.model_validate(district.snapshot())
     assert second.identity == first.identity
     assert second.state.loads == first.state.loads
@@ -86,11 +86,12 @@ def test_opt_in_profile_uses_one_revision_and_validates_the_full_api_contract(mo
 def test_district_api_dispatch_runs_outside_publication_event_loop(monkeypatch):
     import asyncio
     from fastapi.testclient import TestClient
-    from app.district import authority
+    from app.district import recovery
     from app.main import create_app
 
     monkeypatch.setenv("DISTRICT_PROFILE", str(DATA / "gnitc_appliance_profile.json"))
-    original = authority.dispatch
+    monkeypatch.setattr(recovery, "_DISPATCH_CACHE", {})
+    original = recovery.dispatch
     calls = []
 
     def checked(*args):
@@ -99,7 +100,7 @@ def test_district_api_dispatch_runs_outside_publication_event_loop(monkeypatch):
         calls.append(True)
         return original(*args)
 
-    monkeypatch.setattr(authority, "dispatch", checked)
+    monkeypatch.setattr(recovery, "dispatch", checked)
     with TestClient(create_app()) as client:
         response = client.get("/api/v1/district")
         assert response.status_code == 200

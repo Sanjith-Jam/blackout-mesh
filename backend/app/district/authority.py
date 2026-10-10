@@ -10,8 +10,9 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
-from app.district.profile import apportion, load_profile
-from app.district.appliances import dispatch, inventory_energy, validate_mapping
+from app.district.profile import load_profile
+from app.district.appliances import inventory_energy, validate_mapping
+from app.district.recovery import evaluate
 from app.core.active_site import CATALOG
 
 SERVER_EPOCH = str(uuid.uuid4())
@@ -57,8 +58,6 @@ class DistrictAuthority:
         self.profile = load_profile(Path(os.environ.get("DISTRICT_PROFILE", DATA / "gnitc_profile.json")), self.topology)
         self.map = json.loads((DATA / "gnitc_map.geojson").read_text())
         self.energy_trace = json.loads((DATA / "gnitc_energy.json").read_text())
-        self._allocation_cache = None
-        self._allocation_key = None
         self.decision = {"solver": "integer weighted dispatch", "status": "MODEL_DERIVED",
                          "validation": "WATT_BUDGET_ONLY", "physical_confirmation": None}
         if self.profile.demand_basis == "appliance_inventory":
@@ -66,7 +65,7 @@ class DistrictAuthority:
             self.energy_trace = inventory_energy(self.profile)
         self.hour = 12
         self.faults: set[str] = set()
-        self.closed_tie: str | None = None
+        self.closed_ties: frozenset[str] = frozenset()
         self.candidate_tie: str | None = None
         self.stable_evidence_count = 0
         self.stable_since: str | None = None
@@ -80,92 +79,11 @@ class DistrictAuthority:
             "reason": f"Cached topology is active; {runtime_reason}",
             "generated_at": None}
 
-    def _electrical_state(self):
-        topology = self.topology
-        edge_by_id = {edge["id"]: edge for edge in topology["edges"]}
-        states = {edge["id"]: {"id": edge["id"], "closed": (not edge["normally_open"] or edge["id"] == self.closed_tie),
-                             "faulted": edge["id"] in self.faults, "energized": False, "flow_w": 0}
-                  for edge in topology["edges"]}
-        adjacency = {}
-        for edge in topology["edges"]:
-            state = states[edge["id"]]
-            if state["closed"] and not state["faulted"]:
-                adjacency.setdefault(edge["from"], []).append((edge["to"], edge["id"]))
-                adjacency.setdefault(edge["to"], []).append((edge["from"], edge["id"]))
-
-        sources = sorted(node["id"] for node in topology["nodes"] if node["role"] == "source")
-        source = sources[0] if sources else None
-        parent, parent_edge = ({source: None}, {}) if source else ({}, {})
-        queue = [source] if source else []
-        for current in queue:
-            for neighbor, edge_id in sorted(adjacency.get(current, [])):
-                if neighbor not in parent:
-                    parent[neighbor], parent_edge[neighbor] = current, edge_id
-                    queue.append(neighbor)
-
-        if self.profile.demand_basis == "appliance_inventory":
-            key = (tuple(sorted(parent_edge.items())), tuple((edge["id"], edge["limit_w"]) for edge in topology["edges"]))
-            if key != self._allocation_key:
-                self._allocation_cache = dispatch(self.profile, topology, parent, parent_edge, source)
-                self._allocation_key = key
-            flows, loads, self.decision = copy.deepcopy(self._allocation_cache)
-            for edge in topology["edges"]:
-                state = states[edge["id"]]
-                state.update(flow_w=flows[edge["id"]], provenance="MODEL_DERIVED",
-                             energized=edge["from"] in parent and edge["to"] in parent and state["closed"] and not state["faulted"])
-            return states, loads
-
-        # Allocate the hourly trace using declared per-building policy weights.
-        loads = []
-        flows = {edge_id: 0 for edge_id in states}
-        source_capacity_w = self.profile.source_capacity_w
-        grid_served_total = 0
-        policies = {row.building_id: row for row in self.profile.buildings}
-        requested = sorted((node for node in topology["nodes"] if node["role"] == "load"),
-                           key=lambda node: (policies[node.get("building_id", node["id"])].tier != "critical", node["id"]))
-        profile = self.energy_trace["profile"][self.hour]
-        demand_w = profile["demand_w"]
-        grid_requested_total_w = profile["grid_import_w"]
-        demands = apportion(demand_w, {key: row.demand_weight for key, row in policies.items()})
-        imports = apportion(grid_requested_total_w, demands)
-        for node in requested:
-            path = []
-            cursor = node["id"]
-            while cursor in parent_edge:
-                edge_id = parent_edge[cursor]
-                path.append(edge_id)
-                cursor = parent[cursor]
-            connected = bool(source) and cursor == source
-            policy = policies[node.get("building_id", node["id"])]
-            tier = policy.tier
-            requested_w = demands[policy.building_id]
-            grid_requested_w = imports[policy.building_id]
-            # Configured grid-following PV/storage cannot energize an isolated building.
-            local_supply_w = requested_w - grid_requested_w if connected else 0
-            path_capacity = min((edge_by_id[edge_id]["limit_w"] - flows[edge_id] for edge_id in path), default=source_capacity_w)
-            grid_served_w = min(grid_requested_w, source_capacity_w - grid_served_total, max(0, path_capacity)) if connected else 0
-            if grid_served_w:
-                grid_served_total += grid_served_w
-                for edge_id in path:
-                    flows[edge_id] += grid_served_w
-            served_w = local_supply_w + grid_served_w
-            loads.append({"building_id": node.get("building_id", node["id"]), "tier": tier,
-                          "requested_w": requested_w, "local_supply_w": local_supply_w,
-                          "grid_requested_w": grid_requested_w, "grid_served_w": grid_served_w,
-                          "served_w": served_w, "unmet_w": requested_w - served_w,
-                          "demand_provenance": self.energy_trace["provenance"],
-                          "tier_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
-                          "tier_rationale": policy.rationale,
-                          "local_supply_provenance": "MODEL_DERIVED",
-                          "local_supply_basis": "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING",
-                          "local_supply_semantics": "CONFIGURED_GRID_FOLLOWING_REQUIRES_SOURCE_REACHABILITY",
-                          "grid_service_provenance": "MODEL_DERIVED", "unmet_provenance": "MODEL_DERIVED", "appliances": []})
-
-        for edge in topology["edges"]:
-            state = states[edge["id"]]
-            state["flow_w"] = flows[edge["id"]]
-            state["energized"] = edge["from"] in parent and edge["to"] in parent and state["closed"] and not state["faulted"]
-            state["provenance"] = "MODEL_DERIVED"
+    def _electrical_state(self, closed_ties=None):
+        states, loads, decision = evaluate(self.topology, self.profile, self.energy_trace, self.hour, self.faults,
+                                           self.closed_ties if closed_ties is None else closed_ties)
+        if closed_ties is None:
+            self.decision = decision
         return states, loads
 
     def _tie_joins_components(self, tie_id):
@@ -198,7 +116,7 @@ class DistrictAuthority:
                 reason = "Closing the tie would create a loop; the radial constraint rejects it."
             else:
                 reason = "Candidate joins separate modeled sections within its synthetic rating."
-        return {"candidate_edge_id": self.candidate_tie, "applied_edge_id": self.closed_tie,
+        return {"candidate_edge_id": self.candidate_tie, "applied_edge_id": min(self.closed_ties, default=None),
                 "stable_since": self.stable_since, "stable_evidence_count": self.stable_evidence_count,
                 "reason": reason, "provenance": "MODEL_DERIVED"}
 
@@ -329,7 +247,7 @@ class DistrictAuthority:
                     return False
                 self.faults.remove(edge["id"])
                 self.candidate_tie = None
-                self.closed_tie = None
+                self.closed_ties = frozenset()
                 self.stable_evidence_count = 0
                 self.stable_since = None
             self.restoration_reason = None
@@ -346,10 +264,7 @@ class DistrictAuthority:
                 if not self._tie_joins_components(candidate["id"]):
                     self.restoration_reason = "Closing the declared tie would create a loop; radial constraint rejects the route."
                     continue
-                previous_tie = self.closed_tie
-                self.closed_tie = candidate["id"]
-                _, proposed_loads = self._electrical_state()
-                self.closed_tie = previous_tie
+                _, proposed_loads = self._electrical_state(self.closed_ties | {candidate["id"]})
                 if sum(load["served_w"] for load in proposed_loads) <= before_served:
                     self.restoration_reason = "The declared tie does not increase served modeled load under source and line limits."
                     continue
@@ -372,15 +287,13 @@ class DistrictAuthority:
                 self.restoration_reason = "Fresh topology evidence shows the candidate would create a loop."
                 return False
             candidate = self.candidate_tie
-            previous_tie = self.closed_tie
-            self.closed_tie = candidate
-            proposed_states, proposed_loads = self._electrical_state()
+            proposed_states, proposed_loads = self._electrical_state(self.closed_ties | {candidate})
             edge_limits = {edge["id"]: edge["limit_w"] for edge in self.topology["edges"]}
             if (sum(load["grid_served_w"] for load in proposed_loads) > self.profile.source_capacity_w
                     or any(state["flow_w"] > edge_limits[edge_id] for edge_id, state in proposed_states.items())):
-                self.closed_tie = previous_tie
                 self.restoration_reason = "Fresh capacity evidence rejects the candidate under source or line limits."
                 return False
+            self.closed_ties = self.closed_ties | {candidate}
             self.candidate_tie = None
             self.stable_evidence_count = 0
             self.restoration_reason = "Recovery applied to modeled state; no physical switch confirmation is available."

@@ -15,7 +15,8 @@ def validate_mapping(profile):
             raise ValueError(f"{item.id}: requested W exceeds the configured rated maximum")
 
 
-def dispatch(profile, topology, parent, parent_edge, source):
+def dispatch(profile, topology, parent, parent_edge, source, budget_w=None):
+    budget_w = profile.source_capacity_w if budget_w is None else budget_w
     validate_mapping(profile)
     nodes = {node.get("building_id", node["id"]): node for node in topology["nodes"] if node["role"] == "load"}
     by_room = {row.room_id: row.building_id for row in profile.buildings if row.room_id is not None}
@@ -32,7 +33,7 @@ def dispatch(profile, topology, parent, parent_edge, source):
                        reachable=reachable[by_room[item.room_id]], path=paths[by_room[item.room_id]],
                        group=item.indivisible_group, requires=item.requires) for item in APPLIANCES)
     limits = {edge["id"]: edge["limit_w"] for edge in topology["edges"]}
-    problem = Problem(items, profile.source_capacity_w, {"district": profile.source_capacity_w},
+    problem = Problem(items, budget_w, {"district": budget_w},
                       {"district": True}, class_order=CLASS_ORDER["activity_first"], edge_limits_w=limits)
     plan = solve(problem)
     violations = validate(problem, plan.served)
