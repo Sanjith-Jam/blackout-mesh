@@ -26,8 +26,8 @@ Hardware is not integrated: A/B serial/radio contracts differ, physical ACK fiel
 
 ## Scope and authority
 
-- Remote current application plan: [remaining plan v2.0](PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
-- [Required ML plan](LAB_ACTIVITY_ML_PLAN.md) preserves the user's explicit trained-classifier requirement. Its nine-load catalog differs from the web app's six-load catalog; resolve this explicitly, keeping all values labeled by configuration.
+- Remote current application plan: [remaining plan v2.0](docs/planning/PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](docs/planning/PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
+- [Required ML plan](docs/planning/LAB_ACTIVITY_ML_PLAN.md) preserves the user's explicit trained-classifier requirement. Its nine-load catalog differs from the web app's six-load catalog; resolve this explicitly, keeping all values labeled by configuration.
 - Physical first milestone: two ESP32s, one RFID reader, three cards, three classroom LEDs and four buttons. Full two-person plan is local-only in `/home/bread/blackout-mesh-local/`. Phase 0 stays complete.
 - Simulated power; real radio/LEDs only after verified. No real occupancy accuracy, power delivery, savings or multi-hop mesh claim.
 - Approximately 24-hour hackathon and ₹1,500 ceiling; no Arduino/displays. Unknown 12 V/amp/motor modules stay outside baseline.
@@ -41,7 +41,7 @@ When hardware resumes, agree one A/B transport and physical mapping before linki
 
 ## Pending-work planning — 2026-10-10
 
-[PENDING_IMPLEMENTATION_PLAN.md](PENDING_IMPLEMENTATION_PLAN.md) defines all 24 requested backlog items against `d1c58d7`, with six phases, dependencies, acceptance/verification criteria and scoped library choices. This is planning, not implementation completion. Hardware remains paused and existing reuse recommendations are unchanged. Runtime code and dependencies were not changed or tested in this planning task; plan structure and dependency graph were checked. GitHub issue links are recorded in the plan index.
+[docs/planning/PENDING_IMPLEMENTATION_PLAN.md](docs/planning/PENDING_IMPLEMENTATION_PLAN.md) defines all 24 requested backlog items against `d1c58d7`, with six phases, dependencies, acceptance/verification criteria and scoped library choices. This is planning, not implementation completion. Hardware remains paused and existing reuse recommendations are unchanged. Runtime code and dependencies were not changed or tested in this planning task; plan structure and dependency graph were checked. GitHub issue links are recorded in the plan index.
 
 ## Issue #5 delivered locally — 2026-10-10
 
@@ -108,3 +108,7 @@ Added hospital drill-down controls for normal, overload, cooling failure, combin
 ### Demo naming and copy cleanup
 
 Blackout Mesh now names the landing page, header, browser title and engineering console consistently. Removed the unused hidden duplicate hero. The visible hero advertises the implemented demand forecast and city recovery guide with synthetic-training and hardware-verification qualifications. Frontend production build and component checks pass; no hardware work.
+
+### Person B presentation handoff
+
+README now opens with the recorded software demo GIF, states real/simulated boundaries, reproduces the measured 6 kW comparison (including switches and unmet Wh), and gives local startup instructions. Planning documents moved to `docs/planning/`; AGENTS/context/progress references and new Markdown links were checked. See `docs/DEMO_GUIDE.md` for the city/forecast/recovery script, evidence provenance, test setup and B1–B7 status. Generated-client check and the final two browser checks pass after all UI changes. No push by this task. B5 remains on hold; A1/A3/A4 backend dependencies remain explicit rather than being presented as completed results.

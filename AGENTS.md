@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Offline campus-power decision demo: simulated electrical model, Python authority, real ESP32 radio/LED feedback.
-Spec: `PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md`; `LAB_ACTIVITY_ML_PLAN.md` preserves the user-required classifier scope. Catalog and transport conflicts are tracked in `PROGRESS_REPORT.md`; do not mix variants silently. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
+Spec: `docs/planning/PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `docs/planning/PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md`; `docs/planning/LAB_ACTIVITY_ML_PLAN.md` preserves the user-required classifier scope. Catalog and transport conflicts are tracked in `PROGRESS_REPORT.md`; do not mix variants silently. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
 
 **Status:** software classifier, recorded replay, exact allocation and command center are delivered. Hardware is paused; A/B transport compatibility and physical integration remain pending. See `PROGRESS_REPORT.md` for current evidence.
 

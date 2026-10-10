@@ -1,24 +1,32 @@
 # Blackout Mesh
 
-A hackathon prototype for simulated power allocation, RFID classroom interaction and ESP32 LED feedback. “Mesh” is a working name; multi-hop routing is outside scope.
+![Software city-grid outage and recovery demo](docs/media/city-demo.gif)
 
-## Current progress
+A local, explainable power-allocation demo: forecast requested demand, explore a city grid, trigger an outage, and follow staged recovery. The city drawing uses the existing six-service **14 kW lab model**; it does not claim city-scale electrical physics or multi-hop mesh routing.
 
-Software demo now includes a trained local occupancy classifier, recorded-data replay, exact six-service allocation and the original website interface. Board A (RFID reader + five buttons, including an RFID-fail fallback for room A) and board B (room LEDs) now share one contract, and the backend bridges board A to the website; physical end-to-end acceptance with both boards is still to be recorded. The model uses office observations as a proxy and does not establish campus accuracy.
-See [the current progress report](PROGRESS_REPORT.md) for evidence, limitations and next steps.
+**Real software:** a trained occupancy proxy, a synthetic-trained demand forecaster, exact 64-plan allocation, recorded history and an ESP32 USB/ESP-NOW bridge. **Simulated:** city power, demand, faults, switching and recovery. Physical LED confirmation appears only when the connected gateway reports a fresh acknowledgment. Physical end-to-end acceptance remains pending; B5 flashing/pairing/video is on hold.
 
-## Documents
+Recorded local medians: **0.17 ms** occupancy inference (100 warm calls), **1.59 ms** allocation (50 decisions), **0 constraint violations / 280 simulated runs**. These are different tasks, not a competing-controller speed comparison. [Measurement sources](docs/DEMO_GUIDE.md#evidence).
 
-- [Exhaustive pending implementation plan](PENDING_IMPLEMENTATION_PLAN.md): 24 issues, dependency order, technology choices and release gates.
-- [Remaining application plan v2.0](PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
-- [Required ML plan](LAB_ACTIVITY_ML_PLAN.md): training/evaluation requirement; catalog must be reconciled with the current application.
-- [Context](CONTEXT.md) and [agent instructions](AGENTS.md).
-- [A wiring](docs/ESP32_A_WIRING.md), [A status](ESP32_A_STATUS.md), [A serial/radio contract](contracts/serial_protocol.md).
-- [Board A connection guide](docs/ESP32_A_CONNECTION_GUIDE.md), [B guide](hardware/README.md); both boards use the [A serial/radio contract](contracts/serial_protocol.md).
+The 60-second demand forecast averaged **149.49 W error** versus **469.59 W** for last-value persistence on 20 held-out **synthetic** sessions. It warns about capacity risk and cannot authorize switching. Neither model establishes campus accuracy.
 
-## Application
+## Same shortage, simpler controllers
 
-From repository root:
+6 kW shortage · five seeds per policy · 40 simulated minutes per run. Switching counts are means.
+
+| Policy | Occupied service | Switches | Essential unmet Wh | Critical unmet Wh |
+|---|---:|---:|---:|---:|
+| Fixed priority | 61.8% | 6.2 | 380.9 | 0.0 |
+| Essentials-first, no ML | 84.9% | 6.6 | 205.1 | 0.0 |
+| ML with simulated validation-rate errors | 85.4% | 20.6 | 220.3 | 0.0 |
+| Always UNKNOWN | 84.9% | 6.6 | 205.1 | 0.0 |
+| Oracle (offline only) | 85.8% | 7.8 | 219.9 | 0.0 |
+
+The small occupied-service gain comes with more switches and unmet essential demand. ML is optional; rank-dwell evaluation from A1 is still pending. [Full results](backend/benchmarks/results/allocation_report.md).
+
+## Run locally
+
+From the repository root:
 
 ```sh
 uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
@@ -32,43 +40,6 @@ npm ci --no-audit --no-fund
 npm run dev
 ```
 
-Routes: `/`, `/demo`, `/hospital`, `/classrooms`. The classroom route contains physical floor plans, component wiring and powered/shed appliance states. Reset, scan CR1, then choose overload: CR1 stays fully on while CR2/CR3 retain computers and lighting. Its separate catalog is 8,000 W normal and 3,400 W shortage. The hospital route shows three virtual transformers and sensor-derived likely causes, including missing evidence. These are synthetic demonstrations; the fault rules are not a trained transformer model or certified protection. Open `/demo` for the original controls. The UI redesign and its ML/replay presentation have been reverted at the user’s request; use the API documentation at `/docs` to exercise the model and replay until the user specifies classifier visuals. The backend reports hardware disconnected. An INACTIVE prediction only lowers a room's rank: it never sheds a room while capacity allows, never switches off protected lighting/computers or hospital critical circuits, and only counts after two consecutive INACTIVE readings (`backend/app/core/safety.py`). A lower served-watt total is not measured energy savings. Restore waits for five seconds of stable capacity/feeders and three seconds after shedding, then adds at most one service per second.
+Open [the city demo](http://127.0.0.1:5173/demo). Request all rooms → 6 kW shortage → trip feeder A → repair it → restore supply. Select the synthetic rising-demand rehearsal to see a forecast warning. No API key, training step or paid service is required.
 
-No API key, paid service, GPU or training step is needed to run the checked-in classifier. For model provenance, training commands, measured benchmark and limits, see [model report](backend/models/MODEL_REPORT.md). API documentation is at `http://127.0.0.1:8000/docs`. Keep the demo bound to localhost; deployment/authentication is outside this delivery.
-
-## Verified checks
-
-```sh
-python3 tools/test_esp32_a.py
-python3 tools/test_radio_protocol.py
-python3 tools/test_host_tools.py
-pio run -d firmware -e esp32-a -e esp32-a-enroll
-PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with pytest --with httpx python -m pytest backend/tests -q
-```
-
-From `frontend/`: `npm run build` after installing dependencies. Detailed results are in the progress report.
-
-## Hardware utilities
-
-A enrollment/input commands (from repository root; board identity/wiring/access must be verified first):
-
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install pyserial
-pio run -d firmware -e esp32-a-enroll -t upload --upload-port /dev/ttyUSB0
-.venv/bin/python tools/enroll_cards.py --port /dev/ttyUSB0
-pio run -d firmware -e esp32-a -t upload --upload-port /dev/ttyUSB0
-.venv/bin/python tools/gateway_console.py --port /dev/ttyUSB0
-```
-
-`pio device monitor --port /dev/ttyUSB0 --baud 115200` shows raw output without host sync. Run `pio pkg install -d firmware` before native C++ checks on a fresh checkout.
-
-Board B bench check: `python hardware/tools/check_board_b.py <port>`. Full demo with both boards: start the backend with `BLACKOUT_GATEWAY_PORT=<board A port>` or use Connect on the Classrooms page, as in the [connection guide](docs/ESP32_A_CONNECTION_GUIDE.md).
-
-Local planning/reuse research, judge critique, notice drafts, private credentials and historical archives stay outside this repository. Existing reuse recommendations remain unchanged; preserve required license notices when incorporating upstream code.
-
-### Evaluation and policy evidence
-
-- [Temporal occupancy audit](backend/benchmarks/occupancy/REPORT.md): rolling-origin results and conservative adoption gate; campus generalization remains unvalidated.
-- [Allocation policies](docs/ALLOCATION_POLICIES.md): versioned API configuration, per-load explanations and decision replay.
-- [Electrical studies](docs/ELECTRICAL_SIMULATION.md): optional balanced AC adapter, matched engines, assumptions and failure boundaries.
+[Demo guide and checks](docs/DEMO_GUIDE.md) · [Planning](docs/planning/README.md) · [Model evidence](backend/models/MODEL_REPORT.md) · [Progress](PROGRESS_REPORT.md) · [Context](CONTEXT.md) · [Hardware guide](docs/ESP32_A_CONNECTION_GUIDE.md)
