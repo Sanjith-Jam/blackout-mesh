@@ -85,6 +85,7 @@ class DistrictMap(StrictDTO):
     source_url: StrictStr
     attribution: StrictStr
     license: StrictStr
+    retrieved: StrictStr
     source_sha256: StrictStr
     features: list[DistrictMapFeature]
 
@@ -123,6 +124,8 @@ class DistrictLoad(StrictDTO):
     unmet_w: StrictInt
     demand_provenance: StrictStr
     local_supply_provenance: StrictStr
+    local_supply_basis: StrictStr
+    local_supply_semantics: StrictStr
     grid_service_provenance: StrictStr
     unmet_provenance: StrictStr
 
@@ -158,6 +161,32 @@ class DistrictState(StrictDTO):
     transformers: list[dict]
 
 
+class DistrictEnergyTotals(StrictDTO):
+    period_hours: StrictInt
+    demand_wh: StrictInt
+    pv_generated_wh: StrictInt
+    pv_used_wh: StrictInt
+    pv_curtailed_wh: StrictInt
+    baseline_import_scheduled_wh: StrictInt
+    dispatch_import_scheduled_wh: StrictInt
+    grid_export_wh: StrictInt
+    battery_charge_wh: StrictInt
+    battery_discharge_wh: StrictInt
+    battery_loss_wh: StrictInt
+    battery_round_trip_efficiency: StrictFloat
+
+
+class DistrictNetworkEnergyInterval(StrictDTO):
+    duration_hours: StrictInt
+    requested_wh: StrictInt
+    local_supply_wh: StrictInt
+    grid_import_requested_wh: StrictInt
+    grid_served_wh: StrictInt
+    served_wh: StrictInt
+    unmet_wh: StrictInt
+    unmet_fraction_of_requested: StrictFloat
+
+
 class DistrictEnergy(StrictDTO):
     hour: StrictInt
     profile: list[DistrictEnergyHour]
@@ -168,6 +197,8 @@ class DistrictEnergy(StrictDTO):
     battery_charge_w: StrictInt
     battery_discharge_w: StrictInt
     grid_import_w: StrictInt
+    totals: DistrictEnergyTotals
+    network_interval: DistrictNetworkEnergyInterval
 
 
 def register_district():

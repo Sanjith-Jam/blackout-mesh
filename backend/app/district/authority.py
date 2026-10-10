@@ -13,6 +13,23 @@ DATA = Path(__file__).with_name("data")
 SHIFT_PYTHON = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
 
 
+def diagnose_transformer(sensor):
+    """Apply simple thresholds to fresh observations; scenario labels are not inputs."""
+    if (sensor.get("status") not in {"SIMULATED", "OBSERVED"}
+            or any(sensor.get(field) is None for field in
+                   ("oil_temperature_c", "voltage_v", "current_a", "cooling_ok"))):
+        return {"status": "UNKNOWN", "suspected_part": None,
+                "evidence": ["Fresh complete transformer observations are unavailable."]}
+    if sensor["cooling_ok"] is False:
+        return {"status": "SUSPECTED", "suspected_part": "cooling_system",
+                "evidence": ["Observed cooling status is not OK."]}
+    if sensor["oil_temperature_c"] >= 100 and sensor["current_a"] >= 50:
+        return {"status": "SUSPECTED", "suspected_part": "winding",
+                "evidence": ["Observed oil temperature is at least 100 °C and current is at least 50 A."]}
+    return {"status": "UNKNOWN", "suspected_part": None,
+            "evidence": ["Fresh observations do not meet a configured suspicion threshold."]}
+
+
 @lru_cache(maxsize=1)
 def shift_runtime_probe():
     if not SHIFT_PYTHON.is_file():
@@ -95,6 +112,7 @@ class DistrictAuthority:
             tier = "critical" if index < 3 else "noncritical"
             requested_w = demand_base + (index < demand_extra)
             grid_requested_w = grid_base + (index < grid_extra)
+            # CityLearn provides a district residual, allocated per building for this graph view.
             local_supply_w = requested_w - grid_requested_w
             path_capacity = min((edge_by_id[edge_id]["limit_w"] - flows[edge_id] for edge_id in path), default=source_capacity_w)
             grid_served_w = min(grid_requested_w, source_capacity_w - grid_served_total, max(0, path_capacity)) if connected else 0
@@ -108,7 +126,9 @@ class DistrictAuthority:
                           "grid_requested_w": grid_requested_w, "grid_served_w": grid_served_w,
                           "served_w": served_w, "unmet_w": requested_w - served_w,
                           "demand_provenance": self.energy_trace["provenance"],
-                          "local_supply_provenance": self.energy_trace["provenance"],
+                          "local_supply_provenance": "MODEL_DERIVED",
+                          "local_supply_basis": "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING",
+                          "local_supply_semantics": "BEHIND_THE_METER_ALLOCATION_NO_FEEDER_PATH_REQUIRED",
                           "grid_service_provenance": "MODEL_DERIVED", "unmet_provenance": "MODEL_DERIVED"})
 
         for edge in topology["edges"]:
@@ -176,14 +196,12 @@ class DistrictAuthority:
             scenario = self.transformer_scenarios.get(node["id"])
             sensor = {"oil_temperature_c": None, "voltage_v": None, "current_a": None,
                       "cooling_ok": None, "status": "MISSING", "provenance": "NO_SENSOR_DATA"}
-            diagnosis = {"status": "UNKNOWN", "suspected_part": None,
-                         "evidence": ["No causal transformer sensor observations are available."]}
+            diagnosis = None
             if scenario in ("overload", "cooling_failure"):
                 sensor.update(oil_temperature_c=105.0, voltage_v=380.0, current_a=60.0,
                               cooling_ok=scenario != "cooling_failure", status="SIMULATED",
                               provenance="CONFIGURED_SIMULATED_ASSUMPTION")
-                diagnosis = {"status": "SUSPECTED", "suspected_part": "cooling_system" if scenario == "cooling_failure" else "winding",
-                             "evidence": [f"Configured simulated {scenario} scenario; no physical sensor reading."]}
+            diagnosis = diagnose_transformer(sensor)
             transformers.append({"component_id": node["id"], "sensor": sensor, "diagnosis": diagnosis})
 
         profile = self.energy_trace["profile"]
@@ -193,6 +211,7 @@ class DistrictAuthority:
             "site": {"name": "Guru Nanak Institutions Technical Campus", "center": self.map["metadata"]["center"], "radius_m": 500},
             "map": {"source": self.map["metadata"]["source"], "source_url": self.map["metadata"]["source_url"],
                 "attribution": self.map["metadata"]["attribution"], "license": self.map["metadata"]["license"],
+                "retrieved": self.map["metadata"]["retrieved"],
                 "source_sha256": self.map["metadata"].get("source_sha256", ""), "features": features},
             "topology": topology,
             "generation": copy.deepcopy(self.generation),
@@ -212,7 +231,27 @@ class DistrictAuthority:
                 "battery_soc_wh": energy["battery_soc_wh"], "engine": self.energy_trace["engine"],
                 "provenance": self.energy_trace["provenance"], "pv_used_w": energy["pv_used_w"],
                 "battery_charge_w": energy["battery_charge_w"], "battery_discharge_w": energy["battery_discharge_w"],
-                "grid_import_w": energy["grid_import_w"]}}
+                "grid_import_w": energy["grid_import_w"],
+                "totals": {"period_hours": len(profile), "demand_wh": self.energy_trace["totals"]["demand_wh"],
+                    "pv_generated_wh": sum(row["pv_w"] for row in profile),
+                    "pv_used_wh": sum(row["pv_used_w"] for row in profile),
+                    "pv_curtailed_wh": self.energy_trace["totals"]["pv_curtailed_wh"],
+                    "baseline_import_scheduled_wh": self.energy_trace["totals"]["baseline_import_wh"],
+                    "dispatch_import_scheduled_wh": self.energy_trace["totals"]["dispatch_import_wh"],
+                    "grid_export_wh": 0,
+                    "battery_charge_wh": sum(row["battery_charge_w"] for row in profile),
+                    "battery_discharge_wh": sum(row["battery_discharge_w"] for row in profile),
+                    "battery_loss_wh": self.energy_trace["totals"]["battery_loss_wh"],
+                    "battery_round_trip_efficiency": self.energy_trace["battery"]["round_trip_efficiency"]},
+                "network_interval": {"duration_hours": 1,
+                    "requested_wh": sum(load["requested_w"] for load in loads),
+                    "local_supply_wh": sum(load["local_supply_w"] for load in loads),
+                    "grid_import_requested_wh": sum(load["grid_requested_w"] for load in loads),
+                    "grid_served_wh": sum(load["grid_served_w"] for load in loads),
+                    "served_wh": sum(load["served_w"] for load in loads),
+                    "unmet_wh": sum(load["unmet_w"] for load in loads),
+                    "unmet_fraction_of_requested": float(sum(load["unmet_w"] for load in loads) /
+                                                           max(1, sum(load["requested_w"] for load in loads)))}}}
 
     def apply_action(self, action):
         name = action.action.value
