@@ -149,11 +149,17 @@
 .line-b, .ps-swatch.line-b { stroke: #7e22ce; background: #7e22ce; } .line-b-limit, .ps-swatch.line-b-limit { stroke: #d8b4fe; background: #d8b4fe; }
 .ps-swatch { display: inline-block; width: 16px; height: 4px; border-radius: 2px; }
 .ps-swatch.is-dashed { background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 8px); }
-.ps-band.band-SERVED, .ps-swatch.band-SERVED { fill: #22c55e; background: #22c55e; height: 10px; }
-.ps-band.band-PENDING_RESTORATION, .ps-swatch.band-PENDING_RESTORATION { fill: #60a5fa; background: #60a5fa; height: 10px; }
-.ps-band.band-SHED, .ps-swatch.band-SHED { fill: #f59e0b; background: #f59e0b; height: 10px; }
-.ps-band.band-UNREACHABLE, .ps-swatch.band-UNREACHABLE { fill: #ef4444; background: #ef4444; height: 10px; }
-.ps-band.band-NOT_REQUESTED, .ps-swatch.band-NOT_REQUESTED { fill: #a8a29e; background: #a8a29e; height: 10px; }
+.ps-band.band-SERVED { fill: #22c55e; }
+.ps-swatch.band-SERVED { background: #22c55e; }
+.ps-band.band-PENDING_RESTORATION { fill: #60a5fa; }
+.ps-swatch.band-PENDING_RESTORATION { background: #60a5fa; }
+.ps-band.band-SHED { fill: #f59e0b; }
+.ps-swatch.band-SHED { background: #f59e0b; }
+.ps-band.band-UNREACHABLE { fill: #ef4444; }
+.ps-swatch.band-UNREACHABLE { background: #ef4444; }
+.ps-band.band-NOT_REQUESTED { fill: #a8a29e; }
+.ps-swatch.band-NOT_REQUESTED { background: #a8a29e; }
+.ps-swatch[class*="band-"] { height: 10px; }
 .ps-capbars { display: grid; gap: 10px; }
 .ps-capbar { padding: 8px 0; border-bottom: 1px solid var(--ps-line); }
 .ps-capbar-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: .9rem; }

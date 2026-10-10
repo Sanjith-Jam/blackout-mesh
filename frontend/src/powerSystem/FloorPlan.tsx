@@ -10,7 +10,7 @@ import type { Appliance, Edge, PowerSystem, Room } from './model';
 export const VIEW = { width: 1240, height: 880 };
 const WING_X = 210, ROOM_W = 336, HOSP_TOP = 20, ROOM_H = 320, CLASS_TOP = 540;
 const FEEDER_Y: Record<string, number> = { A: 380, B: 490 };
-const PLANT = { x: 18, y: 352, w: 172, h: 168 };
+const PLANT = { x: 18, y: 300, w: 172, h: 262 };
 const SOURCE = { x: 62, y: 436 };
 const BREAKER_X = 150;
 
@@ -164,12 +164,14 @@ export default function FloorPlan({ data, selected, onSelect, highlight }: {
             : <text className="ps-small" x={x + ROOM_W - 12} y={y + 24} textAnchor="end">{room.session ? `Session · ${room.activity_state ?? 'UNKNOWN'}` : 'No session'}</text>}
           {led && <g className={`ps-led${led.commanded ? ' is-on' : ''}`}>
             <circle cx={x + ROOM_W - 18} cy={y + 40} r={5} />
-            <text className="ps-small" x={x + ROOM_W - 28} y={y + 44} textAnchor="end">{`Room LED ${led.commanded ? 'on' : 'off'}${led.confirmed == null ? ' (unconfirmed)' : led.confirmed ? ' (ACK)' : ' (no ACK)'}`}</text>
+            <text className="ps-small" x={x + ROOM_W - 28} y={y + 44} textAnchor="end">{`LED ${led.commanded ? 'on' : 'off'} · ${led.confirmed == null ? 'unconfirmed' : led.confirmed ? 'ACK' : 'no ACK'}`}</text>
           </g>}
           <g className="ps-panel">
             {top ? <><circle cx={panel[0] - 5} cy={panel[1]} r={7} /><circle cx={panel[0] + 5} cy={panel[1]} r={7} /></>
               : <rect x={panel[0] - 12} y={panel[1] - 8} width={24} height={16} rx={2} />}
-            <text className="ps-small" x={panel[0] + 16} y={panel[1] + (top ? 4 : 4)}>{room.distribution_name}</text>
+            <title>{room.distribution_name}</title>
+            {/* Classroom panels sit in the header row, which already carries the session and LED text. */}
+            {top && <text className="ps-small" x={panel[0] + 16} y={panel[1] + 4}>{room.distribution_name}</text>}
           </g>
           {circuit && <g className="ps-circuit"><rect x={circuit[0] - 9} y={circuit[1] - 8} width={18} height={16} rx={2} />
             <text className="ps-small" x={circuit[0] + 14} y={circuit[1] + 4}>{`Circuit ${room.service_id}`}</text></g>}
