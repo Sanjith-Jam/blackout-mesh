@@ -182,3 +182,37 @@ def test_indicators_summarize_rooms_and_are_unconfirmed_without_hardware():
     assert all(i["confirmed"] is None for i in data["indicators"])
     assert data["hardware_link"] == "NOT_CONFIGURED"
     assert "does not prove" in data["boundary"]
+
+
+def test_facility_full_supply_and_reset_close_their_feeder_and_restore_the_source():
+    """Rayna's report: after feeder A was opened elsewhere, /hospital Full supply stayed at 0 W forever."""
+    now = fake_clock()
+    client.post("/api/v1/simulation/feeder", json={"feeder": "A", "available": False})
+    client.post("/api/v1/simulation/capacity", json={"capacity_w": 6000})
+    advance(now, 1.0)
+    assert client.get("/api/v1/visualizers/hospital").json()["effective_capacity_w"] == 0
+
+    client.post("/api/v1/visualizers/hospital", json={"action": "normal"})
+    advance(now, 15.0)
+    data = ps()
+    assert data["feeders"][0]["available"] and data["source"]["capacity_w"] == data["source"]["normal_capacity_w"]
+    assert all(a["state"] == "SERVED" for a in data["appliances"] if a["zone"] == "hospital")
+    hospital = client.get("/api/v1/visualizers/hospital").json()
+    assert hospital["served_w"] == hospital["capacity_w"] == 6000
+    assert_views_agree(data)
+
+    # Overload then sheds per policy: essentials stay on, optional equipment goes.
+    client.post("/api/v1/visualizers/hospital", json={"action": "overload"})
+    advance(now, 1.0)
+    data = ps()
+    hosp = [a for a in data["appliances"] if a["zone"] == "hospital"]
+    assert all(a["state"] == "SERVED" for a in hosp if a["protected"])
+    assert any(a["state"] == "SHED" and a["reason_code"] == "SHED_ZONE_BUDGET" for a in hosp)
+    assert sum(a["served_w"] for a in hosp) <= client.get("/api/v1/visualizers/hospital").json()["capacity_w"]
+
+    # The classroom page's Reset closes feeder B the same way.
+    client.post("/api/v1/simulation/feeder", json={"feeder": "B", "available": False})
+    client.post("/api/v1/visualizers/classrooms", json={"action": "reset"})
+    advance(now, 15.0)
+    assert all(f["available"] for f in ps()["feeders"])
+    client.post("/api/v1/site/scenario", json={"scenario": "normal"})

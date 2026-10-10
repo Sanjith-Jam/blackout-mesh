@@ -212,6 +212,15 @@ class SiteAuthority:
 
         return self.command("site.scenario", apply, {"scenario": name})[1]
 
+    def restore_zone_supply(self, zone: str) -> None:
+        """Full supply / reset on a facility page: close the feeders that zone hangs off and restore the
+        source if it was reduced, so the preset can actually deliver its watts. Call inside a command."""
+        for feeder in sorted({a.feeder for a in APPLIANCES if a.zone == zone}):
+            if not self.grid.feeder_available.get(feeder, True):
+                self.grid.set_feeder(feeder, True)
+        if self.grid.source_capacity_w < NORMAL_SOURCE_CAPACITY_W:
+            self.grid.set_capacity(NORMAL_SOURCE_CAPACITY_W)
+
     def commit(self, name: str, payload=None) -> dict:
         """For handlers that already applied their mutation: tick all parts and record the receipt."""
         return self.command(name, lambda: None, payload)[1]

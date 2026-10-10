@@ -376,6 +376,9 @@ async def post_hardware_disconnect(request: Request):
     request.app.state.site.command("hardware.disconnect", lambda: disconnect_gateway(request.app))
     return hardware_status(request.app)
 
+# Facility presets that promise full supply also close that facility's feeder and restore the source.
+RESTORE_ACTIONS = {"normal", "reset"}
+
 @router.post("/api/v1/visualizers/classrooms", response_model=ClassroomDemoResponse)
 async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     site = request.app.state.site
@@ -391,9 +394,13 @@ async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     if req.capacity_w is not None and not low <= req.capacity_w <= high:
         raise HTTPException(422, f"capacity_w must be between {low} and {high}")
     try:
-        _, receipt = site.command(f"classroom.{req.action}",
-                                  lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w,
-                                                             event_id=req.event_id, event_time=observed_at),
+        def apply():
+            if req.action in RESTORE_ACTIONS:
+                site.restore_zone_supply("classroom")
+            return classroom_demo.act(req.action, req.classroom_id, req.capacity_w,
+                                      event_id=req.event_id, event_time=observed_at)
+
+        _, receipt = site.command(f"classroom.{req.action}", apply,
                                   {"action": req.action, "classroom_id": req.classroom_id,
                                    "capacity_w": req.capacity_w, "event_id": req.event_id, "run_id": req.run_id})
     except ValueError as exc:
@@ -428,7 +435,12 @@ async def act_hospital_demo(request: Request, req: HospitalDemoAction):
         low, high = hospital_demo.snapshot()["capacity_range_w"]
         if not (low <= req.capacity_w <= high):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    _, receipt = site.command(f"hospital.{action}", lambda: hospital_demo.act(action, req.zone_id, req.capacity_w, fault),
+    def apply():
+        if action in RESTORE_ACTIONS:
+            site.restore_zone_supply("hospital")
+        return hospital_demo.act(action, req.zone_id, req.capacity_w, fault)
+
+    _, receipt = site.command(f"hospital.{action}", apply,
                               {"action": action, "zone_id": req.zone_id, "capacity_w": req.capacity_w, "fault": fault})
     data, identity = site.read(hospital_demo.snapshot)
     return with_contract(data, site) | {"command": receipt}

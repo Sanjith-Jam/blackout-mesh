@@ -81,3 +81,22 @@ test('feeder A outage and capacity drop flow from the Fault Lab through the back
   await page.getByRole('button', { name: /Restore Capacity/ }).click();
   await expect.poll(async () => (await backendState(page)).appliances.every(a => a.state === 'SERVED' || a.state === 'NOT_REQUESTED'), { timeout: 30000 }).toBe(true);
 });
+
+test('hospital Full supply closes an open feeder A and Overload sheds per policy', async ({ page }, testInfo) => {
+  // Feeder A left open (for example from the /demo Fault Lab) used to leave /hospital stuck at 0 W.
+  await page.request.post(`${BACKEND}/api/v1/simulation/feeder`, { data: { feeder: 'A', available: false } });
+  await page.goto('/hospital');
+  const state = page.getByRole('region', { name: 'Hospital power state' });
+  await expect(state).toContainText('Limited by campus feeder A (0 W)');
+  await page.getByRole('button', { name: 'Full supply · 6,000 W' }).click();
+  await expect.poll(async () => (await backendState(page)).appliances.filter(a => a.zone === 'hospital').every(a => a.state === 'SERVED'),
+    { timeout: 20000 }).toBe(true);
+  await expect(state.locator('.classroom-demo__metric').filter({ hasText: 'Served' })).toContainText('6,000 W');
+  await expect(state).not.toContainText('UPSTREAM LOSS');
+  await page.screenshot({ path: testInfo.outputPath('hospital-full-supply.png'), fullPage: true });
+
+  await page.getByRole('button', { name: 'Overload preset' }).click();
+  await expect.poll(async () => (await backendState(page)).appliances.some(a => a.zone === 'hospital' && a.state === 'SHED')).toBe(true);
+  await expect(state.locator('.classroom-demo__metric').filter({ hasText: 'Unmet' })).not.toContainText(/^Unmet0 W$/);
+  await page.screenshot({ path: testInfo.outputPath('hospital-overload.png'), fullPage: true });
+});
