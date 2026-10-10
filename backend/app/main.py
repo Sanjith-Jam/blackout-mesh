@@ -7,13 +7,16 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from fastapi import APIRouter, Request, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from typing import List, Literal
 from pydantic import BaseModel, ConfigDict, StrictInt
 
 from app.schemas.snapshot import (
     HealthResponse, ModelStatusResponse, ActivityObservationResponse, ReplayActionResponse, CrossRouteContract,
     WebSocketMessageEnvelope, HardwareAckRequest, HardwareAckResponse,
-    SystemSnapshot,
+    SystemSnapshot, ClassroomDemoResponse, HospitalDemoResponse, HardwareStatusResponse,
+    SiteIdentityResponse, HardwareLinkStatus,
+    AllocationPolicyResponse, AllocationPolicyUpdateResponse,
     RfidScanRequest,
     RfidScanResponse,
     RfidEventType,
@@ -29,7 +32,7 @@ from app.schemas.snapshot import (
 from app.core.state import GridState
 from app.api.history import attach_history, register_history
 from app.core.control_loop import ControlLoop
-from app.core.site import SiteAuthority
+from app.core.site import AuditUnavailable, SiteAuthority
 from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.core.policy import AllocationPolicy
 from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
@@ -111,11 +114,11 @@ def campus_snapshot(site, app=None):
     if snapshot is not None and app is not None:
         hw = hardware_status(app)
         if hw["link"] != "NOT_CONFIGURED":  # physical board B state, applied at read time only
-            snapshot.hardware_link = "CONNECTED" if hw["link"] == "CONNECTED" else "ERROR"
+            snapshot.hardware_link = HardwareLinkStatus.CONNECTED if hw["link"] == "CONNECTED" else HardwareLinkStatus.ERROR
             snapshot.indicator_command_mask = hw["commanded_mask"]
             snapshot.indicator_confirmed_mask = hw["confirmed_mask"]
     if snapshot is not None:
-        snapshot.site = identity
+        snapshot.site = SiteIdentityResponse.model_validate(identity)
         snapshot.contract = snapshot.contract.model_copy(update={"identity": snapshot.contract.identity.model_copy(update={"run_id": site.run_id, "state_revision": site.revision, "observation_time": snapshot.generated_at.isoformat()})})
     return snapshot
 
@@ -148,7 +151,7 @@ def handle_gateway_event(app, action: str, room) -> bool:
         return False
     name, arg = commands[action]
     demo = app.state.classroom_demo
-    app.state.site.command(f"board_a.{action.lower()}", lambda: demo.act(name, arg))
+    app.state.site.command(f"board_a.{action.lower()}", lambda: demo.act(name, arg), {"action": action, "room": room})
     return True
 
 
@@ -185,7 +188,7 @@ def disconnect_gateway(app):
 
 
 def socket_payload(snapshot, site):
-    snapshot.site = site.identity()
+    snapshot.site = SiteIdentityResponse.model_validate(site.identity())
     return WebSocketMessageEnvelope(type="snapshot", payload=snapshot,
         sent_at=datetime.now(timezone.utc)).model_dump_json()
 
@@ -257,10 +260,16 @@ ELECTRICAL_TIMEOUT_S = 5
 async def health_check(request: Request):
     control_loop = request.app.state.control_loop
     return {
-        "status": "ok",
+        "status": "degraded" if request.app.state.grid.storage.degraded else "ok",
         "application": "PriorityGrid",
         "control_loop": control_loop.health(),
+        "storage": {"status": "DEGRADED" if request.app.state.grid.storage.degraded else "HEALTHY",
+                    "degraded_reason": request.app.state.grid.storage.degraded_reason},
     }
+
+
+async def audit_unavailable_handler(request: Request, exc: AuditUnavailable):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 @router.get("/api/v1/snapshot", response_model=SystemSnapshot)
 async def get_snapshot(request: Request):
@@ -275,7 +284,7 @@ async def model_status(request: Request):
     grid = request.app.state.grid
     return grid.model.status()
 
-@router.get("/api/v1/visualizers/classrooms")
+@router.get("/api/v1/visualizers/classrooms", response_model=ClassroomDemoResponse)
 async def get_classroom_demo(request: Request):
     site = request.app.state.site
     classroom_demo = request.app.state.classroom_demo
@@ -287,26 +296,26 @@ class GatewayConnect(BaseModel):
     port: str
 
 
-@router.get("/api/v1/hardware")
+@router.get("/api/v1/hardware", response_model=HardwareStatusResponse)
 async def get_hardware(request: Request):
     return hardware_status(request.app)
 
 
-@router.post("/api/v1/hardware/connect")
+@router.post("/api/v1/hardware/connect", response_model=HardwareStatusResponse)
 async def post_hardware_connect(request: Request, req: GatewayConnect):
     try:
-        connect_gateway(request.app, req.port)
+        request.app.state.site.command("hardware.connect", lambda: connect_gateway(request.app, req.port), {})
     except Exception as exc:
         raise HTTPException(409, f"could not open {req.port}: {exc}")
     return hardware_status(request.app)
 
 
-@router.post("/api/v1/hardware/disconnect")
+@router.post("/api/v1/hardware/disconnect", response_model=HardwareStatusResponse)
 async def post_hardware_disconnect(request: Request):
-    disconnect_gateway(request.app)
+    request.app.state.site.command("hardware.disconnect", lambda: disconnect_gateway(request.app))
     return hardware_status(request.app)
 
-@router.post("/api/v1/visualizers/classrooms")
+@router.post("/api/v1/visualizers/classrooms", response_model=ClassroomDemoResponse)
 async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     site = request.app.state.site
     classroom_demo = request.app.state.classroom_demo
@@ -318,17 +327,18 @@ async def act_classroom_demo(request: Request, req: ClassroomDemoAction):
     if req.capacity_w is not None and not low <= req.capacity_w <= high:
         raise HTTPException(422, f"capacity_w must be between {low} and {high}")
     _, receipt = site.command(f"classroom.{req.action}",
-                              lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w))
+                              lambda: classroom_demo.act(req.action, req.classroom_id, req.capacity_w),
+                              {"action": req.action, "classroom_id": req.classroom_id, "capacity_w": req.capacity_w})
     data, identity = site.read(classroom_demo.snapshot)
     return with_contract(data, site) | {"command": receipt}
 
-@router.get("/api/v1/visualizers/hospital")
+@router.get("/api/v1/visualizers/hospital", response_model=HospitalDemoResponse)
 async def get_hospital_demo(request: Request):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
     return visualizer_snapshot(site, hospital_demo)
 
-@router.post("/api/v1/visualizers/hospital")
+@router.post("/api/v1/visualizers/hospital", response_model=HospitalDemoResponse)
 async def act_hospital_demo(request: Request, req: HospitalDemoAction):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
@@ -340,7 +350,8 @@ async def act_hospital_demo(request: Request, req: HospitalDemoAction):
         low, high = hospital_demo.snapshot()["capacity_range_w"]
         if not (low <= req.capacity_w <= high):
             raise HTTPException(422, f"capacity_w must be between {low} and {high}")
-    _, receipt = site.command(f"hospital.{req.action}", lambda: hospital_demo.act(req.action, req.zone_id, req.capacity_w))
+    _, receipt = site.command(f"hospital.{req.action}", lambda: hospital_demo.act(req.action, req.zone_id, req.capacity_w),
+                              {"action": req.action, "zone_id": req.zone_id, "capacity_w": req.capacity_w})
     data, identity = site.read(hospital_demo.snapshot)
     return with_contract(data, site) | {"command": receipt}
 
@@ -367,13 +378,16 @@ async def post_activity_observation(request: Request, req: ActivityObservationRe
     for key, value in features.items():
         if value is not None and (isinstance(value, bool) or not math.isfinite(value) or not bounds[key][0] <= value <= bounds[key][1]):
             raise HTTPException(422, f"{key} is outside its accepted range")
-    revision = grid.record_activity(req.classroom_id, features, observed_at, req.source)
+    revision, receipt = site.command("campus.activity_observation",
+        lambda: grid.record_activity(req.classroom_id, features, observed_at, req.source),
+        {"classroom_id": req.classroom_id, "source": req.source,
+         "observed_at": observed_at.isoformat(), "features": features})
     try:
         prediction = await asyncio.to_thread(grid.model.predict, features)
     except Exception as exc:
         prediction = {"state": "UNKNOWN", "score": None, "reason": f"inference failed: {type(exc).__name__}", "model_version": "unavailable"}
     applied = grid.apply_prediction(req.classroom_id, revision, prediction)
-    site.commit("campus.activity_observation")
+    site.complete_command(receipt, "campus.activity_observation")
     return {"accepted": True, "applied": applied, "revision": revision,
             "activity": grid.activity[req.classroom_id]}
 
@@ -387,40 +401,41 @@ async def replay_action(request: Request, req: ReplayActionRequest):
     max_len = max((len(rows) for rows in replay_data.values()), default=0)
     if req.action == "start" and not max_len:
         raise HTTPException(409, "recorded replay data is unavailable")
-    if req.action == "reset":
-        request.app.state.replay_generation += 1
-        if request.app.state.replay_task and not request.app.state.replay_task.done():
-            request.app.state.replay_task.cancel()
-        grid.replay_index = 0
-        grid.replay_running = False
-        for cid in ("CR1", "CR2", "CR3"):
-            grid.set_classroom_load(cid, True)
-            grid.activity_tokens[cid] += 1
-            grid.activity_received_monotonic[cid] = None
-            grid.activity_guard.reset(cid)
-            grid.activity[cid] = {"state": "UNKNOWN", "score": None, "reason": "replay reset; awaiting evidence",
-                                  "source": None, "observed_at": None, "recorded_at": None,
-                                  "model_version": "unavailable", "priority": "UNKNOWN",
-                                  "evidence": {key: None for key in FEATURES}}
-    elif req.action == "pause":
-        request.app.state.replay_generation += 1
-        grid.replay_running = False
-    elif not grid.replay_running:
-        for cid in ("CR1", "CR2", "CR3"):
-            grid.set_classroom_load(cid, True)
-        grid.replay_running = True
-        request.app.state.replay_generation += 1
-        request.app.state.replay_task = asyncio.create_task(run_replay(request.app, request.app.state.replay_generation))
-    grid.replay_length = max_len
-    site.commit(f"campus.replay_{req.action}")
+    def apply_replay_action():
+        if req.action == "reset":
+            request.app.state.replay_generation += 1
+            if request.app.state.replay_task and not request.app.state.replay_task.done():
+                request.app.state.replay_task.cancel()
+            grid.replay_index = 0
+            grid.replay_running = False
+            for cid in ("CR1", "CR2", "CR3"):
+                grid.set_classroom_load(cid, True)
+                grid.activity_tokens[cid] += 1
+                grid.activity_received_monotonic[cid] = None
+                grid.activity_guard.reset(cid)
+                grid.activity[cid] = {"state": "UNKNOWN", "score": None, "reason": "replay reset; awaiting evidence",
+                                      "source": None, "observed_at": None, "recorded_at": None,
+                                      "model_version": "unavailable", "priority": "UNKNOWN",
+                                      "evidence": {key: None for key in FEATURES}}
+        elif req.action == "pause":
+            request.app.state.replay_generation += 1
+            grid.replay_running = False
+        elif not grid.replay_running:
+            for cid in ("CR1", "CR2", "CR3"):
+                grid.set_classroom_load(cid, True)
+            grid.replay_running = True
+            request.app.state.replay_generation += 1
+            request.app.state.replay_task = asyncio.create_task(run_replay(request.app, request.app.state.replay_generation))
+        grid.replay_length = max_len
+    site.command(f"campus.replay_{req.action}", apply_replay_action, {"action": req.action})
     return {"running": grid.replay_running, "index": grid.replay_index, "length": max_len}
 
 @router.post("/api/v1/rfid/scan", response_model=RfidScanResponse)
 async def process_rfid_scan(request: Request, req: RfidScanRequest):
     grid = request.app.state.grid
     site = request.app.state.site
-    evt_type, class_id, class_name, service_id = grid.process_rfid_scan(req.uid)
-    site.commit("campus.rfid_scan")
+    evt_type, class_id, class_name, service_id = site.command(
+        "campus.rfid_scan", lambda: grid.process_rfid_scan(req.uid), {"source": "HTTP"})[0]
     return RfidScanResponse(
         accepted=True if evt_type != RfidEventType.DUPLICATE_SUPPRESSED.value else False,
         active_classroom_id=class_id,
@@ -433,8 +448,7 @@ async def process_rfid_scan(request: Request, req: RfidScanRequest):
 async def change_capacity(request: Request, req: CapacityChangeRequest):
     grid = request.app.state.grid
     site = request.app.state.site
-    grid.set_capacity(req.capacity_w)
-    site.commit("campus.capacity")
+    site.command("campus.capacity", lambda: grid.set_capacity(req.capacity_w), {"capacity_w": req.capacity_w})
     return CapacityChangeResponse(
         accepted=True,
         new_capacity_w=req.capacity_w,
@@ -447,8 +461,8 @@ async def change_classroom_load(request: Request, req: ClassroomLoadRequest):
     site = request.app.state.site
     if req.classroom_id not in ("CR1", "CR2", "CR3"):
         raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
-    grid.set_classroom_load(req.classroom_id, req.active)
-    site.commit("campus.classroom_load")
+    site.command("campus.classroom_load", lambda: grid.set_classroom_load(req.classroom_id, req.active),
+                 {"classroom_id": req.classroom_id, "active": req.active})
     return ClassroomLoadResponse(
         accepted=True,
         classroom_id=req.classroom_id,
@@ -461,8 +475,8 @@ async def change_feeder(request: Request, req: FeederChangeRequest):
     site = request.app.state.site
     if req.feeder not in ("A", "B"):
         raise HTTPException(422, "feeder must be A or B")
-    grid.set_feeder(req.feeder, req.available)
-    site.commit("campus.feeder")
+    site.command("campus.feeder", lambda: grid.set_feeder(req.feeder, req.available),
+                 {"feeder": req.feeder, "available": req.available})
     return FeederChangeResponse(
         accepted=True,
         feeder=req.feeder,
@@ -484,13 +498,13 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-@router.get("/api/v1/allocation/policy")
+@router.get("/api/v1/allocation/policy", response_model=AllocationPolicyResponse)
 async def read_allocation_policy(request: Request):
     grid = request.app.state.grid
     site = request.app.state.site
     return site.read(lambda: grid.policy.model_dump())[0]
 
-@router.put("/api/v1/allocation/policy")
+@router.put("/api/v1/allocation/policy", response_model=AllocationPolicyUpdateResponse)
 async def change_allocation_policy(request: Request, policy: AllocationPolicy):
     grid = request.app.state.grid
     site = request.app.state.site
@@ -499,7 +513,7 @@ async def change_allocation_policy(request: Request, policy: AllocationPolicy):
             grid.policy = policy
             grid.control_revision += 1
             grid.add_event("POLICY_CHANGE", policy.model_dump_json())
-    _, receipt = site.command("allocation_policy", apply)
+    _, receipt = site.command("allocation_policy", apply, policy.model_dump())
     return {"policy": policy.model_dump(), "receipt": receipt}
 
 @router.post("/api/v1/studies/electrical", response_model=ElectricalStudyResponse)
@@ -540,14 +554,19 @@ def visualizer_snapshot(site, demo):
 async def hardware_ack(request: Request, req: HardwareAckRequest):
     try:
         request.app.state.site.command("hardware_ack", lambda: request.app.state.grid.record_ack(
-            req.device_boot, req.sequence, req.session, req.confirmed_mask, req.provenance))
+            req.device_boot, req.sequence, req.session, req.confirmed_mask, req.provenance),
+            {"device_boot": req.device_boot, "sequence": req.sequence, "session": req.session,
+             "confirmed_mask": req.confirmed_mask, "provenance": req.provenance})
     except ValueError as exc:
         raise HTTPException(422, str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc))
     return {"accepted": True}
 
 
 def create_app():
     application = FastAPI(title="PriorityGrid API", version="1.0.0", lifespan=lifespan)
+    application.add_exception_handler(AuditUnavailable, audit_unavailable_handler)
     application.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
         allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
     application.include_router(router)

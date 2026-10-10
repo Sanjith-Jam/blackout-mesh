@@ -70,3 +70,11 @@ Integrated PR #36 with current `main`, preserving the app-scoped state, shared W
 ## Prior art and claim boundaries
 
 Added [docs/NOVELTY_AND_PRIOR_ART.md](docs/NOVELTY_AND_PRIOR_ART.md) to compare the demonstrated prototype with established occupancy, allocation, diagnosis and educational tools. The document explicitly limits the "mesh" name, campus ML generalization, physical switching and energy-savings claims. Novelty here is a prototype integration claim; independent field validation remains future work.
+
+## Issue #14 generated API contract — 2026-10-10
+
+Implemented on `codex/remaining-open-issues`: typed every HTTP route, exported stable method/path operation IDs and a version marker, added documented API errors and the named WebSocket envelope, generated frontend contracts, and added runtime validation before WebSocket snapshots enter cache. Added route/schema determinism tests, malformed-envelope tests, and an API-contract GitHub Actions workflow. Snapshot site identity is validated as a typed model throughout the history recorder. See [docs/ISSUE_14_DELIVERY.md](docs/ISSUE_14_DELIVERY.md); verification is recorded there.
+
+## Issue #12 SQLite audit completion — 2026-10-10
+
+On `codex/remaining-open-issues`, completed durable command/event/decision/incident/ACK history: site command UUIDs are stored and returned in receipts, decisions reference the command, ACK keys deduplicate retries, and run-linked records reject orphan writes. Added v1 SQLite migration tracking, visibly degraded health, verified online backups for both databases, and restart/backup/retention coverage. Raw RFID UIDs stay out of audit payloads. Physical ACKs remain rejected until a verified protocol exists. See [docs/ISSUE_12_DELIVERY.md](docs/ISSUE_12_DELIVERY.md).

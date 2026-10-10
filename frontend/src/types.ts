@@ -1,439 +1,70 @@
-import { components } from './schema';
-export interface SourceInfo {
-  model: "watt_budget";
-  limitations: string;
-  kind: string;
-  capacity_w: number;
-}
+import type { components } from './schema';
 
-export interface FeederLimits {
-  A: number;
-  B: number;
-}
+export type SourceInfo = components['schemas']['SourceInfo'];
+export type Service = components['schemas']['ServiceSnapshot'];
+export type HospitalRoom = components['schemas']['HospitalRoom'];
+export type HospitalZone = components['schemas']['HospitalZone'];
+export type ClassroomInfo = components['schemas']['ClassroomInfo'];
+export type ClassroomZone = components['schemas']['ClassroomZone'];
+export type FacilityZones = components['schemas']['FacilityZones'];
+export type SystemEvent = components['schemas']['SystemEvent'];
+export type ActivityState = components['schemas']['VisualizerActivity']['state'];
+export type ActivityPrediction = components['schemas']['ActivitySnapshot'];
+export type ModelStatus = components['schemas']['ModelStatusResponse'];
+export type ReplayStatus = components['schemas']['ReplaySnapshot'];
+export type AllocationExplanation = components['schemas']['AllocationSnapshot']['explanation'];
+export type AllocationStatus = components['schemas']['AllocationSnapshot'];
+export type ActivityObservation = components['schemas']['ActivityObservationRequest'];
+export type Snapshot = components['schemas']['SystemSnapshot'] & { sent_at?: string | null };
+export type HealthResponse = components['schemas']['HealthResponse'];
+export type RfidScanResponse = components['schemas']['RfidScanResponse'];
+export type CapacityChangeResponse = components['schemas']['CapacityChangeResponse'];
+export type ClassroomLoadResponse = components['schemas']['ClassroomLoadResponse'];
+export type FeederChangeResponse = components['schemas']['FeederChangeResponse'];
+export type ClassroomDemoLoad = components['schemas']['VisualizerLoad'];
+export type PowerEdgeState = components['schemas']['PowerEdge']['state'];
+export type PowerEdge = components['schemas']['PowerEdge'];
 
-export interface Service {
-  id: string;
-  name: string;
-  tier: string;
-  feeder: "A" | "B";
-  watts: number;
-  requested: boolean;
-  modeled_served: boolean;
-  indicator_confirmed: boolean | null;
-  model_reason: string;
-}
+export type SiteIdentity = components['schemas']['SiteIdentityResponse'];
 
-export interface HospitalRoom {
-  id: string;
-  name: string;
-  lighting_service: string;
-  led_bit: number;
-}
-
-export interface HospitalZone {
-  rooms: HospitalRoom[];
-}
-
-export interface ClassroomInfo {
-  id: string;
-  name: string;
-  service_id: string;
-  rfid_card_registered: boolean;
-  led_bit: number;
-  load_event_active: boolean;
-}
-
-export interface ClassroomZone {
-  active_classroom_id: string | null;
-  recent_rfid_scan: string | null;
-  rfid_reader_status: string;
-  classrooms: ClassroomInfo[];
-}
-
-export interface FacilityZones {
-  hospital: HospitalZone;
-  classroom: ClassroomZone;
-}
-
-export interface SystemEvent {
-  event_id?: string | null;
-  run_id?: string | null;
-  revision?: number;
-  timestamp: string;
-  type: string;
-  description: string;
-}
-
-export type ActivityState = "ACTIVE" | "INACTIVE" | "UNKNOWN";
-
-export interface ActivityPrediction {
-  evidence?: {
-    temperature_c: number | null;
-    humidity_pct: number | null;
-    co2_ppm: number | null;
-    humidity_ratio: number | null;
+export type CommandReceipt = components['schemas']['CommandReceipt'];
+export type HardwareStatus = components['schemas']['HardwareStatusResponse'];
+export type SafetyStatus = components['schemas']['SafetySnapshot'];
+export type ClassroomDemoActivity = components['schemas']['VisualizerActivity'];
+export type ClassroomDemoRoom = components['schemas']['ClassroomDemoRoomResponse'];
+export type ClassroomDemoActionName = components['schemas']['ClassroomDemoAction']['action'];
+export type ClassroomDemoSnapshot = Omit<components['schemas']['ClassroomDemoResponse'], 'hardware'> & {
+  hardware?: HardwareStatus | null;
+};
+export type HospitalDemoScenario = components['schemas']['HospitalDemoAction']['scenario'];
+export type DiagnosticHypothesis = components['schemas']['HospitalDiagnosisResponse']['hypotheses'][number];
+export type DiagnosticAbstention = components['schemas']['HospitalDiagnosisResponse']['abstention'];
+export type HospitalDemoDiagnosis = components['schemas']['HospitalDiagnosisResponse'];
+export type HospitalDemoActionName = NonNullable<components['schemas']['HospitalDemoAction']['action']>;
+export type HospitalDemoZone = components['schemas']['HospitalDemoTransformerResponse'];
+export type HospitalDemoTransformer = HospitalTransformerView;
+type HospitalTransformerView = Omit<components['schemas']['HospitalDemoTransformerResponse'],
+  'rated_current_a' | 'activity'> & {
+    rated_current_a: number;
+    activity: NonNullable<components['schemas']['HospitalDemoTransformerResponse']['activity']>;
   };
-  state: ActivityState;
-  score: number | null;
-  reason: string;
-  source: string | null;
-  observed_at: string | null;
-  model_version: string;
-  priority: string;
-}
-
-export interface ModelStatus {
-  ready: boolean;
-  model_version: string;
-  model_type: string;
-  features: string[];
-  data_source: string;
-  evaluation: Record<string, unknown>;
-  fallback_reason: string | null;
-}
-
-export interface ReplayStatus {
-  running: boolean;
-  index: number;
-  length: number;
-}
-
-export interface AllocationExplanation {
-  decision_id: string;
-  control_revision: number;
-  restoration_replay: { before: Record<string, unknown>; now_s: number; signature: unknown[]; order: number[] };
-  policy: { name: 'activity_first' | 'water_first'; version: 'allocation-v1'; fairness_weight: number; switching_penalty: number };
-  objective_order: string[];
-  score_terms: Record<string, number | number[]>;
-  replay_inputs: Record<string, unknown>;
-  decisions: { service_id: string; requested: boolean; proposed: boolean; applied: boolean;
-    binding_constraints: string[]; reason: string; score_terms: Record<string, number | number[]>; shortfall_w: number; counterfactual: string }[];
-}
-
-export interface AllocationStatus {
-  explanation: AllocationExplanation;
-  objective: string;
-  critical_shortfall_w: number;
-  served_w: number;
-  baseline_mask: number;
-  safety?: SafetyStatus;
-}
-
-export interface ActivityObservation {
-  classroom_id: "CR1" | "CR2" | "CR3";
-  temperature_c: number | null;
-  humidity_pct: number | null;
-  co2_ppm: number | null;
-  humidity_ratio: number | null;
-  observed_at: string;
-  source: "RECORDED_REPLAY" | "SIMULATED";
-}
-
-export interface Snapshot {
-  contract: components["schemas"]["CrossRouteContract"];
-  activity: Record<string, ActivityPrediction>;
-  model: ModelStatus;
-  replay: ReplayStatus;
-  allocation: AllocationStatus;
-  control_revision: number;
-  published_revision: number;
-  site?: SiteIdentity;
-  edges?: PowerEdge[];
-  generated_at: string;
-  /** Socket messages only: when this copy was sent. generated_at is when the state last changed. */
-  sent_at?: string;
-  source: SourceInfo;
-  feeder_limits_w: FeederLimits;
-  requested_mask: number;
-  modeled_mask: number;
-  proposed_mask: number;
-  indicator_command_mask: number | null;
-  indicator_confirmed_mask: number | null;
-  indicator_mask: number | null;
-  hardware_link: string;
-  services: Service[];
-  zones?: FacilityZones;
-  events?: SystemEvent[];
-}
-
-export interface HealthResponse {
-  status: string;
-  application: string;
-}
-
-export interface RfidScanResponse {
-  accepted: boolean;
-  active_classroom_id: string | null;
-  classroom_name: string | null;
-  service_id: string | null;
-  event_type: string;
-}
-
-export interface CapacityChangeResponse {
-  accepted: boolean;
-  new_capacity_w: number;
-  control_revision: number;
-}
-
-export interface ClassroomLoadResponse {
-  accepted: boolean;
-  classroom_id: string;
-  load_event_active: boolean;
-}
-
-export interface FeederChangeResponse {
-  accepted: boolean;
-  feeder: string;
-  available: boolean;
-  control_revision: number;
-}
-
-export interface ClassroomDemoLoad {
-  id: string;
-  name: string;
-  watts: number;
-  essential: boolean;
-  served: boolean;
-  reason: string;
-}
-
-export type PowerEdgeState = "ENERGIZED" | "PENDING_RESTORATION" | "SHED" | "OPEN" | "UNKNOWN";
-
-/** Canonical power path behind one drawn wire (#23). Watts are modeled, never measured current. */
-export interface PowerEdge {
-  id: string;
-  from: string;
-  to: string;
-  state: PowerEdgeState;
-  connected: boolean;
-  commanded: boolean;
-  applied: boolean;
-  requested_w: number;
-  served_w: number;
-  unit: "W";
-  provenance: "MODELED";
-  physical: "NOT_CONNECTED" | "CONFIRMED";
-  reason: string;
-  observed?: { output_voltage_v: number | null; energized: boolean | null; provenance: string; diagnosis_status?: string; note: string };
-}
-
-/** One site authority: every projection carries the same run and revision (#3). */
-export interface SiteIdentity {
-  run_id: string;
-  revision: number;
-  profile: string;
-  catalog_version: string;
-}
-
-export interface CommandReceipt {
-  command_id: number;
-  name: string;
-  run_id: string;
-  applied_revision: number;
-}
-
-/** Board A gateway bridge state (backend/app/hardware/gateway.py). */
-export interface HardwareStatus {
-  link: "NOT_CONFIGURED" | "CONNECTING" | "SYNCING" | "CONNECTED" | "STALE";
-  commanded_mask: number | null;
-  confirmed_mask: number | null;
-  led_confirmed?: boolean;
-  board_a?: { boot: number | null; reader_ok: boolean | null; radio_configured: boolean | null };
-  board_b?: { online: boolean; boot: number | null; radio_ready: boolean };
-  recent_events?: { event: number; action: string; room: string | null; accepted: boolean }[];
-  recent_status?: string[];
-  port_error?: string | null;
-}
-
-export interface SafetyStatus {
-  policy_version: string;
-  status: "FEASIBLE" | "PROTECTED_SHORTFALL";
-  protected_requested_w: number;
-  protected_served_w: number;
-  protected_shortfall_w: number;
-  fallback_order: string[];
-}
-
-export interface ClassroomDemoActivity {
-  state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
-  /** What the model said before the safety guard; state is what the allocator uses. */
-  raw_state: "ACTIVE" | "INACTIVE" | "UNKNOWN";
-  guard: string | null;
-  score: number | null;
-  reason: string;
-  model_version: string;
-  evidence: { temperature_c?: number | null; humidity_pct?: number | null; co2_ppm?: number | null; humidity_ratio?: number | null };
-}
-
-export interface ClassroomDemoRoom {
-  id: "CR1" | "CR2" | "CR3";
-  name: string;
-  rfid_active: boolean;
-  priority_rank: number | null;
-  activity: ClassroomDemoActivity;
-  loads: ClassroomDemoLoad[];
-}
-
-export type ClassroomDemoActionName = "scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset"
-  | "replay_pause" | "replay_resume" | "replay_step";
-
-export interface ClassroomDemoSnapshot {
-  published_revision: number;
-  capacity_w: number;
-  capacity_range_w: [number, number];
-  requested_w: number;
-  served_w: number;
-  shortfall_w: number;
-  selected_classroom_id: "CR1" | "CR2" | "CR3" | null;
-  scanned_classroom_ids: ("CR1" | "CR2" | "CR3")[];
-  priority_order: ("CR1" | "CR2" | "CR3")[];
-  rooms: ClassroomDemoRoom[];
-  mode: "SIMULATED";
-  safety: SafetyStatus;
-  classroom_limit_w: number;
-  campus_limit_w: number | null;
-  effective_capacity_w: number;
-  limited_by: "classroom limit" | "campus feeder B";
-  hardware?: HardwareStatus;
-  edges: PowerEdge[];
-  generated_at?: string;
-  site?: SiteIdentity;
-  command?: CommandReceipt;
-  model: { ready: boolean; model_version: string; fallback_reason: string | null };
-  replay: { running: boolean; index: number; length: number; step_s: number };
-  policy: string;
-}
-
-export type HospitalDemoScenario = "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
-
-export interface DiagnosticHypothesis {
-  id: string;
-  code: string;
-  asset_id: string;
-  cause: string;
-  severity: "critical" | "high" | "medium" | "low" | "normal" | "unknown";
-  evidence_score: number;
-  sufficiency: "SUFFICIENT" | "PARTIAL" | "INSUFFICIENT";
-  supporting_evidence: string[];
-  contradicting_evidence: string[];
-  recommendation: string;
-}
-
-export interface DiagnosticAbstention {
-  asset_id: string;
-  reason: "INSUFFICIENT_TELEMETRY" | "CONTRADICTORY_EVIDENCE" | "INDISTINGUISHABLE_CAUSES";
-  details: string;
-  missing_sensors: string[];
-  contradictory_readings: string[];
-  indistinguishable_candidates: string[];
-  next_check_needed: string;
-}
-
-/** Telemetry-only (#4) multi-hypothesis (#19) diagnosis: FAULT_DETECTED after two agreeing readings, ALARM on one, ABSTAINED on missing/stale/contradictory data. */
-export interface HospitalDemoDiagnosis {
-  code: string;
-  cause: string;
-  severity: string;
-  evidence: string[];
-  recommendation: string;
-  status?: "NORMAL" | "FAULT_DETECTED" | "ALARM" | "ABSTAINED";
-  hypotheses?: DiagnosticHypothesis[];
-  abstention?: DiagnosticAbstention | null;
-  missing?: string[];
-  stale?: string[];
-}
-
-
-export type HospitalDemoActionName = "scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset" | "replay_pause" | "replay_resume" | "replay_step";
-
-export interface HospitalDemoZone {
-  id: string;
-  name: string;
-  rfid_active: boolean;
-  priority_rank: number | null;
-  activity: {
-    state: "ACTIVE" | "UNKNOWN" | "INACTIVE";
-    score: number | null;
-    reason: string;
-    model_version: string;
-    evidence: Record<string, number>;
+export type HospitalDemoSnapshot = Omit<components['schemas']['HospitalDemoResponse'],
+  'capacity_w' | 'capacity_range_w' | 'requested_w' | 'served_w' | 'shortfall_w' | 'scanned_zone_ids' |
+  'model' | 'replay' | 'transformers'> & {
+    capacity_w: number;
+    capacity_range_w: [number, number];
+    requested_w: number;
+    served_w: number;
+    shortfall_w: number;
+    scanned_zone_ids: string[];
+    model: NonNullable<components['schemas']['HospitalDemoResponse']['model']>;
+    replay: NonNullable<components['schemas']['HospitalDemoResponse']['replay']>;
+    transformers: HospitalTransformerView[];
   };
-  loads: {
-    id: string;
-    name: string;
-    watts: number;
-    essential: boolean;
-    served: boolean;
-    reason: string;
-  }[];
-}
-
-export interface HospitalDemoTransformer {
-  id: string;
-  name: string;
-  zone: string;
-  rated_current_a: number;
-  sensors: {
-    current_a?: number | null;
-    temperature_c?: number | null;
-    input_voltage_v?: number | null;
-    output_voltage_v?: number | null;
-    cooling_ok: boolean | null;
-  };
-  diagnosis: HospitalDemoDiagnosis;
-  energized: boolean;
-  rfid_active: boolean;
-  priority_rank: number | null;
-  activity: {
-    state: "ACTIVE" | "UNKNOWN" | "INACTIVE";
-    score: number | null;
-    reason: string;
-    model_version: string;
-    evidence: Record<string, number>;
-  };
-  loads: HospitalDemoZone['loads'];
-}
-
-export interface HospitalDemoSnapshot {
-  edges?: PowerEdge[];
-  generated_at?: string;
-  capacity_w: number;
-  capacity_range_w: [number, number];
-  requested_w: number;
-  served_w: number;
-  shortfall_w: number;
-  selected_zone_id: string | null;
-  scanned_zone_ids: string[];
-  priority_order: string[];
-  site?: SiteIdentity;
-  command?: CommandReceipt;
-  transformers: HospitalDemoTransformer[];
-  mode: "SIMULATED";
-  model: { ready: boolean; model_version: string; fallback_reason: string | null };
-  replay: { running: boolean; index: number; length: number; step_s: number };
-  policy: string;
-}
-
-
-
-/** Optional study inputs; separate from watt-budget allocation and hardware commands. */
-export interface ElectricalStudyInput {
-  topology_version?: 'radial-400v-v1'; balanced?: true;
-  load_a_w?: number; load_b_w?: number; source_on?: boolean;
-  feeder_a_closed?: boolean; feeder_b_closed?: boolean;
-  power_factor?: number; resistance_ohm?: number; reactance_ohm?: number;
-}
-export interface ElectricalStudyResponse {
-  site: SiteIdentity;
-  result: {
-    mode: 'balanced_ac_study'; topology_version: string; engine: string; engine_version: string | null;
-    status: 'converged' | 'deenergized' | 'failed' | 'unavailable'; converged: boolean; restoration_authorized: false;
-    observed_at: string; inputs: Required<ElectricalStudyInput>; units: Record<string, string>;
-    buses: Record<string, { energized: boolean; voltage_v: number | null }>;
-    branches: Record<string, { energized: boolean; current_a: number | null; p_w: number | null; q_var: number | null; loading_pct: number | null }>;
-    source_p_w: number | null; source_q_var: number | null; loss_w: number | null; power_balance_residual_w: number | null; reason: string | null; provenance: string;
-  };
-  diagnosis: Record<string, unknown>;
-}
-
-export type WebSocketEnvelope = components["schemas"]["WebSocketMessageEnvelope"];
+export type ElectricalStudyInput = components['schemas']['ElectricalInput'];
+export type ElectricalStudyResponse = components['schemas']['ElectricalStudyResponse'];
+export type HistoryRecord = components['schemas']['HistoryEventRecord'] |
+  components['schemas']['HistoryDecisionRecord'] | components['schemas']['HistoryTelemetryRecord'];
+export type HistoryPage = components['schemas']['HistoryPageResponse'];
+export type HistoryRuns = components['schemas']['HistoryRunsResponse'];
+export type WebSocketEnvelope = components['schemas']['WebSocketMessageEnvelope'];

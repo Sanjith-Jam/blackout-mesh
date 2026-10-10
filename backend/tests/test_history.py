@@ -57,8 +57,16 @@ def test_recording_is_sampled_and_readonly_api_does_not_advance_grid(tmp_path, m
         decisions = store.page("campus", run_id, kind="decision")["items"]
         event = store.page("campus", run_id, kind="event")["items"][0]
         assert event["record_id"] in decisions[-1]["payload"]["event_ids"]
-        assert decisions[-1]["payload"]["trail"]["validated_ack"] is None
-        assert decisions[-1]["payload"]["trail"]["command_identity"] is None
+        trail = decisions[-1]["payload"]["trail"]
+        assert trail["validated_ack"] is None
+        assert trail["command_identity"]["action"] == "campus.capacity"
+        assert trail["command_identity"]["command_id"]
+        from app.storage.models import Command
+        from sqlmodel import Session, select
+        with Session(grid.storage.engine) as audit:
+            command = audit.exec(select(Command).where(
+                Command.command_id == trail["command_identity"]["command_id"])).one()
+            assert command.action == "campus.capacity"
         before = (grid.control_revision, grid.last_allocation_mask, grid.replay_index, grid.tick_count, grid.published_revision)
         url = f"/api/v1/history/records?run_id={run_id}&kind=decision&limit=1"
         assert client.get("/api/v1/history/runs").json()["current_run_id"] == run_id
@@ -71,6 +79,20 @@ def test_recording_is_sampled_and_readonly_api_does_not_advance_grid(tmp_path, m
         assert client.get(url + "&start=2026-10-10T00:00:00").status_code == 422
         assert client.get(url + "&after=-1").status_code == 422
         assert client.get(url + "&site_id=invalid").status_code == 422
+
+
+def test_session_commands_never_persist_raw_card_uid(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    from app.storage.models import Command
+    from sqlmodel import Session, select
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'uid.db'}")
+    with TestClient(create_app()) as client:
+        app = client.app
+        assert client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"}).status_code == 200
+        with Session(app.state.grid.storage.engine) as session:
+            payloads = " ".join(str(row.payload) for row in session.exec(select(Command)).all())
+        assert "CARD_1_UID" not in payloads
 
 
 def test_public_history_fixture_and_restart_run_identity(tmp_path):
@@ -100,6 +122,11 @@ def test_new_site_run_rotates_history_and_keeps_previous_evidence(tmp_path, monk
         current = site.new_run()
         site.tick()
         assert current != previous_run
+        assert grid.run_id == current
+        from app.storage.models import Run
+        from sqlmodel import Session, select
+        with Session(grid.storage.engine) as audit:
+            assert audit.exec(select(Run).where(Run.run_id == current)).first()
         assert grid.history.run_id == current
         assert grid.history.store.page("campus", previous_run) == previous
         assert grid.history.store.page("campus", current)["items"][0]["payload"]["snapshot"]["site"]["run_id"] == current

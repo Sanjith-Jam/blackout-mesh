@@ -11,7 +11,7 @@ class Run(SQLModel, table=True):
 
 class Observation(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    run_id: str = Field(index=True)
+    run_id: str = Field(foreign_key="run.run_id", index=True)
     asset_id: str = Field(index=True)
     timestamp: datetime = Field(index=True)
     payload: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
@@ -19,7 +19,7 @@ class Observation(SQLModel, table=True):
 class Command(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     command_id: str = Field(index=True, unique=True)
-    run_id: str = Field(index=True)
+    run_id: str = Field(foreign_key="run.run_id", index=True)
     revision: int
     timestamp: datetime
     action: str
@@ -28,7 +28,7 @@ class Command(SQLModel, table=True):
 class Decision(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     decision_id: str = Field(index=True, unique=True)
-    run_id: str = Field(index=True)
+    run_id: str = Field(foreign_key="run.run_id", index=True)
     revision: int = Field(index=True)
     timestamp: datetime
     modeled_mask: int
@@ -39,7 +39,7 @@ class Decision(SQLModel, table=True):
 
 class Transition(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    run_id: str = Field(index=True)
+    run_id: str = Field(foreign_key="run.run_id", index=True)
     revision: int = Field(index=True)
     timestamp: datetime
     type: str
@@ -48,7 +48,7 @@ class Transition(SQLModel, table=True):
 class Incident(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     incident_id: str = Field(index=True, unique=True)
-    run_id: str = Field(index=True)
+    run_id: str = Field(foreign_key="run.run_id", index=True)
     timestamp: datetime
     code: str
     severity: str
@@ -57,7 +57,7 @@ class Incident(SQLModel, table=True):
 
 class Acknowledgment(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
-    run_id: str = Field(index=True)
+    run_id: str = Field(foreign_key="run.run_id", index=True)
     device_boot: str
     sequence: int
     session: str

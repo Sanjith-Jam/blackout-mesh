@@ -1,25 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient, InfiniteData } from '@tanstack/react-query';
-import { Snapshot, SystemEvent } from './types';
-
-export interface HistoryRecord {
-  seq: number; record_id: string; run_id: string; site_id: string;
-  kind: 'event' | 'decision' | 'telemetry'; timestamp: string; revision: number; provenance: string;
-  payload: {
-    snapshot?: Snapshot; event?: SystemEvent; event_ids?: string[];
-    inputs?: unknown; policy?: unknown; model?: unknown;
-    trail?: { observation: unknown; command_identity: unknown; validated_ack: unknown };
-    capacity?: number; demand?: number; servedCount?: number; shedCount?: number;
-  };
-}
-interface Page { items: HistoryRecord[]; next_cursor: number | null; retention_gap: boolean }
+import { HistoryPage, HistoryRecord, HistoryRuns, SystemEvent } from './types';
 interface Selection { mode: 'LIVE' | 'HISTORY'; run: string; start: string; end: string; seq: number }
 const STORAGE_KEY = 'prioritygrid-history-v1';
 const API = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-export async function historyGet<T>(path: string, signal?: AbortSignal): Promise<T> {
+export function historyGet(path: 'runs', signal?: AbortSignal): Promise<HistoryRuns>;
+export function historyGet(path: `records?${string}`, signal?: AbortSignal): Promise<HistoryPage>;
+export async function historyGet(path: string, signal?: AbortSignal): Promise<HistoryRuns | HistoryPage> {
   const response = await fetch(API + '/api/v1/history/' + path, { signal });
   if (!response.ok) throw new Error('History request failed: HTTP ' + response.status);
-  return response.json();
+  return response.json() as Promise<HistoryRuns | HistoryPage>;
 }
 function initialSelection(): Selection {
   const fallback: Selection = { mode: 'LIVE', run: '', start: new Date(Date.now() - 3600000).toISOString(), end: '', seq: 0 };
@@ -40,7 +30,7 @@ export function useServerHistory(socketEvents: SystemEvent[]) {
   const [playing, setPlaying] = useState(false);
   const runs = useQuery({
     queryKey: ['history-runs', 'campus'],
-    queryFn: ({ signal }) => historyGet<{ current_run_id: string; runs: { run_id: string; started_at: string }[] }>('runs', signal),
+    queryFn: ({ signal }) => historyGet('runs', signal),
     refetchInterval: selection.mode === 'LIVE' ? 5000 : false,
   });
   const run = selection.mode === 'LIVE' ? runs.data?.current_run_id : selection.run || runs.data?.current_run_id;
@@ -48,7 +38,7 @@ export function useServerHistory(socketEvents: SystemEvent[]) {
   const request = (after: number, signal?: AbortSignal) => {
     const params = new URLSearchParams({ site_id: 'campus', run_id: run || '', after: String(after), limit: '200', start: selection.start });
     if (selection.end) params.set('end', selection.end);
-    return historyGet<Page>('records?' + params, signal);
+    return historyGet(`records?${params}`, signal);
   };
   const pages = useInfiniteQuery({
     queryKey: key, enabled: !!run, initialPageParam: 0,
@@ -67,7 +57,7 @@ export function useServerHistory(socketEvents: SystemEvent[]) {
   }, [pages.hasNextPage, pages.isFetching, pages.fetchNextPage]);
   useEffect(() => {
     if (!tail.data?.items.length) return;
-    client.setQueryData<InfiniteData<Page, number>>(key, old => old ? {
+    client.setQueryData<InfiniteData<HistoryPage, number>>(key, old => old ? {
       pages: [...old.pages, tail.data], pageParams: [...old.pageParams, cursor],
     } : old);
   }, [tail.data, client, run, selection.start, selection.end, cursor]);
@@ -80,7 +70,7 @@ export function useServerHistory(socketEvents: SystemEvent[]) {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(selection)); } catch { /* Optional preferences only. */ }
   }, [selection]);
-  const decisions = records.filter(record => record.kind === 'decision');
+  const decisions = records.filter((record): record is Extract<HistoryRecord, { kind: 'decision' }> => record.kind === 'decision');
   const selected = decisions.find(record => record.seq === selection.seq) || decisions[0];
   const index = selected ? decisions.indexOf(selected) : 0;
   const selectIndex = (next: number) => setSelection(old => ({ ...old, seq: decisions[next]?.seq || 0 }));
@@ -91,11 +81,11 @@ export function useServerHistory(socketEvents: SystemEvent[]) {
     return () => window.clearTimeout(timer);
   }, [playing, selection.mode, index, decisions.length]);
   const cutoff = selection.mode === 'HISTORY' ? selected?.seq || 0 : Infinity;
-  const events = records.filter(record => record.kind === 'event' && record.seq <= cutoff)
+  const events = records.filter((record): record is Extract<HistoryRecord, { kind: 'event' }> => record.kind === 'event' && record.seq <= cutoff)
     .map(record => record.payload.event).filter((event): event is SystemEvent => !!event);
   if (selection.mode === 'LIVE') events.push(...socketEvents.filter(event => event.run_id === run && !!event.event_id && Date.parse(event.timestamp) >= Date.parse(selection.start) && (!selection.end || Date.parse(event.timestamp) <= Date.parse(selection.end))));
   const uniqueEvents = [...new Map(events.map(event => [event.event_id, event])).values()];
-  const telemetry = records.filter(record => record.kind === 'telemetry' && (selection.mode === 'LIVE' || (!!selected && record.timestamp <= selected.timestamp))).map(record => ({
+  const telemetry = records.filter((record): record is Extract<HistoryRecord, { kind: 'telemetry' }> => record.kind === 'telemetry' && (selection.mode === 'LIVE' || (!!selected && record.timestamp <= selected.timestamp))).map(record => ({
     time: record.timestamp, capacity: record.payload.capacity!, demand: record.payload.demand!,
     servedCount: record.payload.servedCount!, shedCount: record.payload.shedCount!,
   }));

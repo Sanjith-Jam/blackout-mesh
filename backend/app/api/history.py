@@ -5,6 +5,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query, Request
 from app.storage.history import HistoryStore
 from app.storage.recorder import HistoryRecorder, utc
+from app.schemas.snapshot import HistoryPageResponse, HistoryRunsResponse
 
 def attach_history(grid, run_id):
     if grid.history is None:
@@ -27,12 +28,12 @@ def register_history(site_provider):
             raise HTTPException(503, "History not initialized; start the application lifespan")
         return history
 
-    @router.get("/runs")
+    @router.get("/runs", response_model=HistoryRunsResponse)
     def runs(request: Request, site_id: Literal["campus"] = "campus"):
         history = recorder(request)
         return {"current_run_id": site_provider(request).run_id, "runs": history.store.runs(site_id)}
 
-    @router.get("/records")
+    @router.get("/records", response_model=HistoryPageResponse)
     def records(request: Request, run_id: str = Query(min_length=1, max_length=100),
                 site_id: Literal["campus"] = "campus",
                 kind: Literal["event", "decision", "telemetry"] | None = None,

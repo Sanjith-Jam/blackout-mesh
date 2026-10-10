@@ -32,7 +32,7 @@ class HistoryRecorder:
         signature_data = {k: v for k, v in data.items() if k not in ("generated_at", "published_revision", "site", "events", "replay")}
         signature = hashlib.sha256(json.dumps(signature_data, sort_keys=True).encode()).hexdigest()
         timestamp = utc(snapshot.generated_at)
-        revision = snapshot.site["revision"] if snapshot.site else snapshot.control_revision
+        revision = snapshot.site.revision if snapshot.site else snapshot.control_revision
         if signature != self.signature:
             self.counter += 1
             decision_id = f"{self.run_id}:decision:{self.counter}"
@@ -45,7 +45,7 @@ class HistoryRecorder:
                                          "decision_id": decision_id,
                                          "applied_transition": {"modeled_mask": data["modeled_mask"],
                                                                 "proposed_mask": data["proposed_mask"]},
-                                         "command_identity": None, "validated_ack": None}})
+                                         "command_identity": inputs.get("command_identity"), "validated_ack": None}})
             self.signature = signature
             self.pending_events.clear()
         now = self.clock()

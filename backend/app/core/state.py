@@ -114,6 +114,7 @@ class GridState:
 
         self.storage = storage or Storage()
         self.history = None
+        self.pending_command_identity = None
         self.storage.init()
         self.run_id = str(uuid.uuid4())
         self.server_epoch = int(time.time())
@@ -124,7 +125,8 @@ class GridState:
                 self.storage.commit(session)
 
                 # Load last 50 transitions as events
-                trans = session.exec(select(Transition).order_by(Transition.timestamp.desc()).limit(50)).all()
+                trans = session.exec(select(Transition).where(Transition.run_id == self.run_id)
+                                     .order_by(Transition.timestamp.desc()).limit(50)).all()
                 self.events = []
                 for t in reversed(trans):
                     self.events.append(SystemEvent(timestamp=t.timestamp.isoformat(), type=t.type, description=t.description))
@@ -150,13 +152,14 @@ class GridState:
             state_revision=self.published_revision, observation_time=self.published.generated_at.isoformat()
                 if self.published else datetime.now(timezone.utc).isoformat())
 
-    def save_command(self, action: str, payload: dict):
+    def save_command(self, action: str, payload: dict, command_id: str | None = None):
         if self.storage.degraded:
-            return
+            return False
         try:
+            command_id = command_id or str(uuid.uuid4())
             with Session(self.storage.engine) as session:
                 cmd = Command(
-                    command_id=str(uuid.uuid4()),
+                    command_id=command_id,
                     run_id=self.run_id,
                     revision=self.control_revision,
                     timestamp=datetime.now(timezone.utc),
@@ -164,9 +167,14 @@ class GridState:
                     payload=payload
                 )
                 session.add(cmd)
-                self.storage.commit(session)
+                if not self.storage.commit(session):
+                    return False
+                self.pending_command_identity = {"command_id": command_id, "run_id": self.run_id,
+                                                 "action": action, "revision": self.control_revision}
+                return self.pending_command_identity
         except Exception:
-            pass
+            log.exception("Command audit write failed")
+            return False
 
     def add_event(self, event_type: str, desc: str):
         with self._lock:
@@ -276,6 +284,7 @@ class GridState:
     def history_inputs(self):
         return {"capacity_w": self.source_capacity_w, "feeder_limits_w": self.feeder_limits_w.copy(),
                 "feeder_available": self.feeder_available.copy(), "active_sessions": sorted(self.active_sessions),
+                "command_identity": self.pending_command_identity,
                 "activity": self.current_activity(), "catalog": SERVICE_CATALOG,
                 "model_identity": {key: getattr(self.model, "_manifest", {}).get(key) for key in
                                    ("model_version", "sha256", "features", "decision_threshold", "abstain_margin")}}
@@ -299,13 +308,11 @@ class GridState:
                 else:
                     del self.active_sessions[classroom_id]
                     self.control_revision += 1
-                    self.save_command('end_rfid_session', {'uid': uid[:4] + '***' if uid else 'none', 'classroom_id': classroom_id})
                     self.add_event("SESSION_END", f"Session ended for {classroom_id} via RFID")
                     return "SESSION_ENDED", classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
             else:
                 self.active_sessions[classroom_id] = {"source": "RFID", "started_at": now, "last_scan": now}
                 self.control_revision += 1
-                self.save_command('start_rfid_session', {'uid': uid[:4] + '***' if uid else 'none', 'classroom_id': classroom_id})
                 self.add_event("SESSION_START", f"Session started for {classroom_id} via RFID")
                 return RfidEventType.CARD_RECOGNIZED.value, classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
 
@@ -317,7 +324,6 @@ class GridState:
         with self._lock:
             self.source_capacity_w = capacity_w
             self.control_revision += 1
-            self.save_command('set_capacity', {'capacity_w': capacity_w})
             self.add_event("CAPACITY_CHANGE", f"Source capacity set to {capacity_w}W")
 
     def set_feeder(self, feeder: str, available: bool):
@@ -500,11 +506,21 @@ class GridState:
         with self._lock:
             if provenance != "SIMULATED":
                 raise ValueError("No physical command/session identity has been provisioned")
+            if self.storage.degraded:
+                raise RuntimeError("Acknowledgment storage is unavailable")
             # Record it in the DB
             now = datetime.now(timezone.utc)
             if not self.storage.degraded:
                 try:
                     with Session(self.storage.engine) as db_session:
+                        duplicate = db_session.exec(select(Acknowledgment).where(
+                            Acknowledgment.run_id == self.run_id,
+                            Acknowledgment.device_boot == device_boot,
+                            Acknowledgment.sequence == sequence,
+                            Acknowledgment.session == session,
+                        )).first()
+                        if duplicate:
+                            return False
                         ack = Acknowledgment(
                             run_id=self.run_id,
                             device_boot=device_boot,
@@ -514,13 +530,16 @@ class GridState:
                             confirmed_mask=confirmed_mask
                         )
                         db_session.add(ack)
-                        self.storage.commit(db_session)
+                        if not self.storage.commit(db_session):
+                            raise RuntimeError("acknowledgment could not be persisted")
                 except Exception:
-                    pass
+                    log.exception("Acknowledgment persistence failed")
+                    raise
 
             # Simulation history never confirms physical GPIO output.
             self.control_revision += 1
             self.add_event("HARDWARE_ACK", f"ACK received via {provenance}")
+            return True
 
     def tick(self) -> SystemSnapshot:
         """Advance control (evidence freshness, allocation, staged restoration) and publish.
