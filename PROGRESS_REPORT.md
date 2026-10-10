@@ -1,5 +1,11 @@
 # Blackout Mesh — progress report
 
+## Issue #65 ? multi-fault district restoration stress (2026-10-10)
+
+Delivered the bounded offline [district recovery report](backend/benchmarks/results/district_recovery_report.md): **585/585 cases passed**, including **532 two-fault cases**, **232 applied recoveries**, **353 rejected proposals**, and **0 checked constraint violations**. The cached SHIFT tree and two explicitly synthetic radial fixture shapes cover multiple declared ties, loops, no-benefit routes, source/branch overload and unreachable islands. Per-case JSON records requested/unmet critical and total Wh with denominators; physical confirmation remains null.
+
+Apply/clear revalidate current topology and ratings; evidence resets on topology/capacity/fault/tie changes. A proposal that loses its benefit is rejected, and generation cannot bypass an active fault-repair study. Focused runtime district, benchmark and contract verification: **32 passed in 13.68 s**. Frontend build and runtime contract check passed with the existing chunk-size advisory. Reproduce: `PYTHONPATH=backend python -m benchmarks.run_district_recovery`. See `CONTEXT.md` for exact commands. These are bounded modeled results; new SHIFT execution and physical acceptance remain outside this delivery.
+
 ## GNITC synthetic district demo — 2026-10-10
 
 Delivered `/grid` with shared SHIFT, Energy, Self-healing and Transformers views over the Python-owned district API. All tabs share one run/revision/graph. The attributed OSM snapshot (retrieved 2026-10-10, ODbL-1.0) supplies map features and virtual group centers only; there are no physical feeder or asset locations. SHIFT PRSG was run offline from pinned BSD-3-Clause commit `995004c84c16df7c8ebfd3ddddf3e723a0938a99` with six clusters for both strategies: Radial produced 35 nodes/35 edges, MeshSteiner 31/31. Both completed `BalancedPhaseMapper`, `TransformerVoltageMapper`, a custom `EdgeEquipmentMapper` against declared synthetic catalog assumptions, and `DistributionSystemBuilder`, followed by tree validation. SHIFT electrical simulation/export was not run.

@@ -233,3 +233,29 @@ Tests use temporary history storage. Generated OpenAPI/TypeScript export passed;
 `npm.cmd run build --prefix frontend` passed (existing large-chunk warning), and
 `npm.cmd run test:contract --prefix frontend` passed. Next: commit the bounded
 benchmark and its reproducible per-case reports; hardware remains paused.
+
+### Issue #65 ? final bounded evaluation (2026-10-10)
+
+Delivered `backend/benchmarks/run_district_recovery.py` and the checked-in
+`backend/benchmarks/results/district_recovery_report.{json,md}`. Enumerated all
+zero/one/two-line fault sets on the cached 30-line SHIFT tree and generated
+10-line star/chain fixtures, plus seven named boundary cases. Candidate tie
+universes are explicit. All cases carry four one-hour intervals, critical and
+total requested/unmet Wh and fractions, input digest, rejection explanations,
+and separate proposed/applied/null physical-confirmation fields. Normal dispatch
+remains capacity-clipped; restoration conservatively rejects a route whose full
+connected grid request would exceed a source or line rating. Only one modeled
+tie can be applied at a time; multiple declared candidates are tested.
+Exact command: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m
+benchmarks.run_district_recovery` ? **585 passed / 585 cases, 0 failures,
+232 applied, 353 rejected, 532 two-fault cases, 0 constraint violations**;
+exit 0. Report JSON parsed successfully. The two-run repeatability test passed;
+optimized Python is rejected so safety assertions cannot be skipped.
+Final focused command is the nine-file pytest command immediately above, with
+`test_district_recovery_benchmark.py` now containing the optimized-Python check:
+**32 passed in 13.68 s**. Benchmark-only rerun: **2 passed in 9.14 s**.
+`git diff --check` passed. Earlier frontend build/contract results remain valid.
+No new SHIFT execution, held-out evaluation, hardware connection, flashing,
+physical switching, or physical acceptance was performed. Optional SHIFT-runtime
+integration tests were outside these focused runtime checks. Next: review the
+local issue-65-district-stress commits; no push, PR merge or issue closure yet.
