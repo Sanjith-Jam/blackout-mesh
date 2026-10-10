@@ -35,3 +35,17 @@ test('a refused action shows the backend reason, not an HTTP code', async ({ pag
   await expect(page.getByText(/Refused: observation is duplicate, reordered, stale or malformed/)).toBeVisible();
   await expect(page.getByText(/HTTP error 422/)).toHaveCount(0);
 });
+
+test('a watt-feasible weak tie is refused by the AC check with its numbers', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/grid');
+  await page.getByRole('button', { name: 'Simulate emergency' }).click();
+  const workflow = page.getByRole('list', { name: 'Modeled recovery workflow' });
+  await expect(workflow).toContainText('AC PASSED', { timeout: 20_000 });
+  await page.getByRole('button', { name: 'Rehearse weak tie (AC refusal)' }).click();
+  await expect(workflow).toContainText('Stale; propose again');
+  await page.getByRole('button', { name: 'Propose recovery' }).click();
+  await expect(workflow).toContainText('Refused by AC check');
+  await expect(page.getByRole('region', { name: 'Recovery proposal explanation' })).toContainText(/line_loading at tie:declared-demo: [2-9]\.\d+ vs 1/);
+  await page.getByRole('button', { name: 'Restore tie rating' }).click();
+});
