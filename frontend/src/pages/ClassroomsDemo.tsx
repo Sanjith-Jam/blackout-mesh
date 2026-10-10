@@ -1,3 +1,5 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { Slider } from '@/components/ui/slider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, AlertTriangle } from 'lucide-react';
 import { getClassroomDemo, postClassroomDemo } from '../api';
@@ -120,9 +122,10 @@ export default function ClassroomsDemo() {
             </div>
           </header>
           <div className="classroom-demo__ml-grid">
-            {snapshot.rooms.map(room => {
+            <AnimatePresence>
+            {snapshot.rooms.map((room, i) => {
               const act = room.activity;
-              return <article key={room.id} className={`classroom-demo__ml-card ${room.rfid_active ? 'is-scanned' : ''}`} aria-label={`${room.name} activity estimate`}>
+              return <motion.article initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:20}} transition={{delay: i * 0.05}} key={room.id} className={`classroom-demo__ml-card ${room.rfid_active ? 'is-scanned' : ''}`} aria-label={`${room.name} activity estimate`}>
                 <header><strong>{room.name}</strong><span>{room.priority_rank ? `Priority #${room.priority_rank}` : 'Not scanned'}</span></header>
                 <span className={`classroom-demo__state classroom-demo__state--${act.state.toLowerCase()}`}>{act.state}</span>
                 <dl>
@@ -131,8 +134,9 @@ export default function ClassroomsDemo() {
                   <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
                 </dl>
                 <p>{act.guard ?? act.reason}</p>
-              </article>;
-            })}
+              </motion.article>
+              ;})}
+            </AnimatePresence>
           </div>
           <p className={`classroom-demo__safety ${snapshot.safety.status === 'FEASIBLE' ? '' : 'is-short'}`} role="status">
             {snapshot.safety.status === 'FEASIBLE'
@@ -143,7 +147,9 @@ export default function ClassroomsDemo() {
         </section>
         <section aria-label="Classroom floor plans" aria-describedby="classroom-blueprint-key">
           <p id="classroom-blueprint-key" className="classroom-demo__blueprint-key">A shared supply feeds three tiled classrooms. Bright moving pulses show powered equipment; gray branches have been cut. {error ? 'Motion pauses while the connection is unavailable.' : ''}</p>
-          <ClassroomBlueprint snapshot={snapshot} connected={!error} />
+          <div className="overflow-x-auto whitespace-nowrap scrollbar-hide pb-4 w-full">
+            <ClassroomBlueprint snapshot={snapshot} connected={!error} />
+          </div>
         </section>
       </section>
       <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="classroom-controls-title" aria-busy={pending}>
@@ -161,7 +167,7 @@ export default function ClassroomsDemo() {
           const value = capacityDraft ?? snapshot.capacity_w;
           return <div className="classroom-demo__slider">
             <label htmlFor="classroom-capacity">Supply limit <strong>{value.toLocaleString()} W</strong></label>
-            <input id="classroom-capacity" type="range" min={low} max={high} step={100} value={value} onChange={event => onCapacityChange(Number(event.target.value))} aria-valuetext={`${value} watts`} />
+            <Slider value={[value]} min={low} max={high} step={100} onValueChange={(vals: number[]) => onCapacityChange(vals[0])} />
             <div className="classroom-demo__slider-scale"><span>{low.toLocaleString()} W</span><span>{high.toLocaleString()} W</span></div>
           </div>;
         })()}
@@ -178,3 +184,10 @@ export default function ClassroomsDemo() {
     </div>
   </main>;
 }
+
+
+
+
+
+
+

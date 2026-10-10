@@ -25,21 +25,26 @@ export function Header() {
       }}
       animate={hidden ? "hidden" : "visible"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="sticky top-0 w-full z-50 flex justify-between items-center p-6 bg-background/50 backdrop-blur-md border-b border-border"
+      className="sticky top-0 w-full z-50 grid grid-cols-[1fr_auto_1fr] items-center py-4 px-6 md:px-8 bg-vintage/80 backdrop-blur-md border-b border-gray-200/50"
     >
-      <div className="flex items-center gap-2 text-primary font-bold text-xl">
-        <Activity className="brand-icon" />
-        <span className="brand-name">PriorityGrid</span>
+      <div className="flex items-center justify-start gap-2 text-brand-forest font-bold text-xl">
+        <Activity className="text-brand-forest" />
+        <span className="hidden sm:inline-block">PriorityGrid</span>
       </div>
       
-      <SlideTabs tabs={[
-        { label: "Overview", href: "/" },
-        { label: "Hospital", href: "/hospital" },
-        { label: "Classrooms", href: "/classrooms" }
-      ]} />
+      <div className="flex justify-center w-full min-w-0">
+        <SlideTabs tabs={[
+          { label: "Overview", href: "/" },
+          { label: "Hospital", href: "/hospital" },
+          { label: "Classrooms", href: "/classrooms" }
+        ]} />
+      </div>
       
-      <div>
-        <Link to="/demo" className="inline-block px-5 py-2.5 bg-[#e8dcc4] hover:bg-[#d4c5ab] text-gray-900 border border-[#d4c5ab]/50 rounded-full font-medium transition-colors shadow-sm">Launch Demo</Link>
+      <div className="flex justify-end">
+        <Link to="/demo" className="inline-block px-5 py-2.5 bg-brand-sand hover:bg-brand-sand-dark text-gray-900 border border-brand-sand-dark/50 rounded-full font-medium transition-all active:scale-[0.97] focus-ring shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] text-sm md:text-base">
+          <span className="hidden sm:inline">Launch Demo</span>
+          <span className="sm:hidden">Demo</span>
+        </Link>
       </div>
     </motion.header>
   );

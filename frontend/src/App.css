@@ -5,6 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Vintage Theme Tokens */
+  --bg-vintage: #fffdf7;
+  --brand-forest: #166534;
+  --brand-earth: #854d0e;
+  --brand-sand: #e8dcc4;
+  --brand-sand-dark: #d4c5ab;
   --background: hsl(0 0% 100%);
   --foreground: hsl(20 14.3% 4.1%);
   --card: hsl(0 0% 100%);
@@ -98,6 +104,12 @@
 }
 
 :root {
+  /* Vintage Theme Tokens */
+  --bg-vintage: #fffdf7;
+  --brand-forest: #166534;
+  --brand-earth: #854d0e;
+  --brand-sand: #e8dcc4;
+  --brand-sand-dark: #d4c5ab;
   /* Minimalist Graph Theme - Light */
   --bg-color: #fffdf7; /* Very light yellow/off-white */
   --grid-line: rgba(0, 0, 0, 0.05); /* Subtle grid line */
@@ -145,4 +157,41 @@ body {
 
 button {
   font-family: inherit;
+}
+
+/* Custom Scrollbar for Vintage Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-vintage);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-sand-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-earth);
+}
+
+/* Focus Visible Utility */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffdf7];
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Global Button Active State */
+button {
+  transition: transform 0.1s ease, opacity 0.2s ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.98);
 }

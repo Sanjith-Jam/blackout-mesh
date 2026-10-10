@@ -30,8 +30,8 @@ export default function LandingPage() {
             <span>RECOVER</span>
           </div>
           <div className="hero-cta">
-            <Link to="/demo" className="btn-primary btn-large">Launch Interactive Demo</Link>
-            <a href="#architecture" className="btn-secondary btn-large">Explore Architecture</a>
+            <Link to="/demo" className="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all active:scale-[0.98] focus-ring disabled:pointer-events-none disabled:opacity-50 bg-brand-sand hover:bg-brand-sand-dark text-gray-900 border border-brand-sand-dark/50 rounded-full font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] h-10 px-8">Launch Interactive Demo</Link>
+            <a href="#architecture" className="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all active:scale-[0.98] focus-ring disabled:pointer-events-none disabled:opacity-50 border border-brand-forest text-brand-forest hover:bg-brand-forest/10 rounded-full font-medium h-10 px-8">Explore Architecture</a>
           </div>
         </div>
         <div className="hero-visual">

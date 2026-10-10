@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import DemoDashboard from './pages/DemoDashboard';
 import HospitalPage from './pages/HospitalDemo';
@@ -45,7 +45,7 @@ function ScrollToTop() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 z-[100] p-3 bg-gray-900 text-white rounded-full shadow-xl hover:bg-gray-800 transition-colors"
+          className="fixed bottom-8 right-8 z-[100] p-3 bg-gray-900/80 backdrop-blur-md text-white rounded-full shadow-xl hover:bg-gray-800 transition-colors"
           aria-label="Scroll to top"
         >
           <ChevronUp size={24} />
@@ -55,23 +55,32 @@ function ScrollToTop() {
   );
 }
 
+function AppContent() {
+  const location = useLocation();
+  return (
+    <div className="flex flex-col min-h-screen relative">
+      <Header />
+      <main className="flex-grow">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><LandingPage /></motion.div>} />
+            <Route path="/hospital" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><HospitalPage /></motion.div>} />
+            <Route path="/classrooms" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><ClassroomsPage /></motion.div>} />
+            <Route path="/demo" element={<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><DemoDashboard /></motion.div>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AnimatePresence>
+      </main>
+      <ScrollToTop />
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
       <AppShell>
-        <div className="flex flex-col min-h-screen relative">
-          <Header />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/hospital" element={<HospitalPage />} />
-              <Route path="/classrooms" element={<ClassroomsPage />} />
-              <Route path="/demo" element={<DemoDashboard />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <ScrollToTop />
-        </div>
+        <AppContent />
       </AppShell>
     </Router>
   );
