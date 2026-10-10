@@ -32,7 +32,7 @@
     ]
   },
   "provenance": "SYNTHETIC_GEOMETRY; OSM building centroids are virtual group centers, not electrical asset locations",
-  "equipment_stage": "PRSG topology plus explicit synthetic ratings; GDM equipment sizing/export is deferred",
+  "equipment_stage": "SHIFT BalancedPhaseMapper, TransformerVoltageMapper, EdgeEquipmentMapper, and DistributionSystemBuilder completed with declared synthetic catalog assumptions; mapped 31 phase nodes, 31 voltage nodes, 30 edge equipment items; limits assume unity power factor; no simulation or export",
   "nodes": [
     {
       "id": "junction:78.6567021:17.1608563",
@@ -40,8 +40,8 @@
       "lon": 78.6567021,
       "lat": 17.1608563,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_va": 100000,
+      "voltage_v": 11000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -50,8 +50,8 @@
       "lon": 78.6575765,
       "lat": 17.1617954,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_va": 100000,
+      "voltage_v": 11000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -60,8 +60,8 @@
       "lon": 78.6583934,
       "lat": 17.162434,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_va": 100000,
+      "voltage_v": 11000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -70,8 +70,8 @@
       "lon": 78.6584455,
       "lat": 17.1615332,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_va": 100000,
+      "voltage_v": 11000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -80,8 +80,8 @@
       "lon": 78.6595118,
       "lat": 17.1616223,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_va": 100000,
+      "voltage_v": 11000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -90,8 +90,8 @@
       "lon": 78.660375,
       "lat": 17.1614626,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_va": 100000,
+      "voltage_v": 11000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -174,7 +174,7 @@
       "building_id": "osm-way-1133164421",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -185,7 +185,7 @@
       "building_id": "osm-way-1133164422",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -196,7 +196,7 @@
       "building_id": "osm-way-1133164423",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -207,7 +207,7 @@
       "building_id": "osm-way-1133164424",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -218,7 +218,7 @@
       "building_id": "osm-way-1133164425",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -229,7 +229,7 @@
       "building_id": "osm-way-1133164426",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -240,7 +240,7 @@
       "building_id": "osm-way-1133164427",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -251,7 +251,7 @@
       "building_id": "osm-way-1133164428",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -262,7 +262,7 @@
       "building_id": "osm-way-1133164429",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -273,7 +273,7 @@
       "building_id": "osm-way-1133164430",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -284,7 +284,7 @@
       "building_id": "osm-way-1133164431",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -295,7 +295,7 @@
       "building_id": "osm-way-1133164432",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 5000,
+      "rating_va": 15297,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -305,7 +305,7 @@
       "lat": 17.161849,
       "phase": "ABC",
       "voltage_v": 11000,
-      "rating_va": 1000000,
+      "rating_va": 3300000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -316,7 +316,7 @@
       "group_id": "group-00",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 25000,
+      "rating_va": 100000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -327,7 +327,7 @@
       "group_id": "group-01",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 25000,
+      "rating_va": 100000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -338,7 +338,7 @@
       "group_id": "group-02",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 25000,
+      "rating_va": 100000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -349,7 +349,7 @@
       "group_id": "group-03",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 25000,
+      "rating_va": 100000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -360,7 +360,7 @@
       "group_id": "group-04",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 25000,
+      "rating_va": 100000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     },
     {
@@ -371,7 +371,7 @@
       "group_id": "group-05",
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_va": 25000,
+      "rating_va": 100000,
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
     }
   ],
@@ -384,9 +384,9 @@
       "component_type": "DistributionBranchBase",
       "length_m": 139.49,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "voltage_v": 11000,
+      "rating_a": 100,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -401,7 +401,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -414,9 +414,9 @@
       "component_type": "DistributionBranchBase",
       "length_m": 96.91,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "voltage_v": 11000,
+      "rating_a": 100,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -431,7 +431,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -444,9 +444,9 @@
       "component_type": "DistributionBranchBase",
       "length_m": 99.85,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "voltage_v": 11000,
+      "rating_a": 100,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -461,7 +461,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -474,9 +474,9 @@
       "component_type": "DistributionBranchBase",
       "length_m": 113.87,
       "phase": "ABC",
-      "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "voltage_v": 11000,
+      "rating_a": 100,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -491,7 +491,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -506,7 +506,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -521,7 +521,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -536,7 +536,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -551,7 +551,7 @@
       "phase": "ABC",
       "voltage_v": 11000,
       "rating_a": 100,
-      "limit_w": 100000,
+      "limit_w": 3300000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -566,7 +566,7 @@
       "phase": "ABC",
       "voltage_v": null,
       "rating_a": null,
-      "limit_w": 20000,
+      "limit_w": 100000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -581,7 +581,7 @@
       "phase": "ABC",
       "voltage_v": null,
       "rating_a": null,
-      "limit_w": 20000,
+      "limit_w": 100000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -596,7 +596,7 @@
       "phase": "ABC",
       "voltage_v": null,
       "rating_a": null,
-      "limit_w": 20000,
+      "limit_w": 100000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -611,7 +611,7 @@
       "phase": "ABC",
       "voltage_v": null,
       "rating_a": null,
-      "limit_w": 20000,
+      "limit_w": 100000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -626,7 +626,7 @@
       "phase": "ABC",
       "voltage_v": null,
       "rating_a": null,
-      "limit_w": 20000,
+      "limit_w": 100000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -641,7 +641,7 @@
       "phase": "ABC",
       "voltage_v": null,
       "rating_a": null,
-      "limit_w": 20000,
+      "limit_w": 100000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -655,8 +655,8 @@
       "length_m": 49.79,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -670,8 +670,8 @@
       "length_m": 47.87,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -685,8 +685,8 @@
       "length_m": 25.04,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -700,8 +700,8 @@
       "length_m": 49.79,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -715,8 +715,8 @@
       "length_m": 14.59,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -730,8 +730,8 @@
       "length_m": 0.15,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -745,8 +745,8 @@
       "length_m": 47.87,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -760,8 +760,8 @@
       "length_m": 20.64,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -775,8 +775,8 @@
       "length_m": 49.79,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -790,8 +790,8 @@
       "length_m": 47.87,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -805,8 +805,8 @@
       "length_m": 23.78,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
@@ -820,8 +820,8 @@
       "length_m": 0.15,
       "phase": "ABC",
       "voltage_v": 400,
-      "rating_a": 50,
-      "limit_w": 20000,
+      "rating_a": 100,
+      "limit_w": 120000,
       "normally_open": false,
       "provenance": "SHIFT_SYNTHETIC_GEOMETRY",
       "rating_provenance": "SYNTHETIC_DEMO_ASSUMPTION"
