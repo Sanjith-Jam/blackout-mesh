@@ -16,10 +16,8 @@ function Kpi({ label, value }: { label: string; value: string }) {
   return <div className="district-kpi"><span>{label}</span><strong>{value}</strong></div>;
 }
 
-import { formatMetric } from '../utils';
-
 function number(value: unknown, unit: string) {
-  return formatMetric(typeof value === 'number' && Number.isFinite(value) ? value : null, unit, 'Unknown');
+  return typeof value === 'number' && Number.isFinite(value) ? `${value.toLocaleString()} ${unit}` : 'Unknown';
 }
 
 function errorMessage(error: unknown) {

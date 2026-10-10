@@ -12,8 +12,7 @@ from typing import Dict, Optional, Tuple, Any
 
 from app.schemas.snapshot import (
     SystemSnapshot, SourceInfo, SourceKind, HardwareLinkStatus,
-    ServiceSnapshot, Tier, FacilityZones, HospitalZone, HospitalRoom,
-    ClassroomZone, ClassroomInfo, RfidReaderStatus, RfidEventType,
+    ServiceSnapshot, Tier, RfidReaderStatus, RfidEventType,
     SystemEvent, FaultDiagnosis,
 )
 from app.core.allocator import allocate, fixed_priority_mask, explain
@@ -733,7 +732,7 @@ class GridState:
                 ))
 
             hospital_rooms = [
-                HospitalRoom(id=r["id"], name=r["name"], lighting_service=r["lighting_service"], led_bit=r["led_bit"])
+                {"id": r["id"], "name": r["name"], "lighting_service_id": r["lighting_service"], "led_bit": r["led_bit"]}
                 for r in HOSPITAL_ROOMS
             ]
 
@@ -741,7 +740,7 @@ class GridState:
             for c in CLASSROOMS:
                 cid = c["id"]
                 is_registered = any(v == cid for v in self.rfid_map.values())
-                cinfo = ClassroomInfo(
+                cinfo = dict(
                     id=cid,
                     name=c["name"],
                     service_id=c["service_id"],
@@ -751,15 +750,15 @@ class GridState:
                 )
                 classroom_infos.append(cinfo)
 
-            zones = FacilityZones(
-                hospital=HospitalZone(rooms=hospital_rooms),
-                classroom=ClassroomZone(
-                    active_classroom_id=next(iter(self.active_sessions.keys()), None) if self.active_sessions else None,
-                    recent_rfid_scan=None,
-                    rfid_reader_status=RfidReaderStatus.NOT_CONNECTED,
-                    classrooms=classroom_infos
-                )
-            )
+            zones = {
+                'hospital': {'rooms': [c.model_dump() if hasattr(c, 'model_dump') else c for c in hospital_rooms]},
+                'classroom': {
+                    'active_classroom_id': next(iter(self.active_sessions.keys()), None) if self.active_sessions else None,
+                    'recent_rfid_scan': None,
+                    'rfid_reader_status': 'NOT_CONNECTED',
+                    'classrooms': [c.model_dump() if hasattr(c, 'model_dump') else c for c in classroom_infos]
+                }
+            }
 
             activity = self.current_activity()
 
@@ -802,7 +801,7 @@ class GridState:
                 edges=edges,
                 control_revision=self.control_revision,
                 generated_at=datetime.now(timezone.utc),
-                source=SourceInfo(kind=SourceKind.SIMULATED, capacity_w=self.source_capacity_w),
+                source=SourceInfo(kind=SourceKind.SIMULATED, capacity_w=self.source_capacity_w, max_capacity_w=CATALOG.source_capacity_w),
                 feeder_limits_w=self.feeder_limits_w.copy(),
                 requested_mask=requested_mask,
                 modeled_mask=modeled_mask,

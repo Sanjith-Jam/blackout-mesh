@@ -11,7 +11,7 @@ from starlette.requests import Request
 from app.simulation.electrical import ElectricalInput, solve, telemetry, diagnose_study
 
 
-@pytest.mark.parametrize('bad', [{'load_a_w': True}, {'load_b_w': -1}, {'resistance_ohm': 0.},
+@pytest.mark.parametrize('bad', [{'loads_w': {'A': True}}, {'loads_w': {'B': -1}}, {'resistance_ohm': 0.},
                                   {'reactance_ohm': -1.}, {'power_factor': float('nan')}, {'balanced': False}, {'balanced': 1}, {'truth': 'overload'}])
 def test_invalid_parameters(bad):
     with pytest.raises(ValidationError):
@@ -38,10 +38,10 @@ def test_reference_conservation_islands_and_failure():
         assert branch['current_a'] > 0 and branch['loading_pct'] < 100
         # Three-phase source-terminal apparent power agrees with RMS current.
         assert (branch['p_w']**2 + branch['q_var']**2)**.5 == pytest.approx(3**.5 * 400 * branch['current_a'], rel=1e-6)
-    overload = solve(ElectricalInput(load_a_w=12000))
+    overload = solve(ElectricalInput(loads_w={'A': 12000, 'B': 8000}))
     assert overload.branches['A']['loading_pct'] > 100
     assert diagnose_study(overload)['current_alarms'] == ['A']
-    opened = solve(ElectricalInput(feeder_b_closed=False))
+    opened = solve(ElectricalInput(feeders_closed={'A': True, 'B': False}))
     assert opened.converged and opened.buses['B']['voltage_v'] is None
     assert opened.branches['B']['p_w'] is None
     assert opened.source_p_w == pytest.approx(6000 + opened.loss_w, abs=.1)
@@ -62,7 +62,7 @@ def test_study_api_and_stale_revision(monkeypatch):
         assert result.status_code == 200
         assert result.json()['result']['restoration_authorized'] is False
         assert main.app.state.grid.last_allocation_mask == before
-        assert client.post('/api/v1/studies/electrical', json={'load_a_w': '6000'}).status_code == 422
+        assert client.post('/api/v1/studies/electrical', json={'loads_w': {'A': '6000'}}).status_code == 422
     def stale(inputs):
         main.app.state.site.new_run()
         return fake(inputs)

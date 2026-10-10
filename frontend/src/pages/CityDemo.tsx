@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Radio, ShieldCheck, Zap } from 'lucide-react';
@@ -30,7 +30,7 @@ export default function CityDemo() {
   const act = async (operation: () => Promise<unknown>, message: string) => {
     if (actionInFlight.current || city.isError) return;
     actionInFlight.current = true;
-    setPending(true); setFeedback('Applying event…');
+    setPending(true); setFeedback('Applying eventâ€¦');
     await queryClient.cancelQueries({ queryKey: ['city-demo'] });
     try {
       await operation();
@@ -39,7 +39,7 @@ export default function CityDemo() {
     } catch (error) { setFeedback(error instanceof Error ? error.message : 'Event failed.'); }
     finally { actionInFlight.current = false; setPending(false); }
   };
-  if (!snapshot || !city.data) return <div className="city-demo city-loading"><Activity aria-hidden="true" /><h1>{city.isError ? 'City grid unavailable' : 'Connecting to the city grid…'}</h1>{city.isError && <><p role="alert">Start the local backend to load the simulated city.</p><button onClick={() => void city.refetch()}>Try again</button></>}</div>;
+  if (!snapshot || !city.data) return <div className="city-demo city-loading"><Activity aria-hidden="true" /><h1>{city.isError ? 'City grid unavailable' : 'Connecting to the city gridâ€¦'}</h1>{city.isError && <><p role="alert">Start the local backend to load the simulated city.</p><button onClick={() => void city.refetch()}>Try again</button></>}</div>;
   const openFeeders = ['A', 'B'].filter(id => feederState(snapshot, id) === 'OPEN');
   const requested = snapshot.services.filter(s => s.requested);
   const shed = requested.filter(s => servedWatts(s) < (s.requested_w ?? s.watts));
@@ -50,34 +50,34 @@ export default function CityDemo() {
   const disabled = pending || city.isError || city.isPlaceholderData;
   const outcomes = [
     { label: 'Simple fixed priority', mask: snapshot.allocation.baseline_mask },
-    { label: 'Our exact policy · proposed', mask: snapshot.proposed_mask },
+    { label: 'Our exact policy Â· proposed', mask: snapshot.proposed_mask },
   ];
   return <div className="city-demo">
-    <header className="city-heading"><div><span className="city-eyebrow">Blackout Mesh / city command center</span><h1>Navigate the outage.</h1><p>See what lost power, why it was cut, and what can safely recover next.</p></div><div className="city-live"><span className={`city-dot ${city.isError ? 'is-shed' : 'is-served'}`} />{city.isError ? 'Stale · last known state' : 'Live simulation'}<small>Run {snapshot.site?.run_id}</small></div></header>
+    <header className="city-heading"><div><span className="city-eyebrow">Blackout Mesh / city command center</span><h1>Navigate the outage.</h1><p>See what lost power, why it was cut, and what can safely recover next.</p></div><div className="city-live"><span className={`city-dot ${city.isError ? 'is-shed' : 'is-served'}`} />{city.isError ? 'Stale Â· last known state' : 'Live simulation'}<small>Run {snapshot.site?.run_id}</small></div></header>
     <p className="city-boundary">Illustrative city; electrical demand and outages are simulated at lab scale. USB / ESP-NOW status is physical only when a device reports it.</p>
     {city.isError && <p className="city-warning" role="alert">Connection lost. Controls are disabled; the grid shows the last known snapshot.</p>}
     <section className="city-events" aria-label="City event controls"><span><Zap size={18} aria-hidden="true" /> One event updates the whole grid</span>
-      <button disabled={disabled} onClick={() => void act(async () => { for (const { id } of snapshot.zones?.classroom.classrooms ?? []) await changeClassroomLoad(id, true, snapshot.contract.identity.run_id); }, 'All classroom sessions requested.')}>Request all rooms</button>
-      <button disabled={disabled} onClick={() => void act(() => changeCapacity(6000), '6,000 W shortage applied. Protected demand takes priority.')}>6 kW shortage</button>
-      {['A', 'B'].map(id => <button key={id} disabled={disabled} onClick={() => void act(() => changeFeeder(id, openFeeders.includes(id)), `Feeder ${id} ${openFeeders.includes(id) ? 'repaired' : 'tripped'} in simulation.`)}>{openFeeders.includes(id) ? 'Repair' : 'Trip'} feeder {id}</button>)}
-      <button disabled={disabled} onClick={() => void act(() => changeCapacity(14000), '14,000 W supply restored. Loads still wait for stable evidence.')}>Restore supply</button>
-    </section><p className="city-feedback" role="status">{feedback || 'Start with “Request all rooms”, then trigger a shortage or feeder trip.'}</p>
+      <button disabled={disabled} onClick={() => void act(async () => { for (const { id } of ((snapshot.zones?.classroom as any)?.classrooms || []) ?? []) await changeClassroomLoad(id, true, snapshot.contract.identity.run_id); }, 'All classroom sessions requested.')}>Request all rooms</button>
+      <button disabled={disabled} onClick={() => void act(() => changeCapacity(Math.round((snapshot.source.max_capacity_w ?? 14000) * 0.43)), `${Math.round((snapshot.source.max_capacity_w ?? 14000) * 0.43).toLocaleString()} W shortage applied. Protected demand takes priority.`)}>6 kW shortage</button>
+      {Object.keys(snapshot.feeder_limits_w).map(id => <button key={id} disabled={disabled} onClick={() => void act(() => changeFeeder(id, openFeeders.includes(id)), `Feeder ${id} ${openFeeders.includes(id) ? 'repaired' : 'tripped'} in simulation.`)}>{openFeeders.includes(id) ? 'Repair' : 'Trip'} feeder {id}</button>)}
+      <button disabled={disabled} onClick={() => void act(() => changeCapacity(snapshot.source.max_capacity_w ?? 14000), `${(snapshot.source.max_capacity_w ?? 14000).toLocaleString()} W supply restored. Loads still wait for stable evidence.`)}>Restore supply</button>
+    </section><p className="city-feedback" role="status">{feedback || 'Start with â€œRequest all roomsâ€, then trigger a shortage or feeder trip.'}</p>
     <div className="city-scope-grid">
-      {[{ label: 'Source power state', title: 'City source', capacity: snapshot.source.capacity_w, watts: servedW }, ...['A', 'B'].map(id => ({ label: id === 'A' ? 'Hospital power state' : 'Classroom power state', title: `Feeder ${id} · ${id === 'A' ? 'Hospital' : 'Classrooms'}`, capacity: snapshot.feeder_limits_w[id], watts: snapshot.services.filter(s => s.feeder === id).reduce((sum, s) => sum + servedWatts(s), 0) }))].map(scope => <section className="city-scope" key={scope.title} aria-label={scope.label} data-revision={snapshot.site?.revision}>
-        <span>{scope.title}</span><strong>{scope.watts.toLocaleString()} / {scope.capacity.toLocaleString()} W</strong><small>Served / configured limit · revision {snapshot.site?.revision}</small>
+      {[{ label: 'Source power state', title: 'City source', capacity: snapshot.source.capacity_w, watts: servedW }, ...Object.keys(snapshot.feeder_limits_w).map(id => ({ label: `Feeder ${id} power state`, title: `Feeder ${id}`, capacity: snapshot.feeder_limits_w[id], watts: snapshot.services.filter(s => s.feeder === id).reduce((sum, s) => sum + servedWatts(s), 0) }))].map(scope => <section className="city-scope" key={scope.title} aria-label={scope.label} data-revision={snapshot.site?.revision}>
+        <span>{scope.title}</span><strong>{scope.watts.toLocaleString()} / {scope.capacity.toLocaleString()} W</strong><small>Served / configured limit Â· revision {snapshot.site?.revision}</small>
       </section>)}
     </div>
     <div className="city-main-grid"><CityGrid snapshot={snapshot} selected={selected} onSelect={setSelected} />
       <section className="city-panel city-recovery" aria-label="Outage recovery guidance"><ShieldCheck aria-hidden="true" /><h2>Recovery navigator</h2>
         <ol><li className={openFeeders.length ? 'is-attention' : ''}><strong>Locate the interruption</strong><p>{openFeeders.length ? `Feeder ${openFeeders.join(' and ')} is open. Downstream loads have no supply.` : ['A', 'B'].every(id => feederState(snapshot, id) === 'CLOSED') ? 'Both feeders are closed. Check source capacity and requested demand.' : 'Feeder evidence is incomplete; inspect status before recovery.'}</p></li>
           <li className={snapshot.allocation.critical_shortfall_w ? 'is-attention' : ''}><strong>Check protected demand</strong><p>{snapshot.allocation.critical_shortfall_w ? `${snapshot.allocation.critical_shortfall_w.toLocaleString()} W critical shortfall. Capacity or reachability is insufficient.` : 'Critical requested demand is served in the current model.'}</p></li>
-          <li className={shed.length ? 'is-attention' : ''}><strong>Repair, then restore supply</strong><p>{servedW.toLocaleString()} / {requestedW.toLocaleString()} W served. {shed.length} requested service{shed.length === 1 ? '' : 's'} waiting or shed.</p>{openFeeders.map(id => <button key={id} disabled={disabled} onClick={() => void act(() => changeFeeder(id, true), `Feeder ${id} repaired; restoration remains gated.`)}>Repair feeder {id}</button>)}{snapshot.source.capacity_w < 14000 && <button disabled={disabled} onClick={() => void act(() => changeCapacity(14000), 'Supply restored; waiting for stable capacity.')}>Restore 14 kW supply</button>}</li>
+          <li className={shed.length ? 'is-attention' : ''}><strong>Repair, then restore supply</strong><p>{servedW.toLocaleString()} / {requestedW.toLocaleString()} W served. {shed.length} requested service{shed.length === 1 ? '' : 's'} waiting or shed.</p>{openFeeders.map(id => <button key={id} disabled={disabled} onClick={() => void act(() => changeFeeder(id, true), `Feeder ${id} repaired; restoration remains gated.`)}>Repair feeder {id}</button>)}{snapshot.source.capacity_w < (snapshot.source.max_capacity_w ?? 14000) && <button disabled={disabled} onClick={() => void act(() => changeCapacity(snapshot.source.max_capacity_w ?? 14000), 'Supply restored; waiting for stable capacity.')}>Restore supply</button>}</li>
           <li><strong>{recovering ? 'Restoration in progress' : shed.length ? 'Keep constraints visible' : 'Requested services recovered'}</strong><p>{recovering ? 'The controller is waiting for stability or adding services in stages. Keep this screen open to follow recovery.' : shed.length ? 'Unmet demand remains visible. A forecast cannot bypass a capacity limit or an open feeder.' : 'Every requested service is served. No physical power-delivery claim is implied.'}</p></li></ol>
-        <p className="city-small">Recovery uses the existing controller’s evidence, stability and dwell checks. No automatic feeder bypass or mesh routing.</p>
+        <p className="city-small">Recovery uses the existing controllerâ€™s evidence, stability and dwell checks. No automatic feeder bypass or mesh routing.</p>
       </section></div>
     <section className="city-panel city-decisions" aria-label="Power decision explanations"><h2>Every cut has a reason</h2>
-      {selectedService && <p className="city-selected"><strong>Selected: {selectedService.name}</strong> — {decisionReason(snapshot, selectedService.id)}</p>}
-      {shed.length ? shed.map(service => <article key={service.id} className="city-shed-reason"><strong>{service.name} · {((service.requested_w ?? service.watts) - servedWatts(service)).toLocaleString()} W shed</strong><p>{decisionReason(snapshot, service.id)}</p><details><summary>More decision detail</summary><p>{service.model_reason} · {service.tier} · feeder {service.feeder}</p></details></article>) : <p>All requested services are served.</p>}
+      {selectedService && <p className="city-selected"><strong>Selected: {selectedService.name}</strong> â€” {decisionReason(snapshot, selectedService.id)}</p>}
+      {shed.length ? shed.map(service => <article key={service.id} className="city-shed-reason"><strong>{service.name} Â· {((service.requested_w ?? service.watts) - servedWatts(service)).toLocaleString()} W shed</strong><p>{decisionReason(snapshot, service.id)}</p><details><summary>More decision detail</summary><p>{service.model_reason} Â· {service.tier} Â· feeder {service.feeder}</p></details></article>) : <p>All requested services are served.</p>}
     </section>
     <div className="city-bottom-grid"><DemandForecastPanel forecast={city.data.forecast} evidence={evidence.data} source={source} onSource={setSource} replayIndex={replayIndex} onNext={() => setReplayIndex(index => index === 7 ? 3 : index + 1)} />
       <section className="city-panel" aria-label="Real-time hardware monitoring"><header className="city-panel-heading"><div><h2><Radio size={19} aria-hidden="true" /> Real-time hardware monitoring</h2><p>Board A USB bridge and board B LED acknowledgments</p></div></header>
@@ -89,10 +89,11 @@ export default function CityDemo() {
       const watts = selectedServices.reduce((sum, s) => sum + s.watts, 0);
       const unmet = requested.filter((s, i) => s.tier === 'T1' && !selectedServices.some(selectedService => selectedService.id === s.id)).reduce((sum, s) => sum + s.watts, 0);
       return <article key={outcome.label}><h3>{outcome.label}</h3><strong>{watts.toLocaleString()} W</strong><p>Critical unmet: {unmet.toLocaleString()} W</p><p>{selectedServices.map(s => s.name).join(', ') || 'No services selected'}</p></article>;
-    })}</div><p>Currently applied: <b>{servedW.toLocaleString()} W</b>{recovering ? ' · restoration gated' : ''}.</p>
-      <details><summary>6 kW shortage benchmark · include switching costs</summary><div className="city-table-scroll"><table><caption>Five seeds per policy · simulated 40-minute runs · oracle is offline only</caption><thead><tr><th>Policy</th><th>Occupied service</th><th>Switches</th><th>Essential unmet Wh</th><th>Critical unmet Wh</th></tr></thead><tbody>{evidence.data?.ablation.map(row => <tr key={row.policy}><th>{row.policy}</th><td>{row.occupied_service_pct.toFixed(1)}%</td><td>{row.switching_count.toFixed(1)}</td><td>{row.essential_unmet_wh.toFixed(1)}</td><td>{row.critical_unmet_wh.toFixed(1)}</td></tr>)}</tbody></table></div><p>More occupied service can come with more switching and unmet essential demand. ML is optional; this table does not establish a universal improvement.</p></details>
+    })}</div><p>Currently applied: <b>{servedW.toLocaleString()} W</b>{recovering ? ' Â· restoration gated' : ''}.</p>
+      <details><summary>6 kW shortage benchmark Â· include switching costs</summary><div className="city-table-scroll"><table><caption>Five seeds per policy Â· simulated 40-minute runs Â· oracle is offline only</caption><thead><tr><th>Policy</th><th>Occupied service</th><th>Switches</th><th>Essential unmet Wh</th><th>Critical unmet Wh</th></tr></thead><tbody>{evidence.data?.ablation.map(row => <tr key={row.policy}><th>{row.policy}</th><td>{row.occupied_service_pct.toFixed(1)}%</td><td>{row.switching_count.toFixed(1)}</td><td>{row.essential_unmet_wh.toFixed(1)}</td><td>{row.critical_unmet_wh.toFixed(1)}</td></tr>)}</tbody></table></div><p>More occupied service can come with more switching and unmet essential demand. ML is optional; this table does not establish a universal improvement.</p></details>
     </section>
     <BenchmarkCard />
     <nav className="city-drilldowns" aria-label="Grid drill-downs"><Link to="/hospital">Hospital detail <ArrowRight size={16} aria-hidden="true" /></Link><Link to="/classrooms">Classroom detail <ArrowRight size={16} aria-hidden="true" /></Link><Link to="/console">History and engineering console <ArrowRight size={16} aria-hidden="true" /></Link></nav>
   </div>;
 }
+

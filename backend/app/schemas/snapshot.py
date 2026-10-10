@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
-from typing import List, Optional, Dict, Literal
+from typing import List, Any, Optional, Dict, Literal
 from datetime import datetime
 
 class HardwareLinkStatus(str, Enum):
@@ -23,6 +23,7 @@ class SourceInfo(BaseModel):
     limitations: str = "Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics"
     kind: SourceKind
     capacity_w: int
+    max_capacity_w: int
 
 class ServiceSnapshot(BaseModel):
     id: str
@@ -48,32 +49,6 @@ class RfidEventType(str, Enum):
     UNKNOWN_CARD = "UNKNOWN_CARD"
     DUPLICATE_SUPPRESSED = "DUPLICATE_SUPPRESSED"
 
-class HospitalRoom(BaseModel):
-    id: str
-    name: str
-    lighting_service: str
-    led_bit: int
-
-class ClassroomInfo(BaseModel):
-    id: str
-    name: str
-    service_id: str
-    rfid_card_registered: bool
-    led_bit: int
-    load_event_active: bool
-
-class HospitalZone(BaseModel):
-    rooms: List[HospitalRoom]
-
-class ClassroomZone(BaseModel):
-    active_classroom_id: Optional[str] = None
-    recent_rfid_scan: Optional[str] = None
-    rfid_reader_status: RfidReaderStatus = RfidReaderStatus.NOT_CONNECTED
-    classrooms: List[ClassroomInfo]
-
-class FacilityZones(BaseModel):
-    hospital: HospitalZone
-    classroom: ClassroomZone
 
 class SystemEvent(BaseModel):
     event_id: str | None = None
@@ -92,7 +67,22 @@ class FaultDiagnosis(BaseModel):
     affected_assets: List[str] = Field(default_factory=list)
     supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
-from app.schemas.contract import ScopeTotals, RunIdentity, CrossRouteContract
+class ScopeTotals(BaseModel):
+    capacity_w: Optional[int] = None
+    requested_w: int
+    served_w: int
+
+class RunIdentity(BaseModel):
+    site_id: str
+    run_id: str
+    server_epoch: int
+    config_hash: str
+    catalog_version: str
+    policy_version: str
+    model_version: str
+    state_revision: int
+    observation_time: str
+
 
 class SiteIdentityResponse(BaseModel):
     run_id: str
@@ -102,6 +92,11 @@ class SiteIdentityResponse(BaseModel):
     config_hash: str
     site_name: str
     scenario: Optional[str] = None  # named teaching scenario (#33), or "custom"; None in older history
+
+class CrossRouteContract(BaseModel):
+    identity: RunIdentity
+    campus_totals: Optional[ScopeTotals] = None
+    zone_totals: Dict[str, ScopeTotals] = {}
 
 class SystemSnapshot(BaseModel):
     contract: CrossRouteContract
@@ -119,7 +114,7 @@ class SystemSnapshot(BaseModel):
     indicator_mask: Optional[int] = None
     hardware_link: HardwareLinkStatus
     services: List[ServiceSnapshot]
-    zones: Optional[FacilityZones] = None
+    zones: Optional[Dict[str, Any]] = None
     events: List[SystemEvent] = []
     fault_diagnosis: Optional[FaultDiagnosis] = None
     activity: Dict[str, "ActivitySnapshot"] = Field(default_factory=dict)

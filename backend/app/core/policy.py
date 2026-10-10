@@ -23,7 +23,7 @@ def score(mask, services, activity, previous_mask, policy, waiting_s):
     terms = {state.lower(): sum(on(i) for i, svc in enumerate(services)
                   if svc.get("zone") == "classroom" and activity.get(svc.get("classroom_id", f"CR{i - 2}"), {}).get("state", "UNKNOWN") == state)
              for state in ("ACTIVE", "UNKNOWN", "INACTIVE")}
-    terms.update(water=sum(on(i) for i, svc in enumerate(services) if svc.get("zone") == "water" or svc["id"] == "L2"),
+    terms.update(water=sum(on(i) for i, svc in enumerate(services) if svc.get("zone") == "water"),
                  fairness=policy.fairness_weight * sum(on(i) * min(3600, int(waiting_s.get(svc["id"], 0)))
                             for i, svc in enumerate(services) if svc["tier"] != "T1"),
                  switching=-policy.switching_penalty * (mask ^ previous_mask).bit_count(),
