@@ -5,5 +5,5 @@
 // #undef BUTTON_END
 // #define BUTTON_END <verified GPIO>
 // #undef BUTTON_FALLBACK_A
-// #define BUTTON_FALLBACK_A <verified GPIO>   (RFID-fail fallback, starts room A)
+// #define BUTTON_FALLBACK_A <verified GPIO>   (room A button, RFID fallback; B and C: BUTTON_FALLBACK_B/_C)
 // Button defaults: INPUT_PULLUP, active LOW, switch between GPIO and GND.

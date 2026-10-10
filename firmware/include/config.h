@@ -11,8 +11,10 @@
 #define BUTTON_SHORTAGE 26
 #define BUTTON_RESTORE 27
 #define BUTTON_RESET 32
-// Fallback when the RFID reader fails: starts a session for room A without a card.
+// Room buttons: start a session for that room without a card (RFID fallback / card-free demo).
 #define BUTTON_FALLBACK_A 33
+#define BUTTON_FALLBACK_B 13
+#define BUTTON_FALLBACK_C 14
 #define BUTTON_ACTIVE_LEVEL 0
 #define RADIO_CHANNEL 1
 #define SERIAL_BAUD 115200
@@ -20,10 +22,13 @@
 #include "hardware.local.h"
 #endif
 namespace config {
-// Index order matters: 0 END, 1 SHORTAGE (deprived of kW), 2 RESTORE (normal), 3 RESET (hold), 4 FALLBACK room A.
-constexpr int buttons[] = {BUTTON_END, BUTTON_SHORTAGE, BUTTON_RESTORE, BUTTON_RESET, BUTTON_FALLBACK_A};
+// Index order matters: 0 END, 1 SHORTAGE (deprived of kW), 2 RESTORE (normal), 3 RESET (hold),
+// 4/5/6 room A/B/C buttons.
+constexpr int buttons[] = {BUTTON_END, BUTTON_SHORTAGE, BUTTON_RESTORE, BUTTON_RESET,
+                           BUTTON_FALLBACK_A, BUTTON_FALLBACK_B, BUTTON_FALLBACK_C};
 constexpr int BUTTON_COUNT = sizeof(buttons) / sizeof(buttons[0]);
 constexpr int RESET_BUTTON_INDEX = 3;
+constexpr int FIRST_ROOM_BUTTON_INDEX = 4;  // room A; B and C follow
 constexpr bool safeButton(int pin) {
   return pin == -1 || pin == 4 || pin == 13 || pin == 14 || pin == 25 ||
          pin == 26 || pin == 27 || pin == 32 || pin == 33;

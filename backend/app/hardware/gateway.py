@@ -149,7 +149,8 @@ class GatewayBridge:
     def _on_status(self, code):
         if code == "host_synced":
             self.synced = True
-        elif code in ("reader_fault", "fallback_room_a_reader_fault"):
+        elif code in ("reader_fault", "fallback_room_a_reader_fault", "fallback_room_b_reader_fault",
+                      "fallback_room_c_reader_fault"):
             self.reader_ok = False
         elif code in ("reader_recovered", "reader_initialized_unverified"):
             self.reader_ok = True

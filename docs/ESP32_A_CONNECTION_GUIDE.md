@@ -42,11 +42,13 @@ Each button has **one side to its GPIO pin and the other side to GND**. That's a
 
 | Button label | ESP32 pin | What it does in the demo |
 |---|---|---|
-| **END SELECTED** | GPIO 25 | Ends the session of the room that was scanned last |
+| **END SELECTED** | GPIO 25 | Ends the session of the room that was started last |
 | **DEPRIVED (kW shortage)** | GPIO 26 | Drops the classroom supply to the 3,400 W shortage level |
 | **NORMAL** | GPIO 27 | Restores the full 8,000 W supply |
 | **RESET (hold 2 s)** | GPIO 32 | Clears every session and starts a fresh run |
-| **RFID FALLBACK → ROOM A** | GPIO 33 | If the reader fails, starts room A's session exactly as card A would |
+| **ROOM A** | GPIO 33 | Starts room A's session exactly as card A would (RFID fallback) |
+| **ROOM B** | GPIO 13 | Starts room B's session exactly as card B would |
+| **ROOM C** | GPIO 14 | Starts room C's session exactly as card C would |
 
 How to wire one button on a breadboard:
 1. Put the button across the breadboard's centre gap so its legs are in two different row groups.
@@ -113,7 +115,7 @@ The two boards only talk to each other, encrypted. They need each other's addres
 | Press **END SELECTED** | The last scanned room ends; its LED goes off |
 | Hold **RESET** 2 s | All rooms cleared, all LEDs off, a fresh run starts |
 | **RFID failure:** unplug the reader's SDA wire (USB unplugged first), then power up | Panel shows "Card reader: FAULT" |
-| Press **RFID FALLBACK → ROOM A** | Room A starts exactly as if card A had been tapped; LED A turns on |
+| Press **ROOM A**, **ROOM B** or **ROOM C** | That room starts exactly as if its card had been tapped; its LED turns on |
 | Unplug board B | Link shows stale; board A reports board B not heard; LEDs keep their last state until B is back |
 
 ## 11. Troubleshooting
