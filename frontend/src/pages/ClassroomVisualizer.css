@@ -64,3 +64,23 @@
 .classroom-demo__safety { margin: 12px 0 0; padding: 8px 10px; border-radius: var(--radius-sm); color: #166534; background: #dcfce7; font-size: .8rem; font-weight: 600; }
 .classroom-demo__safety.is-short { color: var(--status-err); background: var(--status-err-bg); }
 .classroom-demo__metric-note { display: block; margin-top: 4px; color: var(--status-warn); font-size: .75rem; font-weight: 650; }
+/* Physical boards panel */
+.hardware-panel { margin: 14px 0; padding: 12px; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); }
+.hardware-panel h3 { margin: 0 0 6px; font-size: .95rem; }
+.hardware-panel__link { margin: 0 0 8px !important; font-weight: 700; color: var(--text-muted) !important; }
+.hardware-panel__link.is-connected { color: #166534 !important; }
+.hardware-panel__link.is-stale { color: var(--status-err) !important; }
+.hardware-panel__facts { display: grid; gap: 4px; margin: 0 0 8px; font-size: .8rem; }
+.hardware-panel__facts div { display: flex; justify-content: space-between; gap: 8px; }
+.hardware-panel__facts dt { color: var(--text-muted); }
+.hardware-panel__facts dd { margin: 0; font-weight: 650; }
+.hardware-panel__leds { display: flex; gap: 10px; margin-bottom: 6px; }
+.hardware-panel__led { display: flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 650; }
+.hardware-panel__led i { width: 10px; height: 10px; border-radius: 50%; background: #9ca3af; }
+.hardware-panel__led.is-on i { background: #f59e0b; box-shadow: 0 0 6px #fbbf24; }
+.hardware-panel__led.is-unknown i { background: transparent; border: 2px dotted #7c6fa8; }
+.hardware-panel__note { margin: 0 0 8px !important; font-size: .76rem !important; }
+.hardware-panel__connect { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: end; margin-bottom: 6px; }
+.hardware-panel__connect label { grid-column: 1 / -1; font-size: .78rem; font-weight: 650; }
+.hardware-panel__connect input { min-height: 40px; padding: 6px 8px; border: 1px solid var(--surface-border-strong); border-radius: var(--radius-sm); font: inherit; }
+.hardware-panel__error { margin: 6px 0 0 !important; color: var(--status-err) !important; font-size: .76rem !important; }

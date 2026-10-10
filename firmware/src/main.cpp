@@ -14,7 +14,7 @@ Bridge bridge;
 Reader reader;
 Radio radio;
 SerialBridge serial;
-Button buttons[4];
+Button buttons[config::BUTTON_COUNT];
 uint32_t lastHello = 0, lastHeartbeat = 0, lastRadioDrops = 0, lastCardError = 0;
 bool radioReady = false, readerWasOk = false;
 struct ReaderSample { int state; char room, uid[21]; bool healthy; };
@@ -133,9 +133,11 @@ void loop() {
       else receiveHost(msg, now);
     }
   }
-  for (int i = 0; i < 4; ++i) if (config::buttons[i] >= 0 &&
-      buttons[i].poll(digitalRead(config::buttons[i]) == BUTTON_ACTIVE_LEVEL, now, i == 3))
+  for (int i = 0; i < config::BUTTON_COUNT; ++i) if (config::buttons[i] >= 0 &&
+      buttons[i].poll(digitalRead(config::buttons[i]) == BUTTON_ACTIVE_LEVEL, now, i == config::RESET_BUTTON_INDEX)) {
+    if (i == 4 && host.input.synced) status(readerWasOk ? "fallback_room_a" : "fallback_room_a_reader_fault");
     action(host.input.button(i));
+  }
   ReaderSample sample;
   if (readerOverflow.exchange(false)) disconnect("reader_queue_overflow");
   for (int i = 0; i < 8 && xQueueReceive(readerQueue, &sample, 0) == pdTRUE; ++i) {

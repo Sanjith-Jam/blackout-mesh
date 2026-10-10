@@ -4,3 +4,4 @@ pydantic>=2.9.0
 websockets
 
 sqlmodel==0.0.48
+pyserial>=3.5

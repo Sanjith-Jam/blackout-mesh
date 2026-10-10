@@ -29,6 +29,10 @@ struct Input {
     if (index == 0) return selected ? Action::END_SESSION : Action::IGNORED_NO_SELECTION;
     if (index == 1) return Action::SHORTAGE;
     if (index == 2) return Action::RESTORE;
+    if (index == 4) {  // RFID fallback: same START_SESSION a room-A card would send
+      selected = 'A';
+      return Action::START_SESSION;
+    }
     return Action::RESET_SESSION;
   }
 };
