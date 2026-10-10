@@ -17,7 +17,7 @@ Notable results: simultaneous overload-plus-cooling was detected in 4/4 scenario
 `diag-bench-ranked-v3` (seeds 5000–5007, same held-out regime) was generated and committed with the current detector hash (`04864dc3…`) before being run, then unsealed once with no rule changes in between. Results: [`diagnosis_ranked_v3_heldout.md`](../backend/benchmarks/diagnosis/results/diagnosis_ranked_v3_heldout.md) and `.json`. 96 scenarios, 8 per family:
 
 - Every fault family detected 8/8 with no false alarms, location errors or safety violations.
-- Top-1 = top-3 = MRR = 1.0 on every family that should produce a ranked cause (88 ranked cases), including 8/8 simultaneous overload-plus-cooling cases with 16/16 correct candidates.
+- Top-1 = top-3 = MRR = 1.0 on every family that should produce a ranked cause (80 ranked cases), including 8/8 simultaneous overload-plus-cooling cases with 16/16 correct candidates.
 - Sensor dropout and stuck sensor are expected to abstain: abstention precision and recall are 1.0 (8/8) for both. Stuck-sensor cases therefore have no ranked cause, so their top-k row reads 0/8 by construction.
 - Coverage is 0.77 (dropout) and 0.82 (stuck sensor) because those asset-steps abstain.
 
