@@ -1,4 +1,5 @@
 import asyncio
+import os
 import json
 import math
 from contextlib import asynccontextmanager
@@ -26,6 +27,7 @@ from app.schemas.snapshot import (
 from app.core.state import GridState
 from app.core.control_loop import ControlLoop
 from app.core.site import SiteAuthority
+from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.activity.model import FEATURES
 from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo, hospital_snapshot
 
@@ -115,7 +117,73 @@ def campus_snapshot():
     snapshot, identity = site.read(grid.build_snapshot)
     if snapshot is not None:
         snapshot.site = identity
+        hw = hardware_status()
+        if hw["link"] != "NOT_CONFIGURED":
+            snapshot.hardware_link = "CONNECTED" if hw["link"] == "CONNECTED" else "ERROR"
+            snapshot.indicator_command_mask = hw["commanded_mask"]
+            snapshot.indicator_confirmed_mask = hw["confirmed_mask"]
     return snapshot
+
+
+# ---- board A gateway (physical card reader, buttons, and board B's LEDs) ----
+ROOM_TO_CLASSROOM = {"A": "CR1", "B": "CR2", "C": "CR3"}
+CLASSROOM_LED_BIT = {"CR1": 3, "CR2": 4, "CR3": 5}
+gateway = None  # (GatewayBridge, GatewayThread) when connected
+
+
+def led_mask(classroom: dict) -> int:
+    """Board B lights a room's LED when the room has a session (card or fallback) and all its loads are served."""
+    mask = 0
+    for room in classroom.get("rooms", []):
+        if room["rfid_active"] and all(load["served"] for load in room["loads"]):
+            mask |= 1 << CLASSROOM_LED_BIT[room["id"]]
+    return mask
+
+
+def desired_led_mask() -> int:
+    data, _ = site.read(classroom_demo.snapshot)
+    return led_mask(data)
+
+
+def handle_gateway_event(action: str, room) -> bool:
+    """Board A input -> one site command. Shortage = deprived-of-kW preset, restore = normal supply."""
+    cid = ROOM_TO_CLASSROOM.get(room)
+    commands = {"START_SESSION": ("scan", cid), "END_SESSION": ("unscan", cid), "SIMULATE_SHORTAGE": ("overload", None),
+                "RESTORE": ("normal", None), "RESET_SESSION": ("reset", None)}
+    if action not in commands or (action in ("START_SESSION", "END_SESSION") and cid is None):
+        return False
+    name, arg = commands[action]
+    site.command(f"board_a.{action.lower()}", lambda: classroom_demo.act(name, arg))
+    return True
+
+
+def hardware_status() -> dict:
+    if gateway is None:
+        return {"link": "NOT_CONFIGURED", "commanded_mask": None, "confirmed_mask": None}
+    bridge, thread = gateway
+    status = bridge.status()
+    status["port_error"] = thread.error
+    return status
+
+
+def connect_gateway(port: str):
+    global gateway
+    disconnect_gateway()
+    bridge = GatewayBridge(SerialTransport(port), handle_gateway_event, desired_led_mask)
+    thread = GatewayThread(bridge)
+    thread.start()
+    gateway = (bridge, thread)
+
+
+def disconnect_gateway():
+    global gateway
+    if gateway is not None:
+        gateway[1].stop()
+        try:
+            gateway[0].t.ser.close()
+        except Exception:
+            pass
+        gateway = None
 
 
 control_loop = ControlLoop(control_tickers(), publish=publish_to_sockets)
@@ -150,9 +218,15 @@ async def run_replay(generation):
 async def lifespan(app: FastAPI):
     control_loop.tick_once()  # initial publication before serving reads
     control_loop.start()
+    if os.environ.get("BLACKOUT_GATEWAY_PORT"):
+        try:
+            connect_gateway(os.environ["BLACKOUT_GATEWAY_PORT"])
+        except Exception as exc:
+            print(f"Board A gateway not connected: {exc}")
     try:
         yield
     finally:
+        disconnect_gateway()
         await control_loop.stop()
         if replay_task:
             replay_task.cancel()
@@ -199,7 +273,32 @@ async def model_status():
 
 @app.get("/api/v1/visualizers/classrooms")
 async def get_classroom_demo():
-    return with_site(*site.read(classroom_demo.snapshot))
+    return with_site(*site.read(classroom_demo.snapshot)) | {"hardware": hardware_status()}
+
+
+class GatewayConnect(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    port: str
+
+
+@app.get("/api/v1/hardware")
+async def get_hardware():
+    return hardware_status()
+
+
+@app.post("/api/v1/hardware/connect")
+async def post_hardware_connect(req: GatewayConnect):
+    try:
+        connect_gateway(req.port)
+    except Exception as exc:
+        raise HTTPException(409, f"could not open {req.port}: {exc}")
+    return hardware_status()
+
+
+@app.post("/api/v1/hardware/disconnect")
+async def post_hardware_disconnect():
+    disconnect_gateway()
+    return hardware_status()
 
 @app.post("/api/v1/visualizers/classrooms")
 async def act_classroom_demo(req: ClassroomDemoAction):
