@@ -13,6 +13,8 @@ from benchmarks.diagnosis.run import markdown
 from benchmarks.diagnosis.runner import TelemetryDetector, run_detector
 
 RESULTS = RANKED_DATA_DIR.parent / "results"
+# Each frozen ranked set keeps its own result files; earlier protocols stay published unchanged.
+RESULT_STEM = f"diagnosis_{RANKED_DATA_DIR.name.replace('-', '_')}_heldout"
 
 
 def main(argv=None):
@@ -45,9 +47,9 @@ def main(argv=None):
     RESULTS.mkdir(exist_ok=True)
     result = {"protocol": RANKED_PROTOCOL, "split": "heldout", "detector": detector.name,
               "manifest": manifest, "families": report}
-    (RESULTS / "diagnosis_ranked_heldout.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
+    (RESULTS / f"{RESULT_STEM}.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     rendered = markdown("ranked heldout", detector.name, report, manifest)
-    (RESULTS / "diagnosis_ranked_heldout.md").write_text(rendered, encoding="utf-8")
+    (RESULTS / f"{RESULT_STEM}.md").write_text(rendered, encoding="utf-8")
     print(rendered)
     return 0
 
