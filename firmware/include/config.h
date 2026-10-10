@@ -8,8 +8,8 @@
 #define RFID_MISO 19
 #define RFID_MOSI 23
 #define BUTTON_END -1  // not fitted: press a room button again to end it
-#define BUTTON_SHORTAGE 26
-#define BUTTON_RESTORE 27
+#define BUTTON_SHORTAGE -1  // not fitted: deprived (shortage) from the website
+#define BUTTON_RESTORE -1  // not fitted: normal supply from the website
 #define BUTTON_RESET -1  // not fitted: reset from the website
 // Room buttons: start a session for that room without a card (RFID fallback / card-free demo).
 #define BUTTON_FALLBACK_A 33
