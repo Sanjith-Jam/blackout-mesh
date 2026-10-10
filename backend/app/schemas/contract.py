@@ -20,5 +20,5 @@ class RunIdentity(BaseModel):
 
 class CrossRouteContract(BaseModel):
     identity: RunIdentity
-    campus_totals: Optional[ScopeTotals] = None
-    zone_totals: Dict[str, ScopeTotals] = {}
+    campus_totals: ScopeTotals
+    zone_totals: Dict[str, ScopeTotals]

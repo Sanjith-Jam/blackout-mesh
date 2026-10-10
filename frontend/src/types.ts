@@ -13,11 +13,6 @@ export type Service = components['schemas']['ServiceSnapshot'];
 export const servedWatts = (s: Service) => s.served_w ?? (s.modeled_served ? s.watts : 0);
 export const serviceStatus = (s: Service) =>
   !s.requested ? 'Not requested' : !s.modeled_served ? 'Shed' : servedWatts(s) < (s.requested_w ?? s.watts) ? 'Partly served' : 'Served';
-export type HospitalRoom = components['schemas']['HospitalRoom'];
-export type HospitalZone = components['schemas']['HospitalZone'];
-export type ClassroomInfo = components['schemas']['ClassroomInfo'];
-export type ClassroomZone = components['schemas']['ClassroomZone'];
-export type FacilityZones = components['schemas']['FacilityZones'];
 export type SystemEvent = components['schemas']['SystemEvent'];
 export type ActivityState = components['schemas']['VisualizerActivity']['state'];
 export type ActivityPrediction = components['schemas']['ActivitySnapshot'];

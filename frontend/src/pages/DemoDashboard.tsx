@@ -170,50 +170,7 @@ export default function DemoDashboard() {
           </section>}
 
           {/* HOSPITAL ZONE */}
-          {activeTab === "hospital" && <section className="zone-section">
-            <div className="zone-header">
-              <h2>Hospital Zone</h2>
-              <p>Three rooms with shared essential lighting and priority-aware support services.</p>
-            </div>
-
-            <div className="hospital-rooms-grid">
-              {zones?.hospital.rooms.map(room => {
-                const cmdOn = checkBit(indicator_command_mask ?? null, room.led_bit);
-                const confOn = checkBit(indicator_confirmed_mask ?? null, room.led_bit);
-                return (
-                  <div key={room.id} className="room-card">
-                    <h3>{room.name}</h3>
-                    <div className="room-tag">Follows L0</div>
-                    <div className="led-states">
-                      <div className="led-row">
-                        <span>Cmd:</span>
-                        <span className={`led-badge ${cmdOn ? 'on' : 'off'}`}>{cmdOn ? 'ON' : 'OFF'}</span>
-                      </div>
-                      <div className="led-row">
-                        <span>HW:</span>
-                        <span className="led-badge unknown">{confOn === null ? 'Unknown' : (confOn ? 'ON' : 'OFF')}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="hospital-services">
-              {[l0, l1, l2].map(svc => svc && (
-                <div key={svc.id} className={`service-row ${svc.modeled_served ? 'served' : 'shed'}`}>
-                  <div className="svc-info">
-                    <strong>{svc.id} - {svc.name}</strong>
-                    <span className="svc-meta">{svc.tier} | {svc.watts}W | Feeder {svc.feeder}</span>
-                  </div>
-                  <div className="svc-status">
-                    {svc.modeled_served ? <span className="text-ok">Served</span> : <span className="text-err">Shed</span>}
-                  </div>
-                  <div className="svc-reason">{svc.model_reason}</div>
-                </div>
-              ))}
-            </div>
-          </section>}
+          
 
           {/* CLASSROOM ZONE */}
           {activeTab === "classrooms" && <section className="zone-section">
@@ -223,8 +180,8 @@ export default function DemoDashboard() {
             </div>
 
             <div className="classrooms-grid">
-              {zones?.classroom.classrooms.map(cr => {
-                const isSelected = zones.classroom.active_classroom_id === cr.id;
+              {(zones?.classroom as any)?.classrooms.map((cr: any) => {
+                const isSelected = (zones?.classroom as any)?.active_classroom_id === cr.id;
                 const svc = getService(cr.service_id);
                 const cmdOn = checkBit(indicator_command_mask ?? null, cr.led_bit);
                 const confOn = checkBit(indicator_confirmed_mask ?? null, cr.led_bit);
@@ -295,10 +252,10 @@ export default function DemoDashboard() {
             <div className="control-group">
               <h3>Classroom Load Control</h3>
               <p className="control-desc">Simulate electrical demand for the selected classroom.</p>
-              {zones?.classroom.active_classroom_id ? (
+              {(zones?.classroom as any)?.active_classroom_id ? (
                 <div className="flex-buttons">
-                  <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, true)}>Activate Load</button>
-                  <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doClassroomLoad(zones.classroom.active_classroom_id!, false)}>Deactivate Load</button>
+                  <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doClassroomLoad((zones?.classroom as any)?.active_classroom_id!, true)}>Activate Load</button>
+                  <button className="btn-outline" disabled={actionPending || historyData.selection.mode === 'HISTORY'} onClick={() => doClassroomLoad((zones?.classroom as any)?.active_classroom_id!, false)}>Deactivate Load</button>
                 </div>
               ) : (
                 <div className="text-err text-small">Select a classroom first.</div>

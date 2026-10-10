@@ -136,7 +136,7 @@
       "served_w": 3000,
       "switching": 0,
       "unknown": 0,
-      "water": 1
+      "water": 0
      },
      "served_w": 3000,
      "service_id": "L2",
@@ -411,7 +411,7 @@
     "served_w": 10000,
     "switching": -1,
     "unknown": 2,
-    "water": 1
+    "water": 0
    }
   },
   "objective": "protected, active, unknown, water, inactive, fairness, switching, served_w, deterministic_mask",
@@ -440,7 +440,7 @@
    "catalog_version": "1.1",
    "config_hash": "af574a50987d",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T08:04:22.149994+00:00",
+   "observation_time": "2026-10-10T09:00:50.367264+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
@@ -799,6 +799,7 @@
   "capacity_w": 14000,
   "kind": "SIMULATED",
   "limitations": "Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics",
+  "max_capacity_w": 14000,
   "model": "watt_budget"
  },
  "zones": {
@@ -838,19 +839,19 @@
     {
      "id": "HR1",
      "led_bit": 0,
-     "lighting_service": "L0",
+     "lighting_service_id": "L0",
      "name": "Hospital Room 1"
     },
     {
      "id": "HR2",
      "led_bit": 1,
-     "lighting_service": "L0",
+     "lighting_service_id": "L0",
      "name": "Hospital Room 2"
     },
     {
      "id": "HR3",
      "led_bit": 2,
-     "lighting_service": "L0",
+     "lighting_service_id": "L0",
      "name": "Hospital Room 3"
     }
    ]

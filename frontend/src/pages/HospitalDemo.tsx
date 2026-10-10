@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, AlertTriangle } from 'lucide-react';
 import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoActionName, HospitalDemoZone, HospitalDemoSnapshot } from '../types';
-import { formatMetric } from '../utils';
 import './ClassroomVisualizer.css';
 import HospitalBlueprint from './HospitalBlueprint';
 import HospitalFaultRehearsal from './HospitalFaultRehearsal';
@@ -132,8 +131,8 @@ export default function HospitalDemo() {
                 <span className={`classroom-demo__state classroom-demo__state--${act.state.toLowerCase()}`}>{act.state}</span>
                 <dl>
                   <div><dt>Score</dt><dd>{act.score === null ? '—' : act.score.toFixed(2)}</dd></div>
-                  <div><dt>CO₂</dt><dd>{formatMetric(act.evidence.co2_ppm, 'ppm')}</dd></div>
-                  <div><dt>Temp</dt><dd>{formatMetric(act.evidence.temperature_c, '°C')}</dd></div>
+                  <div><dt>CO₂</dt><dd>{act.evidence.co2_ppm == null ? '—' : `${Math.round(act.evidence.co2_ppm)} ppm`}</dd></div>
+                  <div><dt>Temp</dt><dd>{act.evidence.temperature_c == null ? '—' : `${act.evidence.temperature_c.toFixed(1)} °C`}</dd></div>
                 </dl>
                 <p>{act.reason}</p>
                 {tx.diagnosis && tx.diagnosis.code !== 'NORMAL' && (

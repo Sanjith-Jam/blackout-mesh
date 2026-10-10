@@ -2549,44 +2549,6 @@
         ],
         "title": "ClassroomDemoRoomResponse"
       },
-      "ClassroomInfo": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "service_id": {
-            "type": "string",
-            "title": "Service Id"
-          },
-          "rfid_card_registered": {
-            "type": "boolean",
-            "title": "Rfid Card Registered"
-          },
-          "led_bit": {
-            "type": "integer",
-            "title": "Led Bit"
-          },
-          "load_event_active": {
-            "type": "boolean",
-            "title": "Load Event Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "service_id",
-          "rfid_card_registered",
-          "led_bit",
-          "load_event_active"
-        ],
-        "title": "ClassroomInfo"
-      },
       "ClassroomLoadRequest": {
         "properties": {
           "classroom_id": {
@@ -2647,48 +2609,6 @@
           "load_event_active"
         ],
         "title": "ClassroomLoadResponse"
-      },
-      "ClassroomZone": {
-        "properties": {
-          "active_classroom_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Classroom Id"
-          },
-          "recent_rfid_scan": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Recent Rfid Scan"
-          },
-          "rfid_reader_status": {
-            "$ref": "#/components/schemas/RfidReaderStatus",
-            "default": "NOT_CONNECTED"
-          },
-          "classrooms": {
-            "items": {
-              "$ref": "#/components/schemas/ClassroomInfo"
-            },
-            "type": "array",
-            "title": "Classrooms"
-          }
-        },
-        "type": "object",
-        "required": [
-          "classrooms"
-        ],
-        "title": "ClassroomZone"
       },
       "CommandReceipt": {
         "properties": {
@@ -4154,33 +4074,9 @@
             "title": "Balanced",
             "default": true
           },
-          "load_a_w": {
-            "type": "integer",
-            "maximum": 100000.0,
-            "minimum": 0.0,
-            "title": "Load A W",
-            "default": 6000
-          },
-          "load_b_w": {
-            "type": "integer",
-            "maximum": 100000.0,
-            "minimum": 0.0,
-            "title": "Load B W",
-            "default": 8000
-          },
           "source_on": {
             "type": "boolean",
             "title": "Source On",
-            "default": true
-          },
-          "feeder_a_closed": {
-            "type": "boolean",
-            "title": "Feeder A Closed",
-            "default": true
-          },
-          "feeder_b_closed": {
-            "type": "boolean",
-            "title": "Feeder B Closed",
             "default": true
           },
           "power_factor": {
@@ -4203,6 +4099,29 @@
             "minimum": 0.0,
             "title": "Reactance Ohm",
             "default": 0.015
+          },
+          "loads_w": {
+            "additionalProperties": {
+              "type": "integer",
+              "maximum": 100000.0,
+              "minimum": 0.0
+            },
+            "type": "object",
+            "title": "Loads W"
+          },
+          "feeders_closed": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Feeders Closed"
+          },
+          "feeder_ratings_a": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Feeder Ratings A"
           }
         },
         "additionalProperties": false,
@@ -4211,17 +4130,6 @@
       },
       "ElectricalResult": {
         "properties": {
-          "mode": {
-            "type": "string",
-            "const": "balanced_ac_study",
-            "title": "Mode",
-            "default": "balanced_ac_study"
-          },
-          "topology_version": {
-            "type": "string",
-            "title": "Topology Version",
-            "default": "radial-400v-v1"
-          },
           "engine": {
             "type": "string",
             "title": "Engine"
@@ -4251,11 +4159,16 @@
             "type": "boolean",
             "title": "Converged"
           },
-          "restoration_authorized": {
-            "type": "boolean",
-            "const": false,
-            "title": "Restoration Authorized",
-            "default": false
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           },
           "observed_at": {
             "type": "string",
@@ -4265,49 +4178,17 @@
             "$ref": "#/components/schemas/ElectricalInput"
           },
           "units": {
-            "additionalProperties": {
-              "type": "string"
-            },
+            "additionalProperties": true,
             "type": "object",
             "title": "Units"
           },
           "buses": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "type": "object"
-            },
+            "additionalProperties": true,
             "type": "object",
             "title": "Buses"
           },
           "branches": {
-            "additionalProperties": {
-              "additionalProperties": {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "type": "object"
-            },
+            "additionalProperties": true,
             "type": "object",
             "title": "Branches"
           },
@@ -4355,21 +4236,17 @@
             ],
             "title": "Power Balance Residual W"
           },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
-          },
           "provenance": {
             "type": "string",
+            "const": "ELECTRICAL_STUDY",
             "title": "Provenance",
-            "default": "SIMULATED_AC_SOLVER; synthetic engineering parameters"
+            "default": "ELECTRICAL_STUDY"
+          },
+          "restoration_authorized": {
+            "type": "boolean",
+            "const": false,
+            "title": "Restoration Authorized",
+            "default": false
           }
         },
         "type": "object",
@@ -4408,22 +4285,6 @@
           "diagnosis"
         ],
         "title": "ElectricalStudyResponse"
-      },
-      "FacilityZones": {
-        "properties": {
-          "hospital": {
-            "$ref": "#/components/schemas/HospitalZone"
-          },
-          "classroom": {
-            "$ref": "#/components/schemas/ClassroomZone"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hospital",
-          "classroom"
-        ],
-        "title": "FacilityZones"
       },
       "FaultDiagnosis": {
         "properties": {
@@ -5891,50 +5752,6 @@
         ],
         "title": "HospitalFaultResponse"
       },
-      "HospitalRoom": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "lighting_service": {
-            "type": "string",
-            "title": "Lighting Service"
-          },
-          "led_bit": {
-            "type": "integer",
-            "title": "Led Bit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "lighting_service",
-          "led_bit"
-        ],
-        "title": "HospitalRoom"
-      },
-      "HospitalZone": {
-        "properties": {
-          "rooms": {
-            "items": {
-              "$ref": "#/components/schemas/HospitalRoom"
-            },
-            "type": "array",
-            "title": "Rooms"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rooms"
-        ],
-        "title": "HospitalZone"
-      },
       "Indicator": {
         "properties": {
           "led_bit": {
@@ -6370,15 +6187,6 @@
           "DUPLICATE_SUPPRESSED"
         ],
         "title": "RfidEventType"
-      },
-      "RfidReaderStatus": {
-        "type": "string",
-        "enum": [
-          "NOT_CONNECTED",
-          "CONNECTED",
-          "ERROR"
-        ],
-        "title": "RfidReaderStatus"
       },
       "RfidScanRequest": {
         "properties": {
@@ -6997,12 +6805,17 @@
           "capacity_w": {
             "type": "integer",
             "title": "Capacity W"
+          },
+          "max_capacity_w": {
+            "type": "integer",
+            "title": "Max Capacity W"
           }
         },
         "type": "object",
         "required": [
           "kind",
-          "capacity_w"
+          "capacity_w",
+          "max_capacity_w"
         ],
         "title": "SourceInfo"
       },
@@ -7184,12 +6997,14 @@
           "zones": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/FacilityZones"
+                "additionalProperties": true,
+                "type": "object"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Zones"
           },
           "events": {
             "items": {

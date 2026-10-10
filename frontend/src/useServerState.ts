@@ -75,11 +75,8 @@ export function useWebSocketSync() {
 
           if (isNewEpochOrRun || isGap) {
              // explicitly resync on epoch/run change or gaps
-             queryClient.cancelQueries();
+             queryClient.cancelQueries({ queryKey: ['snapshot'] });
              queryClient.invalidateQueries({ queryKey: ['snapshot'] });
-             queryClient.invalidateQueries({ queryKey: ['city-demo'] });
-             queryClient.invalidateQueries({ queryKey: ['power-system'] });
-             queryClient.invalidateQueries({ queryKey: ['district-study'] });
           }
 
           currentRunId.current = identity.run_id;

@@ -145,11 +145,8 @@ class Indicator(BaseModel):
     confirmed: Optional[bool] = None
 
 
-from app.schemas.contract import CrossRouteContract
-
 class PowerSystemResponse(BaseModel):
     site: SiteIdentityResponse
-    contract: CrossRouteContract
     generated_at: str
     boundary: str
     source: Source

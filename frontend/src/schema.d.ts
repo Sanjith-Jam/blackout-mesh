@@ -866,21 +866,6 @@ export interface components {
             /** Loads */
             loads: components["schemas"]["ClassroomDemoLoadResponse"][];
         };
-        /** ClassroomInfo */
-        ClassroomInfo: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Service Id */
-            service_id: string;
-            /** Rfid Card Registered */
-            rfid_card_registered: boolean;
-            /** Led Bit */
-            led_bit: number;
-            /** Load Event Active */
-            load_event_active: boolean;
-        };
         /** ClassroomLoadRequest */
         ClassroomLoadRequest: {
             /** Classroom Id */
@@ -905,17 +890,6 @@ export interface components {
             classroom_id: string;
             /** Load Event Active */
             load_event_active: boolean;
-        };
-        /** ClassroomZone */
-        ClassroomZone: {
-            /** Active Classroom Id */
-            active_classroom_id?: string | null;
-            /** Recent Rfid Scan */
-            recent_rfid_scan?: string | null;
-            /** @default NOT_CONNECTED */
-            rfid_reader_status: components["schemas"]["RfidReaderStatus"];
-            /** Classrooms */
-            classrooms: components["schemas"]["ClassroomInfo"][];
         };
         /** CommandReceipt */
         CommandReceipt: {
@@ -1421,30 +1395,10 @@ export interface components {
              */
             balanced: boolean;
             /**
-             * Load A W
-             * @default 6000
-             */
-            load_a_w: number;
-            /**
-             * Load B W
-             * @default 8000
-             */
-            load_b_w: number;
-            /**
              * Source On
              * @default true
              */
             source_on: boolean;
-            /**
-             * Feeder A Closed
-             * @default true
-             */
-            feeder_a_closed: boolean;
-            /**
-             * Feeder B Closed
-             * @default true
-             */
-            feeder_b_closed: boolean;
             /**
              * Power Factor
              * @default 0.95
@@ -1460,20 +1414,21 @@ export interface components {
              * @default 0.015
              */
             reactance_ohm: number;
+            /** Loads W */
+            loads_w?: {
+                [key: string]: number;
+            };
+            /** Feeders Closed */
+            feeders_closed?: {
+                [key: string]: boolean;
+            };
+            /** Feeder Ratings A */
+            feeder_ratings_a?: {
+                [key: string]: number;
+            };
         };
         /** ElectricalResult */
         ElectricalResult: {
-            /**
-             * Mode
-             * @default balanced_ac_study
-             * @constant
-             */
-            mode: "balanced_ac_study";
-            /**
-             * Topology Version
-             * @default radial-400v-v1
-             */
-            topology_version: string;
             /** Engine */
             engine: string;
             /** Engine Version */
@@ -1485,30 +1440,22 @@ export interface components {
             status: "converged" | "deenergized" | "failed" | "unavailable";
             /** Converged */
             converged: boolean;
-            /**
-             * Restoration Authorized
-             * @default false
-             * @constant
-             */
-            restoration_authorized: false;
+            /** Reason */
+            reason?: string | null;
             /** Observed At */
             observed_at: string;
             inputs: components["schemas"]["ElectricalInput"];
             /** Units */
             units: {
-                [key: string]: string;
+                [key: string]: unknown;
             };
             /** Buses */
             buses: {
-                [key: string]: {
-                    [key: string]: number | boolean | null;
-                };
+                [key: string]: unknown;
             };
             /** Branches */
             branches: {
-                [key: string]: {
-                    [key: string]: number | boolean | null;
-                };
+                [key: string]: unknown;
             };
             /** Source P W */
             source_p_w?: number | null;
@@ -1518,13 +1465,18 @@ export interface components {
             loss_w?: number | null;
             /** Power Balance Residual W */
             power_balance_residual_w?: number | null;
-            /** Reason */
-            reason?: string | null;
             /**
              * Provenance
-             * @default SIMULATED_AC_SOLVER; synthetic engineering parameters
+             * @default ELECTRICAL_STUDY
+             * @constant
              */
-            provenance: string;
+            provenance: "ELECTRICAL_STUDY";
+            /**
+             * Restoration Authorized
+             * @default false
+             * @constant
+             */
+            restoration_authorized: false;
         };
         /** ElectricalStudyResponse */
         ElectricalStudyResponse: {
@@ -1537,11 +1489,6 @@ export interface components {
             diagnosis: {
                 [key: string]: unknown;
             };
-        };
-        /** FacilityZones */
-        FacilityZones: {
-            hospital: components["schemas"]["HospitalZone"];
-            classroom: components["schemas"]["ClassroomZone"];
         };
         /** FaultDiagnosis */
         FaultDiagnosis: {
@@ -1986,22 +1933,6 @@ export interface components {
              */
             provenance: "INJECTED_SIMULATION";
         };
-        /** HospitalRoom */
-        HospitalRoom: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Lighting Service */
-            lighting_service: string;
-            /** Led Bit */
-            led_bit: number;
-        };
-        /** HospitalZone */
-        HospitalZone: {
-            /** Rooms */
-            rooms: components["schemas"]["HospitalRoom"][];
-        };
         /** Indicator */
         Indicator: {
             /** Led Bit */
@@ -2160,11 +2091,6 @@ export interface components {
          * @enum {string}
          */
         RfidEventType: "CARD_RECOGNIZED" | "UNKNOWN_CARD" | "DUPLICATE_SUPPRESSED";
-        /**
-         * RfidReaderStatus
-         * @enum {string}
-         */
-        RfidReaderStatus: "NOT_CONNECTED" | "CONNECTED" | "ERROR";
         /** RfidScanRequest */
         RfidScanRequest: {
             /** Uid */
@@ -2382,6 +2308,8 @@ export interface components {
             kind: components["schemas"]["SourceKind"];
             /** Capacity W */
             capacity_w: number;
+            /** Max Capacity W */
+            max_capacity_w: number;
         };
         /**
          * SourceKind
@@ -2459,7 +2387,10 @@ export interface components {
             hardware_link: components["schemas"]["HardwareLinkStatus"];
             /** Services */
             services: components["schemas"]["ServiceSnapshot"][];
-            zones?: components["schemas"]["FacilityZones"] | null;
+            /** Zones */
+            zones?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Events
              * @default []

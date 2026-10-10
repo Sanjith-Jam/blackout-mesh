@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from importlib.metadata import version
 from typing import Literal, Dict, Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, computed_field, conint
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator
 
 TOPOLOGY_VERSION = 'radial-400v-v1'
 NOMINAL_V = 400.0
@@ -18,7 +18,7 @@ class ElectricalInput(BaseModel):
     resistance_ohm: float = Field(default=.04, gt=0, le=10, allow_inf_nan=False)
     reactance_ohm: float = Field(default=.015, ge=0, le=10, allow_inf_nan=False)
     
-    loads_w: Dict[str, conint(ge=0, le=100000, strict=True)] = Field(default_factory=lambda: {'A': 6000, 'B': 8000})
+    loads_w: Dict[str, StrictInt] = Field(default_factory=lambda: {'A': 6000, 'B': 8000})
     feeders_closed: Dict[str, StrictBool] = Field(default_factory=lambda: {'A': True, 'B': True})
     feeder_ratings_a: Dict[str, float] = Field(default_factory=lambda: {'A': 10.0, 'B': 14.0})
 
@@ -49,7 +49,11 @@ class ElectricalResult(BaseModel):
     power_balance_residual_w: Optional[float] = None
     provenance: Literal['ELECTRICAL_STUDY'] = 'ELECTRICAL_STUDY'
 
-    restoration_authorized: Literal[False] = False
+    @property
+    def restoration_authorized(self) -> bool:
+        return (self.converged and 
+                all(b['loading_pct'] is not None and b['loading_pct'] < 100.0 for b in self.branches.values()) and
+                self.source_p_w is not None and self.source_p_w > 0)
 
 def solve(inputs: ElectricalInput, engine='power-grid-model', max_iterations=30):
     """One immutable study; missing/failed/islanded values stay null, never fabricated."""

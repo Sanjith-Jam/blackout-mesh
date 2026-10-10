@@ -196,16 +196,7 @@ def build_power_system(site, hardware: dict) -> dict:
                            "confirmed": None if confirmed is None or link != "CONNECTED" else bool(confirmed >> c["led_bit"] & 1)})
 
     events = [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in grid.events[-30:]]
-    contract = site.grid.published.contract if site.grid.published else None
-    if contract is None:
-        contract = {"identity": {**site.grid.identity(), "run_id": site.run_id, "state_revision": site.revision}, "campus_totals": {"capacity_w": 0, "requested_w": 0, "served_w": 0}, "zone_totals": {}}
-    else:
-        # We need it as dict for response or pydantic model 
-        contract = contract.model_dump() if hasattr(contract, "model_dump") else dict(contract)
-        # override identity with site revision
-        contract["identity"] = {**contract["identity"], "run_id": site.run_id, "state_revision": site.revision}
-        
-    return {"site": site.identity(), "contract": contract, "generated_at": datetime.now(timezone.utc).isoformat(), "boundary": BOUNDARY,
+    return {"site": site.identity(), "generated_at": datetime.now(timezone.utc).isoformat(), "boundary": BOUNDARY,
             "source": source, "feeders": feeders, "zone_budgets": zone_budgets, "rooms": rooms,
             "appliances": appliances, "edges": edges, "optimizer": {**ctrl.summary(), "baseline": {
                 "description": "Six-service allocator kept as a regression fixture; it no longer decides appliances.",
