@@ -104,3 +104,7 @@ Final real-controller browser journey passed: shortage, shared revisions, foreca
 ### Hospital diagnostic rehearsal
 
 Added hospital drill-down controls for normal, overload, cooling failure, combined overload/cooling, upstream loss, dropout and stuck-sensor examples. They show ordered hypotheses, supporting evidence, uncalibrated evidence scores and explicit inspection instructions. The stuck-sensor example supplies three causal observations and returns ABSTAINED; its card says sensor evidence is untrusted. These are clearly labeled, read-only diagnostic rehearsals using the existing separate 100 A fixtures; they do not claim persistent fault injection into the city. A4 stateful injection and A3 reconciliation of the legacy 7 kW hospital equipment drill-down remain backend handoffs. Generated request types, example fixtures, API/shape checks and the UI regression test were updated together. Current full backend suite (179 tests), frontend component suite (18 tests), and production build pass.
+
+### Demo naming and copy cleanup
+
+Blackout Mesh now names the landing page, header, browser title and engineering console consistently. Removed the unused hidden duplicate hero. The visible hero advertises the implemented demand forecast and city recovery guide with synthetic-training and hardware-verification qualifications. Frontend production build and component checks pass; no hardware work.
