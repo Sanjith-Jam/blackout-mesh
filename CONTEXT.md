@@ -259,3 +259,22 @@ No new SHIFT execution, held-out evaluation, hardware connection, flashing,
 physical switching, or physical acceptance was performed. Optional SHIFT-runtime
 integration tests were outside these focused runtime checks. Next: review the
 local issue-65-district-stress commits; no push, PR merge or issue closure yet.
+
+## PR #73 CI collection fix - 2026-10-10
+
+GitHub Actions run 38036290933 failed before backend tests ran: the optional
+SHIFT topology-generator test imported gdm, which the normal CI requirements
+do not install. Generated-client drift and npm audit passed. Added explicit
+module-level importorskip guards for gdm/shift; provisioned SHIFT runtimes still
+execute those integration tests. Runtime district and stress tests remain active.
+Broader Windows verification (`PYTHONPATH=backend backend/.venv/Scripts/python.exe
+-m pytest backend/tests -q --ignore=backend/tests/test_temporal_evaluation.py`):
+425 passed, 3 skipped, 1 failed in 125.40 s. The failure was CRLF conversion of
+the frozen demand-forecast.json, not model drift: its Git blob matches the
+recorded SHA-256. Added a -text attribute and restored identical Git blob bytes;
+no model/report content or recorded hash changed. The temporal test is excluded
+locally because its existing audit imports POSIX-only resource; Linux CI retains it.
+Targeted recheck (test_demand_training.py, test_district_topology_generator.py,
+test_district_recovery.py): 14 passed, 1 optional-runtime module skipped in 3.20 s.
+Frontend `npm.cmd test --prefix frontend`: 38 tests across 10 files passed.
+`git diff --check` passed. Next: push these fixes and verify the full Linux CI run.

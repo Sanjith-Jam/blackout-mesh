@@ -1,1 +1,4 @@
 backend/benchmarks/diagnosis/data/** -text
+
+# Keep the frozen forecast artifact byte-identical to its recorded SHA-256.
+backend/models/demand-forecast.json -text
