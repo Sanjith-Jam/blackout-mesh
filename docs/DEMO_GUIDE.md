@@ -66,7 +66,3 @@ npm run test:contract
 ```
 
 `npm run test:e2e` starts an isolated backend on 8183 and frontend on 5183. Put a Python environment with project requirements on PATH (for this workspace: `PATH="$PWD/.venv-ml/bin:$PATH" npm run test:e2e --prefix frontend` from the repository root). The city test forwards browser API requests to that isolated backend and uses temporary SQLite history. CI installs the project requirements before the browser checks. No production database or hardware is involved.
-
-## Person B handoff
-
-B1 claim cleanup, B2 city story, B3 comparison/table, B6 real-backend browser smoke check and B7 pitch/docs are delivered. B4 has functioning, clearly labeled read-only diagnostic rehearsals, using the explicit `rehearsal` request field. The integrated backend also supports persistent `inject_fault` / `clear_fault` actions and couples hospital supply to campus feeder A; rehearsal buttons leave that live state unchanged. B5 is deferred at the user's request. The predictive-demand model is an added user-requested feature, separate from the occupancy ablation.

@@ -1,9 +1,9 @@
 # AGENTS.md
 
 Offline campus-power decision demo: simulated electrical model, Python authority, real ESP32 radio/LED feedback.
-Spec: `docs/planning/PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `docs/planning/PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md`; `docs/planning/LAB_ACTIVITY_ML_PLAN.md` preserves the user-required classifier scope. Catalog and transport conflicts are tracked in `PROGRESS_REPORT.md`; do not mix variants silently. State/handoff: `CONTEXT.md`. Historical planning references are maintained outside this repository.
+Current status and evidence: `PROGRESS_REPORT.md`. Remaining work: `docs/ROADMAP.md`. Handoff notes: `CONTEXT.md`. Documentation index: `docs/README.md`. Older plans and delivery notes are in git history only.
 
-**Status:** software classifier, recorded replay, exact allocation and command center are delivered. Hardware is paused; A/B transport compatibility and physical integration remain pending. See `PROGRESS_REPORT.md` for current evidence.
+**Status:** classifier, demand forecast, exact allocation, diagnosis, history and the city/hospital/classroom website are delivered. Physical A+B acceptance is still pending. See `PROGRESS_REPORT.md`.
 
 ## Stack
 
@@ -48,7 +48,7 @@ A and B both use contract v2 (`contracts/serial_protocol.md`); board B's `protoc
 
 ## Workflow: small commits
 
-1. Pick the next unfinished step from `PROGRESS_REPORT.md` and the current remaining implementation plan. Break it into commit-sized pieces; one piece = one commit.
+1. Pick the next unfinished item from `docs/ROADMAP.md`. Break it into commit-sized pieces; one piece = one commit.
 2. Read the code you touch and its callers.
 3. Make the smallest change that completes the step, plus its check if the logic is nontrivial.
 4. Run the relevant checks. Do not commit failing checks.
@@ -74,7 +74,7 @@ Keep commits under ~200 changed lines where possible. Split refactors from behav
 
 ## Scope
 
-Implement the required small lab-activity classifier and evaluation plan. Do not add deep vision models, a broker, a second backend, cloud storage, real power electronics or mesh routing. Prefer stdlib and native browser features. Follow the component layout in plan §6; create modules only as needed.
+Implement the required small lab-activity classifier and evaluation plan. Do not add deep vision models, a broker, a second backend, cloud storage, real power electronics or mesh routing. Prefer stdlib and native browser features. Follow the existing component layout; create modules only as needed.
 
 ## Lab activity ML
 

@@ -1,46 +1,41 @@
 # Blackout Mesh
 
-![Software city-grid outage and recovery demo](docs/media/city-demo.gif)
+![City outage and recovery demo](docs/media/city-demo.gif)
 
-A local, explainable power-allocation demo: forecast requested demand, explore a city grid, trigger an outage, and follow staged recovery. The city drawing uses the existing six-service **14 kW lab model**; it does not claim city-scale electrical physics or multi-hop mesh routing.
+**When the power runs short, decide what stays on, and explain why.**
 
-**Real software:** a trained occupancy proxy, a synthetic-trained demand forecaster, exact 64-plan allocation, recorded history and an ESP32 USB/ESP-NOW bridge. **Simulated:** city power, demand, faults, switching and recovery. Physical LED confirmation appears only when the connected gateway reports a fresh acknowledgment. Physical end-to-end acceptance remains pending; B5 flashing/pairing/video is on hold.
+Blackout Mesh is an offline demo of a small campus grid: a hospital on one feeder, three classrooms on the other. When supply drops it checks all 64 possible plans, always keeps critical hospital circuits and classroom essentials on, ranks everything else by observed room use, and gives every cut a one-sentence reason. Fault diagnosis ranks likely causes and says "I don't know" when sensors disagree or freeze.
 
-Recorded local medians: **0.17 ms** occupancy inference (100 warm calls), **1.59 ms** allocation (50 decisions), **0 constraint violations / 385 simulated runs**. These are different tasks, not a competing-controller speed comparison. [Measurement sources](docs/DEMO_GUIDE.md#evidence).
+| Real | Simulated |
+|---|---|
+| Allocation, diagnosis and forecasting code; a trained occupancy model; recorded history; the ESP32 card reader, buttons and LEDs when connected | Electrical power, demand, faults and switching. LEDs stand in for contactors. |
 
-The 60-second demand forecast averaged **149.49 W error** versus **469.59 W** for last-value persistence on 20 held-out **synthetic** sessions. It warns about capacity risk and cannot authorize switching. Neither model establishes campus accuracy.
+## Try it
 
-## Same shortage, simpler controllers
-
-6 kW shortage · five seeds per policy · 40 simulated minutes per run. Switching counts are means.
-
-| Policy | Occupied service | Switches | Essential unmet Wh | Critical unmet Wh |
-|---|---:|---:|---:|---:|
-| Fixed priority | 61.8% | 6.2 | 380.9 | 0.0 |
-| Essentials-first, no ML | 84.9% | 6.6 | 205.1 | 0.0 |
-| ML without rank dwell, validation-rate errors | 85.4% | 20.6 | 220.3 | 0.0 |
-| ML with rank dwell, validation-rate errors | 85.2% | 15.0 | 221.9 | 0.0 |
-| Always UNKNOWN | 84.9% | 6.6 | 205.1 | 0.0 |
-| Oracle (offline only) | 85.8% | 7.8 | 219.9 | 0.0 |
-
-The small occupied-service gain comes with more switches and unmet essential demand. ML is optional. Rank dwell reduces switching from 20.6 to 15.0 in this synthetic shortage, with a small occupied-service reduction. [Full results](backend/benchmarks/results/allocation_report.md).
-
-## Run locally
-
-From the repository root:
+You need [uv](https://docs.astral.sh/uv/) and Node 22.
 
 ```sh
-uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+# terminal 1, repository root
+uv run --no-project --python 3.14 --with-requirements backend/requirements.txt \
+  --with-requirements backend/requirements-ml.txt \
+  python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+
+# terminal 2
+cd frontend && npm ci && npm run dev
 ```
 
-In another terminal:
+Open <http://127.0.0.1:5173/demo>, then: **Request all rooms → 6 kW shortage → Trip feeder A → Restore supply.** No API key or internet connection is needed.
 
-```sh
-cd frontend
-npm ci --no-audit --no-fund
-npm run dev
-```
+## What the numbers say
 
-Open [the city demo](http://127.0.0.1:5173/demo). Request all rooms → 6 kW shortage → trip feeder A → repair it → restore supply. Select the synthetic rising-demand rehearsal to see a forecast warning. No API key, training step or paid service is required.
+Measured locally: 0.17 ms per occupancy prediction, 1.59 ms per allocation decision, 0 constraint violations in 385 simulated runs.
 
-[Demo guide and checks](docs/DEMO_GUIDE.md) · [Planning](docs/planning/README.md) · [Model evidence](backend/models/MODEL_REPORT.md) · [Progress](PROGRESS_REPORT.md) · [Context](CONTEXT.md) · [Hardware guide](docs/ESP32_A_CONNECTION_GUIDE.md)
+In a 6 kW shortage, essentials-first allocation serves occupied rooms 84.9% of the time versus 61.8% for a fixed priority list. Adding occupancy evidence reaches 85.2%, close to the 85.8% a perfect-knowledge oracle gets. In this setup the protection and explanation do most of the work; occupancy helps most when outages repeat (94.9% vs 91.0%). [Full results](backend/benchmarks/results/allocation_report.md).
+
+## Learn more
+
+- [Demo guide](docs/DEMO_GUIDE.md): the walkthrough, what each view shows, and how to verify it.
+- [Status](PROGRESS_REPORT.md) and [roadmap](docs/ROADMAP.md).
+- [All documentation](docs/README.md): design notes, model and benchmark reports, hardware guides.
+
+Not for real electrical control or life-safety use.
