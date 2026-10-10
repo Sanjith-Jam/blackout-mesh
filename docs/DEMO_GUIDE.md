@@ -1,6 +1,12 @@
 # Blackout Mesh demo guide
 
-## The software story
+## Primary district planning story
+
+Start at `/grid`: real GNITC geography supports a synthetic topology, configured demand and a separately limited 6,000 W source. Inspect a building and transformer, inject a modeled line outage, propose recovery and inspect the reason before applying it. Electrical limits currently mean W budgets; AC engineering acceptance is tracked in issue #70. This view cannot issue hardware commands. District crash replay remains an explicit issue #69 acceptance gate.
+
+The `/demo` appliance controller, `/city` illustration and `/console` history share the separate six-service, 31-appliance campus model with 14,000 W rated demand. Hospital and classroom drill-downs belong to that campus model. A 6,000 W shortage on that controller is a scenario, not the district source identity. See the [route/model table](../README.md).
+
+## Campus controller story
 
 Use `/demo` for the appliance-level power system (see `APPLIANCE_ALLOCATION.md`) and `/city` for the city story. All source, feeder A/hospital and feeder B/classroom panels come from one backend snapshot and carry the same revision. The illustrative city retains the six-service 14 kW model. It is not a city-scale power-flow study.
 
@@ -46,7 +52,7 @@ When authorized to resume B5, follow [the connection and acceptance guide](ESP32
 ## Evidence
 
 - Occupancy inference: [evaluation JSON](../backend/models/evaluation.json), `runtime_inference.warm_single_prediction_ms`, median 0.171876 ms over 100 warm calls.
-- Six-service exact allocation: [profile JSON](../backend/benchmarks/results/allocation_profile.json), median 1.594748 ms over 50 decisions/64 masks. The offline 19-leaf result does not establish live scalability.
+- Historical six-service enumeration benchmark (regression fixture, not the current 31-appliance CP-SAT solver): [profile JSON](../backend/benchmarks/results/allocation_profile.json), median 1.594748 ms over 50 decisions/64 masks. The offline 19-leaf result does not establish live scalability.
 - Allocation safety/outcomes: [report JSON](../backend/benchmarks/results/allocation_report.json) and [full table](../backend/benchmarks/results/allocation_report.md), 385 simulated runs and zero constraint violations. This is not a field safety guarantee.
 - The live comparison shows fixed-priority and exact-policy candidate masks over the same revision and inputs. The currently applied mask is separate so restoration dwell does not unfairly penalize one candidate.
 - The current ML/no-ML benchmark includes switching and essential/critical unmet Wh. The rank-dwell ablation is included; no ML superiority is assumed.
