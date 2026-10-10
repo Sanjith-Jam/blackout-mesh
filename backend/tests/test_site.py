@@ -68,7 +68,8 @@ def test_rfid_and_classroom_view_share_sessions_and_requested_loads():
     services = {item["id"]: item for item in campus["services"]}
     assert classroom["scanned_classroom_ids"] == ["CR1"]
     assert campus["zones"]["classroom"]["active_classroom_id"] == "CR1"
-    assert services["L3"]["requested"] and not services["L4"]["requested"]
+    sessions = {c["id"]: c["load_event_active"] for c in campus["zones"]["classroom"]["classrooms"]}
+    assert sessions == {"CR1": True, "CR2": False, "CR3": False}
 
     client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_2_UID"}))
     classroom = client.get("/api/v1/visualizers/classrooms").json()
@@ -81,7 +82,10 @@ def test_rfid_and_classroom_view_share_sessions_and_requested_loads():
     services = {item["id"]: item for item in campus["services"]}
     assert classroom["scanned_classroom_ids"] == ["CR2"]
     assert campus["zones"]["classroom"]["active_classroom_id"] == "CR2"
-    assert not services["L3"]["requested"] and services["L4"]["requested"]
+    sessions = {c["id"]: c["load_event_active"] for c in campus["zones"]["classroom"]["classrooms"]}
+    assert sessions == {"CR1": False, "CR2": True, "CR3": False}
+    # Sessions rank rooms; the requested watts are the room's leaves on both routes (#33).
+    assert services["L3"]["requested_w"] == services["L4"]["requested_w"] == 2000
 
 
 def test_board_gateway_events_and_expiry_share_the_same_room_sessions():
@@ -117,10 +121,12 @@ def test_hospital_commands_share_the_site_revision_and_reads_never_bump_it():
 
 
 def test_headroom_is_zero_without_feeder_b_and_capped_by_its_limit():
-    grid = main.app.state.site.grid
-    assert classroom_headroom_w(grid) == 8000
+    site = main.app.state.site
+    grid = site.grid
+    assert classroom_headroom_w(grid, site.appliances) <= 8000
     grid.set_feeder("B", False)
-    assert classroom_headroom_w(grid) == 0
+    assert classroom_headroom_w(grid, site.appliances) == 0
+    grid.set_feeder("B", True)
 
 
 def test_hospital_leaves_reconcile_with_campus_feeder_a():
@@ -151,3 +157,80 @@ def test_campus_shortage_bounds_the_hospital_to_what_the_campus_served_on_feeder
     assert hospital["campus_limit_w"] == served_a == hospital["effective_capacity_w"]
     assert hospital["served_w"] <= served_a
     assert hospital["safety"]["protected_served_w"] == 3000  # L0 + L1 essentials
+
+
+def _rooms_by_service(classroom):
+    parent = {"CR1": "L3", "CR2": "L4", "CR3": "L5"}
+    return {parent[r["id"]]: (sum(x["watts"] for x in r["loads"]),
+                              sum(x["watts"] for x in r["loads"] if x["served"])) for r in classroom["rooms"]}
+
+
+def test_feeder_b_has_one_decision_with_partial_service_on_every_route():
+    """Campus service watts are the appliance-level decision, not a second whole-service decision."""
+    client.post("/api/v1/visualizers/classrooms", json={"action": "reset"})
+    for capacity in (14000, 9000, 7000, 3500):
+        client.post("/api/v1/simulation/capacity", json={"capacity_w": capacity})
+        campus, classroom, hospital = read_all()
+        services = {s["id"]: s for s in campus["services"]}
+        rooms = _rooms_by_service(classroom)
+        for sid, (requested, served) in rooms.items():
+            assert (services[sid]["requested_w"], services[sid]["served_w"]) == (requested, served)
+            assert services[sid]["modeled_served"] == (served > 0)
+        # Leaves -> feeders -> source reconcile on every route.
+        feeder = {e["to"]: e for e in campus["edges"] if e["from"] == "SRC"}
+        assert feeder["B"]["served_w"] == classroom["served_w"] == sum(served for _, served in rooms.values())
+        assert feeder["A"]["served_w"] == sum(s["served_w"] for s in campus["services"] if s["feeder"] == "A")
+        assert hospital["served_w"] == feeder["A"]["served_w"]
+        assert hospital["campus_limit_w"] == min(6000, capacity - classroom["served_w"])
+        assert campus["allocation"]["served_w"] == feeder["A"]["served_w"] + feeder["B"]["served_w"] <= capacity
+        assert campus["contract"]["campus_totals"]["served_w"] == campus["allocation"]["served_w"]
+        assert campus["contract"]["zone_totals"]["classroom"]["served_w"] == classroom["served_w"]
+    # At 7,000 W the classrooms get a partial budget: some room is energized but not fully served.
+    client.post("/api/v1/simulation/capacity", json={"capacity_w": 7000})
+    campus, classroom, _ = read_all()
+    partial = [s for s in campus["services"] if s["feeder"] == "B" and 0 < s["served_w"] < s["requested_w"]]
+    assert partial and all("Partly served" in s["model_reason"] for s in partial)
+    decisions = {d["service_id"]: d for d in campus["allocation"]["explanation"]["decisions"]}
+    assert all(decisions[s]["decided_by"] == "appliance_allocation" for s in ("L0", "L1", "L2", "L3", "L4", "L5"))
+
+
+def test_named_scenario_switches_every_route_in_one_revision():
+    """#33: teaching scenarios are named and switched by one explicit command."""
+    listing = client.get("/api/v1/site/scenarios").json()
+    assert listing["active"] == listing["site"]["scenario"] == "normal"
+    assert {"normal", "source_shortage", "feeder_b_trip", "classroom_overload", "hospital_overload"} == {
+        p["name"] for p in listing["scenarios"]}
+
+    reply = client.post("/api/v1/site/scenario", json={"scenario": "source_shortage"}).json()
+    assert reply["active"] == reply["site"]["scenario"] == "source_shortage"
+    assert reply["command"]["applied_revision"] == reply["site"]["revision"]
+    campus, classroom, hospital = read_all()
+    assert {(p["site"]["revision"], p["site"]["scenario"]) for p in (campus, classroom, hospital)} == {
+        (reply["site"]["revision"], "source_shortage")}
+    assert campus["source"]["capacity_w"] == 6000 and campus["allocation"]["served_w"] <= 6000
+
+    client.post("/api/v1/site/scenario", json={"scenario": "classroom_overload"})
+    campus, classroom, hospital = read_all()
+    assert campus["source"]["capacity_w"] == 14000  # every budget is set, not just the one that differs
+    assert classroom["classroom_limit_w"] == 3400 and hospital["capacity_w"] == 6000
+
+    client.post("/api/v1/site/scenario", json={"scenario": "feeder_b_trip"})
+    campus, classroom, _ = read_all()
+    assert classroom["served_w"] == 0 and classroom["classroom_limit_w"] == 8000
+    assert all(s["served_w"] == 0 for s in campus["services"] if s["feeder"] == "B")
+
+    # A hand-changed budget no longer matches the scenario, and says so.
+    client.post("/api/v1/visualizers/classrooms", json={"action": "set_capacity", "capacity_w": 5000})
+    assert client.get("/api/v1/snapshot").json()["site"]["scenario"] == "custom"
+    client.post("/api/v1/site/scenario", json={"scenario": "normal"})
+    campus, classroom, _ = read_all()
+    assert campus["site"]["scenario"] == "normal" and classroom["classroom_limit_w"] == 8000
+    assert campus["site"]["profile"] == "campus"  # the site profile (#26) is a separate, restart-only choice
+
+
+def test_unknown_or_malformed_scenario_is_rejected_without_a_change():
+    before = client.get("/api/v1/site/scenarios").json()["site"]["revision"]
+    assert client.post("/api/v1/site/scenario", json={"scenario": "mains_power"}).status_code == 422
+    assert client.post("/api/v1/site/scenario", json={"scenario": "normal", "extra": 1}).status_code == 422
+    assert client.post("/api/v1/site/scenario", json={"scenario": 3}).status_code == 422
+    assert client.get("/api/v1/site/scenarios").json()["site"]["revision"] == before

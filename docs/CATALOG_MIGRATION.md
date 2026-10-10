@@ -1,6 +1,6 @@
 # Site catalog inventory and migration table (#3)
 
-Catalog version `site-catalog-2026-10-10.1`. This file records every identifier, load, feeder, room mapping and route command that existed before the three demo authorities were placed under one site authority. It must be updated in the same commit as any catalog change.
+Catalog version `site-catalog-2026-10-10.1`, now `site-catalog-1.1` from `backend/sites/default_campus.json` (#26: the inventory below is defined by that profile; see `docs/SITE_PROFILES.md`). This file records every identifier, load, feeder, room mapping and route command that existed before the three demo authorities were placed under one site authority. It must be updated in the same commit as any catalog change.
 
 ## Before: three independent authorities
 
@@ -72,6 +72,7 @@ Every command below goes through `SiteAuthority.command()`, which applies it, ti
 | `POST /api/v1/replay` | campus replay start/pause/reset | campus |
 | `POST /api/v1/visualizers/classrooms` | scan/unscan, classroom limit, presets, replay controls, reset | classroom |
 | `POST /api/v1/visualizers/hospital` | zone scan/unscan, hospital supply limit, presets, reset, `inject_fault` / `clear_fault` (the old `scenario` field is an alias) | hospital zone view |
+| `POST /api/v1/site/scenario` | named teaching scenario (#33) | campus source and feeders, classroom limit, hospital limit; clears a hospital fault |
 
 ## Coupling introduced in this step
 
@@ -79,8 +80,32 @@ The classroom view now allocates within `min(classroom limit, campus feeder B he
 
 The hospital view allocates within `min(hospital limit, campus feeder A served watts)`: the watts of L0–L2 that the campus allocator served, or 0 when feeder A is unavailable. A campus shortage or feeder A trip therefore reaches the hospital page in the same revision, and the hospital view can never serve more than the campus granted feeder A.
 
-## Remaining migration (not done in this step)
+## One feeder B decision (#33)
 
-- The campus allocator still decides L0–L5 as whole services while the classroom and hospital views decide equipment within the budget the campus granted. Both levels respect the same feeder budgets, but they are two decisions. Next step: derive L3–L5 served watts from the leaf allocation (partial service) and retire whole-room classroom decisions.
-- Campus RFID events, classroom-view scan controls and board session events now share `GridState.active_sessions`; these update the same requested campus services and classroom projection (#21). Hardware inputs remain simulated/unconnected unless the explicitly provisioned gateway is present.
-- `GridState` is still a process-wide singleton (#11).
+The campus allocator decides the feeder A services (L0–L2) as whole services and grants feeder B a budget: `min(feeder B limit, source capacity − feeder A served)`, or 0 when feeder B is open. The classroom leaf allocation is then the only decision inside feeder B. The campus snapshot publishes L3–L5 from those leaves:
+
+- `requested_w` / `served_w` on each service are the sums of its room's leaves; `served_w` can be partial (for example 2,100 W of essentials across three rooms).
+- `modeled_served` and the L3–L5 bits of `modeled_mask` mean "some of this room is energized"; `model_reason` says "Partly served" when it is not all of it.
+- Feeder, source, zone and allocation totals add leaf watts, so `/demo`, `/classrooms` and `/hospital` reconcile from leaves to feeders to the source in the same revision.
+- `allocation.explanation.decisions` marks L3–L5 `decided_by: classroom_leaf_allocation` with leaf `served_w` and `shortfall_w`; the reason keeps the allocator's binding constraint and adds the leaf watts when a room is only partly served, and `campus_allocator_applied` keeps the allocator's whole-room verdict. The allocator's own masks stay in `campus_proposed_mask` / `campus_applied_mask`; replay the restoration gate against those.
+- Room sessions (RFID, classroom scans, board A) rank rooms for optional loads. They no longer decide whether a whole room is requested, because the classroom view always requests every leaf and protects every room's essentials.
+
+`GridState` used alone (no site authority) keeps whole-service projection.
+
+## Named teaching scenarios (#33)
+
+`GET /api/v1/site/scenarios` lists them; `POST /api/v1/site/scenario {"scenario": name}` applies one as one command and one revision on every route. Each scenario sets every budget below, so switching never leaves part of the previous one behind. Sessions and recorded replay are kept. Values come from the active site profile (#26); a site profile itself is still chosen at startup only. For the default campus:
+
+| Scenario | Source | Feeders | Classroom limit | Hospital limit |
+|---|---:|---|---:|---:|
+| `normal` (default) | 14,000 W | A, B closed | 8,000 W | 6,000 W |
+| `source_shortage` | 6,000 W (feeder A limit) | A, B closed | 8,000 W | 6,000 W |
+| `feeder_b_trip` | 14,000 W | B open | 8,000 W | 6,000 W |
+| `classroom_overload` | 14,000 W | A, B closed | 3,400 W (feeder B preset) | 6,000 W |
+| `hospital_overload` | 14,000 W | A, B closed | 8,000 W | 4,000 W (feeder A preset) |
+
+The site identity's `scenario` names the active scenario, or `custom` after a budget is changed by hand (capacity, feeder, either slider or preset, or a view reset). The per-page presets and sliders remain as documented equivalents.
+
+## Remaining migration
+
+- Done (#58): one CP-SAT solve now decides every appliance on both feeders, with one shared restoration gate (one priority group per room per second). L0–L5 publish served watts from that decision, and full recovery after a feeder A trip on `/demo` takes about 10–15 s. See `APPLIANCE_ALLOCATION.md`. The notes above describe the earlier feeder B budget step.

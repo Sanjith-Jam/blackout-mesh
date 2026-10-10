@@ -53,16 +53,20 @@
   }
  },
  "allocation": {
-  "baseline_mask": 31,
+  "baseline_mask": 63,
   "critical_shortfall_w": 0,
   "explanation": {
+   "campus_applied_mask": 15,
+   "campus_proposed_mask": 31,
    "control_revision": 2,
    "decision_id": "<volatile>",
    "decisions": [
     {
      "applied": true,
      "binding_constraints": [],
+     "campus_allocator_applied": true,
      "counterfactual": "served",
+     "decided_by": "appliance_allocation",
      "proposed": true,
      "reason": "Selected by activity_first under protected-first lexicographic objective",
      "requested": true,
@@ -80,13 +84,16 @@
       "unknown": 0,
       "water": 0
      },
+     "served_w": 2000,
      "service_id": "L0",
      "shortfall_w": 0
     },
     {
      "applied": true,
      "binding_constraints": [],
+     "campus_allocator_applied": true,
      "counterfactual": "served",
+     "decided_by": "appliance_allocation",
      "proposed": true,
      "reason": "Selected by activity_first under protected-first lexicographic objective",
      "requested": true,
@@ -104,13 +111,16 @@
       "unknown": 0,
       "water": 0
      },
+     "served_w": 1000,
      "service_id": "L1",
      "shortfall_w": 0
     },
     {
      "applied": true,
      "binding_constraints": [],
+     "campus_allocator_applied": true,
      "counterfactual": "served",
+     "decided_by": "appliance_allocation",
      "proposed": true,
      "reason": "Selected by activity_first under protected-first lexicographic objective",
      "requested": true,
@@ -128,15 +138,18 @@
       "unknown": 0,
       "water": 1
      },
+     "served_w": 3000,
      "service_id": "L2",
      "shortfall_w": 0
     },
     {
      "applied": true,
      "binding_constraints": [],
+     "campus_allocator_applied": true,
      "counterfactual": "served",
+     "decided_by": "appliance_allocation",
      "proposed": true,
-     "reason": "Selected by activity_first under protected-first lexicographic objective",
+     "reason": "Partly served: 1,000 of 2,000 W served by the appliance-level allocation within the site constraints",
      "requested": true,
      "score_terms": {
       "active": 0,
@@ -152,17 +165,20 @@
       "unknown": 1,
       "water": 0
      },
+     "served_w": 1000,
      "service_id": "L3",
-     "shortfall_w": 0
+     "shortfall_w": 1000
     },
     {
      "applied": false,
      "binding_constraints": [
       "restoration_dwell_or_stability"
      ],
+     "campus_allocator_applied": false,
      "counterfactual": "force-on violates restoration_dwell_or_stability",
+     "decided_by": "appliance_allocation",
      "proposed": true,
-     "reason": "Selected but waiting for stable evidence and restoration dwell",
+     "reason": "Selected but waiting for stable evidence and restoration dwell; 1,000 of 2,000 W served by the appliance-level allocation",
      "requested": true,
      "score_terms": {
       "active": 0,
@@ -178,17 +194,20 @@
       "unknown": 1,
       "water": 0
      },
+     "served_w": 1000,
      "service_id": "L4",
-     "shortfall_w": 2000
+     "shortfall_w": 1000
     },
     {
      "applied": false,
      "binding_constraints": [
       "not_requested"
      ],
+     "campus_allocator_applied": false,
      "counterfactual": "force-on violates not_requested",
+     "decided_by": "appliance_allocation",
      "proposed": false,
-     "reason": "Not selected: not_requested",
+     "reason": "No session in this room; the appliance-level allocation still serves 1,000 of 4,000 W (essentials first, then any budget left)",
      "requested": false,
      "score_terms": {
       "active": 0,
@@ -204,8 +223,9 @@
       "unknown": 0,
       "water": 0
      },
+     "served_w": 1000,
      "service_id": "L5",
-     "shortfall_w": 0
+     "shortfall_w": 3000
     }
    ],
    "objective_order": [
@@ -407,20 +427,20 @@
    "protected_shortfall_w": 0,
    "status": "FEASIBLE"
   },
-  "served_w": 8000
+  "served_w": 9000
  },
- "config_hash": "157a248c",
+ "config_hash": "af574a50987d",
  "contract": {
   "campus_totals": {
    "capacity_w": 14000,
-   "requested_w": 10000,
-   "served_w": 8000
+   "requested_w": 14000,
+   "served_w": 9000
   },
   "identity": {
-   "catalog_version": "1.0",
-   "config_hash": "157a248c",
+   "catalog_version": "1.1",
+   "config_hash": "af574a50987d",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:48:49.143155+00:00",
+   "observation_time": "2026-10-10T03:15:55.515082+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
@@ -430,8 +450,8 @@
   "zone_totals": {
    "classroom": {
     "capacity_w": null,
-    "requested_w": 4000,
-    "served_w": 2000
+    "requested_w": 8000,
+    "served_w": 3000
    },
    "hospital": {
     "capacity_w": null,
@@ -466,8 +486,8 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Feeder B head",
-   "requested_w": 4000,
-   "served_w": 2000,
+   "requested_w": 8000,
+   "served_w": 3000,
    "state": "ENERGIZED",
    "to": "B",
    "unit": "W"
@@ -480,7 +500,7 @@
    "id": "campus:A>L0",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Served by allocation policy",
+   "reason": "Served by appliance-level allocation",
    "requested_w": 2000,
    "served_w": 2000,
    "state": "ENERGIZED",
@@ -495,7 +515,7 @@
    "id": "campus:A>L1",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Served by allocation policy",
+   "reason": "Served by appliance-level allocation",
    "requested_w": 1000,
    "served_w": 1000,
    "state": "ENERGIZED",
@@ -510,7 +530,7 @@
    "id": "campus:A>L2",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Served by allocation policy",
+   "reason": "Served by appliance-level allocation",
    "requested_w": 3000,
    "served_w": 3000,
    "state": "ENERGIZED",
@@ -525,40 +545,40 @@
    "id": "campus:B>L3",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Served by allocation policy",
+   "reason": "Partly served by appliance-level allocation: 1,000 of 2,000 W",
    "requested_w": 2000,
-   "served_w": 2000,
+   "served_w": 1000,
    "state": "ENERGIZED",
    "to": "L3",
    "unit": "W"
   },
   {
-   "applied": false,
+   "applied": true,
    "commanded": true,
    "connected": true,
    "from": "B",
    "id": "campus:B>L4",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Waiting for simulated restoration delay",
+   "reason": "Partly served by appliance-level allocation: 1,000 of 2,000 W",
    "requested_w": 2000,
-   "served_w": 0,
-   "state": "PENDING_RESTORATION",
+   "served_w": 1000,
+   "state": "ENERGIZED",
    "to": "L4",
    "unit": "W"
   },
   {
-   "applied": false,
-   "commanded": false,
+   "applied": true,
+   "commanded": true,
    "connected": true,
    "from": "B",
    "id": "campus:B>L5",
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "No active load request",
-   "requested_w": 0,
-   "served_w": 0,
-   "state": "SHED",
+   "reason": "Partly served by appliance-level allocation: 1,000 of 4,000 W",
+   "requested_w": 4000,
+   "served_w": 1000,
+   "state": "ENERGIZED",
    "to": "L5",
    "unit": "W"
   }
@@ -588,7 +608,7 @@
  },
  "generated_at": "<volatile>",
  "hardware_link": "NOT_CONNECTED",
- "indicator_command_mask": 15,
+ "indicator_command_mask": 31,
  "indicator_confirmed_mask": null,
  "indicator_mask": null,
  "model": {
@@ -677,24 +697,26 @@
   "model_version": "uci-occ-logistic-2026-10-09",
   "ready": true
  },
- "modeled_mask": 15,
- "proposed_mask": 31,
- "published_revision": 4,
+ "modeled_mask": 63,
+ "proposed_mask": 63,
+ "published_revision": 5,
  "replay": {
   "index": 0,
   "length": 40,
   "running": false
  },
- "requested_mask": 31,
+ "requested_mask": 63,
  "services": [
   {
    "feeder": "A",
    "id": "L0",
    "indicator_confirmed": null,
-   "model_reason": "Served by allocation policy",
+   "model_reason": "Served by appliance-level allocation",
    "modeled_served": true,
    "name": "Hospital Essential Circuit",
    "requested": true,
+   "requested_w": 2000,
+   "served_w": 2000,
    "tier": "T1",
    "watts": 2000
   },
@@ -702,10 +724,12 @@
    "feeder": "A",
    "id": "L1",
    "indicator_confirmed": null,
-   "model_reason": "Served by allocation policy",
+   "model_reason": "Served by appliance-level allocation",
    "modeled_served": true,
    "name": "Emergency Lighting",
    "requested": true,
+   "requested_w": 1000,
+   "served_w": 1000,
    "tier": "T1",
    "watts": 1000
   },
@@ -713,10 +737,12 @@
    "feeder": "A",
    "id": "L2",
    "indicator_confirmed": null,
-   "model_reason": "Served by allocation policy",
+   "model_reason": "Served by appliance-level allocation",
    "modeled_served": true,
    "name": "Water Pump & HVAC",
    "requested": true,
+   "requested_w": 3000,
+   "served_w": 3000,
    "tier": "T2",
    "watts": 3000
   },
@@ -724,10 +750,12 @@
    "feeder": "B",
    "id": "L3",
    "indicator_confirmed": null,
-   "model_reason": "Served by allocation policy",
+   "model_reason": "Partly served by appliance-level allocation: 1,000 of 2,000 W",
    "modeled_served": true,
    "name": "Classroom 1",
    "requested": true,
+   "requested_w": 2000,
+   "served_w": 1000,
    "tier": "T2",
    "watts": 2000
   },
@@ -735,10 +763,12 @@
    "feeder": "B",
    "id": "L4",
    "indicator_confirmed": null,
-   "model_reason": "Waiting for simulated restoration delay",
-   "modeled_served": false,
+   "model_reason": "Partly served by appliance-level allocation: 1,000 of 2,000 W",
+   "modeled_served": true,
    "name": "Classroom 2",
    "requested": true,
+   "requested_w": 2000,
+   "served_w": 1000,
    "tier": "T2",
    "watts": 2000
   },
@@ -746,19 +776,24 @@
    "feeder": "B",
    "id": "L5",
    "indicator_confirmed": null,
-   "model_reason": "No active load request",
-   "modeled_served": false,
+   "model_reason": "Partly served by appliance-level allocation: 1,000 of 4,000 W",
+   "modeled_served": true,
    "name": "Classroom 3",
-   "requested": false,
+   "requested": true,
+   "requested_w": 4000,
+   "served_w": 1000,
    "tier": "T3",
    "watts": 4000
   }
  ],
  "site": {
-  "catalog_version": "site-catalog-2026-10-10.1",
+  "catalog_version": "site-catalog-1.1",
+  "config_hash": "af574a50987d",
   "profile": "campus",
   "revision": 9,
-  "run_id": "<volatile>"
+  "run_id": "<volatile>",
+  "scenario": "custom",
+  "site_name": "Default Campus"
  },
  "source": {
   "capacity_w": 14000,

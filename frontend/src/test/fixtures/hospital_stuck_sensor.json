@@ -6,10 +6,10 @@
  "contract": {
   "campus_totals": null,
   "identity": {
-   "catalog_version": "1.0",
-   "config_hash": "157a248c",
+   "catalog_version": "1.1",
+   "config_hash": "af574a50987d",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:48:49.143155+00:00",
+   "observation_time": "2026-10-10T03:15:55.515082+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
@@ -36,10 +36,13 @@
  "served_w": null,
  "shortfall_w": null,
  "site": {
-  "catalog_version": "site-catalog-2026-10-10.1",
+  "catalog_version": "site-catalog-1.1",
+  "config_hash": "af574a50987d",
   "profile": "campus",
   "revision": 9,
-  "run_id": "<volatile>"
+  "run_id": "<volatile>",
+  "scenario": "custom",
+  "site_name": "Default Campus"
  },
  "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; a cause is inferred after two consecutive agreeing readings. Thresholds are not certified protection settings.",
  "transformers": [

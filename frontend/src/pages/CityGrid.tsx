@@ -1,5 +1,5 @@
 import { Droplets, Hospital, Lightbulb, School, Zap } from 'lucide-react';
-import type { Snapshot } from '../types';
+import { servedWatts, serviceStatus, type Snapshot } from '../types';
 
 export function feederState(snapshot: Snapshot, id: string): 'OPEN' | 'CLOSED' | 'UNKNOWN' {
   const inputs = snapshot.allocation.explanation?.replay_inputs as { feeder_available?: Record<string, unknown> } | undefined;
@@ -14,7 +14,7 @@ export default function CityGrid({ snapshot, selected, onSelect }: {
 }) {
   const { services, source } = snapshot;
   const feederOpen = (id: string) => feederState(snapshot, id) !== 'CLOSED';
-  const served = (feeder: string) => services.filter(s => s.feeder === feeder && s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
+  const served = (feeder: string) => services.filter(s => s.feeder === feeder).reduce((sum, s) => sum + servedWatts(s), 0);
   return <section className="city-panel city-map-panel" aria-label="City electrical grid">
     <header className="city-panel-heading"><div><h2>One city, one grid</h2><p>Illustrative city blocks · six-service 14 kW lab model</p></div><span>Revision <b data-testid="city-revision">{snapshot.site?.revision}</b></span></header>
     <div className="city-map" aria-label="Select a city service to inspect its power decision">
@@ -37,7 +37,7 @@ export default function CityGrid({ snapshot, selected, onSelect }: {
       </div>)}
       {services.map((service, i) => {
         const Icon = ICONS[i] ?? School;
-        const status = !service.requested ? 'Not requested' : service.modeled_served ? 'Served' : 'Shed';
+        const status = serviceStatus(service);
         return <button key={service.id} className={`city-building ${service.modeled_served ? 'is-served' : service.requested ? 'is-shed' : 'is-idle'}`} style={{ left: `${48 + (i % 3) * 17}%`, top: i < 3 ? '10%' : '65%' }}
           aria-label={`${service.name}: ${status}`} aria-pressed={selected === service.id} onClick={() => onSelect(service.id)}>
           <Icon size={24} aria-hidden="true" /><strong>{service.name}</strong><span>{service.watts.toLocaleString()} W · {service.tier}</span><b>{status}</b>

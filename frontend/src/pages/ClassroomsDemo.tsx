@@ -58,7 +58,7 @@ export default function ClassroomsDemo() {
     unscan: `Ended ${classroomId}'s session.`,
     set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
     normal: 'Full supply 8,000 W applied.',
-    overload: 'Overload preset 3,400 W applied.',
+    overload: 'Overload preset applied.',
     reset: 'Classroom demo reset.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',
@@ -161,7 +161,7 @@ export default function ClassroomsDemo() {
         <h2 id="classroom-controls-title">Demo controls</h2>
         <p>Scan any number of classrooms, then lower the supply to see which rooms keep their equipment.</p>
         <div className="classroom-demo__button-stack" role="group" aria-label="Scan classroom RFID cards">
-          {(['CR1', 'CR2', 'CR3'] as const).map(id => {
+          {snapshot.rooms.map(({ id }) => {
             const scanned = snapshot.scanned_classroom_ids.includes(id);
             return <button key={id} className={`classroom-demo__button ${scanned ? 'classroom-demo__button--primary' : ''}`} aria-pressed={scanned} disabled={pending} onClick={() => void runAction(scanned ? 'unscan' : 'scan', id)}>{scanned ? `✓ ${id} scanned · tap to end` : `Scan ${id}`}</button>;
           })}
@@ -177,8 +177,8 @@ export default function ClassroomsDemo() {
           </div>;
         })()}
         <div className="classroom-demo__button-stack">
-          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 8,000 W</button>
-          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 3,400 W</button>
+          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · {snapshot.capacity_range_w[1].toLocaleString()} W</button>
+          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset</button>
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
         <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating classroom state…' : feedback ?? ''}</p>

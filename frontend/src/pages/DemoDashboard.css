@@ -422,3 +422,14 @@
 .history-controls button[aria-pressed=true] { border: 2px solid var(--text-main); }
 .history-controls pre { max-height: 280px; overflow: auto; font-size: .8rem; }
 .history-controls button:disabled { opacity: .5; cursor: default; }
+
+/* Narrow screens: stack the header, wrap the status pills and keep the tab bar scrollable inside itself. */
+.demo-tabs { overflow-x: auto; }
+.demo-tabs .tab-btn { flex-shrink: 0; }
+@media (max-width: 640px) {
+  .dash-header { grid-template-columns: 1fr; gap: 0.75rem; padding: 1rem; }
+  .dash-status-indicators { flex-wrap: wrap; justify-content: flex-start; }
+  .dash-actions { justify-content: flex-start; }
+  .feeders-strip { grid-template-columns: 1fr; padding: 1rem; }
+  .zones-layout, .zone-section { padding: 1rem; }
+}

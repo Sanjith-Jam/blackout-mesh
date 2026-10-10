@@ -27,54 +27,26 @@ from app.simulation.sensors import CAMPUS_BUS, CAMPUS_FEEDERS, campus_readings, 
 from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, RankDwell, normalize_prediction, shortfall_status
 
 from app.schemas.snapshot import CrossRouteContract, ScopeTotals
-from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
-import os
+from app.core.active_site import CATALOG, rfid_enrollment, site_profile
 
 log = logging.getLogger(__name__)
 
-_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEFAULT_SITE_PATH = os.environ.get("SITE_PROFILE", os.path.join(_BASE_DIR, "sites", "default_campus.json"))
-RFID_ENROLLMENT_PATH = os.environ.get("RFID_ENROLLMENT", os.path.join(_BASE_DIR, "sites", "rfid_enrollment.json"))
+SERVICE_CATALOG = CATALOG.services
+HOSPITAL_ROOMS = CATALOG.hospital_rooms
+CLASSROOMS = CATALOG.classrooms
+CLASSROOM_IDS = {c["id"] for c in CLASSROOMS}
+SERVICE_BIT = {s["id"]: i for i, s in enumerate(SERVICE_CATALOG)}
+ALL_SERVICES_MASK = (1 << len(SERVICE_CATALOG)) - 1
+# Services requested whatever the classroom sessions say (the hospital feeder's services).
+BASE_REQUESTED_MASK = sum(1 << i for i, s in enumerate(SERVICE_CATALOG) if s["zone"] != "classroom")
 
-site_profile = load_site_profile(DEFAULT_SITE_PATH)
-rfid_enrollment = load_rfid_enrollment(RFID_ENROLLMENT_PATH)
-
-SERVICE_CATALOG = []
-HOSPITAL_ROOMS = []
-CLASSROOMS = []
-
-for asset in site_profile.assets:
-    if asset.type == AssetType.SERVICE:
-        SERVICE_CATALOG.append({
-            "id": asset.id,
-            "name": asset.name,
-            "tier": asset.tier.value if asset.tier else "T3",
-            "feeder": asset.parent_id,
-            "watts": asset.rating_w or 0,
-            "zone": asset.zone
-        })
-    elif asset.type == AssetType.HOSPITAL_ROOM:
-        HOSPITAL_ROOMS.append({
-            "id": asset.id,
-            "name": asset.name,
-            "lighting_service": asset.parent_id,
-            "led_bit": asset.led_bit
-        })
-    elif asset.type == AssetType.CLASSROOM:
-        CLASSROOMS.append({
-            "id": asset.id,
-            "name": asset.name,
-            "service_id": asset.parent_id,
-            "led_bit": asset.led_bit
-        })
-
-
-DEFAULT_RFID_MAP = rfid_enrollment.tag_to_room
-SITE_CONFIG_HASH = get_config_hash(site_profile)
+# Cards enrolled for rooms this site does not have are ignored rather than mapped to nothing.
+DEFAULT_RFID_MAP = {uid: room for uid, room in rfid_enrollment.tag_to_room.items() if room in CLASSROOM_IDS}
+SITE_CONFIG_HASH = CATALOG.config_hash
 
 RFID_SCAN_COOLDOWN_SECONDS = 2.0
 SESSION_EXPIRY_SECONDS = 7200
-NORMAL_SOURCE_CAPACITY_W = 14000
+NORMAL_SOURCE_CAPACITY_W = CATALOG.source_capacity_w
 
 class GridState:
     def __init__(self, storage=None):
@@ -83,9 +55,9 @@ class GridState:
         self.published: Optional[SystemSnapshot] = None
         self.published_revision = 0
         self.tick_count = 0
-        self.source_capacity_w = 14000
-        self.feeder_limits_w = {"A": 6000, "B": 8000}
-        self.feeder_available = {"A": True, "B": True}
+        self.source_capacity_w = NORMAL_SOURCE_CAPACITY_W
+        self.feeder_limits_w = dict(CATALOG.feeder_limits_w)
+        self.feeder_available = {f: True for f in CATALOG.feeder_limits_w}
         self.control_revision = 0
         self.active_sessions = {}
         self.session_event_ids = {}
@@ -99,6 +71,9 @@ class GridState:
                                     "evidence": {key: None for key in FEATURES}}
                          for c in CLASSROOMS}
         self.software_mode = False
+        # Appliance-level decision per campus service, set by the site authority:
+        # {service_id: {"requested_w", "commanded_w", "served_w"}}. None when GridState runs alone.
+        self.leaf_decision = None
         self.replay_running = False
         self.replay_index = 0
         self.replay_length = 0
@@ -137,13 +112,14 @@ class GridState:
             self.events = []
 
         self.fault_diagnosis = None
+        self.campus_diagnosis = None
         self._diagnostic_signature = None
         self.telemetry_window = ObservationWindow()
         self.telemetry_sequence = 0
         self._active_incidents = {}
-        self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
-                                                  tuple(sorted(self.feeder_available.items())),), range(6))
-        self.last_allocation_mask = 0b111111
+        self.restoration_gate.update(ALL_SERVICES_MASK, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
+                                                  tuple(sorted(self.feeder_available.items())),), range(len(SERVICE_CATALOG)))
+        self.last_allocation_mask = ALL_SERVICES_MASK
         self._initialized = True
         self.tick()  # initial publication so the first read is never empty
 
@@ -219,9 +195,9 @@ class GridState:
     def sample_telemetry(self, now: datetime):
         """Simulation side: turn the modeled campus state into bus/feeder sensor envelopes."""
         served = {"A": 0, "B": 0}
-        for i, svc in enumerate(SERVICE_CATALOG):
-            if self.last_allocation_mask & (1 << i):
-                served[svc["feeder"]] += svc["watts"]
+        rows = self.service_watts(self.last_allocation_mask, self.proposed_mask, 0)
+        for svc, (_, _, served_w) in zip(SERVICE_CATALOG, rows):
+            served[svc["feeder"]] += served_w
         self.telemetry_sequence += 1
         readings = campus_readings(self.source_capacity_w, self.feeder_available, served)
         for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
@@ -236,6 +212,7 @@ class GridState:
             now = datetime.now(timezone.utc)
             self.sample_telemetry(now)
             result = diagnose_campus(self.telemetry_window, CAMPUS_BUS, list(CAMPUS_FEEDERS), FeederRating(), now)
+            self.campus_diagnosis = {**result, "evaluated_at": now.isoformat()}  # published even when NORMAL
             self._sync_incidents(result.get("hypotheses", []))
             constraint = (f"Configured supply limit {self.source_capacity_w} W (operating constraint, not a diagnosed fault)."
                           if self.source_capacity_w < NORMAL_SOURCE_CAPACITY_W else None)
@@ -495,9 +472,9 @@ class GridState:
     def compute_allocation(self) -> int:
         """
         Compute allocation based on priority and capacity constraints.
-        - Essential loads (bits 0, 1, 2) are requested independent of a session by default.
+        - Hospital feeder services are requested independent of a session by default.
         - Uncertainty protects essentials: even without clear occupancy evidence, they are never silently cut.
-        - Session evidence (RFID/UI) explicitly adds optional equipment demand (bits 3, 4, 5).
+        - Session evidence (RFID/UI) explicitly adds each classroom's service demand.
         - Occupancy prediction (from sensors) can further rank active/unknown ties, but does NOT override the safety of essentials.
         """
         with self._lock:
@@ -505,12 +482,12 @@ class GridState:
             now = self.clock()
             freshness = tuple(received is not None and now - received > 600
                               for received in self.activity_received_monotonic.values())
-            requested = 0b111111
+            requested = ALL_SERVICES_MASK
             if self.software_mode:
-                requested = 0b111
+                requested = BASE_REQUESTED_MASK
                 for c in CLASSROOMS:
                     if c["id"] in self.active_sessions:
-                        requested |= 1 << int(c["service_id"][1:])
+                        requested |= 1 << SERVICE_BIT[c["service_id"]]
             elapsed = max(0, now - self.last_policy_tick)
             self.last_policy_tick = now
             for bit, svc in enumerate(SERVICE_CATALOG):
@@ -553,7 +530,9 @@ class GridState:
                             revision=self.control_revision, timestamp=datetime.now(timezone.utc),
                             modeled_mask=self.last_allocation_mask, proposed_mask=self.proposed_mask,
                             indicator_command_mask=self.compute_indicator_command_mask(self.last_allocation_mask),
-                            reason="Protected-first allocation", context=explanation))
+                            reason="Protected-first allocation",
+                            context={**explanation, "config_hash": SITE_CONFIG_HASH,
+                                     "catalog_version": site_profile.version}))
                         self.storage.commit(session)
             return self.last_allocation_mask
 
@@ -561,10 +540,9 @@ class GridState:
     def compute_indicator_command_mask(self, modeled_mask: int) -> int:
         with self._lock:
             mask = 0
-            # Hospital rooms L0
-            l0_served = bool((modeled_mask >> 0) & 1)
-            if l0_served:
-                for room in HOSPITAL_ROOMS:
+            # Hospital rooms light when their lighting service is served
+            for room in HOSPITAL_ROOMS:
+                if (modeled_mask >> SERVICE_BIT[room["lighting_service"]]) & 1:
                     mask |= (1 << room["led_bit"])
 
             # Classroom logic
@@ -572,8 +550,7 @@ class GridState:
                 classroom = next((c for c in CLASSROOMS if c["id"] == cid), None)
                 if classroom:
                     cr_svc = classroom["service_id"]
-                    svc_bit = int(cr_svc[1:])
-                    svc_served = bool((modeled_mask >> svc_bit) & 1)
+                    svc_served = bool((modeled_mask >> SERVICE_BIT[cr_svc]) & 1)
 
                     cr_svc_obj = next((s for s in SERVICE_CATALOG if s["id"] == cr_svc), None)
                     feeder_avail = False
@@ -624,15 +601,33 @@ class GridState:
             self.add_event("HARDWARE_ACK", f"ACK received via {provenance}")
             return True
 
-    def tick(self) -> SystemSnapshot:
-        """Advance control (evidence freshness, allocation, staged restoration) and publish.
+    def service_watts(self, allocation_mask: int, proposed_mask: int, requested_mask: int):
+        """(requested_w, proposed_w, served_w) per service, in catalog order.
 
-        This is the only place time-dependent state moves forward. Readers call build_snapshot().
+        Services decomposed into classroom leaves report the leaf decision (partial service is possible);
+        the rest are whole services decided by the campus allocator.
         """
+        rows = []
+        for i, svc in enumerate(SERVICE_CATALOG):
+            leaves = (self.leaf_decision or {}).get(svc["id"])
+            if leaves is not None:
+                rows.append((leaves["requested_w"], leaves["commanded_w"], leaves["served_w"]))
+            else:
+                rows.append(tuple(svc["watts"] if mask & (1 << i) else 0
+                                  for mask in (requested_mask, proposed_mask, allocation_mask)))
+        return rows
+
+    def advance(self) -> int:
+        """Advance control (evidence freshness, allocation, staged restoration) without publishing."""
         with self._lock:
             modeled_mask = self.compute_allocation()
             self.compute_fault_diagnosis()
-            candidate = self._project(modeled_mask)
+            return modeled_mask
+
+    def publish(self) -> SystemSnapshot:
+        """Project the current decision (the appliance-level decision projected onto campus services) and publish."""
+        with self._lock:
+            candidate = self._project(self.last_allocation_mask)
             self.tick_count += 1
             if self.published is None or _content(candidate) != _content(self.published):
                 self.published_revision += 1
@@ -640,30 +635,82 @@ class GridState:
                 self.published = candidate
             return self.published
 
+    def tick(self) -> SystemSnapshot:
+        """Advance control and publish. This is the only place time-dependent state moves forward.
+        Readers call build_snapshot(). The site authority calls advance() and publish() separately so the
+        appliance-level decision can be included in the same publication; a standalone tick has none."""
+        with self._lock:
+            self.leaf_decision = None
+            self.advance()
+            return self.publish()
+
     def build_snapshot(self) -> Optional[SystemSnapshot]:
         """Read-only: a copy of the last published snapshot, or None before the first tick.
         Never advances control."""
         with self._lock:
             return None if self.published is None else self.published.model_copy(deep=True)
 
-    def _project(self, modeled_mask: int) -> SystemSnapshot:
+    def _published_explanation(self, served_w_of):
+        """The campus decision record; every service row says the appliance-level allocation decided it."""
+        leaves = self.leaf_decision or {}
+        if not leaves or not self.allocation_explanation.get("decisions"):
+            return self.allocation_explanation
+        index = {svc["id"]: i for i, svc in enumerate(SERVICE_CATALOG)}
+        decisions = []
+        for row in self.allocation_explanation["decisions"]:
+            leaf = leaves.get(row.get("service_id"))
+            if leaf is not None:
+                served = served_w_of[index[row["service_id"]]]
+                reason = row["reason"]
+                if "not_requested" in row.get("binding_constraints", []):
+                    # The campus solve counts rooms with a session; the leaves always protect every room's essentials.
+                    reason = (f"No session in this room; the appliance-level allocation still serves {served:,} of "
+                              f"{leaf['requested_w']:,} W (essentials first, then any budget left)")
+                elif 0 < served < leaf["requested_w"]:
+                    partly = f"{served:,} of {leaf['requested_w']:,} W served by the appliance-level allocation"
+                    reason = (f"Partly served: {partly} within the site constraints" if row.get("applied")
+                              else f"{reason}; {partly}")
+                elif served == 0 and row.get("applied"):
+                    reason = "Campus service granted, but the appliance-level allocation served none of its equipment"
+                row = {**row, "decided_by": "appliance_allocation", "served_w": served,
+                       "shortfall_w": leaf["requested_w"] - served,
+                       "campus_allocator_applied": row.get("applied"), "reason": reason}
+            decisions.append(row)
+        # The published masks include the leaf decision; replay the restoration gate against these.
+        return {**self.allocation_explanation, "decisions": decisions,
+                "campus_proposed_mask": self.proposed_mask, "campus_applied_mask": self.last_allocation_mask}
+
+    def _project(self, allocation_mask: int) -> SystemSnapshot:
         with self._lock:
-            indicator_command = self.compute_indicator_command_mask(modeled_mask)
-            requested_mask = 0b111111
+            requested_mask = ALL_SERVICES_MASK
             if self.software_mode:
-                requested_mask = 0b111
+                requested_mask = BASE_REQUESTED_MASK
                 for c in CLASSROOMS:
                     if c["id"] in self.active_sessions:
-                        requested_mask |= 1 << int(c["service_id"][1:])
+                        requested_mask |= 1 << SERVICE_BIT[c["service_id"]]
+            # One decision per appliance: every service reports the appliance-level decision, so masks and
+            # watts below agree with /classrooms and /hospital. A bit means "some of this service".
+            rows = self.service_watts(allocation_mask, self.proposed_mask, requested_mask)
+            requested_mask, proposed_mask, modeled_mask = (
+                sum(1 << i for i, row in enumerate(rows) if row[k] > 0) for k in range(3))
+            requested_w_of = [row[0] for row in rows]
+            proposed_w_of = [row[1] for row in rows]
+            served_w_of = [row[2] for row in rows]
+            indicator_command = self.compute_indicator_command_mask(modeled_mask)
 
             services_out = []
             for svc in SERVICE_CATALOG:
-                bit = int(svc["id"][1:])
+                bit = SERVICE_BIT[svc["id"]]
                 served = bool((modeled_mask >> bit) & 1)
+                leaf_decided = svc["id"] in (self.leaf_decision or {})
 
-                if served:
+                if leaf_decided and served:
+                    reason = ("Served by appliance-level allocation" if served_w_of[bit] >= requested_w_of[bit] else
+                              f"Partly served by appliance-level allocation: {served_w_of[bit]:,} of "
+                              f"{requested_w_of[bit]:,} W")
+                elif served:
                     reason = "Served by allocation policy"
-                elif self.proposed_mask & (1 << bit):
+                elif proposed_mask & (1 << bit):
                     reason = "Waiting for simulated restoration delay"
                 elif not requested_mask & (1 << bit):
                     reason = "No active load request"
@@ -679,6 +726,8 @@ class GridState:
                     watts=svc["watts"],
                     requested=bool(requested_mask & (1 << bit)),
                     modeled_served=served,
+                    requested_w=requested_w_of[bit],
+                    served_w=served_w_of[bit],
                     indicator_confirmed=None,
                     model_reason=reason
                 ))
@@ -715,14 +764,14 @@ class GridState:
             activity = self.current_activity()
 
 
-            requested_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i))
-            served_w = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i))
+            requested_w = sum(requested_w_of)
+            served_w = sum(served_w_of)
             campus_totals = ScopeTotals(capacity_w=self.source_capacity_w, requested_w=requested_w, served_w=served_w)
 
             zone_totals = {}
             for z in ["hospital", "classroom"]:
-                z_req = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if requested_mask & (1 << i) and s["zone"] == z)
-                z_srv = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i) and s["zone"] == z)
+                z_req = sum(requested_w_of[i] for i, s in enumerate(SERVICE_CATALOG) if s["zone"] == z)
+                z_srv = sum(served_w_of[i] for i, s in enumerate(SERVICE_CATALOG) if s["zone"] == z)
                 zone_totals[z] = ScopeTotals(capacity_w=None, requested_w=z_req, served_w=z_srv)
 
             contract_dict = {
@@ -733,18 +782,17 @@ class GridState:
             contract = CrossRouteContract(**contract_dict)
 
             edges = [power_edge(f"campus:SRC>{f}", "SRC", f, connected=self.source_capacity_w > 0,
-                                commanded=any(self.proposed_mask & (1 << i) for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
+                                commanded=any(proposed_mask & (1 << i) for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
                                 applied=any(modeled_mask & (1 << i) for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
-                                requested_w=sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f and requested_mask & (1 << i)),
-                                served_w=sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f and modeled_mask & (1 << i)),
+                                requested_w=sum(requested_w_of[i] for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
+                                served_w=sum(served_w_of[i] for i, s in enumerate(SERVICE_CATALOG) if s["feeder"] == f),
                                 reason="Source has no capacity" if self.source_capacity_w <= 0 else f"Feeder {f} head")
-                     for f in ("A", "B")]
+                     for f in self.feeder_limits_w]
             for i, svc in enumerate(SERVICE_CATALOG):
                 closed = self.source_capacity_w > 0 and self.feeder_available.get(svc["feeder"], False)
                 edges.append(power_edge(f"campus:{svc['feeder']}>{svc['id']}", svc["feeder"], svc["id"], connected=closed,
-                                        commanded=bool(self.proposed_mask & (1 << i)), applied=bool(modeled_mask & (1 << i)),
-                                        requested_w=svc["watts"] if requested_mask & (1 << i) else 0,
-                                        served_w=svc["watts"] if modeled_mask & (1 << i) else 0,
+                                        commanded=bool(proposed_mask & (1 << i)), applied=bool(modeled_mask & (1 << i)),
+                                        requested_w=requested_w_of[i], served_w=served_w_of[i],
                                         reason=(f"Open: feeder {svc['feeder']} unavailable" if not closed
                                                 else services_out[i].model_reason)))
 
@@ -758,7 +806,7 @@ class GridState:
                 feeder_limits_w=self.feeder_limits_w.copy(),
                 requested_mask=requested_mask,
                 modeled_mask=modeled_mask,
-                proposed_mask=self.proposed_mask,
+                proposed_mask=proposed_mask,
                 indicator_mask=None,
                 indicator_command_mask=indicator_command,
                 indicator_confirmed_mask=self.indicator_confirmed_mask,
@@ -771,17 +819,17 @@ class GridState:
                 model=self.model.status(),
                 replay={"running": self.replay_running, "index": self.replay_index, "length": self.replay_length},
                 allocation={"objective": ", ".join(self.policy.objective_order),
-                            "explanation": self.allocation_explanation,
+                            "explanation": self._published_explanation(served_w_of),
                             "critical_shortfall_w": max(0, sum(s["watts"] for s in SERVICE_CATALOG[:2]) -
-                                                         sum(SERVICE_CATALOG[i]["watts"] for i in range(2) if modeled_mask & (1 << i))),
-                            "served_w": sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG) if modeled_mask & (1 << i)),
+                                                         sum(served_w_of[i] for i in range(2))),
+                            "served_w": served_w,
                             "baseline_mask": fixed_priority_mask(SERVICE_CATALOG, self.source_capacity_w, self.feeder_limits_w,
                                                                  self.feeder_available, requested_mask),
                             "safety": shortfall_status(
-                                sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-                                    if s["id"] in CAMPUS_PROTECTED_SERVICES and requested_mask & (1 << i)),
-                                sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-                                    if s["id"] in CAMPUS_PROTECTED_SERVICES and modeled_mask & (1 << i)))}
+                                sum(requested_w_of[i] for i, s in enumerate(SERVICE_CATALOG)
+                                    if s["id"] in CAMPUS_PROTECTED_SERVICES),
+                                sum(served_w_of[i] for i, s in enumerate(SERVICE_CATALOG)
+                                    if s["id"] in CAMPUS_PROTECTED_SERVICES))}
             )
 
 

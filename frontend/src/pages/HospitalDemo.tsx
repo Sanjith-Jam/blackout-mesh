@@ -57,10 +57,10 @@ export default function HospitalDemo() {
     scan: `Scanned ${zoneId}.`,
     unscan: `Ended ${zoneId}'s session.`,
     set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
-    normal: 'Full supply 6,000 W applied.',
-    overload: 'Overload preset 4,000 W applied.',
+    normal: 'Full supply applied.',
+    overload: 'Overload preset applied.',
     reset: 'Hospital demo reset.',
-    inject_fault: `Fault injected at ${zoneId ?? 'Theatre'}.`,
+    inject_fault: zoneId ? `Fault injected at ${zoneId}.` : 'Fault injected.',
     clear_fault: 'Injected fault cleared.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',
@@ -174,7 +174,7 @@ export default function HospitalDemo() {
         <h2 id="classzone-controls-title">Demo controls</h2>
         <p>Scan any number of zones, then lower the supply to see which zones keep their equipment.</p>
         <div className="classroom-demo__button-stack" role="group" aria-label="Scan hospital ward RFID cards">
-          {(['ICU', 'Theatre', 'Wards'] as const).map(id => {
+          {snapshot.transformers.map(({ zone: id }) => {
             const scanned = snapshot.scanned_zone_ids.includes(id);
             return <button key={id} className={`classroom-demo__button ${scanned ? 'classroom-demo__button--primary' : ''}`} aria-pressed={scanned} disabled={pending} onClick={() => void runAction(scanned ? 'unscan' : 'scan', id)}>{scanned ? `✓ ${id} scanned · tap to end` : `Scan ${id}`}</button>;
           })}
@@ -190,8 +190,8 @@ export default function HospitalDemo() {
           </div>;
         })()}
         <div className="classroom-demo__button-stack">
-          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · 6,000 W</button>
-          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset · 4,000 W</button>
+          <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('normal')}>Full supply · {snapshot.capacity_range_w[1].toLocaleString()} W</button>
+          <button className="classroom-demo__button classroom-demo__button--warn" disabled={pending} onClick={() => void runAction('overload')}>Overload preset</button>
           <button className="classroom-demo__button" disabled={pending} onClick={() => void runAction('reset')}>Reset demo</button>
         </div>
         <p className="classroom-demo__feedback" aria-live="polite">{pending ? 'Updating hospital state…' : feedback ?? ''}</p>

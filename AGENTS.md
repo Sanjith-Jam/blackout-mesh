@@ -10,7 +10,7 @@ Spec: `docs/planning/PRIORITYGRID_HACKATHON_REMAINING_PLAN.md` (v2.0) and `docs/
 - `backend/` Python + FastAPI, single worker, the only owner of modeled state.
 - `frontend/` React + TypeScript + Vite, renders full snapshots.
 - `firmware/` Arduino C++ + ESP-NOW.
-- Allocation: current web app uses six services; older required-ML plan specifies nine. The software demo explicitly retains the six-service 14-kW catalog and enumerates all 64 masks. The nine-service catalog is deferred; physical catalog reconciliation is still pending.
+- Allocation: current web app uses six services; older required-ML plan specifies nine. The software demo retains the six-service 14-kW catalog, but each of its 31 appliances is now decided by OR-Tools CP-SAT with independent validation and an exhaustive oracle in tests; the 64-mask enumerator is a regression fixture only (docs/APPLIANCE_ALLOCATION.md). The nine-service catalog is deferred; physical catalog reconciliation is still pending.
 - Pin versions only after a successful local install/compile. Never invent pins.
 
 ## Commands
@@ -39,7 +39,7 @@ Hardware B commands (from repository root):
 
 Application checks (from repo root):
 
-- `PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with pytest --with httpx python -m pytest backend/tests -q`
+- `PYTHONPATH=backend uv run --no-project --python 3.14 --with-requirements backend/requirements-test.txt --with-requirements backend/requirements-ml.txt python -m pytest backend/tests -q`
 - `cd frontend && npm ci --no-audit --no-fund && npm run build`
 - `PYTHONPATH=backend python -m benchmarks.diagnosis.run [--split dev|calibration]` — diagnosis benchmark on development data; held-out needs `--unseal` and is reserved for the final frozen evaluation (see `backend/benchmarks/diagnosis/PROTOCOL.md`).
 - `PYTHONPATH=backend python -m benchmarks.run_allocation` — allocation benchmark; writes `backend/benchmarks/results/allocation_report.{json,md}`, exits non-zero on any constraint violation.

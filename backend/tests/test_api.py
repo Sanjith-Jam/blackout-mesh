@@ -204,8 +204,8 @@ def test_priority_allocation_constraints(client):
     services = {s["id"]: s for s in snap["services"]}
 
     # Total served must not exceed 6000
-    total_served = sum(s["watts"] for s in snap["services"] if s["modeled_served"])
-    assert total_served <= 6000
+    total_served = sum(s["served_w"] for s in snap["services"])
+    assert total_served <= 6000 and total_served == snap["allocation"]["served_w"]
 
     # Priority check: T1s (L0, L1) must be served over T3 (L5)
     assert services["L0"]["modeled_served"] is True
@@ -218,7 +218,8 @@ def test_priority_allocation_constraints(client):
     # L5 (4000) T3 definitely doesn't fit.
     # Total served: L0(2000) + L1(1000) + L3(2000) = 5000 <= 6000.
 
-    assert services["L5"]["modeled_served"] is False
+    # Feeder B is decided by the classroom leaves (#33): L5 keeps at most part of its 4,000 W.
+    assert services["L5"]["served_w"] < services["L5"]["requested_w"]
 
 def test_hardware_confirmation_truth(client):
     snap = client.get("/api/v1/snapshot").json()

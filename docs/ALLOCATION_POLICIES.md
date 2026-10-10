@@ -30,3 +30,5 @@ Each campus snapshot's `allocation.explanation` contains policy/version, objecti
 See `backend/benchmarks/results/allocation_profile.json`. On this host, 50 six-service runs had median **1.59 ms**, maximum **2.17 ms**. Three experimental 19-leaf enumerations examined **524,288 masks** each, median **11.95 s**, maximum **17.59 s**. They decompose the current services without double-counting, but are only a scale probe, not an adopted leaf safety policy. Small samples do not establish a tail guarantee.
 
 Keep the exact 64-mask oracle in the shipped 250-ms control loop. Never put the 19-leaf enumeration there. If a future catalog needs leaf dispatch, this evidence warrants a bounded solver (e.g. OR-Tools), timeout-safe previous feasible/protective fallback and safety-equivalence tests before adoption. Adding an unused solver dependency to today's six-service runtime would not improve its outcome.
+
+**Update 2026-10-10:** leaf dispatch was adopted on exactly those terms. CP-SAT now decides 31 appliances (about 8 ms per solve), with validation, a validated fallback and oracle-equivalence tests; see `APPLIANCE_ALLOCATION.md`.

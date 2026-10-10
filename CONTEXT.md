@@ -8,6 +8,23 @@ Verification: full backend suite **201 passed**; final focused allocation suite 
 
 Five repository clones, pinned manifest and individual subagent reuse maps remain ignored under `sources/` and `local-only/reuse-2026-10-10/`. Broader assimilation is mapped, not delivered: geographic feeders require catalog/topology reconciliation, live RL lacks local hard constraints, and two source repositories lack project licenses. Next step is selecting those larger experiments and resolving their input/license gates. No upstream applications, frontend, held-out evaluation or physical hardware were run in this task; no push.
 
+## Appliance-level allocation and the new `/demo` — 2026-10-10
+
+- **One appliance-level decision.** CP-SAT decides all 31 appliances (lexicographic priority classes, then fewest switches); every plan is validated, a validated conservative fallback covers a non-optimal solve, and an exhaustive oracle checks it in tests. Campus, classroom and hospital views are projections of that one decision. This supersedes the feeder B leaf budget from #33 below.
+- **`/demo` is the power-system page** (Overview, Floor Plan, Electrical Network, Fault Detection, Electrical Laws) driven by `GET /api/v1/power-system`; the city page moved to `/city`. Details, verified outage/overload states and limitations: `docs/APPLIANCE_ALLOCATION.md`.
+
+## One-authority migration follow-up (#33) — 2026-10-10
+
+- **One feeder B decision.** The campus allocator decides feeder A and grants feeder B a budget; the classroom leaf allocation is the only decision inside it. L3–L5 now publish `requested_w`/`served_w` from their leaves (partial service), and every total reconciles from leaves through feeders to the source on `/demo`, `/classrooms` and `/hospital`. Frontend totals use `served_w`.
+- **Named teaching scenarios.** `GET /api/v1/site/scenarios`, `POST /api/v1/site/scenario` (`normal`, `source_shortage`, `feeder_b_trip`, `classroom_overload`, `hospital_overload`), derived from the active site profile (#26). The identity's `scenario` shows the active one or `custom`.
+- Sessions (#21/#45), hospital mapping (#48) and per-app lifecycle (#11) had already landed. Details and what is left: `docs/CATALOG_MIGRATION.md`.
+
+Verification: backend suite **224 passed, 2 skipped**; frontend `npm run build`, `npm test` (18) and `npm run test:contract` pass; generated client in sync. No browser or hardware run.
+
+## Issue #15 cleanup — 2026-10-10
+
+Removed three empty `.gitkeep` placeholders, pinned backend runtime/test dependencies from a clean Python 3.14 install (195 passed, 2 skipped) and fixed the stale `--with httpx` test command in `AGENTS.md`. Every other script and both firmware trees have callers and stay. Inventory and evidence: [docs/ISSUE_15_DELIVERY.md](docs/ISSUE_15_DELIVERY.md).
+
 ## Person A sprint: evidence and backend — 2026-10-10
 
 Answers to the adversarial review, in five commits on `claude/peaceful-volta-r0k5cd`:
@@ -142,3 +159,16 @@ Restarted this project's existing localhost backend with its original environmen
 Integrated main's A1 rank-dwell benchmark, A3 shared 6 kW hospital catalog and A4 persistent fault controls. Read-only diagnostic buttons now send an explicit `rehearsal` field; mixed rehearsal/live requests reject. Removed the duplicate stuck-sensor rule in favor of main's latched uncertainty and cooling-aware detection. Frozen ranked manifests/results retain their original detector identity; regression checks verify changed rules refuse unsealing rather than rewriting that provenance. No new held-out run was performed. README/demo guide now include the 385-run allocation evidence and rank-dwell comparison. Earlier pending A1/A3/A4 notes above are superseded by this integration. B5 remains on hold.
 
 Validation: 197 backend tests passed against temporary databases; 18 frontend component tests, 4 history tests, runtime contract check, production build and 2 real-browser checks passed. Dependency audit found zero vulnerabilities. The existing frontend bundle-size warning remains. Publication requested by the user; no merge or hardware operation authorized by this update.
+
+
+### #19 ranked held-out v3 — 2026-10-10
+
+Ranked v2 could not be unsealed (frozen against a detector that changed before it ran). Froze `diag-bench-ranked-v3` (seeds 5000–5007) against the current detector, committed it, then unsealed it once. All fault families detected 8/8 with zero safety violations; top-1/top-3/MRR 1.0 on all 80 ranked cases; dropout and stuck-sensor abstention precision/recall 1.0 (8/8 each). Results in `backend/benchmarks/diagnosis/results/diagnosis_ranked_v3_heldout.{md,json}`; details in `docs/ISSUE_19_DELIVERY.md`. This supersedes the earlier "keep #19 open" notes. Synthetic, developer-held-out only.
+
+## Issue #26 configurable site profiles — 2026-10-10
+
+The active site is one validated JSON profile (`SITE_PROFILE`, default `backend/sites/default_campus.json`); `app/core/active_site.py` loads it once and every module derives its catalog from `CATALOG` (services, classrooms and appliances, hospital zones and equipment, LED bits, board A room letters, presets, protected T1 services). Validation is strict and lists every problem by asset before startup. `backend/sites/small_test_site.json` (4 services, 2 classrooms, 2 hospital zones) runs with no source edits. Snapshots, view identities and persisted decisions carry the profile's config hash. Real RFID UIDs go in the ignored `backend/sites/rfid_enrollment.local.json`. Details and limits: `docs/SITE_PROFILES.md`.
+
+## Main sync on issue #19 branch — 2026-10-10
+
+Merged `origin/main` into `codex/issue-19-ranked-evaluation` after the ranked v3 evaluation. The merge brings the configurable site profiles, appliance-level allocator and power-system `/demo` into the same branch as the held-out results. No unresolved paths or conflict markers remain; `git diff --check` passes. Full backend tests pass with a temporary `PRIORITYGRID_HISTORY_DB`: **395 passed, 2 skipped**. Frontend build and component tests passed during merge verification. No hardware checks or physical acceptance were run. Next: review the combined app in a browser, then continue the pending hardware A/B transport and catalog reconciliation work.

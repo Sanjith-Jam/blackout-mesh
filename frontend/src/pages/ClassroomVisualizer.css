@@ -47,8 +47,8 @@
 .classroom-demo__ml-actions { display: flex; flex-shrink: 0; gap: 8px; }
 .classroom-demo__ml-actions .classroom-demo__button { min-height: 38px; padding: 8px 12px; font-size: .82rem; }
 .classroom-demo__ml-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.classroom-demo__ml-card { padding: 12px; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); opacity: .72; }
-.classroom-demo__ml-card.is-scanned { border-color: var(--accent-primary); opacity: 1; }
+.classroom-demo__ml-card { padding: 12px; border: 1px dashed var(--surface-border); border-radius: var(--radius-sm); }
+.classroom-demo__ml-card.is-scanned { border-style: solid; border-color: var(--accent-primary); }
 .classroom-demo__ml-card header { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: .88rem; }
 .classroom-demo__ml-card header span { color: var(--text-muted); font-size: .78rem; font-weight: 650; }
 .classroom-demo__ml-card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 10px 0 8px; }

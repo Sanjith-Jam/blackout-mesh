@@ -28,24 +28,36 @@ from app.schemas.snapshot import (
     FeederChangeResponse,
     ActivityObservationRequest,
     ReplayActionRequest,
+    SiteScenarioRequest,
+    SiteScenarioResponse,
+    SiteScenariosResponse,
 )
-from app.core.state import GridState
+from app.core.state import CLASSROOMS, GridState
+from app.core.active_site import CATALOG
 from app.api.history import attach_history, register_history
 from app.api.demo import register_demo
+from app.api.power_system import register_power_system
 from app.forecast import DemandForecast
 from app.core.control_loop import ControlLoop
-from app.core.site import AuditUnavailable, SiteAuthority
+from app.core.site import SCENARIOS, AuditUnavailable, SiteAuthority
 from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.core.policy import AllocationPolicy
 from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
 from app.activity.model import FEATURES
 from app.visualizers import hospital_snapshot, CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
 
+# Request enums follow the active site profile (#26); the default campus keeps the published contract.
+CLASSROOM_IDS = tuple(c["id"] for c in CLASSROOMS)
+ClassroomId = Literal[CLASSROOM_IDS]
+HospitalZoneId = Literal[CATALOG.hospital_zones]
+CLASSROOM_ID_ERROR = f"classroom_id must be one of {', '.join(CLASSROOM_IDS)}"
+
+
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset",
                     "replay_pause", "replay_resume", "replay_step"]
-    classroom_id: Literal["CR1", "CR2", "CR3"] | None = None
+    classroom_id: ClassroomId | None = None
     capacity_w: StrictInt | None = None
     event_id: StrictStr | None = Field(default=None, min_length=1, max_length=128)
     observed_at: datetime | None = None
@@ -66,7 +78,7 @@ class HospitalDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     action: Literal["scan", "unscan", "set_capacity", "normal", "overload", "reset", "replay_pause", "replay_resume", "replay_step",
                     "inject_fault", "clear_fault"] | None = None
-    zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
+    zone_id: HospitalZoneId | None = None
     capacity_w: StrictInt | None = None
     fault: Literal["overload", "cooling_failure", "overload_cooling", "upstream_loss", "sensor_dropout", "stuck_sensor"] | None = None
     # Preserve the live scenario alias; rehearsals use isolated diagnostic fixtures.
@@ -101,7 +113,7 @@ class ConnectionManager:
 def load_replay():
     try:
         data = json.loads(REPLAY_PATH.read_text())
-        return {cid: rows for cid, rows in data.items() if cid in ("CR1", "CR2", "CR3") and isinstance(rows, list)}
+        return {cid: rows for cid, rows in data.items() if cid in CLASSROOM_IDS and isinstance(rows, list)}
     except (OSError, ValueError):
         return {}
 
@@ -173,8 +185,8 @@ def campus_snapshot(site, app=None):
 
 
 # ---- board A gateway (physical card reader, buttons, and board B's LEDs) ----
-ROOM_TO_CLASSROOM = {"A": "CR1", "B": "CR2", "C": "CR3"}
-CLASSROOM_LED_BIT = {"CR1": 3, "CR2": 4, "CR3": 5}
+ROOM_TO_CLASSROOM = {c["hardware_room"]: c["id"] for c in CLASSROOMS if c["hardware_room"]}
+CLASSROOM_LED_BIT = {c["id"]: c["led_bit"] for c in CLASSROOMS}
 
 
 def led_mask(classroom: dict) -> int:
@@ -425,8 +437,8 @@ async def act_hospital_demo(request: Request, req: HospitalDemoAction):
 async def post_activity_observation(request: Request, req: ActivityObservationRequest):
     grid = request.app.state.grid
     site = request.app.state.site
-    if req.classroom_id not in ("CR1", "CR2", "CR3"):
-        raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
+    if req.classroom_id not in CLASSROOM_IDS:
+        raise HTTPException(422, CLASSROOM_ID_ERROR)
     if req.source not in ("RECORDED_REPLAY", "SIMULATED"):
         raise HTTPException(422, "source must be RECORDED_REPLAY or SIMULATED")
     try:
@@ -474,7 +486,7 @@ async def replay_action(request: Request, req: ReplayActionRequest):
                 request.app.state.replay_task.cancel()
             grid.replay_index = 0
             grid.replay_running = False
-            for cid in ("CR1", "CR2", "CR3"):
+            for cid in CLASSROOM_IDS:
                 grid.set_classroom_load(cid, True)
                 grid.activity_tokens[cid] += 1
                 grid.activity_received_monotonic[cid] = None
@@ -487,7 +499,7 @@ async def replay_action(request: Request, req: ReplayActionRequest):
             request.app.state.replay_generation += 1
             grid.replay_running = False
         elif not grid.replay_running:
-            for cid in ("CR1", "CR2", "CR3"):
+            for cid in CLASSROOM_IDS:
                 grid.set_classroom_load(cid, True)
             grid.replay_running = True
             request.app.state.replay_generation += 1
@@ -531,8 +543,8 @@ async def change_capacity(request: Request, req: CapacityChangeRequest):
 async def change_classroom_load(request: Request, req: ClassroomLoadRequest):
     grid = request.app.state.grid
     site = request.app.state.site
-    if req.classroom_id not in ("CR1", "CR2", "CR3"):
-        raise HTTPException(422, "classroom_id must be CR1, CR2, or CR3")
+    if req.classroom_id not in CLASSROOM_IDS:
+        raise HTTPException(422, CLASSROOM_ID_ERROR)
     observed_at = session_event_time(req.observed_at)
     check_session_run(req.run_id, site, req.event_id, req.observed_at)
     try:
@@ -576,6 +588,27 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+def _site_scenarios(site):
+    scenarios = [{"name": name, **settings} for name, settings in SCENARIOS.items()]
+    return {"active": site.scenario, "scenarios": scenarios, "site": site.identity()}
+
+
+@router.get("/api/v1/site/scenarios", response_model=SiteScenariosResponse)
+async def read_site_scenarios(request: Request):
+    site = request.app.state.site
+    return site.read(lambda: _site_scenarios(site))[0]
+
+
+@router.post("/api/v1/site/scenario", response_model=SiteScenarioResponse)
+async def switch_site_scenario(request: Request, req: SiteScenarioRequest):
+    """Switch the whole site to a named scenario: one command, one revision on every route (#33)."""
+    site = request.app.state.site
+    if req.scenario not in SCENARIOS:
+        raise HTTPException(422, f"unknown scenario {req.scenario!r}; choose one of {sorted(SCENARIOS)}")
+    receipt = site.apply_scenario(req.scenario)
+    return {**site.read(lambda: _site_scenarios(site))[0], "command": receipt}
+
 
 @router.get("/api/v1/allocation/policy", response_model=AllocationPolicyResponse)
 async def read_allocation_policy(request: Request):
@@ -651,6 +684,7 @@ def create_app():
     application.include_router(router)
     application.include_router(register_history(lambda request: request.app.state.site))
     application.include_router(register_demo(campus_snapshot, hardware_status))
+    application.include_router(register_power_system(hardware_status))
     return application
 
 

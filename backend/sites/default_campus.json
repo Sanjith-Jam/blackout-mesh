@@ -1,6 +1,7 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "name": "Default Campus",
+  "fault_zone": "Theatre",
   "assets": [
     {
       "id": "SOURCE",
@@ -13,14 +14,16 @@
       "type": "feeder",
       "name": "Feeder A",
       "parent_id": "SOURCE",
-      "capacity_w": 6000
+      "capacity_w": 6000,
+      "shortage_preset_w": 4000
     },
     {
       "id": "B",
       "type": "feeder",
       "name": "Feeder B",
       "parent_id": "SOURCE",
-      "capacity_w": 8000
+      "capacity_w": 8000,
+      "shortage_preset_w": 3400
     },
     {
       "id": "L0",
@@ -102,21 +105,24 @@
       "type": "classroom",
       "name": "Classroom 1",
       "parent_id": "L3",
-      "led_bit": 3
+      "led_bit": 3,
+      "hardware_room": "A"
     },
     {
       "id": "CR2",
       "type": "classroom",
       "name": "Classroom 2",
       "parent_id": "L4",
-      "led_bit": 4
+      "led_bit": 4,
+      "hardware_room": "B"
     },
     {
       "id": "CR3",
       "type": "classroom",
       "name": "Classroom 3",
       "parent_id": "L5",
-      "led_bit": 5
+      "led_bit": 5,
+      "hardware_room": "C"
     },
     {
       "id": "L_CR1_lighting",
@@ -251,21 +257,159 @@
       "type": "transformer",
       "name": "Transformer 1",
       "zone": "ICU",
-      "rating_w": 100
+      "parent_id": "A",
+      "rated_current_a": 100.0
     },
     {
       "id": "TX2",
       "type": "transformer",
       "name": "Transformer 2",
       "zone": "Theatre",
-      "rating_w": 100
+      "parent_id": "A",
+      "rated_current_a": 100.0
     },
     {
       "id": "TX3",
       "type": "transformer",
       "name": "Transformer 3",
       "zone": "Wards",
-      "rating_w": 100
+      "parent_id": "A",
+      "rated_current_a": 100.0
+    },
+    {
+      "id": "L_TX1_ventilator",
+      "type": "load",
+      "name": "Ventilator",
+      "parent_id": "TX1",
+      "service_id": "L0",
+      "rating_w": 300,
+      "essential": true
+    },
+    {
+      "id": "L_TX1_monitor",
+      "type": "load",
+      "name": "Patient Monitor",
+      "parent_id": "TX1",
+      "service_id": "L0",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_TX1_infusion",
+      "type": "load",
+      "name": "Infusion Pump",
+      "parent_id": "TX1",
+      "service_id": "L0",
+      "rating_w": 50,
+      "essential": true
+    },
+    {
+      "id": "L_TX1_lights",
+      "type": "load",
+      "name": "Emergency Lights",
+      "parent_id": "TX1",
+      "service_id": "L1",
+      "rating_w": 200,
+      "essential": true
+    },
+    {
+      "id": "L_TX1_oxygen",
+      "type": "load",
+      "name": "O2 System",
+      "parent_id": "TX1",
+      "service_id": "L0",
+      "rating_w": 500,
+      "essential": true
+    },
+    {
+      "id": "L_TX2_surgical_light",
+      "type": "load",
+      "name": "Surgical Light",
+      "parent_id": "TX2",
+      "service_id": "L1",
+      "rating_w": 500,
+      "essential": true
+    },
+    {
+      "id": "L_TX2_anesthesia",
+      "type": "load",
+      "name": "Anesthesia Unit",
+      "parent_id": "TX2",
+      "service_id": "L0",
+      "rating_w": 200,
+      "essential": true
+    },
+    {
+      "id": "L_TX2_esu",
+      "type": "load",
+      "name": "Electrosurgical",
+      "parent_id": "TX2",
+      "service_id": "L0",
+      "rating_w": 650,
+      "essential": true
+    },
+    {
+      "id": "L_TX2_monitor",
+      "type": "load",
+      "name": "Vital Monitor",
+      "parent_id": "TX2",
+      "service_id": "L0",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_TX2_ac",
+      "type": "load",
+      "name": "Climate Control",
+      "parent_id": "TX2",
+      "service_id": "L2",
+      "rating_w": 900,
+      "essential": false
+    },
+    {
+      "id": "L_TX3_bed_lights",
+      "type": "load",
+      "name": "Bed Lights",
+      "parent_id": "TX3",
+      "service_id": "L1",
+      "rating_w": 300,
+      "essential": true
+    },
+    {
+      "id": "L_TX3_nurse_call",
+      "type": "load",
+      "name": "Nurse Call",
+      "parent_id": "TX3",
+      "service_id": "L0",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_TX3_fans",
+      "type": "load",
+      "name": "Ceiling Fans",
+      "parent_id": "TX3",
+      "service_id": "L2",
+      "rating_w": 300,
+      "essential": false
+    },
+    {
+      "id": "L_TX3_water_pump",
+      "type": "load",
+      "name": "Water Pump",
+      "parent_id": "TX3",
+      "service_id": "L2",
+      "rating_w": 600,
+      "essential": false
+    },
+    {
+      "id": "L_TX3_ac",
+      "type": "load",
+      "name": "Air Conditioning",
+      "parent_id": "TX3",
+      "service_id": "L2",
+      "rating_w": 1200,
+      "essential": false
     }
   ]
 }

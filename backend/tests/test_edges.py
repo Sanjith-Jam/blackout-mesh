@@ -54,7 +54,8 @@ def test_pending_restoration_is_not_shown_as_energized():
 def test_shed_edges_explain_why():
     snap = client.post("/api/v1/visualizers/classrooms", json={"action": "set_capacity", "capacity_w": 2500}).json()
     shed = [e for e in snap["edges"] if e["state"] == "SHED" and e["to"].count(".") == 1]
-    assert shed and all("did not fit" in e["reason"] for e in shed)
+    # The appliance-level optimizer names the binding constraint and the watts left under it.
+    assert shed and all("Shed: it needs" in e["reason"] and "W left" in e["reason"] for e in shed)
 
 
 def test_hospital_edges_keep_observed_voltage_separate_and_unknown_when_abstained():

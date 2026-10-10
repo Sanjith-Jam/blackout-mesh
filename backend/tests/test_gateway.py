@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 import app.main as main
 from app.hardware.gateway import GatewayBridge
 from app.visualizers import ClassroomDemo
+from app.core.appliance_control import ApplianceController
 
 
 class FakeBoardA:
@@ -96,6 +97,8 @@ def rig(monkeypatch):
     classroom.bind_sessions(APP.state.grid.active_sessions, APP.state.grid.set_classroom_load)
     APP.state.classroom_demo = classroom
     APP.state.site.classroom = classroom
+    # Restoration timing lives in the site's appliance-level controller; drive it with the same fake clock.
+    APP.state.site.appliances = ApplianceController(lambda: now[0])
     fake = FakeBoardA()
     bridge = GatewayBridge(fake, lambda action, room: main.handle_gateway_event(APP, action, room),
                            lambda: main.desired_led_mask(APP), clock=lambda: now[0], session_seed=lambda: 100)

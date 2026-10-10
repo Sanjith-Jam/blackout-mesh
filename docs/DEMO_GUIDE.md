@@ -2,7 +2,7 @@
 
 ## The software story
 
-Use `/demo` for the city story. All source, feeder A/hospital and feeder B/classroom panels come from one backend snapshot and carry the same revision. The illustrative city retains the six-service 14 kW model. It is not a city-scale power-flow study.
+Use `/demo` for the appliance-level power system (see `APPLIANCE_ALLOCATION.md`) and `/city` for the city story. All source, feeder A/hospital and feeder B/classroom panels come from one backend snapshot and carry the same revision. The illustrative city retains the six-service 14 kW model. It is not a city-scale power-flow study.
 
 1. **Request all rooms.** This creates observed session requests for CR1/CR2/CR3. It does not assign priority directly.
 2. **6 kW shortage.** Protective shedding is immediate. Each requested shed load gets its sentence from `allocation.explanation.decisions[].reason`; inspect More for additional detail.

@@ -1,7 +1,11 @@
-fastapi>=0.115.0
-uvicorn>=0.32.0
-pydantic>=2.9.0
-websockets
+# Backend runtime. Pinned after a clean install on CPython 3.14.6 (2026-10-10)
+# that passed the full backend suite; bump deliberately, not opportunistically.
+fastapi==0.143.0
+uvicorn==0.54.0
+pydantic==2.14.0
+websockets==17.2
 
 sqlmodel==0.0.48
-pyserial>=3.5
+pyserial==3.5
+# Appliance-level allocation (CP-SAT). Installed and tested on CPython 3.14.6 (2026-10-10).
+ortools==9.15.6755

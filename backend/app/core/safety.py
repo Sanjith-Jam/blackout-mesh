@@ -6,12 +6,12 @@ This is a modeled policy, not certified electrical protection; it cannot create 
 """
 from __future__ import annotations
 
+from app.core.active_site import CATALOG
+
 SAFETY_POLICY_VERSION = "safety-2026-10-10.1"
 
-# Campus six-service catalog: services that are protected whatever the activity model says.
-CAMPUS_PROTECTED_SERVICES = ("L0", "L1")
-# Each classroom's essential minimum, shared by the campus and classroom-demo catalogs.
-ROOM_ESSENTIAL_LOADS = ("lighting", "computers")
+# Services that are protected whatever the activity model says: the site profile's T1 hospital services.
+CAMPUS_PROTECTED_SERVICES = CATALOG.protected_services
 
 # Downgrading a room to INACTIVE needs this many consecutive INACTIVE readings.
 # Upgrades (to ACTIVE) and fallbacks (to UNKNOWN) apply at once: they never shed anything.
@@ -24,7 +24,7 @@ VALID_STATES = ("ACTIVE", "UNKNOWN", "INACTIVE")
 # evidence (failed inference, no score) skip the hold and fall back to UNKNOWN at once.
 RANK_DWELL_READINGS = 3
 
-FALLBACK_ORDER = ("hospital critical (L0, L1)", "classroom essentials in room rank order",
+FALLBACK_ORDER = (f"hospital critical ({', '.join(CAMPUS_PROTECTED_SERVICES)})", "classroom essentials in room rank order",
                   "optional loads in room rank order")
 
 

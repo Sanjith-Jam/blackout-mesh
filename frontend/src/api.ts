@@ -1,3 +1,4 @@
+import type { components } from './schema';
 import { 
   Snapshot, 
   HealthResponse, 
@@ -14,7 +15,7 @@ import {
   HospitalDemoFault,
   HardwareStatus
 } from './types';
-import type { CityDemoSnapshot, DemoEvidence, DemandForecast } from './types';
+import type { CityDemoSnapshot, DemoEvidence, DemandForecast, SiteScenarios, SiteScenarioSwitch } from './types';
 import type { HospitalDemoScenario, HospitalFaultSnapshot } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -100,6 +101,18 @@ export async function changeCapacity(capacity_w: number): Promise<CapacityChange
   });
 }
 
+export async function getSiteScenarios(): Promise<SiteScenarios> {
+  return fetchJson<SiteScenarios>('/api/v1/site/scenarios');
+}
+
+/** Switch every route to a named teaching scenario in one command (#33). */
+export async function switchSiteScenario(scenario: string): Promise<SiteScenarioSwitch> {
+  return fetchJson<SiteScenarioSwitch>('/api/v1/site/scenario', {
+    method: 'POST',
+    body: JSON.stringify({ scenario })
+  });
+}
+
 export async function changeClassroomLoad(classroom_id: string, active: boolean, run_id: string): Promise<ClassroomLoadResponse> {
   return fetchJson<ClassroomLoadResponse>('/api/v1/simulation/classroom-load', {
     method: 'POST',
@@ -145,4 +158,12 @@ export async function postHospitalDemo(action: HospitalDemoActionName, zone_id?:
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', {
     method: 'POST', body: JSON.stringify({ action, ...(zone_id ? { zone_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}), ...(fault ? { fault } : {}) })
   });
+}
+
+export async function getPowerSystem(signal?: AbortSignal): Promise<components['schemas']['PowerSystemResponse']> {
+  return fetchJson('/api/v1/power-system', { signal });
+}
+
+export async function requestAppliance(appliance_id: string, requested: boolean): Promise<components['schemas']['ApplianceRequestResponse']> {
+  return fetchJson('/api/v1/appliances/request', { method: 'POST', body: JSON.stringify({ appliance_id, requested }) });
 }
