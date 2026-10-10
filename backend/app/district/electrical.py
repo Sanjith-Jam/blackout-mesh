@@ -105,7 +105,8 @@ def build_model(topology, params: ElectricalParams, served_w: dict[str, int], st
     lines, transformers, component = [], [], {}
     for edge in topology["edges"]:
         state = states[edge["id"]]
-        status = int(state["closed"] and not state["faulted"])
+        # Use the planner's energized flag when present so both models share one reachability.
+        status = int(state.get("energized", state["closed"] and not state["faulted"]))
         left, right = nodes[edge["from"]], nodes[edge["to"]]
         if edge.get("component_type") == "DistributionTransformer":
             hv, lv = (left, right) if left["voltage_v"] > right["voltage_v"] else (right, left)
@@ -201,7 +202,7 @@ def check(topology, params: ElectricalParams | None, served_w: dict[str, int], s
     loadings = {"line": [], "transformer": []}
     losses = 0.0
     for kind in ("line", "transformer"):
-        for row in output[kind]:
+        for row in output.get(kind, []):
             if not row["energized"]:
                 continue
             loadings[kind].append(float(row["loading"]))

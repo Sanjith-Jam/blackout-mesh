@@ -5,10 +5,11 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from enum import StrEnum
+from typing import Literal
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
 
 from app.district.authority import DistrictAuthority
 
@@ -20,7 +21,25 @@ class DistrictActionName(StrEnum):
     apply_recovery = "apply_recovery"
     advance_hour = "advance_hour"
     transformer_scenario = "transformer_scenario"
+    record_observation = "record_observation"
     reset = "reset"
+
+
+class DistrictObservation(BaseModel):
+    """A sequenced causal health sample from the labeled simulated observation adapter."""
+    model_config = ConfigDict(extra="forbid", strict=True)
+    sequence: StrictInt = Field(ge=1, le=2**53)
+    observed_at: StrictStr = Field(min_length=20, max_length=40)
+    healthy: StrictBool
+    source: Literal["SIMULATED_OBSERVATION_ADAPTER"]
+
+    @field_validator("observed_at")
+    @classmethod
+    def utc_offset(cls, value):
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is None:
+            raise ValueError("observed_at requires a UTC offset")
+        return value
 
 
 class DistrictAction(BaseModel):
@@ -30,6 +49,7 @@ class DistrictAction(BaseModel):
     action: DistrictActionName = Field(strict=False)
     component_id: StrictStr | None = None
     fault_kind: StrictStr | None = None
+    observation: DistrictObservation | None = None
 
 
 class GenerationRequest(BaseModel):
@@ -345,6 +365,7 @@ async def _run_generation(district, python, script, body, run_id, task_id, revis
                 return
             district.profile.validate_topology(result)
             district.topology = result
+            district._reset_evidence()
             district.generation.update(status="GENERATED", cluster_count=body.cluster_count,
                 secondary_strategy=body.secondary_strategy, generated_at=datetime.now(timezone.utc).isoformat(),
                 reason=None)

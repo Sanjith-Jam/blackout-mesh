@@ -3235,6 +3235,16 @@
               }
             ],
             "title": "Fault Kind"
+          },
+          "observation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DistrictObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -3255,6 +3265,7 @@
           "apply_recovery",
           "advance_hour",
           "transformer_scenario",
+          "record_observation",
           "reset"
         ],
         "title": "DistrictActionName"
@@ -3885,6 +3896,41 @@
           "unmet_fraction_of_requested"
         ],
         "title": "DistrictNetworkEnergyInterval"
+      },
+      "DistrictObservation": {
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "maximum": 9007199254740992.0,
+            "minimum": 1.0,
+            "title": "Sequence"
+          },
+          "observed_at": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 20,
+            "title": "Observed At"
+          },
+          "healthy": {
+            "type": "boolean",
+            "title": "Healthy"
+          },
+          "source": {
+            "type": "string",
+            "const": "SIMULATED_OBSERVATION_ADAPTER",
+            "title": "Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sequence",
+          "observed_at",
+          "healthy",
+          "source"
+        ],
+        "title": "DistrictObservation",
+        "description": "A sequenced causal health sample from the labeled simulated observation adapter."
       },
       "DistrictPath": {
         "properties": {

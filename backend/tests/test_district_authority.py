@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 import copy
 import json
 from app.api.district import DistrictAction, DistrictActionName
@@ -72,7 +73,22 @@ def test_citylearn_demand_and_grid_import_balance_into_graph_load_state():
                for edge in faulted["edges"])
 
 
+def healthy_evidence(district):
+    """Two distinct sequenced healthy samples six seconds apart (simulated adapter)."""
+    from datetime import datetime, timedelta, timezone
+    from app.api.district import DistrictObservation
+    sequence, last = district.last_observation or (0, None)
+    start = last + timedelta(seconds=1) if last else datetime.now(timezone.utc)
+    for index in range(2):
+        at = start + timedelta(seconds=6 * index)
+        district.clock = lambda at=at: at
+        assert district.apply_action(DistrictAction(run_id="test", expected_revision=1, action="record_observation",
+            observation=DistrictObservation(sequence=sequence + index + 1, observed_at=at.isoformat(),
+                                            healthy=True, source="SIMULATED_OBSERVATION_ADAPTER")))
+
+
 def test_fault_disconnects_edges_and_recovery_waits_for_stable_evidence():
+    pytest.importorskip("power_grid_model")
     district = DistrictAuthority()
     district.hour = 0
     tie = next(edge for edge in district.topology["edges"] if edge["kind"] == "tie")
@@ -111,15 +127,13 @@ def test_fault_disconnects_edges_and_recovery_waits_for_stable_evidence():
     assert next(edge for edge in broken["state"]["edges"] if edge["id"] == fault_id)["energized"] is False
     assert district.apply_action(action(DistrictActionName.propose_recovery))
     assert not district.apply_action(action(DistrictActionName.apply_recovery))
-    for _ in range(2):
-        assert district.apply_action(action(DistrictActionName.advance_hour))
+    healthy_evidence(district)
     assert district.apply_action(action(DistrictActionName.apply_recovery))
     restored = district.snapshot()
     assert restored["state"]["restoration"]["applied_edge_id"] == tie["id"]
     assert all(load["served_w"] <= load["requested_w"] for load in restored["state"]["loads"])
     assert not district.apply_action(action(DistrictActionName.clear_fault, fault_id, "line_open"))
-    for _ in range(2):
-        assert district.apply_action(action(DistrictActionName.advance_hour))
+    healthy_evidence(district)
     assert district.apply_action(action(DistrictActionName.clear_fault, fault_id, "line_open"))
     assert district.snapshot()["state"]["faults"] == []
 

@@ -1090,12 +1090,13 @@ export interface components {
             component_id?: string | null;
             /** Fault Kind */
             fault_kind?: string | null;
+            observation?: components["schemas"]["DistrictObservation"] | null;
         };
         /**
          * DistrictActionName
          * @enum {string}
          */
-        DistrictActionName: "inject_fault" | "clear_fault" | "propose_recovery" | "apply_recovery" | "advance_hour" | "transformer_scenario" | "reset";
+        DistrictActionName: "inject_fault" | "clear_fault" | "propose_recovery" | "apply_recovery" | "advance_hour" | "transformer_scenario" | "record_observation" | "reset";
         /** DistrictAppliance */
         DistrictAppliance: {
             /** Id */
@@ -1318,6 +1319,23 @@ export interface components {
             unmet_wh: number;
             /** Unmet Fraction Of Requested */
             unmet_fraction_of_requested: number;
+        };
+        /**
+         * DistrictObservation
+         * @description A sequenced causal health sample from the labeled simulated observation adapter.
+         */
+        DistrictObservation: {
+            /** Sequence */
+            sequence: number;
+            /** Observed At */
+            observed_at: string;
+            /** Healthy */
+            healthy: boolean;
+            /**
+             * Source
+             * @constant
+             */
+            source: "SIMULATED_OBSERVATION_ADAPTER";
         };
         /** DistrictPath */
         DistrictPath: {

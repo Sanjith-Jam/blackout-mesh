@@ -16,13 +16,22 @@ def edge_states(topology, faults, closed_ties):
 
 
 def source_tree(topology, states):
-    """BFS from the first source over closed, unfaulted edges; returns (source, parent, parent_edge)."""
+    """BFS from the first source over closed, unfaulted edges; returns (source, parent, parent_edge).
+
+    Declared rule: transformers pass power HV->LV only, so an LV tie never back-feeds a dead
+    primary section (that would need an HV isolation/back-feed study this model lacks)."""
+    volts = {node["id"]: node.get("voltage_v") or 0 for node in topology["nodes"]}
     adjacency = {}
     for edge in topology["edges"]:
         state = states[edge["id"]]
         if state["closed"] and not state["faulted"]:
-            adjacency.setdefault(edge["from"], []).append((edge["to"], edge["id"]))
-            adjacency.setdefault(edge["to"], []).append((edge["from"], edge["id"]))
+            a, b = edge["from"], edge["to"]
+            if edge.get("component_type") == "DistributionTransformer":
+                hv, lv = (a, b) if volts[a] > volts[b] else (b, a)
+                adjacency.setdefault(hv, []).append((lv, edge["id"]))
+                continue
+            adjacency.setdefault(a, []).append((b, edge["id"]))
+            adjacency.setdefault(b, []).append((a, edge["id"]))
     sources = sorted(node["id"] for node in topology["nodes"] if node["role"] == "source")
     source = sources[0] if sources else None
     parent, parent_edge = ({source: None}, {}) if source else ({}, {})
@@ -102,3 +111,106 @@ def evaluate(topology, profile, energy_trace, hour, faults, closed_ties, *, sour
     mark(flows)
     return states, loads, {"solver": "integer weighted dispatch", "status": "MODEL_DERIVED",
                            "validation": "WATT_BUDGET_ONLY", "physical_confirmation": None}
+
+
+MAX_CONFIGS = 1024  # ponytail: exhaustive 2^ties enumeration; needs branch-and-bound for large districts
+OBJECTIVE = ("lexicographic: maximize served critical W, then served W (uniform weights), "
+             "then minimize switching actions, then prefer the lexicographically smallest tie-ID set")
+
+
+def critical_served_w(profile, loads):
+    if profile.demand_basis == "appliance_inventory":
+        return sum(item["served_w"] for load in loads for item in load["appliances"] if item["priority_class"] == "hospital_critical")
+    return sum(load["served_w"] for load in loads if load["tier"] == "critical")
+
+
+def config_problem(topology, faults, closed_ties):
+    """Return None when the configuration is permitted, else the rule it breaks."""
+    nodes = {node["id"]: node for node in topology["nodes"]}
+    edges = {edge["id"]: edge for edge in topology["edges"]}
+    for tie_id in sorted(closed_ties):
+        tie = edges.get(tie_id)
+        if tie is None or tie["kind"] != "tie":
+            return f"{tie_id} is not a declared tie"
+        if tie_id in faults:
+            return f"{tie_id} is known open or faulted"
+        if not tie.get("voltage_v") or nodes[tie["from"]]["voltage_v"] != tie["voltage_v"] or nodes[tie["to"]]["voltage_v"] != tie["voltage_v"]:
+            return f"{tie_id} joins incompatible voltages"
+    root = {node_id: node_id for node_id in nodes}
+
+    def find(node_id):
+        while root[node_id] != node_id:
+            root[node_id] = root[root[node_id]]
+            node_id = root[node_id]
+        return node_id
+    for edge_id, state in edge_states(topology, faults, closed_ties).items():
+        if state["closed"] and not state["faulted"]:
+            left, right = find(edges[edge_id]["from"]), find(edges[edge_id]["to"])
+            if left == right:
+                return f"closing {sorted(closed_ties)} creates a loop; radial operation is required"
+            root[left] = right
+    return None
+
+
+def switching_sequence(current, final):
+    """Break-before-make: open first, then close. Every intermediate set is a subset of a radial
+    final set (or of the current set), so each step is itself radial."""
+    return ([{"operation": "open", "edge_id": edge_id} for edge_id in sorted(current - final)]
+            + [{"operation": "close", "edge_id": edge_id} for edge_id in sorted(final - current)])
+
+
+def optimize(topology, profile, energy_trace, hour, faults, current, electrical_params, ac_check):
+    """Exhaustively rank permitted tie configurations, then AC-validate in rank order."""
+    import itertools
+    ties = sorted(edge["id"] for edge in topology["edges"] if edge["kind"] == "tie")
+    configs, truncated = [], False
+    for size in range(len(ties) + 1):
+        for combo in itertools.combinations(ties, size):
+            if len(configs) == MAX_CONFIGS:
+                truncated = True
+                break
+            configs.append(frozenset(combo))
+    ranked, refused = [], []
+    for config in configs:
+        problem = config_problem(topology, faults, config)
+        if problem:
+            refused.append({"edge_ids": sorted(config), "reason": problem})
+            continue
+        states, loads, _ = evaluate(topology, profile, energy_trace, hour, faults, config)
+        switches = len(config ^ current)
+        objective = {"critical_served_w": critical_served_w(profile, loads),
+                     "served_w": sum(load["served_w"] for load in loads), "switching_actions": switches}
+        ranked.append(((-objective["critical_served_w"], -objective["served_w"], switches, sorted(config)),
+                       config, objective, states, loads))
+    ranked.sort(key=lambda row: row[0])
+    evaluations, chosen = [], None
+    for index, (_, config, objective, states, loads) in enumerate(ranked):
+        served = {load["building_id"]: load["grid_served_w"] for load in loads}
+        ac = ac_check(topology, electrical_params, served, states, profile.source_capacity_w)
+        evaluations.append({"rank": index, "edge_ids": sorted(config), "objective": objective,
+                            "ac_status": ac["status"], "ac_reason": ac["reason"], "violations": ac["violations"]})
+        if ac["status"] == "PASSED":
+            chosen = (index, config, objective, ac)
+            break
+        if ac["status"] in ("UNAVAILABLE", "BLOCKED"):
+            break  # every configuration shares the engine and parameter set
+    baseline = next((row[2] for row in ranked if row[1] == current), None)
+    bound = ranked[0][2] if ranked else None
+    if chosen is None:
+        status = "UNVALIDATED" if evaluations and evaluations[-1]["ac_status"] in ("UNAVAILABLE", "BLOCKED") else "NO_VALIDATED_RECOVERY"
+    else:
+        # Rank 0 under the watt relaxation is an upper bound, so only it proves optimality; a
+        # rejected higher-ranked topology might admit another load decision that passes AC.
+        status = "OPTIMAL" if chosen[0] == 0 and not truncated else "FEASIBLE"
+    result = {"solver_status": status, "objective_definition": OBJECTIVE,
+              "load_semantics": ("binary appliances decided by CP-SAT" if profile.demand_basis == "appliance_inventory"
+                                 else "divisible aggregate loads, critical-first greedy"),
+              "configs_total": 2 ** len(ties), "configs_evaluated": len(configs), "truncated": truncated,
+              "refused_configs": refused, "evaluations": evaluations, "baseline_objective": baseline,
+              "bound_objective": bound, "candidate_edge_ids": None, "switching_sequence": [],
+              "objective": None, "ac": None}
+    if chosen:
+        _, config, objective, ac = chosen
+        result.update(objective=objective, ac=ac, candidate_edge_ids=sorted(config),
+                      switching_sequence=switching_sequence(current, config))
+    return result

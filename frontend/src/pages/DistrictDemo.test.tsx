@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { DistrictSnapshot } from '../types';
-import { clearFaultGate, generationTransitionFeedback, TransformerCutaway, transformerReading } from './DistrictDemo';
+import { clearFaultGate, generationTransitionFeedback, observationRequest, TransformerCutaway, transformerReading } from './DistrictDemo';
 
 const generationSnapshot = (status: string): DistrictSnapshot => ({
   generation: { status, reason: 'test result' },
@@ -18,14 +18,22 @@ describe('district study evidence views', () => {
       .toBe('Topology generation failed: test result');
   });
 
-  it('keeps fault clearing disabled until the current fault has two stable evidence intervals', () => {
-    expect(clearFaultGate('edge-1', ['edge-1'], 0)).toMatchObject({
+  it('keeps fault clearing disabled until the backend evidence gate is satisfied', () => {
+    expect(clearFaultGate('edge-1', ['edge-1'], false, 0, '2 samples over 5 s')).toMatchObject({
       enabled: false,
-      reason: expect.stringContaining('0 of 2'),
+      reason: expect.stringContaining('2 samples over 5 s; 0 healthy samples'),
     });
-    expect(clearFaultGate('edge-1', ['edge-1'], 1).enabled).toBe(false);
-    expect(clearFaultGate('edge-1', ['edge-1'], 2).enabled).toBe(true);
-    expect(clearFaultGate('edge-2', ['edge-1'], 2).enabled).toBe(false);
+    // Sample count alone never opens the gate; only the backend's dwell/freshness verdict does.
+    expect(clearFaultGate('edge-1', ['edge-1'], false, 5).enabled).toBe(false);
+    expect(clearFaultGate('edge-1', ['edge-1'], true, 2).enabled).toBe(true);
+    expect(clearFaultGate('edge-2', ['edge-1'], true, 2).enabled).toBe(false);
+  });
+
+  it('builds sequenced, timestamped simulated observations', () => {
+    const now = new Date('2026-10-10T12:00:00.000Z');
+    expect(observationRequest(null, true, now)).toEqual({ sequence: 1, observed_at: '2026-10-10T12:00:00.000Z',
+      healthy: true, source: 'SIMULATED_OBSERVATION_ADAPTER' });
+    expect(observationRequest(7, false, now).sequence).toBe(8);
   });
 
   it('shows an accessible synthetic transformer schematic and highlights only the diagnosed part', () => {

@@ -5,6 +5,7 @@ import type { DistrictActionName, DistrictSnapshot } from '../types';
 import DistrictMap, { type DistrictEdge, type DistrictEdgeState, type DistrictFeature, type DistrictNode } from './DistrictMap';
 import './DistrictDemo.css';
 import DistrictApplianceTrace from './DistrictApplianceTrace';
+import DistrictRecoveryProposal from './DistrictRecoveryProposal';
 
 const TABS = [
   { id: 'shift', label: 'SHIFT network' }, { id: 'energy', label: 'Energy' },
@@ -46,16 +47,20 @@ export function generationTransitionFeedback(previousStatus: string | undefined,
     ? generationMessage(snapshot) : null;
 }
 
-export function clearFaultGate(selectedEdgeId: string | null, faultedEdgeIds: string[], stableEvidenceCount: number) {
+export function clearFaultGate(selectedEdgeId: string | null, faultedEdgeIds: string[], evidenceReady: boolean, evidenceCount: number, rule = 'fresh healthy observations') {
   const isCurrentFault = selectedEdgeId !== null && faultedEdgeIds.includes(selectedEdgeId);
-  const evidence = Number.isFinite(stableEvidenceCount) ? Math.max(0, stableEvidenceCount) : 0;
+  const count = Number.isFinite(evidenceCount) ? Math.max(0, evidenceCount) : 0;
   return {
-    enabled: isCurrentFault && evidence >= 2,
+    enabled: isCurrentFault && evidenceReady,
     reason: !selectedEdgeId ? 'Select a currently faulted line to clear it.'
       : !isCurrentFault ? 'The selected line is not currently listed as faulted.'
-        : evidence < 2 ? `Clear fault requires 2 stable evidence intervals; ${evidence} of 2 recorded. Advance fault evidence to continue.`
-          : 'Two stable evidence intervals are recorded; this fault can be cleared in the modeled state.',
+        : !evidenceReady ? `Clear fault requires ${rule}; ${count} healthy sample${count === 1 ? '' : 's'} recorded. Record simulated observations to continue.`
+          : 'The evidence gate is satisfied; this fault can be cleared in the modeled state.',
   };
+}
+
+export function observationRequest(lastSequence: number | null | undefined, healthy: boolean, now = new Date()) {
+  return { sequence: (lastSequence ?? 0) + 1, observed_at: now.toISOString(), healthy, source: 'SIMULATED_OBSERVATION_ADAPTER' as const };
 }
 
 export function TransformerCutaway({ componentId, suspectedPart }: { componentId: string; suspectedPart: string | null }) {
@@ -131,8 +136,9 @@ export default function DistrictDemo() {
       setPending(false);
     }
   };
-  const action = (current: DistrictSnapshot, name: DistrictActionName, component_id?: string, fault_kind?: string) => districtAction({
+  const action = (current: DistrictSnapshot, name: DistrictActionName, component_id?: string, fault_kind?: string, healthy?: boolean) => districtAction({
     run_id: current.identity.run_id, expected_revision: current.identity.revision, action: name, component_id, fault_kind,
+    observation: healthy === undefined ? undefined : observationRequest(current.state.restoration.last_observation_sequence, healthy),
   });
 
   if (!snapshot) return <div className="district-page district-empty"><h1>{district.isError ? 'District study unavailable' : 'Loading GNITC district…'}</h1>
@@ -151,7 +157,8 @@ export default function DistrictDemo() {
   const selectedTransformer = snapshot.state.transformers.find(item => item.component_id === selectedNode?.id);
   const faultedEdges = snapshot.state.faults.map(fault => fault.component_id);
   const restoration = snapshot.state.restoration;
-  const clearFault = clearFaultGate(selectedEdge?.id || null, faultedEdges, Number(restoration.stable_evidence_count || 0));
+  const clearFault = clearFaultGate(selectedEdge?.id || null, faultedEdges, !!restoration.evidence_ready, Number(restoration.stable_evidence_count || 0), restoration.evidence_rule);
+  const proposalOpen = !!restoration.candidate_edge_id && !restoration.proposal_stale;
   const statusText = district.isError || district.isPlaceholderData ? 'Stale snapshot' : 'Backend snapshot';
   const disabled = pending || district.isError || district.isPlaceholderData;
   const tabsKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -201,16 +208,19 @@ export default function DistrictDemo() {
           <p>One-hour modeled network interval: {number(snapshot.energy.network_interval.served_wh, 'Wh')} served from {number(snapshot.energy.network_interval.requested_wh, 'Wh')} requested; {number(snapshot.energy.network_interval.grid_served_wh, 'Wh')} grid-routed, {number(snapshot.energy.network_interval.local_supply_wh, 'Wh')} allocated behind the meter, and {number(snapshot.energy.network_interval.unmet_wh, 'Wh')} unmet ({number(snapshot.energy.network_interval.unmet_fraction_of_requested * 100, '%')} of requested energy). Scheduled imports above are profile requests; only this interval's grid-served value is routed through the synthetic feeder model.</p>
           <div className="district-data-table"><table><caption>Profile hourly energy profile · imports are scheduled requests; W over each one-hour interval equals Wh</caption><thead><tr><th>Hour</th><th>Demand (W)</th><th>PV (W)</th><th>Baseline scheduled import (W)</th><th>Dispatch scheduled import (W)</th><th>Battery state (Wh)</th><th>Loss (Wh)</th></tr></thead><tbody>{snapshot.energy.profile.map(row => <tr key={row.hour} aria-current={row.hour === snapshot.energy.hour ? 'time' : undefined}><th>{row.hour}:00</th><td>{number(row.demand_w, 'W')}</td><td>{number(row.pv_w, 'W')}</td><td>{number(row.baseline_grid_w, 'W')}</td><td>{number(row.dispatch_grid_w, 'W')}</td><td>{number(row.battery_soc_wh, 'Wh')}</td><td>{number(row.loss_wh, 'Wh')}</td></tr>)}</tbody></table></div>
           <p>Import values are model output; a profile comparison is not a real-world savings claim.</p><div className="district-actions"><button disabled={disabled} onClick={() => void submit(current => action(current, 'advance_hour'), 'Advanced the simulated energy interval.')}>Advance one hour</button><button className="is-secondary" disabled={disabled} onClick={() => void submit(current => action(current, 'reset'), 'District simulation reset.')}>Reset simulation</button></div></>}
-        {tab === 'healing' && <><h2>Fault isolation and recovery</h2><p>Inject a line-open fault, propose a declared tie, and apply only after stable modeled evidence. Simulated state stays separate from physical confirmation.</p><p className="district-action-help">Priority tiers · {snapshot.state.loads[0]?.tier_provenance || 'provenance unavailable'}: {snapshot.state.loads[0]?.tier_rationale || 'Priority policy rationale unavailable.'}</p>
-          <div className="district-kpis"><Kpi label="Synthetic critical shortfall" value={number(snapshot.state.critical_shortfall_w, 'W')} /><Kpi label="Open faults" value={String(snapshot.state.faults.length)} /><Kpi label="Recovery proposal" value={String(restoration.candidate_edge_id || 'None')} /><Kpi label="Applied modeled tie" value={String(restoration.applied_edge_id || 'None')} /></div>
-          <p>Source capacity: {number(snapshot.state.source_capacity_w, 'W')} · {snapshot.state.source_capacity_provenance} · {snapshot.state.source_capacity_note}. {snapshot.state.source_available ? 'Available in model.' : 'Unavailable in model.'} Stable evidence: {String(restoration.stable_evidence_count ?? 0)}. {restoration.reason || ''}</p>
+        {tab === 'healing' && <><h2>Fault isolation and recovery</h2><p>Inject a line-open fault, propose the best permitted tie configuration, and apply only after fresh sequenced observations and AC revalidation. Simulated state stays separate from physical confirmation.</p><p className="district-action-help">Priority tiers · {snapshot.state.loads[0]?.tier_provenance || 'provenance unavailable'}: {snapshot.state.loads[0]?.tier_rationale || 'Priority policy rationale unavailable.'}</p>
+          <div className="district-kpis"><Kpi label="Synthetic critical shortfall" value={number(snapshot.state.critical_shortfall_w, 'W')} /><Kpi label="Open faults" value={String(snapshot.state.faults.length)} /><Kpi label="Recovery proposal" value={String(restoration.candidate_edge_id || 'None')} /><Kpi label="Applied modeled ties" value={restoration.applied_edge_ids?.join(', ') || 'None'} /></div>
+          <p>Source capacity: {number(snapshot.state.source_capacity_w, 'W')} · {snapshot.state.source_capacity_provenance} · {snapshot.state.source_capacity_note}. {snapshot.state.source_available ? 'Available in model.' : 'Unavailable in model.'} Evidence: {String(restoration.stable_evidence_count ?? 0)} healthy sample(s); rule: {restoration.evidence_rule || 'unknown'}; {restoration.evidence_ready ? 'satisfied' : 'not satisfied'}. {restoration.reason || ''}</p>
           <div className="district-actions"><button className="is-danger" disabled={disabled || !selectedEdge || selectedEdge.kind === 'tie' || !!selectedState?.faulted} onClick={() => selectedEdge && void submit(current => action(current, 'inject_fault', selectedEdge.id, 'line_open'), 'Simulated line fault injected; state recalculated.')}>Inject selected line fault</button>
             <button className="is-secondary" aria-describedby="clear-fault-help" disabled={disabled || !clearFault.enabled} onClick={() => selectedEdge && void submit(current => action(current, 'clear_fault', selectedEdge.id, 'line_open'), 'Simulated line fault cleared.')}>Clear selected fault</button>
-            <button className="is-secondary" disabled={disabled || !snapshot.state.faults.length || !!restoration.candidate_edge_id} onClick={() => void submit(current => action(current, 'propose_recovery'), updated => updated.state.restoration.candidate_edge_id ? `Recovery candidate ${updated.state.restoration.candidate_edge_id} proposed by the backend.` : `No recovery candidate: ${updated.state.restoration.reason || 'the backend found no feasible modeled tie.'}`)}>Propose recovery</button>
-            <button className="is-secondary" disabled={disabled || !snapshot.state.faults.length} onClick={() => void submit(current => action(current, 'advance_hour'), updated => updated.state.restoration.candidate_edge_id ? 'One simulated hour advanced; fresh evidence was recorded for the recovery candidate.' : 'One simulated hour advanced; fault evidence was refreshed. You can propose recovery again.')}>{restoration.candidate_edge_id ? 'Advance evidence interval' : 'Advance fault evidence'}</button>
-            <button disabled={disabled || !restoration.candidate_edge_id || Number(restoration.stable_evidence_count || 0) < 2} onClick={() => void submit(current => action(current, 'apply_recovery'), 'Recovery applied to modeled topology after stable evidence.')}>Apply safe proposal</button></div>
+            <button className="is-secondary" disabled={disabled || !snapshot.state.faults.length || proposalOpen} onClick={() => void submit(current => action(current, 'propose_recovery'), updated => updated.state.restoration.candidate_edge_id ? `Recovery candidate ${updated.state.restoration.candidate_edge_ids?.join(', ')} proposed (${updated.state.restoration.proposal?.solver_status}).` : `No recovery candidate: ${updated.state.restoration.reason || 'the backend found no validated configuration.'}`)}>Propose recovery</button>
+            <button className="is-secondary" disabled={disabled} onClick={() => void submit(current => action(current, 'record_observation', undefined, undefined, true), updated => `Simulated healthy observation #${updated.state.restoration.last_observation_sequence} recorded; ${updated.state.restoration.stable_evidence_count} counted.`)}>Record healthy observation</button>
+            <button className="is-secondary" disabled={disabled} onClick={() => void submit(current => action(current, 'record_observation', undefined, undefined, false), 'Simulated unhealthy observation recorded; the evidence gate was reset.')}>Record unhealthy observation</button>
+            <button disabled={disabled || !proposalOpen || !restoration.evidence_ready} onClick={() => void submit(current => action(current, 'apply_recovery'), 'Recovery applied to modeled topology after fresh evidence and AC revalidation.')}>Apply validated proposal</button></div>
+          <p className="district-action-help">Observations come from a labeled simulated adapter (timestamped, sequence-numbered). Advancing the hour is not evidence.</p>
           <p id="clear-fault-help" className="district-action-help" aria-live="polite">{clearFault.reason}</p>
-          <p className="district-feedback" role="status">{feedback || (restoration.candidate_edge_id ? `Candidate ${restoration.candidate_edge_id}; ${restoration.stable_evidence_count} stable evidence intervals recorded.` : 'Select a synthetic line on the map to inject a fault.')}</p>
+          <DistrictRecoveryProposal proposal={restoration.proposal} stale={!!restoration.proposal_stale} />
+          <p className="district-feedback" role="status">{feedback || (restoration.candidate_edge_id ? `Candidate ${restoration.candidate_edge_ids?.join(', ')}; ${restoration.stable_evidence_count} healthy observation(s) counted.` : 'Select a synthetic line on the map to inject a fault.')}</p>
           {snapshot.state.loads.map(load => <p className="district-load-row" key={load.building_id}>{load.building_id}: {number(load.served_w, 'W')} served of {number(load.requested_w, 'W')} gross demand · {load.tier}. Local supply {number(load.local_supply_w, 'W')}; routed grid service {number(load.grid_served_w, 'W')} of {number(load.grid_requested_w, 'W')} allocated; {number(load.unmet_w, 'W')} unmet. Demand: {load.demand_provenance}; local supply: {load.local_supply_provenance}, {load.local_supply_basis}, {load.local_supply_semantics}; grid service: {load.grid_service_provenance}; unmet: {load.unmet_provenance}.</p>)}</>}
         {tab === 'transformers' && <><h2>Transformer inspection</h2><p>{selectedTransformer ? `Selected synthetic transformer ${selectedTransformer.component_id}.` : 'Select a synthetic transformer on the map.'} Measurements are shown only when the snapshot includes evidence.</p>
           {selectedTransformer ? <><TransformerCutaway componentId={selectedTransformer.component_id} suspectedPart={selectedTransformer.diagnosis.status === 'SUSPECTED' ? selectedTransformer.diagnosis.suspected_part : null} />
