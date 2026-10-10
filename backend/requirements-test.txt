@@ -1,3 +1,4 @@
+# Backend test tools. starlette's TestClient now uses httpx2 (plain httpx is deprecated).
 -r requirements.txt
-pytest
-httpx2
+pytest==9.1.1
+httpx2==2.13.1
