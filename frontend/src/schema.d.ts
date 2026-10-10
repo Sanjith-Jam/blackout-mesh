@@ -619,7 +619,7 @@ export interface components {
         /** CommandReceipt */
         CommandReceipt: {
             /** Command Id */
-            command_id: number;
+            command_id: string;
             /** Name */
             name: string;
             /** Run Id */
@@ -944,6 +944,7 @@ export interface components {
         /** HealthResponse */
         HealthResponse: {
             control_loop: components["schemas"]["ControlLoopHealth"];
+            storage: components["schemas"]["StorageHealth"];
             /** Status */
             status: string;
             /** Application */
@@ -1441,6 +1442,16 @@ export interface components {
          * @enum {string}
          */
         SourceKind: "SIMULATED";
+        /** StorageHealth */
+        StorageHealth: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "HEALTHY" | "DEGRADED";
+            /** Degraded Reason */
+            degraded_reason?: string | null;
+        };
         /** SystemEvent */
         SystemEvent: {
             /** Event Id */

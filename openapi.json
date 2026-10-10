@@ -1894,7 +1894,7 @@
       "CommandReceipt": {
         "properties": {
           "command_id": {
-            "type": "integer",
+            "type": "string",
             "title": "Command Id"
           },
           "name": {
@@ -2761,6 +2761,9 @@
           "control_loop": {
             "$ref": "#/components/schemas/ControlLoopHealth"
           },
+          "storage": {
+            "$ref": "#/components/schemas/StorageHealth"
+          },
           "status": {
             "type": "string",
             "title": "Status"
@@ -2773,6 +2776,7 @@
         "type": "object",
         "required": [
           "control_loop",
+          "storage",
           "status",
           "application"
         ],
@@ -4268,6 +4272,34 @@
           "SIMULATED"
         ],
         "title": "SourceKind"
+      },
+      "StorageHealth": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "HEALTHY",
+              "DEGRADED"
+            ],
+            "title": "Status"
+          },
+          "degraded_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degraded Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "StorageHealth"
       },
       "SystemEvent": {
         "properties": {

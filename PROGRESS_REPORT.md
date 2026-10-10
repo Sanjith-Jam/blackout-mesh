@@ -223,3 +223,7 @@ Integrated durable server history and read-only playback with current `main` whi
 ## Issue #14 — generated API contract (2026-10-10)
 
 Implemented on the active follow-up branch. All HTTP operations now export request/success/error schemas; classroom, hospital, history, hardware, policy, and campus wire types are generated for TypeScript. Stable OpenAPI export, WebSocket envelope schema/runtime validation, malformed-message assertions, route coverage tests, and CI drift/build checks are included. Full backend suite: **153 passed**; frontend build and runtime contract tests pass. The browser DOM history test remains blocked by missing local `jsdom`; no hardware behavior was checked. See `docs/ISSUE_14_DELIVERY.md`.
+
+## Issue #12 — durable SQLite audit and recovery (2026-10-10)
+
+Completed on the active follow-up branch. Commands, decisions, transitions, incidents and ACKs survive restarts with UUID/revision identities. Duplicate simulated ACKs are idempotent; foreign run references are rejected; both state and replay-history databases have version tracking and integrity-checked online backup support. Storage failure is visible via health status. Raw RFID UIDs remain excluded. Physical ACKs remain disabled pending protocol provisioning. Verification and limitations: `docs/ISSUE_12_DELIVERY.md`.

@@ -5,18 +5,24 @@ carries the same run_id and revision. See docs/CATALOG_MIGRATION.md for the cata
 """
 from __future__ import annotations
 
-import itertools
 import logging
 import threading
 import uuid
+from datetime import datetime, timezone
+from sqlmodel import Session
 
-from app.core.state import CLASSROOMS, SERVICE_CATALOG
+from app.core.state import CLASSROOMS, SERVICE_CATALOG, site_profile
 from app.schemas.snapshot import SiteIdentityResponse
+from app.storage.models import Run
 from app.visualizers import LOADS as CLASSROOM_LEAVES
 
 CATALOG_VERSION = "site-catalog-2026-10-10.1"
 PROFILE = "campus"
 log = logging.getLogger(__name__)
+
+
+class AuditUnavailable(RuntimeError):
+    """A state-changing request cannot proceed without its command record."""
 
 # Classroom appliance leaves decompose these campus services (no double counting).
 CLASSROOM_PARENT = {c["id"]: c["service_id"] for c in CLASSROOMS}
@@ -54,7 +60,6 @@ class SiteAuthority:
         self.classroom = classroom
         self.hospital = hospital
         self._lock = threading.RLock()
-        self._commands = itertools.count(1)
         self.run_id = grid.run_id
         self.revision = 0
         self.last_command = None
@@ -82,23 +87,35 @@ class SiteAuthority:
                 snapshot.site = SiteIdentityResponse.model_validate(self.identity())
                 try:
                     self.grid.history.capture(snapshot, self.grid.history_inputs())
+                    self.grid.pending_command_identity = None
                 except Exception:
                     log.exception("History snapshot recording failed; live controller continues")
             return self.revision
 
-    def command(self, name: str, apply):
+    def command(self, name: str, apply, payload=None):
         """Apply one command, tick all parts, and return (result, receipt)."""
         with self._lock:
-            command_id = next(self._commands)
+            command_id = str(uuid.uuid4())
+            if not self.grid.save_command(name, payload or {}, command_id):
+                raise AuditUnavailable("Command audit storage is unavailable; no change was applied")
             result = apply()
             revision = self.tick()
             self.last_command = {"command_id": command_id, "name": name, "run_id": self.run_id,
                                  "applied_revision": revision}
             return result, dict(self.last_command)
 
-    def commit(self, name: str) -> dict:
+    def complete_command(self, receipt, name):
+        """Publish a delayed result under its already-persisted command identity."""
+        with self._lock:
+            self.grid.pending_command_identity = {"command_id": receipt["command_id"], "run_id": receipt["run_id"],
+                                                 "action": name, "revision": self.grid.control_revision}
+            revision = self.tick()
+            self.last_command = {**receipt, "applied_revision": revision}
+            return dict(self.last_command)
+
+    def commit(self, name: str, payload=None) -> dict:
         """For handlers that already applied their mutation: tick all parts and record the receipt."""
-        return self.command(name, lambda: None)[1]
+        return self.command(name, lambda: None, payload)[1]
 
     def read(self, project):
         """Run a read-only projection and the identity under one lock, so both describe one revision."""
@@ -114,6 +131,12 @@ class SiteAuthority:
     def new_run(self):
         with self._lock:
             self.run_id = uuid.uuid4().hex[:12]
+            self.grid.run_id = self.run_id
+            self.grid.pending_command_identity = None
+            with Session(self.grid.storage.engine) as session:
+                session.add(Run(site_id=site_profile.name, run_id=self.run_id,
+                                server_epoch=self.grid.server_epoch, started_at=datetime.now(timezone.utc)))
+                self.grid.storage.commit(session)
             self._sync_history_run()
             return self.run_id
 

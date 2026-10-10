@@ -4,6 +4,7 @@ from fastapi.encoders import jsonable_encoder
 import threading
 from sqlalchemy import Index, UniqueConstraint, delete
 from sqlmodel import SQLModel, Field, Session, create_engine, select
+from app.storage.db import backup_sqlite
 
 
 class HistoryRecord(SQLModel, table=True):
@@ -44,6 +45,11 @@ class HistoryStore:
         with self.engine.connect() as connection:
             connection.exec_driver_sql("PRAGMA journal_mode=WAL")
             connection.exec_driver_sql("PRAGMA busy_timeout=5000")
+            connection.exec_driver_sql('CREATE TABLE IF NOT EXISTS history_schema_migration (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)')
+            connection.exec_driver_sql("INSERT OR IGNORE INTO history_schema_migration(version, applied_at) VALUES (1, datetime('now'))")
+
+    def backup(self, path):
+        return backup_sqlite(self.engine, path, self.lock)
 
     def append(self, site, run, kind, record_id, timestamp, revision, payload):
         with self.lock, Session(self.engine) as session:

@@ -8,10 +8,10 @@ Incoming WebSocket data is checked at runtime for envelope type, timestamps, run
 
 Verification on 2026-10-10:
 
-- `PYTHONPATH=backend .venv-ml/bin/python -m pytest backend/tests -q --tb=short` — **153 passed**.
+- `PYTHONPATH=backend .venv-ml/bin/python -m pytest backend/tests -q --tb=short` — **157 passed**.
 - `npm run build` — passed; existing large-bundle warning remains.
 - `npm run test:contract` — passed.
 - Two independent OpenAPI exports compare equal; every HTTP operation has a JSON success schema and documented default error schema; required request bodies and the WebSocket envelope are checked by `backend/tests/test_openapi_contract.py`.
 - `git diff --check` — passed.
 
-The pre-existing `npm run test:history` still cannot start in this checkout because `jsdom` is missing from `frontend/node_modules`; it is declared in the package manifest and the new CI workflow installs from the lockfile. No browser-to-backend rehearsal or physical hardware test was performed. TypeScript generation provides compile-time API types; only WebSocket input gets client-side runtime validation.
+`npm run test:history` — **4 passed** after installing exact lockfile dependencies. No browser-to-backend rehearsal or physical hardware test was performed. TypeScript generation provides compile-time API types; only WebSocket input gets client-side runtime validation.

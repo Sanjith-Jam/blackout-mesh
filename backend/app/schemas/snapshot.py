@@ -235,6 +235,7 @@ class FeederChangeResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     control_loop: "ControlLoopHealth"
+    storage: "StorageHealth"
     status: str
     application: str
 
@@ -248,6 +249,11 @@ class ControlLoopHealth(BaseModel):
     last_error: Optional[str] = None
     last_tick_age_s: Optional[float] = None
     last_tick_at: Optional[datetime] = None
+
+
+class StorageHealth(BaseModel):
+    status: Literal["HEALTHY", "DEGRADED"]
+    degraded_reason: Optional[str] = None
 
 
 class APIErrorResponse(BaseModel):
@@ -264,7 +270,7 @@ class ModelStatusResponse(BaseModel):
 
 
 class CommandReceipt(BaseModel):
-    command_id: int
+    command_id: str
     name: str
     run_id: str
     applied_revision: int

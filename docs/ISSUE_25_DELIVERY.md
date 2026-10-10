@@ -1,7 +1,7 @@
 # Issue #25 delivery — 2026-10-10
 
 Implemented server-backed campus history and read-only recorded-decision playback.
-The original theme remains. No push or issue closure was performed.
+The original theme remains. PR #36 is merged. This delivery note preserves the original review evidence; the follow-up dependency checks are recorded below.
 
 ## Delivered
 - Indexed SQLModel/SQLite records scoped to campus/run, stable IDs/revisions,
@@ -95,9 +95,9 @@ Exact PowerShell commands, repository root:
 - npm.cmd run test:history --prefix frontend: 4 passed.
 - npm.cmd run build --prefix frontend: passed, existing large-bundle warning.
 
-#12's crash-atomic journal, the full #13 transport lifecycle, #14 generated contracts,
-real ACK association and causal re-execution remain outside the completed slice.
-Do not close #25 solely because the Git merge conflicts have been resolved.
+#12's durable audit and #14's generated contract have now been implemented on the
+active follow-up branch; their merge is still required before #25 is closed. The
+real ACK association and causal re-execution remain outside this completed slice.
 
 ## Integration against current main — 2026-10-10
 
@@ -128,3 +128,12 @@ recorded playback deterministically displays stored outputs and does not rerun t
 historical model or authorize what-if control. #12 and #14 remain dependency gates
 for closing #25; #13 is already closed. Keep issue #25 open until those gates and
 the frontend history test are verified.
+
+## Follow-up verification — 2026-10-10
+
+After installing from the committed lockfile, `npm run test:history` passes all 4
+DOM tests (pagination/backfill/reload, read-only playback, and cancellation when the
+run changes). The #12/#14 dependency implementations pass the full backend suite
+(157 tests), frontend production build, and contract tests. They still need to land
+on `main` before this issue's dependency gate is fully satisfied. No physical ACK
+or causal historical re-execution is claimed.

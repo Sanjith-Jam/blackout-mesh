@@ -45,7 +45,7 @@ class HistoryRecorder:
                                          "decision_id": decision_id,
                                          "applied_transition": {"modeled_mask": data["modeled_mask"],
                                                                 "proposed_mask": data["proposed_mask"]},
-                                         "command_identity": None, "validated_ack": None}})
+                                         "command_identity": inputs.get("command_identity"), "validated_ack": None}})
             self.signature = signature
             self.pending_events.clear()
         now = self.clock()
