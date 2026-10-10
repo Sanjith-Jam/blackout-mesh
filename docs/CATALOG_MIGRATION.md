@@ -108,5 +108,4 @@ The site identity's `scenario` names the active scenario, or `custom` after a bu
 
 ## Remaining migration
 
-- Feeder A is still decided as whole services by the campus allocator; the hospital view decides equipment within the watts it granted. Deriving L0–L2 from hospital leaves the same way was tried and backed out: the hospital view's own restoration gate then runs after the campus gate, and full recovery after a feeder A trip on `/demo` went from about 10 s to about 31 s. It needs one shared restoration gate first.
-- The feeder B budget comes from a whole-room campus solve over L3–L5, so the campus may shed L2 to make room for a classroom that the leaves then only partly fill.
+- Done (#58): one CP-SAT solve now decides every appliance on both feeders, with one shared restoration gate (one priority group per room per second). L0–L5 publish served watts from that decision, and full recovery after a feeder A trip on `/demo` takes about 10–15 s. See `APPLIANCE_ALLOCATION.md`. The notes above describe the earlier feeder B budget step.
