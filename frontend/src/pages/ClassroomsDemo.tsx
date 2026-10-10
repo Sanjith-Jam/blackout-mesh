@@ -58,7 +58,7 @@ export default function ClassroomsDemo() {
     unscan: `Ended ${classroomId}'s session.`,
     set_capacity: `Supply set to ${capacity?.toLocaleString()} W.`,
     normal: 'Full supply 8,000 W applied.',
-    overload: 'Overload preset 3,400 W applied.',
+    overload: 'Overload preset applied.',
     reset: 'Classroom demo reset.',
     replay_pause: 'Sensor replay paused.',
     replay_resume: 'Sensor replay resumed.',

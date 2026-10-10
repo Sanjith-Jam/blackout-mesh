@@ -12,7 +12,7 @@ test('city shortage, forecast warning and guided recovery use the real controlle
   await page.goto('/demo');
   await expect(page.getByRole('region', { name: 'City electrical grid' })).toBeVisible();
   await page.getByRole('button', { name: 'Request all rooms', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'All three classroom sessions requested.' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'All classroom sessions requested.' })).toBeVisible();
   const panels = ['Source power state', 'Hospital power state', 'Classroom power state'];
   const before = await page.getByRole('region', { name: panels[0], exact: true }).getAttribute('data-revision');
   await page.getByRole('button', { name: '6 kW shortage', exact: true }).click();
