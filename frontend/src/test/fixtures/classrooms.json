@@ -1,0 +1,596 @@
+{
+ "campus_limit_w": 8000,
+ "capacity_range_w": [
+  0,
+  8000
+ ],
+ "capacity_w": 3000,
+ "classroom_limit_w": 3000,
+ "command": {
+  "applied_revision": 5,
+  "command_id": "2cf0a45e-e18f-4540-8041-af5360929539",
+  "name": "classroom.set_capacity",
+  "run_id": "<volatile>"
+ },
+ "contract": {
+  "campus_totals": null,
+  "identity": {
+   "catalog_version": "1.0",
+   "config_hash": "e7cb835f",
+   "model_version": "uci-occ-logistic-2026-10-09",
+   "observation_time": "2026-10-10T00:48:43.678263+00:00",
+   "policy_version": "allocation-v1",
+   "run_id": "<volatile>",
+   "server_epoch": 1791593323,
+   "site_id": "Default Campus",
+   "state_revision": 5
+  },
+  "zone_totals": {}
+ },
+ "edges": [
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "SUPPLY",
+   "id": "classroom:SUPPLY>BUS",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Shared bus; 3,000 W available",
+   "requested_w": 8000,
+   "served_w": 3000,
+   "state": "ENERGIZED",
+   "to": "BUS",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "BUS",
+   "id": "classroom:BUS>CR1",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "1,000 W of this room's loads served",
+   "requested_w": 2000,
+   "served_w": 1000,
+   "state": "ENERGIZED",
+   "to": "CR1",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR1",
+   "id": "classroom:CR1>lighting",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Lighting: served (protected essential)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "CR1.lighting",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR1",
+   "id": "classroom:CR1>computers",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Computers: served (protected essential)",
+   "requested_w": 600,
+   "served_w": 600,
+   "state": "ENERGIZED",
+   "to": "CR1.computers",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR1",
+   "id": "classroom:CR1>fans",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Fans: served (optional)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "CR1.fans",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR1",
+   "id": "classroom:CR1>projector",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Projector: served (optional)",
+   "requested_w": 200,
+   "served_w": 200,
+   "state": "ENERGIZED",
+   "to": "CR1.projector",
+   "unit": "W"
+  },
+  {
+   "applied": false,
+   "commanded": false,
+   "connected": true,
+   "from": "CR1",
+   "id": "classroom:CR1>ac",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Air conditioning: shed by the allocator; 1,000 W did not fit in the 600 W left after higher-priority loads",
+   "requested_w": 1000,
+   "served_w": 0,
+   "state": "SHED",
+   "to": "CR1.ac",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "BUS",
+   "id": "classroom:BUS>CR2",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "1,000 W of this room's loads served",
+   "requested_w": 2000,
+   "served_w": 1000,
+   "state": "ENERGIZED",
+   "to": "CR2",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR2",
+   "id": "classroom:CR2>lighting",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Lighting: served (protected essential)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "CR2.lighting",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR2",
+   "id": "classroom:CR2>computers",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Computers: served (protected essential)",
+   "requested_w": 600,
+   "served_w": 600,
+   "state": "ENERGIZED",
+   "to": "CR2.computers",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR2",
+   "id": "classroom:CR2>fans",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Fans: served (optional)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "CR2.fans",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR2",
+   "id": "classroom:CR2>projector",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Projector: served (optional)",
+   "requested_w": 200,
+   "served_w": 200,
+   "state": "ENERGIZED",
+   "to": "CR2.projector",
+   "unit": "W"
+  },
+  {
+   "applied": false,
+   "commanded": false,
+   "connected": true,
+   "from": "CR2",
+   "id": "classroom:CR2>ac",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Air conditioning: shed by the allocator; 1,000 W did not fit in the 300 W left after higher-priority loads",
+   "requested_w": 1000,
+   "served_w": 0,
+   "state": "SHED",
+   "to": "CR2.ac",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "BUS",
+   "id": "classroom:BUS>CR3",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "1,000 W of this room's loads served",
+   "requested_w": 4000,
+   "served_w": 1000,
+   "state": "ENERGIZED",
+   "to": "CR3",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR3",
+   "id": "classroom:CR3>lighting",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Lighting: served (protected essential)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "CR3.lighting",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR3",
+   "id": "classroom:CR3>computers",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Computers: served (protected essential)",
+   "requested_w": 600,
+   "served_w": 600,
+   "state": "ENERGIZED",
+   "to": "CR3.computers",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR3",
+   "id": "classroom:CR3>fans",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Fans: served (optional)",
+   "requested_w": 100,
+   "served_w": 100,
+   "state": "ENERGIZED",
+   "to": "CR3.fans",
+   "unit": "W"
+  },
+  {
+   "applied": true,
+   "commanded": true,
+   "connected": true,
+   "from": "CR3",
+   "id": "classroom:CR3>projector",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Projector: served (optional)",
+   "requested_w": 200,
+   "served_w": 200,
+   "state": "ENERGIZED",
+   "to": "CR3.projector",
+   "unit": "W"
+  },
+  {
+   "applied": false,
+   "commanded": false,
+   "connected": true,
+   "from": "CR3",
+   "id": "classroom:CR3>ac",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Air conditioning: shed by the allocator; 1,000 W did not fit in the 0 W left after higher-priority loads",
+   "requested_w": 1000,
+   "served_w": 0,
+   "state": "SHED",
+   "to": "CR3.ac",
+   "unit": "W"
+  },
+  {
+   "applied": false,
+   "commanded": false,
+   "connected": true,
+   "from": "CR3",
+   "id": "classroom:CR3>instruments",
+   "observed": null,
+   "physical": "NOT_CONNECTED",
+   "provenance": "MODELED",
+   "reason": "Instruments: shed by the allocator; 2,000 W did not fit in the 0 W left after higher-priority loads",
+   "requested_w": 2000,
+   "served_w": 0,
+   "state": "SHED",
+   "to": "CR3.instruments",
+   "unit": "W"
+  }
+ ],
+ "effective_capacity_w": 3000,
+ "generated_at": "<volatile>",
+ "hardware": null,
+ "limited_by": "classroom limit",
+ "mode": "SIMULATED",
+ "model": {
+  "fallback_reason": null,
+  "model_version": "uci-occ-logistic-2026-10-09",
+  "ready": true
+ },
+ "policy": "Classroom-only: lighting and computers in every room are protected and served first, whatever the model says. Scanned rooms' other equipment next, ranked by the activity model (ACTIVE, then UNKNOWN, then INACTIVE; earlier scan first within a state). INACTIVE counts only after 2 consecutive readings. Unscanned rooms' optional loads last. Safety policy safety-2026-10-10.1.",
+ "priority_order": [
+  "CR1",
+  "CR2"
+ ],
+ "published_revision": 6,
+ "replay": {
+  "index": 0,
+  "length": 40,
+  "running": false,
+  "step_s": 5.0
+ },
+ "requested_w": 8000,
+ "rooms": [
+  {
+   "activity": {
+    "evidence": {
+     "co2_ppm": 472.0,
+     "humidity_pct": 26.7,
+     "humidity_ratio": 0.00371272675749,
+     "temperature_c": 19.39
+    },
+    "guard": "INACTIVE not yet confirmed (1/2 readings); treated as UNKNOWN",
+    "model_version": "uci-occ-logistic-2026-10-09",
+    "raw_state": "INACTIVE",
+    "reason": "local environmental occupancy estimate",
+    "score": 0.04693895498965297,
+    "state": "UNKNOWN"
+   },
+   "id": "CR1",
+   "loads": [
+    {
+     "essential": true,
+     "id": "lighting",
+     "name": "Lighting",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 100
+    },
+    {
+     "essential": true,
+     "id": "computers",
+     "name": "Computers",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 600
+    },
+    {
+     "essential": false,
+     "id": "fans",
+     "name": "Fans",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 100
+    },
+    {
+     "essential": false,
+     "id": "projector",
+     "name": "Projector",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 200
+    },
+    {
+     "essential": false,
+     "id": "ac",
+     "name": "Air conditioning",
+     "reason": "Shed by classroom demo policy",
+     "served": false,
+     "watts": 1000
+    }
+   ],
+   "name": "Classroom 1",
+   "priority_rank": 1,
+   "rfid_active": true
+  },
+  {
+   "activity": {
+    "evidence": {
+     "co2_ppm": 471.333333333333,
+     "humidity_pct": 26.6666666666667,
+     "humidity_ratio": 0.00370806401061887,
+     "temperature_c": 19.39
+    },
+    "guard": "INACTIVE not yet confirmed (1/2 readings); treated as UNKNOWN",
+    "model_version": "uci-occ-logistic-2026-10-09",
+    "raw_state": "INACTIVE",
+    "reason": "local environmental occupancy estimate",
+    "score": 0.04677656007477929,
+    "state": "UNKNOWN"
+   },
+   "id": "CR2",
+   "loads": [
+    {
+     "essential": true,
+     "id": "lighting",
+     "name": "Lighting",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 100
+    },
+    {
+     "essential": true,
+     "id": "computers",
+     "name": "Computers",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 600
+    },
+    {
+     "essential": false,
+     "id": "fans",
+     "name": "Fans",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 100
+    },
+    {
+     "essential": false,
+     "id": "projector",
+     "name": "Projector",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 200
+    },
+    {
+     "essential": false,
+     "id": "ac",
+     "name": "Air conditioning",
+     "reason": "Shed by classroom demo policy",
+     "served": false,
+     "watts": 1000
+    }
+   ],
+   "name": "Classroom 2",
+   "priority_rank": 2,
+   "rfid_active": true
+  },
+  {
+   "activity": {
+    "evidence": {
+     "co2_ppm": 463.5,
+     "humidity_pct": 26.84,
+     "humidity_ratio": 0.00373231105323758,
+     "temperature_c": 19.39
+    },
+    "guard": "INACTIVE not yet confirmed (1/2 readings); treated as UNKNOWN",
+    "model_version": "uci-occ-logistic-2026-10-09",
+    "raw_state": "INACTIVE",
+    "reason": "local environmental occupancy estimate",
+    "score": 0.04002151872109167,
+    "state": "UNKNOWN"
+   },
+   "id": "CR3",
+   "loads": [
+    {
+     "essential": true,
+     "id": "lighting",
+     "name": "Lighting",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 100
+    },
+    {
+     "essential": true,
+     "id": "computers",
+     "name": "Computers",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 600
+    },
+    {
+     "essential": false,
+     "id": "fans",
+     "name": "Fans",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 100
+    },
+    {
+     "essential": false,
+     "id": "projector",
+     "name": "Projector",
+     "reason": "served by classroom demo",
+     "served": true,
+     "watts": 200
+    },
+    {
+     "essential": false,
+     "id": "ac",
+     "name": "Air conditioning",
+     "reason": "Shed by classroom demo policy",
+     "served": false,
+     "watts": 1000
+    },
+    {
+     "essential": false,
+     "id": "instruments",
+     "name": "Instruments",
+     "reason": "Shed by classroom demo policy",
+     "served": false,
+     "watts": 2000
+    }
+   ],
+   "name": "Classroom 3",
+   "priority_rank": null,
+   "rfid_active": false
+  }
+ ],
+ "safety": {
+  "fallback_order": [
+   "hospital critical (L0, L1)",
+   "classroom essentials in room rank order",
+   "optional loads in room rank order"
+  ],
+  "policy_version": "safety-2026-10-10.1",
+  "protected_requested_w": 2100,
+  "protected_served_w": 2100,
+  "protected_shortfall_w": 0,
+  "status": "FEASIBLE"
+ },
+ "scanned_classroom_ids": [
+  "CR1",
+  "CR2"
+ ],
+ "selected_classroom_id": "CR2",
+ "served_w": 3000,
+ "shortfall_w": 5000,
+ "site": {
+  "catalog_version": "site-catalog-2026-10-10.1",
+  "profile": "campus",
+  "revision": 5,
+  "run_id": "<volatile>"
+ }
+}

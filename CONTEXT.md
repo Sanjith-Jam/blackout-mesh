@@ -78,3 +78,7 @@ Implemented on `codex/remaining-open-issues`: typed every HTTP route, exported s
 ## Issue #12 SQLite audit completion — 2026-10-10
 
 On `codex/remaining-open-issues`, completed durable command/event/decision/incident/ACK history: site command UUIDs are stored and returned in receipts, decisions reference the command, ACK keys deduplicate retries, and run-linked records reject orphan writes. Added v1 SQLite migration tracking, visibly degraded health, verified online backups for both databases, and restart/backup/retention coverage. Raw RFID UIDs stay out of audit payloads. Physical ACKs remain rejected until a verified protocol exists. See [docs/ISSUE_12_DELIVERY.md](docs/ISSUE_12_DELIVERY.md).
+
+## Issue #16 frontend tests — in progress
+
+Kept the shared live-state socket and server-history flow from `main`; integrated useful WIP fixtures and component tests without duplicating the socket implementation. Added tests for both facility visualizers and power-edge states, automated accessibility scans, API-shape fixture checks, and Playwright route navigation. Local tests pass; the issue remains open pending CI and any remaining acceptance gaps.

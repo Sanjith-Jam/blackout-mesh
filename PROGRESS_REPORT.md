@@ -227,3 +227,7 @@ Implemented on the active follow-up branch. All HTTP operations now export reque
 ## Issue #12 — durable SQLite audit and recovery (2026-10-10)
 
 Completed on the active follow-up branch. Commands, decisions, transitions, incidents and ACKs survive restarts with UUID/revision identities. Duplicate simulated ACKs are idempotent; foreign run references are rejected; both state and replay-history databases have version tracking and integrity-checked online backup support. Storage failure is visible via health status. Raw RFID UIDs remain excluded. Physical ACKs remain disabled pending protocol provisioning. Verification and limitations: `docs/ISSUE_12_DELIVERY.md`.
+
+## Issue #16 frontend regression coverage (in progress)
+
+Integrated useful tests from the preserved `issue-16-frontend-tests` branch while keeping the current shared WebSocket/history architecture; its obsolete duplicate socket implementation was not restored. Added Vitest coverage for both facility visualizers and evidence-backed power edges, automated axe checks, generated API-shape fixture checks, and a Playwright navigation test for the separate classroom and hospital routes. Local checks pass (15 component tests, one browser test); issue closure is pending CI and remaining acceptance review.
