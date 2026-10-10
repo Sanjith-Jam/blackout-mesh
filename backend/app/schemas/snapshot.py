@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, StrictStr, StrictFloat, StrictInt, StrictBool
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 from datetime import datetime
 
 class HardwareLinkStatus(str, Enum):
@@ -17,6 +17,8 @@ class Tier(str, Enum):
     T3 = "T3"
 
 class SourceInfo(BaseModel):
+    model: Literal["watt_budget"] = "watt_budget"
+    limitations: str = "Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics"
     kind: SourceKind
     capacity_w: int
 
@@ -40,7 +42,6 @@ class RfidEventType(str, Enum):
     CARD_RECOGNIZED = "CARD_RECOGNIZED"
     UNKNOWN_CARD = "UNKNOWN_CARD"
     DUPLICATE_SUPPRESSED = "DUPLICATE_SUPPRESSED"
-    SESSION_ENDED = "SESSION_ENDED"
 
 class HospitalRoom(BaseModel):
     id: str
@@ -74,24 +75,14 @@ class SystemEvent(BaseModel):
     type: str
     description: str
 
-
-class Hypothesis(BaseModel):
-    code: str
-    cause: str
-    asset_id: Optional[str] = None
-    supporting_evidence: List[str]
-    contradicting_evidence: List[str]
-    time_window: str
-    sufficiency: str
-    score: float
+class FaultDiagnosis(BaseModel):
+    has_fault: bool
+    diagnosis: str
     severity: str
-    recommendation: str
-
-class RankedDiagnosis(BaseModel):
-    is_fault: bool
-    hypotheses: List[Hypothesis]
-    abstention_reason: Optional[str] = None
-
+    status: str  # NORMAL | FAULT_DETECTED | ALARM | ABSTAINED (telemetry-derived, #4/#19)
+    hypotheses: List[Dict[str, object]] = Field(default_factory=list)
+    affected_assets: List[str] = Field(default_factory=list)
+    supply_constraint: Optional[str] = None  # configured limit, never fault evidence
 
 class ScopeTotals(BaseModel):
     capacity_w: Optional[int] = None
@@ -116,9 +107,10 @@ class CrossRouteContract(BaseModel):
 
 class SystemSnapshot(BaseModel):
     contract: CrossRouteContract
-    control_revision: int
     config_hash: str = ""
+    control_revision: int
     generated_at: datetime
+    published_revision: int = 0
     source: SourceInfo
     feeder_limits_w: Dict[str, int]
     requested_mask: int
@@ -131,11 +123,13 @@ class SystemSnapshot(BaseModel):
     services: List[ServiceSnapshot]
     zones: Optional[FacilityZones] = None
     events: List[SystemEvent] = []
-    fault_diagnosis: Optional[RankedDiagnosis] = None
+    fault_diagnosis: Optional[FaultDiagnosis] = None
     activity: Dict[str, "ActivitySnapshot"] = Field(default_factory=dict)
     model: Dict[str, object] = Field(default_factory=dict)
     replay: "ReplaySnapshot"
     allocation: "AllocationSnapshot"
+    site: Optional[Dict[str, object]] = None
+    edges: List[Dict[str, object]] = Field(default_factory=list)  # canonical power paths (#23)
 
 
 class ActivityObservationRequest(BaseModel):
@@ -158,6 +152,8 @@ class ActivitySnapshot(BaseModel):
     model_version: str
     priority: str
     evidence: Optional[Dict[str, Optional[float]]] = None
+    raw_state: Optional[str] = None
+    guard: Optional[str] = None
 
 
 class ReplaySnapshot(BaseModel):
@@ -166,11 +162,22 @@ class ReplaySnapshot(BaseModel):
     length: int
 
 
+class SafetySnapshot(BaseModel):
+    policy_version: str
+    status: str
+    protected_requested_w: int
+    protected_served_w: int
+    protected_shortfall_w: int
+    fallback_order: List[str]
+
+
 class AllocationSnapshot(BaseModel):
+    explanation: dict = Field(default_factory=dict)
     objective: str
     critical_shortfall_w: int
     served_w: int
     baseline_mask: int
+    safety: Optional[SafetySnapshot] = None
 
 
 class ReplayActionRequest(BaseModel):
@@ -195,7 +202,6 @@ class CapacityChangeResponse(BaseModel):
     accepted: bool
     new_capacity_w: int
     control_revision: int
-    config_hash: str = ""
 
 class ClassroomLoadRequest(BaseModel):
     classroom_id: StrictStr
@@ -215,10 +221,10 @@ class FeederChangeResponse(BaseModel):
     feeder: str
     available: bool
     control_revision: int
-    config_hash: str = ""
 
 
 class HealthResponse(BaseModel):
+    control_loop: dict = Field(default_factory=dict)
     status: str
     application: str
 
@@ -232,6 +238,7 @@ class ModelStatusResponse(BaseModel):
     fallback_reason: Optional[str] = None
 
 class ClassroomDemoLoad(BaseModel):
+    model_config = ConfigDict(extra="allow")
     id: str
     name: str
     watts: int
@@ -240,12 +247,14 @@ class ClassroomDemoLoad(BaseModel):
     reason: str
 
 class ClassroomDemoRoom(BaseModel):
+    model_config = ConfigDict(extra="allow")
     id: str
     name: str
     rfid_active: bool
     loads: List[ClassroomDemoLoad]
 
 class ClassroomDemoSnapshot(BaseModel):
+    model_config = ConfigDict(extra="allow")
     contract: CrossRouteContract
     capacity_w: int
     requested_w: int
@@ -264,14 +273,16 @@ class HospitalDemoSensors(BaseModel):
     cooling_ok: Optional[bool] = None
 
 class HospitalDemoDiagnosis(BaseModel):
+    model_config = ConfigDict(extra="allow")
     code: str
     cause: str
     severity: str
     evidence: List[str]
     recommendation: str
-    hypotheses: List[Hypothesis]
+    hypotheses: List[Dict[str, object]]
 
 class HospitalDemoTransformer(BaseModel):
+    model_config = ConfigDict(extra="allow")
     id: str
     name: str
     zone: str
@@ -281,6 +292,7 @@ class HospitalDemoTransformer(BaseModel):
     energized: bool
 
 class HospitalDemoSnapshot(BaseModel):
+    model_config = ConfigDict(extra="allow")
     contract: CrossRouteContract
     mode: str
     transformers: List[HospitalDemoTransformer]
@@ -298,6 +310,7 @@ class ReplayActionResponse(BaseModel):
     length: int
 
 class WebSocketMessageEnvelope(BaseModel):
+    sent_at: datetime
     type: str
     payload: SystemSnapshot
 

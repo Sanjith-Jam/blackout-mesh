@@ -36,7 +36,7 @@ class SiteProfile(BaseModel):
     version: str
     name: str
     assets: List[Asset]
-    
+
     @model_validator(mode='after')
     def validate_topology(self):
         assets = self.assets
@@ -45,7 +45,7 @@ class SiteProfile(BaseModel):
             if a.id in asset_dict:
                 raise ValueError(f"Duplicate Asset ID: {a.id}")
             asset_dict[a.id] = a
-        
+
         # Dangling IDs and connectivity
         for asset in assets:
             if asset.parent_id is not None:
@@ -61,7 +61,7 @@ class SiteProfile(BaseModel):
                     raise ValueError(f"Cycle detected involving asset {curr.id}")
                 visited.add(curr.id)
                 curr = asset_dict[curr.parent_id]
-        
+
         return self
 
 class RfidEnrollment(BaseModel):

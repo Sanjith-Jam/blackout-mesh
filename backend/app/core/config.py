@@ -40,7 +40,7 @@ class SiteProfile(BaseModel):
     version: str
     name: str
     assets: List[Asset]
-    
+
     @model_validator(mode='after')
     def validate_topology(self):
         assets = self.assets
@@ -49,13 +49,13 @@ class SiteProfile(BaseModel):
             if a.id in asset_dict:
                 raise ValueError(f"Duplicate Asset ID: {a.id}")
             asset_dict[a.id] = a
-        
+
         # Dangling IDs and connectivity
         for asset in assets:
             if asset.parent_id is not None:
                 if asset.parent_id not in asset_dict:
                     raise ValueError(f"Dangling parent_id: {asset.parent_id} for asset {asset.id}")
-                
+
         # Check for cycles
         for asset in assets:
             visited = set()
@@ -74,7 +74,7 @@ class SiteProfile(BaseModel):
                 if asset.type == AssetType.TRANSFORMER: continue # Transformers don't add to electrical loads in this demo
                 if asset.type == AssetType.HOSPITAL_ROOM: continue # Hospital rooms don't define wattage
                 parent_totals[asset.parent_id] = parent_totals.get(asset.parent_id, 0) + val
-                
+
         for pid, total in parent_totals.items():
             parent = asset_dict[pid]
             limit = parent.capacity_w or parent.rating_w

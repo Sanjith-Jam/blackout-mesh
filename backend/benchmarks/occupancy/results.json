@@ -1,0 +1,2948 @@
+{
+  "status": "EXPLORATORY_ONLY; campus generalization unvalidated",
+  "adopted": false,
+  "dataset_sha256": "4ae3f46aa98eedff564a9f6924d1635173e2fd2c816004342a9be93076d3a81a",
+  "protocol_sha256": "fce8f8c9545fe327b051ba8e9aba2122932ab25265c482a6da8284a542e3d009",
+  "baseline_artifact_sha256_unchanged": "b552641e908e6c1011c61223401f6e527d9d87aebc247025cf4812c1243efdf9",
+  "features": [
+    "temperature_c",
+    "humidity_pct",
+    "co2_ppm",
+    "humidity_ratio"
+  ],
+  "light_experiment_features": [
+    "temperature_c",
+    "humidity_pct",
+    "co2_ppm",
+    "humidity_ratio",
+    "Light"
+  ],
+  "source_rows": 20560,
+  "deduplicated_rows": 20560,
+  "duplicates_removed": 0,
+  "excluded_tail_days": [
+    "2015-02-18"
+  ],
+  "folds": [
+    {
+      "split": {
+        "train": {
+          "days": [
+            "2015-02-02",
+            "2015-02-03",
+            "2015-02-04",
+            "2015-02-05",
+            "2015-02-06",
+            "2015-02-07"
+          ],
+          "n": 7354,
+          "row_ids_sha256": "054f49943f424f24f35a3bf5afb25e85ac559a119efc6c91e90a1cf736d2241d"
+        },
+        "validation": {
+          "days": [
+            "2015-02-08",
+            "2015-02-09"
+          ],
+          "n": 2880,
+          "row_ids_sha256": "55227b500107c65077a0991fcc9904bb92e00ed58725337105c30d2f84308417"
+        },
+        "evaluation": {
+          "days": [
+            "2015-02-10",
+            "2015-02-11"
+          ],
+          "n": 1126,
+          "row_ids_sha256": "c579e2cc747c1bbb8fac43377eba4f230ba69bbc8a057b6dbbad4936787e7655"
+        }
+      },
+      "models": {
+        "logistic": {
+          "operating_point": {
+            "decision_threshold": 0.5,
+            "abstain_margin": 0.15
+          },
+          "validation_gate_passed": true,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                852,
+                6,
+                0
+              ],
+              [
+                205,
+                63,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.631852236366031,
+            "macro_f1_all_rows_unknown_as_error": 0.631852236366031,
+            "accuracy_covered": 0.8126110124333925,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.23507462686567165,
+            "false_inactive_count": 205,
+            "false_inactive_rate_of_occupied": 0.7649253731343284,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.1873889875666075
+          },
+          "artifact_bytes": 1489,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.169833,
+            "p95_ms": 0.19571239999999995
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.17600949999999999,
+            "p95_ms": 0.20870239999999998
+          },
+          "metrics": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                850,
+                6,
+                2
+              ],
+              [
+                121,
+                49,
+                98
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.6830213464696223,
+            "macro_f1_all_rows_unknown_as_error": 0.6164376141524492,
+            "accuracy_covered": 0.8762183235867447,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.1828358208955224,
+            "false_inactive_count": 121,
+            "false_inactive_rate_of_occupied": 0.45149253731343286,
+            "unknown_count": 100,
+            "unknown_rate": 0.08880994671403197,
+            "coverage": 0.911190053285968,
+            "selective_risk": 0.12378167641325533
+          },
+          "per_day": {
+            "2015-02-10": {
+              "n": 574,
+              "occupied": 54,
+              "unoccupied": 520,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  520,
+                  0,
+                  0
+                ],
+                [
+                  54,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.4753199268738574,
+              "macro_f1_all_rows_unknown_as_error": 0.4753199268738574,
+              "accuracy_covered": 0.9059233449477352,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 54,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.09407665505226481
+            },
+            "2015-02-11": {
+              "n": 552,
+              "occupied": 214,
+              "unoccupied": 338,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  330,
+                  6,
+                  2
+                ],
+                [
+                  67,
+                  49,
+                  98
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.736754346074372,
+              "macro_f1_all_rows_unknown_as_error": 0.631135725665731,
+              "accuracy_covered": 0.838495575221239,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.22897196261682243,
+              "false_inactive_count": 67,
+              "false_inactive_rate_of_occupied": 0.3130841121495327,
+              "unknown_count": 100,
+              "unknown_rate": 0.18115942028985507,
+              "coverage": 0.8188405797101449,
+              "selective_risk": 0.16150442477876104
+            }
+          }
+        },
+        "tree": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                792,
+                66,
+                0
+              ],
+              [
+                263,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4287586718416301,
+            "macro_f1_all_rows_unknown_as_error": 0.4287586718416301,
+            "accuracy_covered": 0.7078152753108348,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.018656716417910446,
+            "false_inactive_count": 263,
+            "false_inactive_rate_of_occupied": 0.9813432835820896,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.29218472468916523
+          },
+          "artifact_bytes": 8441,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.052523,
+            "p95_ms": 0.06393109999999999
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.054066,
+            "p95_ms": 0.059393699999999994
+          },
+          "metrics": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                858
+              ],
+              [
+                0,
+                0,
+                268
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 1126,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-10": {
+              "n": 574,
+              "occupied": 54,
+              "unoccupied": 520,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  520
+                ],
+                [
+                  0,
+                  0,
+                  54
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 574,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-11": {
+              "n": 552,
+              "occupied": 214,
+              "unoccupied": 338,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  338
+                ],
+                [
+                  0,
+                  0,
+                  214
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 552,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "logistic_light_experiment": {
+          "operating_point": {
+            "decision_threshold": 0.5,
+            "abstain_margin": 0.15
+          },
+          "validation_gate_passed": true,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                851,
+                7,
+                0
+              ],
+              [
+                1,
+                267,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.9902807449127122,
+            "macro_f1_all_rows_unknown_as_error": 0.9902807449127122,
+            "accuracy_covered": 0.9928952042628775,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.996268656716418,
+            "false_inactive_count": 1,
+            "false_inactive_rate_of_occupied": 0.0037313432835820895,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.007104795737122527
+          },
+          "artifact_bytes": 1505,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.18885800000000003,
+            "p95_ms": 0.19800189999999998
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.16693750000000002,
+            "p95_ms": 0.17786395
+          },
+          "metrics": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                850,
+                7,
+                1
+              ],
+              [
+                1,
+                267,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.9902780058245547,
+            "macro_f1_all_rows_unknown_as_error": 0.989986807416348,
+            "accuracy_covered": 0.9928888888888889,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.996268656716418,
+            "false_inactive_count": 1,
+            "false_inactive_rate_of_occupied": 0.0037313432835820895,
+            "unknown_count": 1,
+            "unknown_rate": 0.0008880994671403197,
+            "coverage": 0.9991119005328597,
+            "selective_risk": 0.007111111111111068
+          },
+          "per_day": {
+            "2015-02-10": {
+              "n": 574,
+              "occupied": 54,
+              "unoccupied": 520,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  517,
+                  2,
+                  1
+                ],
+                [
+                  0,
+                  54,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.9899438399438399,
+              "macro_f1_all_rows_unknown_as_error": 0.9894626106776541,
+              "accuracy_covered": 0.9965095986038395,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 1.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1,
+              "unknown_rate": 0.0017421602787456446,
+              "coverage": 0.9982578397212544,
+              "selective_risk": 0.003490401396160525
+            },
+            "2015-02-11": {
+              "n": 552,
+              "occupied": 214,
+              "unoccupied": 338,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  333,
+                  5,
+                  0
+                ],
+                [
+                  1,
+                  213,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.9885912698412699,
+              "macro_f1_all_rows_unknown_as_error": 0.9885912698412699,
+              "accuracy_covered": 0.9891304347826086,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.9953271028037384,
+              "false_inactive_count": 1,
+              "false_inactive_rate_of_occupied": 0.004672897196261682,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.010869565217391353
+            }
+          }
+        },
+        "majority": {
+          "metrics": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                858,
+                0,
+                0
+              ],
+              [
+                268,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4324596774193548,
+            "macro_f1_all_rows_unknown_as_error": 0.4324596774193548,
+            "accuracy_covered": 0.7619893428063943,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 268,
+            "false_inactive_rate_of_occupied": 1.0,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.2380106571936057
+          },
+          "per_day": {
+            "2015-02-10": {
+              "n": 574,
+              "occupied": 54,
+              "unoccupied": 520,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  520,
+                  0,
+                  0
+                ],
+                [
+                  54,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.4753199268738574,
+              "macro_f1_all_rows_unknown_as_error": 0.4753199268738574,
+              "accuracy_covered": 0.9059233449477352,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 54,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.09407665505226481
+            },
+            "2015-02-11": {
+              "n": 552,
+              "occupied": 214,
+              "unoccupied": 338,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  338,
+                  0,
+                  0
+                ],
+                [
+                  214,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.3797752808988764,
+              "macro_f1_all_rows_unknown_as_error": 0.3797752808988764,
+              "accuracy_covered": 0.6123188405797102,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 214,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.3876811594202898
+            }
+          }
+        },
+        "co2_rule": {
+          "metrics": {
+            "n": 1126,
+            "occupied": 268,
+            "unoccupied": 858,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                853,
+                5,
+                0
+              ],
+              [
+                232,
+                36,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.5555166917338317,
+            "macro_f1_all_rows_unknown_as_error": 0.5555166917338317,
+            "accuracy_covered": 0.7895204262877442,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.13432835820895522,
+            "false_inactive_count": 232,
+            "false_inactive_rate_of_occupied": 0.8656716417910447,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.21047957371225579
+          },
+          "per_day": {
+            "2015-02-10": {
+              "n": 574,
+              "occupied": 54,
+              "unoccupied": 520,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  520,
+                  0,
+                  0
+                ],
+                [
+                  54,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.4753199268738574,
+              "macro_f1_all_rows_unknown_as_error": 0.4753199268738574,
+              "accuracy_covered": 0.9059233449477352,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 54,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.09407665505226481
+            },
+            "2015-02-11": {
+              "n": 552,
+              "occupied": 214,
+              "unoccupied": 338,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  333,
+                  5,
+                  0
+                ],
+                [
+                  178,
+                  36,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.5334026189981294,
+              "macro_f1_all_rows_unknown_as_error": 0.5334026189981294,
+              "accuracy_covered": 0.6684782608695652,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.16822429906542055,
+              "false_inactive_count": 178,
+              "false_inactive_rate_of_occupied": 0.8317757009345794,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.3315217391304348
+            }
+          }
+        }
+      },
+      "train_feature_mean": [
+        21.18115707680992,
+        23.175819563698248,
+        625.2285945776199,
+        0.0036202429164252986
+      ],
+      "evaluation_feature_mean": [
+        20.766257178804004,
+        31.37628263765538,
+        552.4543738898756,
+        0.004756082579368354
+      ]
+    },
+    {
+      "split": {
+        "train": {
+          "days": [
+            "2015-02-02",
+            "2015-02-03",
+            "2015-02-04",
+            "2015-02-05",
+            "2015-02-06",
+            "2015-02-07",
+            "2015-02-08",
+            "2015-02-09"
+          ],
+          "n": 10234,
+          "row_ids_sha256": "0b82efbe1d815b80893dfc36d23eef86f2b4af219c0f3a4511d0069a2b55d728"
+        },
+        "validation": {
+          "days": [
+            "2015-02-10",
+            "2015-02-11"
+          ],
+          "n": 1126,
+          "row_ids_sha256": "c579e2cc747c1bbb8fac43377eba4f230ba69bbc8a057b6dbbad4936787e7655"
+        },
+        "evaluation": {
+          "days": [
+            "2015-02-12",
+            "2015-02-13"
+          ],
+          "n": 2880,
+          "row_ids_sha256": "cf89999a8672d09735c970bf1260d1878143036b18b94bb8e8b014cae33a32dd"
+        }
+      },
+      "models": {
+        "logistic": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                1897,
+                245,
+                0
+              ],
+              [
+                592,
+                146,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.5389487298119368,
+            "macro_f1_all_rows_unknown_as_error": 0.5389487298119368,
+            "accuracy_covered": 0.709375,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.1978319783197832,
+            "false_inactive_count": 592,
+            "false_inactive_rate_of_occupied": 0.8021680216802168,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.290625
+          },
+          "artifact_bytes": 1489,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.1891735,
+            "p95_ms": 0.19862955
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.19262,
+            "p95_ms": 0.2001106
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                2142
+              ],
+              [
+                0,
+                0,
+                738
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 2880,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-12": {
+              "n": 1440,
+              "occupied": 244,
+              "unoccupied": 1196,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  1196
+                ],
+                [
+                  0,
+                  0,
+                  244
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-13": {
+              "n": 1440,
+              "occupied": 494,
+              "unoccupied": 946,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  946
+                ],
+                [
+                  0,
+                  0,
+                  494
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "tree": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                1234,
+                908,
+                0
+              ],
+              [
+                419,
+                319,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4875056573032013,
+            "macro_f1_all_rows_unknown_as_error": 0.4875056573032013,
+            "accuracy_covered": 0.5392361111111111,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.43224932249322495,
+            "false_inactive_count": 419,
+            "false_inactive_rate_of_occupied": 0.5677506775067751,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.46076388888888886
+          },
+          "artifact_bytes": 8281,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.052318,
+            "p95_ms": 0.05621014999999999
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.054251,
+            "p95_ms": 0.06577474999999999
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                2142
+              ],
+              [
+                0,
+                0,
+                738
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 2880,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-12": {
+              "n": 1440,
+              "occupied": 244,
+              "unoccupied": 1196,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  1196
+                ],
+                [
+                  0,
+                  0,
+                  244
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-13": {
+              "n": 1440,
+              "occupied": 494,
+              "unoccupied": 946,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  946
+                ],
+                [
+                  0,
+                  0,
+                  494
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "logistic_light_experiment": {
+          "operating_point": {
+            "decision_threshold": 0.5,
+            "abstain_margin": 0
+          },
+          "validation_gate_passed": true,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2117,
+                25,
+                0
+              ],
+              [
+                10,
+                728,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.9841635901141211,
+            "macro_f1_all_rows_unknown_as_error": 0.9841635901141211,
+            "accuracy_covered": 0.9878472222222222,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.986449864498645,
+            "false_inactive_count": 10,
+            "false_inactive_rate_of_occupied": 0.013550135501355014,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.01215277777777779
+          },
+          "artifact_bytes": 1505,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.190481,
+            "p95_ms": 0.19872694999999999
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.1984915,
+            "p95_ms": 0.20480455
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2117,
+                25,
+                0
+              ],
+              [
+                10,
+                728,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.9841635901141211,
+            "macro_f1_all_rows_unknown_as_error": 0.9841635901141211,
+            "accuracy_covered": 0.9878472222222222,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.986449864498645,
+            "false_inactive_count": 10,
+            "false_inactive_rate_of_occupied": 0.013550135501355014,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.01215277777777779
+          },
+          "per_day": {
+            "2015-02-12": {
+              "n": 1440,
+              "occupied": 244,
+              "unoccupied": 1196,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1189,
+                  7,
+                  0
+                ],
+                [
+                  6,
+                  238,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.9839890386495369,
+              "macro_f1_all_rows_unknown_as_error": 0.9839890386495369,
+              "accuracy_covered": 0.9909722222222223,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.9754098360655737,
+              "false_inactive_count": 6,
+              "false_inactive_rate_of_occupied": 0.02459016393442623,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.009027777777777746
+            },
+            "2015-02-13": {
+              "n": 1440,
+              "occupied": 494,
+              "unoccupied": 946,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  928,
+                  18,
+                  0
+                ],
+                [
+                  4,
+                  490,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.9831646610931492,
+              "macro_f1_all_rows_unknown_as_error": 0.9831646610931492,
+              "accuracy_covered": 0.9847222222222223,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.9919028340080972,
+              "false_inactive_count": 4,
+              "false_inactive_rate_of_occupied": 0.008097165991902834,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.015277777777777724
+            }
+          }
+        },
+        "majority": {
+          "metrics": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2142,
+                0,
+                0
+              ],
+              [
+                738,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4265232974910394,
+            "macro_f1_all_rows_unknown_as_error": 0.4265232974910394,
+            "accuracy_covered": 0.74375,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 738,
+            "false_inactive_rate_of_occupied": 1.0,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.25625
+          },
+          "per_day": {
+            "2015-02-12": {
+              "n": 1440,
+              "occupied": 244,
+              "unoccupied": 1196,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1196,
+                  0,
+                  0
+                ],
+                [
+                  244,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.4537177541729894,
+              "macro_f1_all_rows_unknown_as_error": 0.4537177541729894,
+              "accuracy_covered": 0.8305555555555556,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 244,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.1694444444444444
+            },
+            "2015-02-13": {
+              "n": 1440,
+              "occupied": 494,
+              "unoccupied": 946,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  946,
+                  0,
+                  0
+                ],
+                [
+                  494,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.3964794635373009,
+              "macro_f1_all_rows_unknown_as_error": 0.3964794635373009,
+              "accuracy_covered": 0.6569444444444444,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 494,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.34305555555555556
+            }
+          }
+        },
+        "co2_rule": {
+          "metrics": {
+            "n": 2880,
+            "occupied": 738,
+            "unoccupied": 2142,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2137,
+                5,
+                0
+              ],
+              [
+                697,
+                41,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.48175733315834374,
+            "macro_f1_all_rows_unknown_as_error": 0.48175733315834374,
+            "accuracy_covered": 0.75625,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.05555555555555555,
+            "false_inactive_count": 697,
+            "false_inactive_rate_of_occupied": 0.9444444444444444,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.24375000000000002
+          },
+          "per_day": {
+            "2015-02-12": {
+              "n": 1440,
+              "occupied": 244,
+              "unoccupied": 1196,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1191,
+                  5,
+                  0
+                ],
+                [
+                  203,
+                  41,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.6012248701903875,
+              "macro_f1_all_rows_unknown_as_error": 0.6012248701903875,
+              "accuracy_covered": 0.8555555555555555,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.1680327868852459,
+              "false_inactive_count": 203,
+              "false_inactive_rate_of_occupied": 0.8319672131147541,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.1444444444444445
+            },
+            "2015-02-13": {
+              "n": 1440,
+              "occupied": 494,
+              "unoccupied": 946,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  946,
+                  0,
+                  0
+                ],
+                [
+                  494,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.3964794635373009,
+              "macro_f1_all_rows_unknown_as_error": 0.3964794635373009,
+              "accuracy_covered": 0.6569444444444444,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 494,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.34305555555555556
+            }
+          }
+        }
+      },
+      "train_feature_mean": [
+        20.8500573717879,
+        25.217290647656306,
+        643.1384772513666,
+        0.003848155732249718
+      ],
+      "evaluation_feature_mean": [
+        21.651987731481352,
+        26.379414814814435,
+        603.8400057870364,
+        0.004221344662922024
+      ]
+    },
+    {
+      "split": {
+        "train": {
+          "days": [
+            "2015-02-02",
+            "2015-02-03",
+            "2015-02-04",
+            "2015-02-05",
+            "2015-02-06",
+            "2015-02-07",
+            "2015-02-08",
+            "2015-02-09",
+            "2015-02-10",
+            "2015-02-11"
+          ],
+          "n": 11360,
+          "row_ids_sha256": "5d6201c263b47ee7b2c9a60481109eb0e45938a0ac706aaf71e54436095181d5"
+        },
+        "validation": {
+          "days": [
+            "2015-02-12",
+            "2015-02-13"
+          ],
+          "n": 2880,
+          "row_ids_sha256": "cf89999a8672d09735c970bf1260d1878143036b18b94bb8e8b014cae33a32dd"
+        },
+        "evaluation": {
+          "days": [
+            "2015-02-14",
+            "2015-02-15"
+          ],
+          "n": 2880,
+          "row_ids_sha256": "cf4ff61dba7163a05a4b8945d9de2d549e72c4c8710736605910eb6b460bd422"
+        }
+      },
+      "models": {
+        "logistic": {
+          "operating_point": {
+            "decision_threshold": 0.15,
+            "abstain_margin": 0
+          },
+          "validation_gate_passed": true,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2880,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 1.0,
+            "macro_f1_all_rows_unknown_as_error": 0.5,
+            "accuracy_covered": 1.0,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.0
+          },
+          "artifact_bytes": 1489,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.1872555,
+            "p95_ms": 0.1969881
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.16636099999999998,
+            "p95_ms": 0.17610215
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                1928,
+                952,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.40099833610648916,
+            "macro_f1_all_rows_unknown_as_error": 0.40099833610648916,
+            "accuracy_covered": 0.6694444444444444,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.3305555555555556
+          },
+          "per_day": {
+            "2015-02-14": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1440,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 1.0,
+              "macro_f1_all_rows_unknown_as_error": 0.5,
+              "accuracy_covered": 1.0,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.0
+            },
+            "2015-02-15": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  488,
+                  952,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.25311203319502074,
+              "macro_f1_all_rows_unknown_as_error": 0.25311203319502074,
+              "accuracy_covered": 0.3388888888888889,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.6611111111111111
+            }
+          }
+        },
+        "tree": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                731,
+                2149,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.2024369980614788,
+            "macro_f1_all_rows_unknown_as_error": 0.2024369980614788,
+            "accuracy_covered": 0.25381944444444443,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.7461805555555556
+          },
+          "artifact_bytes": 7641,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.051847000000000004,
+            "p95_ms": 0.058473349999999986
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.053404999999999994,
+            "p95_ms": 0.058551299999999994
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                2880
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 2880,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-14": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  1440
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-15": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  1440
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "logistic_light_experiment": {
+          "operating_point": {
+            "decision_threshold": 0.24,
+            "abstain_margin": 0.05
+          },
+          "validation_gate_passed": true,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2849,
+                31,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4972944667481236,
+            "macro_f1_all_rows_unknown_as_error": 0.4972944667481236,
+            "accuracy_covered": 0.9892361111111111,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.010763888888888906
+          },
+          "artifact_bytes": 1505,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.1713855,
+            "p95_ms": 0.20290154999999999
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.168265,
+            "p95_ms": 0.18414394999999997
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2783,
+                60,
+                37
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4946676146462851,
+            "macro_f1_all_rows_unknown_as_error": 0.4914356348225322,
+            "accuracy_covered": 0.9788955328877946,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 37,
+            "unknown_rate": 0.012847222222222222,
+            "coverage": 0.9871527777777778,
+            "selective_risk": 0.021104467112205372
+          },
+          "per_day": {
+            "2015-02-14": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1431,
+                  6,
+                  3
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.4989539748953975,
+              "macro_f1_all_rows_unknown_as_error": 0.49843260188087773,
+              "accuracy_covered": 0.9958246346555324,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 3,
+              "unknown_rate": 0.0020833333333333333,
+              "coverage": 0.9979166666666667,
+              "selective_risk": 0.0041753653444676075
+            },
+            "2015-02-15": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1352,
+                  54,
+                  34
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.4902102973168963,
+              "macro_f1_all_rows_unknown_as_error": 0.48424068767908307,
+              "accuracy_covered": 0.9615931721194879,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 34,
+              "unknown_rate": 0.02361111111111111,
+              "coverage": 0.9763888888888889,
+              "selective_risk": 0.038406827880512084
+            }
+          }
+        },
+        "majority": {
+          "metrics": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2880,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 1.0,
+            "macro_f1_all_rows_unknown_as_error": 0.5,
+            "accuracy_covered": 1.0,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.0
+          },
+          "per_day": {
+            "2015-02-14": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1440,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 1.0,
+              "macro_f1_all_rows_unknown_as_error": 0.5,
+              "accuracy_covered": 1.0,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.0
+            },
+            "2015-02-15": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1440,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 1.0,
+              "macro_f1_all_rows_unknown_as_error": 0.5,
+              "accuracy_covered": 1.0,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.0
+            }
+          }
+        },
+        "co2_rule": {
+          "metrics": {
+            "n": 2880,
+            "occupied": 0,
+            "unoccupied": 2880,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                2880,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 1.0,
+            "macro_f1_all_rows_unknown_as_error": 0.5,
+            "accuracy_covered": 1.0,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": null,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.0
+          },
+          "per_day": {
+            "2015-02-14": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1440,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 1.0,
+              "macro_f1_all_rows_unknown_as_error": 0.5,
+              "accuracy_covered": 1.0,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.0
+            },
+            "2015-02-15": {
+              "n": 1440,
+              "occupied": 0,
+              "unoccupied": 1440,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  1440,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 1.0,
+              "macro_f1_all_rows_unknown_as_error": 0.5,
+              "accuracy_covered": 1.0,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": null,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": null,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.0
+            }
+          }
+        }
+      },
+      "train_feature_mean": [
+        20.84175112026568,
+        25.827768198778106,
+        634.1498944709928,
+        0.003938149185582071
+      ],
+      "evaluation_feature_mean": [
+        20.373620428240578,
+        33.839350694443944,
+        570.4765827546299,
+        0.005001611891864162
+      ]
+    },
+    {
+      "split": {
+        "train": {
+          "days": [
+            "2015-02-02",
+            "2015-02-03",
+            "2015-02-04",
+            "2015-02-05",
+            "2015-02-06",
+            "2015-02-07",
+            "2015-02-08",
+            "2015-02-09",
+            "2015-02-10",
+            "2015-02-11",
+            "2015-02-12",
+            "2015-02-13"
+          ],
+          "n": 14240,
+          "row_ids_sha256": "8c0c6a0c277fa5c729a7b1e6542a6249e1a8c34561bde7d7f7dca97a1f3b18d1"
+        },
+        "validation": {
+          "days": [
+            "2015-02-14",
+            "2015-02-15"
+          ],
+          "n": 2880,
+          "row_ids_sha256": "cf4ff61dba7163a05a4b8945d9de2d549e72c4c8710736605910eb6b460bd422"
+        },
+        "evaluation": {
+          "days": [
+            "2015-02-16",
+            "2015-02-17"
+          ],
+          "n": 2880,
+          "row_ids_sha256": "518d71641b5445556d732893485bc5a78b334e0962fef58ec1647238f39983a8"
+        }
+      },
+      "models": {
+        "logistic": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                748,
+                1044,
+                0
+              ],
+              [
+                0,
+                1088,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.632376387734142,
+            "macro_f1_all_rows_unknown_as_error": 0.632376387734142,
+            "accuracy_covered": 0.6375,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 1.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.36250000000000004
+          },
+          "artifact_bytes": 1489,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.1897955,
+            "p95_ms": 0.1992608
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.168275,
+            "p95_ms": 0.18622149999999998
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                1792
+              ],
+              [
+                0,
+                0,
+                1088
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 2880,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-16": {
+              "n": 1440,
+              "occupied": 551,
+              "unoccupied": 889,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  889
+                ],
+                [
+                  0,
+                  0,
+                  551
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-17": {
+              "n": 1440,
+              "occupied": 537,
+              "unoccupied": 903,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  903
+                ],
+                [
+                  0,
+                  0,
+                  537
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "tree": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                360,
+                1432,
+                0
+              ],
+              [
+                14,
+                1074,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.4650363717923224,
+            "macro_f1_all_rows_unknown_as_error": 0.4650363717923224,
+            "accuracy_covered": 0.4979166666666667,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.9871323529411765,
+            "false_inactive_count": 14,
+            "false_inactive_rate_of_occupied": 0.012867647058823529,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.5020833333333333
+          },
+          "artifact_bytes": 7481,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.051811499999999996,
+            "p95_ms": 0.0583106
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.054106,
+            "p95_ms": 0.06196925
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                1792
+              ],
+              [
+                0,
+                0,
+                1088
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 2880,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-16": {
+              "n": 1440,
+              "occupied": 551,
+              "unoccupied": 889,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  889
+                ],
+                [
+                  0,
+                  0,
+                  551
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-17": {
+              "n": 1440,
+              "occupied": 537,
+              "unoccupied": 903,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  903
+                ],
+                [
+                  0,
+                  0,
+                  537
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "logistic_light_experiment": {
+          "operating_point": null,
+          "validation_gate_passed": false,
+          "ungated_threshold_0_5_exploratory": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                1774,
+                18,
+                0
+              ],
+              [
+                1,
+                1087,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.9930047321606288,
+            "macro_f1_all_rows_unknown_as_error": 0.9930047321606288,
+            "accuracy_covered": 0.9934027777777777,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.9990808823529411,
+            "false_inactive_count": 1,
+            "false_inactive_rate_of_occupied": 0.0009191176470588235,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.006597222222222254
+          },
+          "artifact_bytes": 1505,
+          "single_latency": {
+            "n": 30,
+            "median_ms": 0.1879565,
+            "p95_ms": 0.1994882
+          },
+          "batch128_latency": {
+            "n": 30,
+            "median_ms": 0.16980299999999998,
+            "p95_ms": 0.18408094999999997
+          },
+          "metrics": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                0,
+                0,
+                1792
+              ],
+              [
+                0,
+                0,
+                1088
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": null,
+            "macro_f1_all_rows_unknown_as_error": 0.0,
+            "accuracy_covered": null,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 0,
+            "false_inactive_rate_of_occupied": 0.0,
+            "unknown_count": 2880,
+            "unknown_rate": 1.0,
+            "coverage": 0.0,
+            "selective_risk": null
+          },
+          "per_day": {
+            "2015-02-16": {
+              "n": 1440,
+              "occupied": 551,
+              "unoccupied": 889,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  889
+                ],
+                [
+                  0,
+                  0,
+                  551
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            },
+            "2015-02-17": {
+              "n": 1440,
+              "occupied": 537,
+              "unoccupied": 903,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  0,
+                  0,
+                  903
+                ],
+                [
+                  0,
+                  0,
+                  537
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": null,
+              "macro_f1_all_rows_unknown_as_error": 0.0,
+              "accuracy_covered": null,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 0,
+              "false_inactive_rate_of_occupied": 0.0,
+              "unknown_count": 1440,
+              "unknown_rate": 1.0,
+              "coverage": 0.0,
+              "selective_risk": null
+            }
+          }
+        },
+        "majority": {
+          "metrics": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                1792,
+                0,
+                0
+              ],
+              [
+                1088,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.3835616438356164,
+            "macro_f1_all_rows_unknown_as_error": 0.3835616438356164,
+            "accuracy_covered": 0.6222222222222222,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+            "false_inactive_count": 1088,
+            "false_inactive_rate_of_occupied": 1.0,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.37777777777777777
+          },
+          "per_day": {
+            "2015-02-16": {
+              "n": 1440,
+              "occupied": 551,
+              "unoccupied": 889,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  889,
+                  0,
+                  0
+                ],
+                [
+                  551,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.38170888793473595,
+              "macro_f1_all_rows_unknown_as_error": 0.38170888793473595,
+              "accuracy_covered": 0.6173611111111111,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 551,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.38263888888888886
+            },
+            "2015-02-17": {
+              "n": 1440,
+              "occupied": 537,
+              "unoccupied": 903,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  903,
+                  0,
+                  0
+                ],
+                [
+                  537,
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.3854033290653009,
+              "macro_f1_all_rows_unknown_as_error": 0.3854033290653009,
+              "accuracy_covered": 0.6270833333333333,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+              "false_inactive_count": 537,
+              "false_inactive_rate_of_occupied": 1.0,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.3729166666666667
+            }
+          }
+        },
+        "co2_rule": {
+          "metrics": {
+            "n": 2880,
+            "occupied": 1088,
+            "unoccupied": 1792,
+            "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+              [
+                1409,
+                383,
+                0
+              ],
+              [
+                605,
+                483,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "macro_f1_covered": 0.6173902005721721,
+            "macro_f1_all_rows_unknown_as_error": 0.6173902005721721,
+            "accuracy_covered": 0.6569444444444444,
+            "occupancy_recall_all_rows_unknown_counts_as_miss": 0.44393382352941174,
+            "false_inactive_count": 605,
+            "false_inactive_rate_of_occupied": 0.5560661764705882,
+            "unknown_count": 0,
+            "unknown_rate": 0.0,
+            "coverage": 1.0,
+            "selective_risk": 0.34305555555555556
+          },
+          "per_day": {
+            "2015-02-16": {
+              "n": 1440,
+              "occupied": 551,
+              "unoccupied": 889,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  888,
+                  1,
+                  0
+                ],
+                [
+                  474,
+                  77,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.516907871364714,
+              "macro_f1_all_rows_unknown_as_error": 0.516907871364714,
+              "accuracy_covered": 0.6701388888888888,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.1397459165154265,
+              "false_inactive_count": 474,
+              "false_inactive_rate_of_occupied": 0.8602540834845736,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.32986111111111116
+            },
+            "2015-02-17": {
+              "n": 1440,
+              "occupied": 537,
+              "unoccupied": 903,
+              "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+                [
+                  521,
+                  382,
+                  0
+                ],
+                [
+                  131,
+                  406,
+                  0
+                ],
+                [
+                  0,
+                  0,
+                  0
+                ]
+              ],
+              "macro_f1_covered": 0.6414633258508766,
+              "macro_f1_all_rows_unknown_as_error": 0.6414633258508766,
+              "accuracy_covered": 0.64375,
+              "occupancy_recall_all_rows_unknown_counts_as_miss": 0.7560521415270018,
+              "false_inactive_count": 131,
+              "false_inactive_rate_of_occupied": 0.24394785847299813,
+              "unknown_count": 0,
+              "unknown_rate": 0.0,
+              "coverage": 1.0,
+              "selective_risk": 0.35624999999999996
+            }
+          }
+        }
+      },
+      "train_feature_mean": [
+        21.005619198938934,
+        25.93933717730233,
+        628.0198046247996,
+        0.0039954246753811685
+      ],
+      "evaluation_feature_mean": [
+        20.97021296296269,
+        30.087404166666136,
+        979.0960243055558,
+        0.004632087295527183
+      ]
+    }
+  ],
+  "pooled": {
+    "majority": {
+      "n": 9766,
+      "occupied": 2094,
+      "unoccupied": 7672,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          7672,
+          0,
+          0
+        ],
+        [
+          2094,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.4399587108613373,
+      "macro_f1_all_rows_unknown_as_error": 0.4399587108613373,
+      "accuracy_covered": 0.7855826336268688,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+      "false_inactive_count": 2094,
+      "false_inactive_rate_of_occupied": 1.0,
+      "unknown_count": 0,
+      "unknown_rate": 0.0,
+      "coverage": 1.0,
+      "selective_risk": 0.21441736637313125
+    },
+    "co2_rule": {
+      "n": 9766,
+      "occupied": 2094,
+      "unoccupied": 7672,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          7279,
+          393,
+          0
+        ],
+        [
+          1534,
+          560,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.6253402587050176,
+      "macro_f1_all_rows_unknown_as_error": 0.6253402587050176,
+      "accuracy_covered": 0.8026827769813639,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.26743075453677173,
+      "false_inactive_count": 1534,
+      "false_inactive_rate_of_occupied": 0.7325692454632283,
+      "unknown_count": 0,
+      "unknown_rate": 0.0,
+      "coverage": 1.0,
+      "selective_risk": 0.19731722301863608
+    },
+    "logistic": {
+      "n": 9766,
+      "occupied": 2094,
+      "unoccupied": 7672,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          2778,
+          958,
+          3936
+        ],
+        [
+          121,
+          49,
+          1924
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.460320037595742,
+      "macro_f1_all_rows_unknown_as_error": 0.2785957920141415,
+      "accuracy_covered": 0.7237583205325141,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.023400191021967526,
+      "false_inactive_count": 121,
+      "false_inactive_rate_of_occupied": 0.05778414517669532,
+      "unknown_count": 5860,
+      "unknown_rate": 0.6000409584271964,
+      "coverage": 0.3999590415728036,
+      "selective_risk": 0.2762416794674859
+    },
+    "tree": {
+      "n": 9766,
+      "occupied": 2094,
+      "unoccupied": 7672,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          0,
+          0,
+          7672
+        ],
+        [
+          0,
+          0,
+          2094
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": null,
+      "macro_f1_all_rows_unknown_as_error": 0.0,
+      "accuracy_covered": null,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.0,
+      "false_inactive_count": 0,
+      "false_inactive_rate_of_occupied": 0.0,
+      "unknown_count": 9766,
+      "unknown_rate": 1.0,
+      "coverage": 0.0,
+      "selective_risk": null
+    },
+    "logistic_light_experiment": {
+      "n": 9766,
+      "occupied": 2094,
+      "unoccupied": 7672,
+      "confusion_matrix_rows_true_cols_pred_labels_0_1_unknown": [
+        [
+          5750,
+          92,
+          1830
+        ],
+        [
+          11,
+          995,
+          1088
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "macro_f1_covered": 0.9709556637637456,
+      "macro_f1_all_rows_unknown_as_error": 0.7408450424713119,
+      "accuracy_covered": 0.9849591121495327,
+      "occupancy_recall_all_rows_unknown_counts_as_miss": 0.47516714422158546,
+      "false_inactive_count": 11,
+      "false_inactive_rate_of_occupied": 0.0052531041069723014,
+      "unknown_count": 2918,
+      "unknown_rate": 0.29879172639770635,
+      "coverage": 0.7012082736022937,
+      "selective_risk": 0.01504088785046731
+    }
+  },
+  "environment": {
+    "python": "3.14.7",
+    "sklearn": "1.9.1",
+    "numpy": "2.5.3",
+    "platform": "Linux-7.2.8-2-cachyos-x86_64-with-glibc2.44",
+    "peak_process_rss_mib": 204.9375
+  }
+}

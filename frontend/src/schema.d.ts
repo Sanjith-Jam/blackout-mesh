@@ -193,6 +193,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/allocation/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Allocation Policy */
+        get: operations["ReadAllocationPolicy"];
+        /** Change Allocation Policy */
+        put: operations["ChangeAllocationPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/studies/electrical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Electrical Study */
+        post: operations["ElectricalStudy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hardware/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hardware Ack */
+        post: operations["HardwareAck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -244,9 +296,42 @@ export interface components {
             evidence?: {
                 [key: string]: number | null;
             } | null;
+            /** Raw State */
+            raw_state?: string | null;
+            /** Guard */
+            guard?: string | null;
+        };
+        /** AllocationPolicy */
+        AllocationPolicy: {
+            /**
+             * Name
+             * @default activity_first
+             * @enum {string}
+             */
+            name: "activity_first" | "water_first";
+            /**
+             * Version
+             * @default allocation-v1
+             * @constant
+             */
+            version: "allocation-v1";
+            /**
+             * Fairness Weight
+             * @default 0
+             */
+            fairness_weight: number;
+            /**
+             * Switching Penalty
+             * @default 1
+             */
+            switching_penalty: number;
         };
         /** AllocationSnapshot */
         AllocationSnapshot: {
+            /** Explanation */
+            explanation?: {
+                [key: string]: unknown;
+            };
             /** Objective */
             objective: string;
             /** Critical Shortfall W */
@@ -255,6 +340,7 @@ export interface components {
             served_w: number;
             /** Baseline Mask */
             baseline_mask: number;
+            safety?: components["schemas"]["SafetySnapshot"] | null;
         };
         /** CapacityChangeRequest */
         CapacityChangeRequest: {
@@ -269,11 +355,6 @@ export interface components {
             new_capacity_w: number;
             /** Control Revision */
             control_revision: number;
-            /**
-             * Config Hash
-             * @default
-             */
-            config_hash: string;
         };
         /** ClassroomDemoAction */
         ClassroomDemoAction: {
@@ -281,55 +362,11 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "scan" | "unscan" | "normal" | "overload" | "reset";
+            action: "scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset" | "replay_pause" | "replay_resume" | "replay_step";
             /** Classroom Id */
             classroom_id?: ("CR1" | "CR2" | "CR3") | null;
-        };
-        /** ClassroomDemoLoad */
-        ClassroomDemoLoad: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Watts */
-            watts: number;
-            /** Essential */
-            essential: boolean;
-            /** Served */
-            served: boolean;
-            /** Reason */
-            reason: string;
-        };
-        /** ClassroomDemoRoom */
-        ClassroomDemoRoom: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Rfid Active */
-            rfid_active: boolean;
-            /** Loads */
-            loads: components["schemas"]["ClassroomDemoLoad"][];
-        };
-        /** ClassroomDemoSnapshot */
-        ClassroomDemoSnapshot: {
-            contract: components["schemas"]["CrossRouteContract"];
             /** Capacity W */
-            capacity_w: number;
-            /** Requested W */
-            requested_w: number;
-            /** Served W */
-            served_w: number;
-            /** Shortfall W */
-            shortfall_w: number;
-            /** Selected Classroom Id */
-            selected_classroom_id?: string | null;
-            /** Rooms */
-            rooms: components["schemas"]["ClassroomDemoRoom"][];
-            /** Mode */
-            mode: string;
-            /** Policy */
-            policy: string;
+            capacity_w?: number | null;
         };
         /** ClassroomInfo */
         ClassroomInfo: {
@@ -385,10 +422,160 @@ export interface components {
                 [key: string]: components["schemas"]["ScopeTotals"];
             };
         };
+        /** ElectricalInput */
+        ElectricalInput: {
+            /**
+             * Topology Version
+             * @default radial-400v-v1
+             * @constant
+             */
+            topology_version: "radial-400v-v1";
+            /**
+             * Balanced
+             * @default true
+             */
+            balanced: boolean;
+            /**
+             * Load A W
+             * @default 6000
+             */
+            load_a_w: number;
+            /**
+             * Load B W
+             * @default 8000
+             */
+            load_b_w: number;
+            /**
+             * Source On
+             * @default true
+             */
+            source_on: boolean;
+            /**
+             * Feeder A Closed
+             * @default true
+             */
+            feeder_a_closed: boolean;
+            /**
+             * Feeder B Closed
+             * @default true
+             */
+            feeder_b_closed: boolean;
+            /**
+             * Power Factor
+             * @default 0.95
+             */
+            power_factor: number;
+            /**
+             * Resistance Ohm
+             * @default 0.04
+             */
+            resistance_ohm: number;
+            /**
+             * Reactance Ohm
+             * @default 0.015
+             */
+            reactance_ohm: number;
+        };
+        /** ElectricalResult */
+        ElectricalResult: {
+            /**
+             * Mode
+             * @default balanced_ac_study
+             * @constant
+             */
+            mode: "balanced_ac_study";
+            /**
+             * Topology Version
+             * @default radial-400v-v1
+             */
+            topology_version: string;
+            /** Engine */
+            engine: string;
+            /** Engine Version */
+            engine_version?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "converged" | "deenergized" | "failed" | "unavailable";
+            /** Converged */
+            converged: boolean;
+            /**
+             * Restoration Authorized
+             * @default false
+             * @constant
+             */
+            restoration_authorized: false;
+            /** Observed At */
+            observed_at: string;
+            inputs: components["schemas"]["ElectricalInput"];
+            /** Units */
+            units: {
+                [key: string]: string;
+            };
+            /** Buses */
+            buses: {
+                [key: string]: {
+                    [key: string]: number | boolean | null;
+                };
+            };
+            /** Branches */
+            branches: {
+                [key: string]: {
+                    [key: string]: number | boolean | null;
+                };
+            };
+            /** Source P W */
+            source_p_w?: number | null;
+            /** Source Q Var */
+            source_q_var?: number | null;
+            /** Loss W */
+            loss_w?: number | null;
+            /** Power Balance Residual W */
+            power_balance_residual_w?: number | null;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Provenance
+             * @default SIMULATED_AC_SOLVER; synthetic engineering parameters
+             */
+            provenance: string;
+        };
+        /** ElectricalStudyResponse */
+        ElectricalStudyResponse: {
+            /** Site */
+            site: {
+                [key: string]: unknown;
+            };
+            result: components["schemas"]["ElectricalResult"];
+            /** Diagnosis */
+            diagnosis: {
+                [key: string]: unknown;
+            };
+        };
         /** FacilityZones */
         FacilityZones: {
             hospital: components["schemas"]["HospitalZone"];
             classroom: components["schemas"]["ClassroomZone"];
+        };
+        /** FaultDiagnosis */
+        FaultDiagnosis: {
+            /** Has Fault */
+            has_fault: boolean;
+            /** Diagnosis */
+            diagnosis: string;
+            /** Severity */
+            severity: string;
+            /** Status */
+            status: string;
+            /** Hypotheses */
+            hypotheses?: {
+                [key: string]: unknown;
+            }[];
+            /** Affected Assets */
+            affected_assets?: string[];
+            /** Supply Constraint */
+            supply_constraint?: string | null;
         };
         /** FeederChangeRequest */
         FeederChangeRequest: {
@@ -407,16 +594,29 @@ export interface components {
             available: boolean;
             /** Control Revision */
             control_revision: number;
-            /**
-             * Config Hash
-             * @default
-             */
-            config_hash: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HardwareAckRequest */
+        HardwareAckRequest: {
+            /** Device Boot */
+            device_boot: string;
+            /** Sequence */
+            sequence: number;
+            /** Session */
+            session: string;
+            /** Confirmed Mask */
+            confirmed_mask: number;
+            /** Provenance */
+            provenance: string;
+        };
+        /** HardwareAckResponse */
+        HardwareAckResponse: {
+            /** Accepted */
+            accepted: boolean;
         };
         /**
          * HardwareLinkStatus
@@ -425,6 +625,10 @@ export interface components {
         HardwareLinkStatus: "NOT_CONNECTED" | "CONNECTED" | "ERROR";
         /** HealthResponse */
         HealthResponse: {
+            /** Control Loop */
+            control_loop?: {
+                [key: string]: unknown;
+            };
             /** Status */
             status: string;
             /** Application */
@@ -432,64 +636,14 @@ export interface components {
         };
         /** HospitalDemoAction */
         HospitalDemoAction: {
-            /**
-             * Scenario
-             * @enum {string}
-             */
-            scenario: "normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor";
-        };
-        /** HospitalDemoDiagnosis */
-        HospitalDemoDiagnosis: {
-            /** Code */
-            code: string;
-            /** Cause */
-            cause: string;
-            /** Severity */
-            severity: string;
-            /** Evidence */
-            evidence: string[];
-            /** Recommendation */
-            recommendation: string;
-            /** Hypotheses */
-            hypotheses: components["schemas"]["Hypothesis"][];
-        };
-        /** HospitalDemoSensors */
-        HospitalDemoSensors: {
-            /** Current A */
-            current_a?: number | null;
-            /** Temperature C */
-            temperature_c?: number | null;
-            /** Input Voltage V */
-            input_voltage_v?: number | null;
-            /** Output Voltage V */
-            output_voltage_v?: number | null;
-            /** Cooling Ok */
-            cooling_ok?: boolean | null;
-        };
-        /** HospitalDemoSnapshot */
-        HospitalDemoSnapshot: {
-            contract: components["schemas"]["CrossRouteContract"];
-            /** Mode */
-            mode: string;
-            /** Transformers */
-            transformers: components["schemas"]["HospitalDemoTransformer"][];
-            /** Summary */
-            summary: string;
-        };
-        /** HospitalDemoTransformer */
-        HospitalDemoTransformer: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Zone */
-            zone: string;
-            /** Rated Current A */
-            rated_current_a: number;
-            sensors: components["schemas"]["HospitalDemoSensors"];
-            diagnosis: components["schemas"]["HospitalDemoDiagnosis"];
-            /** Energized */
-            energized: boolean;
+            /** Action */
+            action?: ("scan" | "unscan" | "set_capacity" | "normal" | "overload" | "reset" | "replay_pause" | "replay_resume" | "replay_step") | null;
+            /** Zone Id */
+            zone_id?: ("ICU" | "Theatre" | "Wards") | null;
+            /** Capacity W */
+            capacity_w?: number | null;
+            /** Scenario */
+            scenario?: ("normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor") | null;
         };
         /** HospitalRoom */
         HospitalRoom: {
@@ -506,29 +660,6 @@ export interface components {
         HospitalZone: {
             /** Rooms */
             rooms: components["schemas"]["HospitalRoom"][];
-        };
-        /** Hypothesis */
-        Hypothesis: {
-            /** Code */
-            code: string;
-            /** Cause */
-            cause: string;
-            /** Asset Id */
-            asset_id?: string | null;
-            /** Supporting Evidence */
-            supporting_evidence: string[];
-            /** Contradicting Evidence */
-            contradicting_evidence: string[];
-            /** Time Window */
-            time_window: string;
-            /** Sufficiency */
-            sufficiency: string;
-            /** Score */
-            score: number;
-            /** Severity */
-            severity: string;
-            /** Recommendation */
-            recommendation: string;
         };
         /** ModelStatusResponse */
         ModelStatusResponse: {
@@ -548,15 +679,6 @@ export interface components {
             };
             /** Fallback Reason */
             fallback_reason?: string | null;
-        };
-        /** RankedDiagnosis */
-        RankedDiagnosis: {
-            /** Is Fault */
-            is_fault: boolean;
-            /** Hypotheses */
-            hypotheses: components["schemas"]["Hypothesis"][];
-            /** Abstention Reason */
-            abstention_reason?: string | null;
         };
         /** ReplayActionRequest */
         ReplayActionRequest: {
@@ -585,7 +707,7 @@ export interface components {
          * RfidEventType
          * @enum {string}
          */
-        RfidEventType: "CARD_RECOGNIZED" | "UNKNOWN_CARD" | "DUPLICATE_SUPPRESSED" | "SESSION_ENDED";
+        RfidEventType: "CARD_RECOGNIZED" | "UNKNOWN_CARD" | "DUPLICATE_SUPPRESSED";
         /**
          * RfidReaderStatus
          * @enum {string}
@@ -631,6 +753,21 @@ export interface components {
             /** Observation Time */
             observation_time: string;
         };
+        /** SafetySnapshot */
+        SafetySnapshot: {
+            /** Policy Version */
+            policy_version: string;
+            /** Status */
+            status: string;
+            /** Protected Requested W */
+            protected_requested_w: number;
+            /** Protected Served W */
+            protected_served_w: number;
+            /** Protected Shortfall W */
+            protected_shortfall_w: number;
+            /** Fallback Order */
+            fallback_order: string[];
+        };
         /** ScopeTotals */
         ScopeTotals: {
             /** Capacity W */
@@ -662,6 +799,17 @@ export interface components {
         };
         /** SourceInfo */
         SourceInfo: {
+            /**
+             * Model
+             * @default watt_budget
+             * @constant
+             */
+            model: "watt_budget";
+            /**
+             * Limitations
+             * @default Integer demand/capacity accounting; no AC power flow, thermal dynamics or protection physics
+             */
+            limitations: string;
             kind: components["schemas"]["SourceKind"];
             /** Capacity W */
             capacity_w: number;
@@ -683,18 +831,23 @@ export interface components {
         /** SystemSnapshot */
         SystemSnapshot: {
             contract: components["schemas"]["CrossRouteContract"];
-            /** Control Revision */
-            control_revision: number;
             /**
              * Config Hash
              * @default
              */
             config_hash: string;
+            /** Control Revision */
+            control_revision: number;
             /**
              * Generated At
              * Format: date-time
              */
             generated_at: string;
+            /**
+             * Published Revision
+             * @default 0
+             */
+            published_revision: number;
             source: components["schemas"]["SourceInfo"];
             /** Feeder Limits W */
             feeder_limits_w: {
@@ -724,7 +877,7 @@ export interface components {
              * @default []
              */
             events: components["schemas"]["SystemEvent"][];
-            fault_diagnosis?: components["schemas"]["RankedDiagnosis"] | null;
+            fault_diagnosis?: components["schemas"]["FaultDiagnosis"] | null;
             /** Activity */
             activity?: {
                 [key: string]: components["schemas"]["ActivitySnapshot"];
@@ -735,6 +888,14 @@ export interface components {
             };
             replay: components["schemas"]["ReplaySnapshot"];
             allocation: components["schemas"]["AllocationSnapshot"];
+            /** Site */
+            site?: {
+                [key: string]: unknown;
+            } | null;
+            /** Edges */
+            edges?: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * Tier
@@ -756,6 +917,11 @@ export interface components {
         };
         /** WebSocketMessageEnvelope */
         WebSocketMessageEnvelope: {
+            /**
+             * Sent At
+             * Format: date-time
+             */
+            sent_at: string;
             /** Type */
             type: string;
             payload: components["schemas"]["SystemSnapshot"];
@@ -844,7 +1010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClassroomDemoSnapshot"];
+                    "application/json": unknown;
                 };
             };
         };
@@ -868,7 +1034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClassroomDemoSnapshot"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -897,7 +1063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HospitalDemoSnapshot"];
+                    "application/json": unknown;
                 };
             };
         };
@@ -921,7 +1087,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HospitalDemoSnapshot"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -1120,6 +1286,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeederChangeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ReadAllocationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    ChangeAllocationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AllocationPolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ElectricalStudy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ElectricalInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ElectricalStudyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    HardwareAck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HardwareAckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareAckResponse"];
                 };
             };
             /** @description Validation Error */

@@ -22,7 +22,7 @@ def client():
 
 @pytest.fixture(autouse=True)
 def clean_grid():
-    grid = GridState()
+    grid = app.state.grid
     saved_model = grid.model
     with grid._lock:
         grid.source_capacity_w = 14000
@@ -117,7 +117,7 @@ def test_restoration_sheds_immediately_then_waits_and_adds_one_per_second(client
 
 
 def test_activity_prediction_updates_allocation_policy(client, monkeypatch):
-    grid = GridState()
+    grid = app.state.grid
 
     class StubModel:
         def __init__(self, state):
@@ -136,11 +136,10 @@ def test_activity_prediction_updates_allocation_policy(client, monkeypatch):
         grid.source_capacity_w = 5000
         grid.feeder_available = {"A": True, "B": True}
         grid.feeder_limits_w = {"A": 6000, "B": 8000}
-        grid.active_sessions = {"CR1": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}, "CR2": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}, "CR3": {"source": "UI", "started_at": 1791574486.422292, "last_scan": 1791574486.422292}}
+        grid.active_sessions = {"CR1": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}, "CR2": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}, "CR3": {"source": "UI", "started_at": time.time(), "last_scan": time.time()}}
         grid.software_mode = True
         grid.model = StubModel("ACTIVE")
     features = {"temperature_c": 22.0, "humidity_pct": 40.0, "co2_ppm": 700.0, "humidity_ratio": 0.007}
-    import time
     def send(cid):
         time.sleep(0.001)
         return client.post("/api/v1/activity/observations", json={"classroom_id": cid, **features,
@@ -180,10 +179,11 @@ def test_failed_inference_and_stale_evidence_become_unknown(clean_grid, client, 
     response = client.post("/api/v1/activity/observations", json=payload)
     assert response.json()["activity"]["state"] == "UNKNOWN"
     grid.activity_received_monotonic["CR1"] = time.monotonic() - 601
+    grid.tick()  # staleness is applied by the control loop, not by reads
     assert client.get("/api/v1/snapshot").json()["activity"]["CR1"]["reason"] == "sensor evidence stale"
 
 
-def test_replay_start_is_single_owner_and_pause_reset_invalidate(clean_grid, client, monkeypatch):
+def test_replay_start_is_single_owner_and_pause_reset_invalidate(clean_grid, monkeypatch):
     import app.main as main
 
     class ReplayModel:
@@ -198,7 +198,8 @@ def test_replay_start_is_single_owner_and_pause_reset_invalidate(clean_grid, cli
     row = {"temperature_c": 22.0, "humidity_pct": 40.0, "co2_ppm": 700.0,
            "humidity_ratio": 0.007, "observed_at": "2016-01-01T00:00:00Z"}
     model = ReplayModel()
-    monkeypatch.setattr(main, "load_replay", lambda: {cid: [row] for cid in ("CR1", "CR2", "CR3")})
+    app.state.replay_data = {cid: [row] for cid in ("CR1", "CR2", "CR3")}
+    app.state.grid.replay_length = 1
     with TestClient(app) as replay_client:
         app.state.grid.model = model
         started = replay_client.post("/api/v1/replay", json={"action": "start"}).json()

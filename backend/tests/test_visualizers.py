@@ -48,9 +48,25 @@ def test_hospital_diagnosis_uses_sensor_values_only():
     assert upstream["code"] == "UPSTREAM_LOSS"
     assert missing["code"] == "UNKNOWN"
     with TestClient(app) as client:
-        cooling = client.post("/api/v1/visualizers/hospital", json={"scenario": "cooling_failure"}).json()
-        assert [t["diagnosis"]["code"] for t in cooling["transformers"]] == ["NORMAL", "COOLING_FAILURE", "NORMAL"]
-        assert client.post("/api/v1/visualizers/hospital", json={"scenario": "normal", "code": "OVERLOAD"}).status_code == 422
+        # The hospital route now uses zone scans and a supply limit (HospitalPriorityDemo).
+        scanned = client.post("/api/v1/visualizers/hospital", json={"action": "scan", "zone_id": "ICU"}).json()
+        assert scanned["scanned_zone_ids"] == ["ICU"]
+        assert client.post("/api/v1/visualizers/hospital", json={"action": "normal", "code": "OVERLOAD"}).status_code == 422
+        assert client.post("/api/v1/visualizers/hospital", json={"action": "set_capacity", "capacity_w": 9000}).status_code == 422
+
+
+def test_hospital_diagnosis_multi_hypothesis_and_backward_compatibility():
+    # Multi-fault simultaneous scenario
+    simul = diagnose(100.0, current_a=130.0, temperature_c=91.0, input_voltage_v=230.0, output_voltage_v=218.0, cooling_ok=False)
+    assert "hypotheses" in simul
+    assert len(simul["hypotheses"]) >= 2
+    assert simul["severity"] == "high"
+    # Backward compatible fields exist
+    assert "code" in simul
+    assert "cause" in simul
+    assert "evidence" in simul
+    assert "recommendation" in simul
+
 
 
 
@@ -64,8 +80,11 @@ def test_simultaneous_fault_matrix_and_ambiguity():
 
     # 2. Ambiguous thermal fault (missing cooling_ok)
     ambig = diagnose(100, 45, 91, 230, 220, None)
-    assert ambig["hypotheses"][0]["code"] == "AMBIGUOUS_THERMAL_FAULT"
-    assert ambig["hypotheses"][0]["sufficiency"] == "ambiguous"
+    assert ambig["hypotheses"][0]["code"] == "HIGH_TEMPERATURE"
+    assert ambig["status"] == "FAULT_DETECTED"
+    assert "cooling_ok" in ambig["missing"]
+    assert all(h["code"] != "COOLING_FAILURE" for h in ambig["hypotheses"])
+    assert ambig["hypotheses"][0]["sufficiency"] == "PARTIAL"
 
     # 3. Missing everything
     missing = diagnose(100, None, None, None, None, None)
@@ -82,19 +101,22 @@ def test_classroom_restoration_uses_time_not_snapshot_count():
     assert demo.snapshot()["served_w"] == 3400
     demo.act("normal", None)
     for _ in range(100):
-        waiting = demo.snapshot()
+        waiting = demo.tick()
         assert waiting["served_w"] == 3400
     assert any(load["reason"] == "Waiting for simulated restoration delay"
                for room in waiting["rooms"] for load in room["loads"] if not load["served"])
     now[0] = 2.99
-    assert demo.snapshot()["served_w"] == 3400
+    assert demo.tick()["served_w"] == 3400
+    now[0] = 4.99
+    assert demo.tick()["served_w"] == 3400
     now[0] = 5.0
-    first = demo.snapshot()["served_w"]
+    assert demo.snapshot()["served_w"] == 3400  # reads never advance restoration
+    first = demo.tick()["served_w"]
     assert first > 3400
     for _ in range(100):
-        assert demo.snapshot()["served_w"] == first
+        assert demo.tick()["served_w"] == first  # at most one restored load per second
     now[0] = 6.0
-    assert demo.snapshot()["served_w"] > first
+    assert demo.tick()["served_w"] > first
 
 
 def test_hospital_faults_are_local_except_upstream_loss():
@@ -104,3 +126,102 @@ def test_hospital_faults_are_local_except_upstream_loss():
     upstream = hospital_snapshot("upstream_loss")["transformers"]
     assert [t["diagnosis"]["code"] for t in upstream] == ["UPSTREAM_LOSS"] * 3
     assert [t["zone"] for t in upstream] == ["ICU", "Theatre", "Wards"]
+
+
+class StubModel:
+    """Maps a CO2 reading straight to a state so ranking tests don't depend on the trained weights."""
+
+    def predict(self, features):
+        co2 = features.get("co2_ppm")
+        if co2 is None:
+            return {"state": "UNKNOWN", "score": None, "reason": "missing", "model_version": "stub"}
+        score = min(co2 / 1000, 1.0)
+        return {"state": "ACTIVE" if score >= 0.6 else "INACTIVE" if score <= 0.4 else "UNKNOWN",
+                "score": score, "reason": "stub", "model_version": "stub"}
+
+    def status(self):
+        return {"ready": True, "model_version": "stub"}
+
+
+def stub_replay(**co2_by_room):
+    rows = {"CR1": [500], "CR2": [500], "CR3": [500]}
+    rows.update(co2_by_room)
+    return {cid: [{"temperature_c": 21.0, "humidity_pct": 30.0, "co2_ppm": co2, "humidity_ratio": 0.004}
+                  for co2 in values] for cid, values in rows.items()}
+
+
+def served_rooms(snapshot):
+    """Rooms whose optional (non-essential) loads are all served."""
+    return {room["id"] for room in snapshot["rooms"]
+            if all(load["served"] for load in room["loads"] if not load["essential"])}
+
+
+def test_several_rooms_can_be_scanned_and_unscanned():
+    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay())
+    demo.act("scan", "CR1")
+    snap = demo.act("scan", "CR2")
+    assert snap["scanned_classroom_ids"] == ["CR1", "CR2"]
+    assert {r["id"] for r in snap["rooms"] if r["rfid_active"]} == {"CR1", "CR2"}
+    assert snap["selected_classroom_id"] == "CR2"
+    snap = demo.act("unscan", "CR1")
+    assert snap["scanned_classroom_ids"] == ["CR2"]
+    assert demo.act("reset")["scanned_classroom_ids"] == []
+
+
+def test_model_ranks_scanned_rooms_under_a_tight_supply():
+    # Essentials take 2,100 W; the remaining 1,300 W fits exactly one room's optional loads.
+    now = [0.0]
+    demo = ClassroomDemo(lambda: now[0], StubModel(), stub_replay(CR1=[300], CR2=[900]))
+    demo.act("scan", "CR1")
+    demo.act("scan", "CR2")
+    snap = demo.act("set_capacity", capacity_w=3400)
+    assert snap["priority_order"] == ["CR2", "CR1"]  # CR2 ACTIVE outranks CR1 INACTIVE despite scan order
+    assert {r["id"]: r["priority_rank"] for r in snap["rooms"]} == {"CR1": 2, "CR2": 1, "CR3": None}
+    assert served_rooms(snap) == {"CR2"}
+    assert snap["served_w"] <= snap["capacity_w"]
+
+
+def test_ties_keep_scan_order_and_unknown_sits_between():
+    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[500, 500], CR2=[500, 500], CR3=[200, 200]))
+    for cid in ("CR3", "CR2", "CR1"):
+        demo.act("scan", cid)
+    assert demo.snapshot()["priority_order"] == ["CR3", "CR2", "CR1"]  # one INACTIVE reading is not enough
+    demo.act("replay_pause")
+    assert demo.act("replay_step")["priority_order"] == ["CR2", "CR1", "CR3"]  # confirmed on the second reading
+
+
+def test_replay_steps_change_the_ranking():
+    now = [0.0]
+    demo = ClassroomDemo(lambda: now[0], StubModel(), stub_replay(CR1=[900, 300], CR2=[300, 900], CR3=[500, 500]))
+    demo.act("scan", "CR1")
+    demo.act("scan", "CR2")
+    assert demo.snapshot()["priority_order"] == ["CR1", "CR2"]
+    demo.act("replay_pause")
+    now[0] = 60.0
+    assert demo.snapshot()["replay"]["index"] == 0
+    assert demo.act("replay_step")["priority_order"] == ["CR2", "CR1"]
+
+
+def test_capacity_slider_validation():
+    with TestClient(app) as client:
+        url = "/api/v1/visualizers/classrooms"
+        client.post(url, json={"action": "reset"})
+        ok = client.post(url, json={"action": "set_capacity", "capacity_w": 5000}).json()
+        assert ok["capacity_w"] == 5000 and ok["served_w"] <= 5000
+        assert client.post(url, json={"action": "set_capacity"}).status_code == 422
+        assert client.post(url, json={"action": "set_capacity", "capacity_w": 9001}).status_code == 422
+        assert client.post(url, json={"action": "set_capacity", "capacity_w": -1}).status_code == 422
+        assert client.post(url, json={"action": "set_capacity", "capacity_w": True}).status_code == 422
+        assert client.post(url, json={"action": "normal", "capacity_w": 5000}).status_code == 422
+        assert client.post(url, json={"action": "unscan"}).status_code == 422
+        both = [client.post(url, json={"action": "scan", "classroom_id": cid}).json() for cid in ("CR1", "CR2")][-1]
+        assert both["scanned_classroom_ids"] == ["CR1", "CR2"]
+        assert all(room["activity"]["state"] in ("ACTIVE", "INACTIVE", "UNKNOWN") for room in both["rooms"])
+        client.post(url, json={"action": "reset"})
+
+
+def test_score_noise_within_a_state_does_not_reorder_rooms():
+    demo = ClassroomDemo(lambda: 0.0, StubModel(), stub_replay(CR1=[300], CR2=[100]))
+    demo.act("scan", "CR2")
+    demo.act("scan", "CR1")
+    assert demo.snapshot()["priority_order"] == ["CR2", "CR1"]
