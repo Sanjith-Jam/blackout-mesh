@@ -11,43 +11,18 @@ from app.core.restoration import RestorationGate
 from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
 from app.diagnosis.observations import validate as validate_observation
 from app.simulation.sensors import HOSPITAL_ASSETS, HOSPITAL_FAULTS, TRANSFORMER_FIELDS, add_noise, apply_fault, envelopes as sensor_envelopes, hospital_readings, zone_readings
-from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, RankDwell, shortfall_status
+from app.core.safety import SAFETY_POLICY_VERSION, ActivityGuard, RankDwell, shortfall_status
+from app.core.active_site import CATALOG
 
-from app.core.state import site_profile
-from app.core.config import AssetType
-ROOMS = []
-LOADS = {}
-ZONES = []
-TRANSFORMERS_CONFIG = []
-
-for asset in site_profile.assets:
-    if asset.type == AssetType.CLASSROOM:
-        ROOMS.append(asset.id)
-        LOADS[asset.id] = []
-    elif asset.type == AssetType.TRANSFORMER:
-        ZONES.append(asset.zone)
-        TRANSFORMERS_CONFIG.append({
-            "id": asset.id,
-            "name": asset.name,
-            "zone": asset.zone,
-            "rated_current_a": float(asset.rating_w or 100.0)
-        })
-
-for asset in site_profile.assets:
-    if asset.type == AssetType.LOAD and asset.parent_id in LOADS:
-        # id like L_CR1_lighting -> strip L_CR1_ to get 'lighting'
-        short_id = asset.id.split("_", 2)[-1]
-        LOADS[asset.parent_id].append((short_id, asset.name, asset.rating_w, asset.essential))
-
-ROOMS = tuple(ROOMS)
-ZONES = tuple(ZONES)
+# Classroom appliances (key, name, watts, essential) per room, from the site profile.
+ROOMS = tuple(c["id"] for c in CATALOG.classrooms)
+LOADS = CATALOG.classroom_loads
 LOAD_KEYS = tuple((room, item[0]) for room in ROOMS for item in LOADS[room])
 
-
-
-NORMAL_CAPACITY_W = 8000
-OVERLOAD_CAPACITY_W = 3400
-CAPACITY_RANGE_W = (0, 8000)
+# The classroom view's supply slider spans its campus feeder; "overload" is the profile's shortage preset.
+NORMAL_CAPACITY_W = CATALOG.feeder_limits_w["B"]
+OVERLOAD_CAPACITY_W = CATALOG.feeder_presets_w["B"] if CATALOG.feeder_presets_w["B"] is not None else NORMAL_CAPACITY_W // 2
+CAPACITY_RANGE_W = (0, NORMAL_CAPACITY_W)
 REPLAY_STEP_S = 5.0
 ACTIVITY_RANK = {"ACTIVE": 0, "UNKNOWN": 1, "INACTIVE": 2}
 REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
@@ -228,7 +203,7 @@ class ClassroomDemo:
         requested = sum(x[2] for rows in LOADS.values() for x in rows)
         served_w = sum(x[2] for r in ROOMS for x in LOADS[r] if (r, x[0]) in current)
         edges = self._edges(target, current, shortfall_note)
-        essential = [(r, x) for r in ROOMS for x in LOADS[r] if x[0] in ROOM_ESSENTIAL_LOADS]
+        essential = [(r, x) for r in ROOMS for x in LOADS[r] if x[3]]
         safety = shortfall_status(sum(x[2] for _, x in essential),
                                   sum(x[2] for r, x in essential if (r, x[0]) in current))
         status = self.model.status() if hasattr(self.model, "status") else {}
@@ -338,18 +313,13 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
 
 
 
-HOSP_ZONES = ("ICU", "Theatre", "Wards")
-# Hospital equipment are the leaves of campus feeder A (docs/CATALOG_MIGRATION.md):
-# every essential leaf belongs to a T1 service (L0 essential circuit, L1 emergency lighting) and every
-# optional leaf to L2 (water pump and HVAC). reconcile_catalog() checks the sums at startup.
-HOSP_LOADS = {
-    "ICU": [("ventilator", "Ventilator", 300, True), ("monitor", "Patient Monitor", 100, True), ("infusion", "Infusion Pump", 50, True), ("lights", "Emergency Lights", 200, True), ("oxygen", "O2 System", 500, True)],
-    "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 650, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 900, False)],
-    "Wards": [("bed_lights", "Bed Lights", 300, True), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 300, False), ("water_pump", "Water Pump", 600, False), ("ac", "Air Conditioning", 1200, False)],
-}
-HOSP_PARENT = {("ICU", "lights"): "L1", ("Theatre", "surgical_light"): "L1", ("Wards", "bed_lights"): "L1"}
-HOSP_PARENT.update({(z, item[0]): ("L0" if item[3] else "L2") for z, rows in HOSP_LOADS.items() for item in rows
-                    if (z, item[0]) not in HOSP_PARENT})
+HOSP_ZONES = CATALOG.hospital_zones
+# Hospital equipment are the leaves of the campus feeder A services (docs/CATALOG_MIGRATION.md): each leaf
+# names its service in the site profile, and the profile is rejected unless essential leaves belong to T1
+# services and every service's leaves sum to its watts. reconcile_catalog() re-checks the sums at startup.
+HOSP_LOADS = CATALOG.hospital_loads
+HOSP_PARENT = CATALOG.hospital_parent
+ZONE_ASSET = {zone: asset for asset, zone in CATALOG.transformers.items()}
 HOSPITAL_LOADS = {zone: [(item[0], item[3]) for item in loads] for zone, loads in HOSP_LOADS.items()}
 HOSP_LOAD_KEYS = tuple((zone, item[0]) for zone in HOSP_ZONES for item in HOSP_LOADS[zone])
 
@@ -361,7 +331,9 @@ class HospitalPriorityDemo(ClassroomDemo):
     publishes; snapshot() is a read-only copy (#9, #10). Essential equipment is protected (#22).
     """
 
-    NORMAL_W, OVERLOAD_W, RANGE_W = 6000, 4000, (0, 6000)
+    NORMAL_W = CATALOG.feeder_limits_w["A"]
+    OVERLOAD_W = CATALOG.feeder_presets_w["A"] if CATALOG.feeder_presets_w["A"] is not None else NORMAL_W // 2
+    RANGE_W = (0, NORMAL_W)
 
     def __init__(self, clock=None, model=None, replay=None):
         import time
@@ -454,9 +426,9 @@ class HospitalPriorityDemo(ClassroomDemo):
                 loads.append({"id": lid, "name": name, "watts": watts, "essential": essential, "served": on, "reason": reason})
             act = self.activity(z)
             transformers.append({
-                "id": f"TX{i+1}", "name": f"Transformer {i+1}", "zone": z,
-                "rated_current_a": self._rating(z).rated_current_a, "sensors": readings[f"TX{i+1}"],
-                "diagnosis": diagnoses[f"TX{i+1}"],
+                "id": ZONE_ASSET[z], "name": CATALOG.transformer_names[ZONE_ASSET[z]], "zone": z,
+                "rated_current_a": self._rating(z).rated_current_a, "sensors": readings[ZONE_ASSET[z]],
+                "diagnosis": diagnoses[ZONE_ASSET[z]],
                 "energized": any(l["served"] for l in loads),
                 "rfid_active": z in self.scanned,
                 "priority_rank": order.index(z) + 1 if z in self.scanned else None,
@@ -498,7 +470,7 @@ class HospitalPriorityDemo(ClassroomDemo):
                             served_w=sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current),
                             reason=open_reason if not closed else f"Campus feeder A; {self.effective_capacity():,} W available")]
         for i, z in enumerate(HOSP_ZONES):
-            tx = f"TX{i+1}"
+            tx = ZONE_ASSET[z]
             vout = readings[tx].get("output_voltage_v")
             diagnosis = diagnoses[tx]
             observed = {"output_voltage_v": vout, "energized": None if vout is None else vout >= 100.0,
@@ -535,11 +507,11 @@ class HospitalPriorityDemo(ClassroomDemo):
         from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc)
-        served = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current) for i, z in enumerate(HOSP_ZONES)}
-        demand = {f"TX{i+1}": sum(x[2] for x in HOSP_LOADS[z]) for i, z in enumerate(HOSP_ZONES)}
+        served = {ZONE_ASSET[z]: sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current) for z in HOSP_ZONES}
+        demand = {ZONE_ASSET[z]: sum(x[2] for x in HOSP_LOADS[z]) for z in HOSP_ZONES}
         readings = zone_readings(served, demand)
         if self.fault:
-            ratings = {f"TX{i+1}": self._rating(z).rated_current_a for i, z in enumerate(HOSP_ZONES)}
+            ratings = {ZONE_ASSET[z]: self._rating(z).rated_current_a for z in HOSP_ZONES}
             readings = apply_fault(readings, self.fault, ratings, self.telemetry_sequence - self.fault["sequence"])
         frozen = {(self.fault["asset"], "current_a")} if self.fault and self.fault["kind"] == "stuck_sensor" else set()
         readings = add_noise(readings, self.telemetry_sequence, frozen)
@@ -547,16 +519,16 @@ class HospitalPriorityDemo(ClassroomDemo):
         self.telemetry_sequence += 1
         for raw in sensor_envelopes(readings, self.telemetry_sequence, now):
             self.telemetry.add(validate_observation(raw, set(readings), now))
-        diagnoses = {f"TX{i+1}": diagnose_transformer(self.telemetry, f"TX{i+1}", self._rating(z), now, peers_input_low={})
-                     for i, z in enumerate(HOSP_ZONES)}
+        diagnoses = {ZONE_ASSET[z]: diagnose_transformer(self.telemetry, ZONE_ASSET[z], self._rating(z), now, peers_input_low={})
+                     for z in HOSP_ZONES}
         return readings, diagnoses
 
     def inject_fault(self, kind: str, zone_id: str | None = None):
         """Persist an injected fault until cleared or reset; the diagnosis still sees only telemetry."""
         if kind not in HOSPITAL_FAULTS:
             raise ValueError(f"unknown fault {kind!r}")
-        zone = zone_id or "Theatre"
-        asset = f"TX{HOSP_ZONES.index(zone) + 1}"
+        zone = zone_id or CATALOG.fault_zone
+        asset = ZONE_ASSET[zone]
         frozen = (self._last_readings.get(asset) or {}).get("current_a")
         self.fault = {"kind": kind, "zone": zone, "asset": asset, "sequence": self.telemetry_sequence,
                       "frozen_current_a": frozen}
@@ -610,8 +582,9 @@ class HospitalTelemetry:
                 for asset in HOSPITAL_ASSETS}
 
 
-def hospital_projection(readings, diagnoses, scenario="normal", zone="Theatre"):
+def hospital_projection(readings, diagnoses, scenario="normal", zone=None):
     """Route view. Load shedding here is simulated actuation; the diagnosis comes only from telemetry."""
+    zone = zone or CATALOG.fault_zone
     transformers = []
     for asset, zname in HOSPITAL_ASSETS.items():
         sensors = readings[asset]
@@ -624,8 +597,8 @@ def hospital_projection(readings, diagnoses, scenario="normal", zone="Theatre"):
             if scenario == "overload" and zname != zone and not essential:
                 served = False
             loads.append({"id": eq_id, "served": served})
-        transformers.append({"id": asset, "name": f"Transformer {asset[-1]}", "zone": zname,
-                             "rated_current_a": 100.0, "sensors": sensors, "diagnosis": diagnoses[asset],
+        transformers.append({"id": asset, "name": CATALOG.transformer_names[asset], "zone": zname,
+                             "rated_current_a": CATALOG.transformer_ratings_a[asset] or 100.0, "sensors": sensors, "diagnosis": diagnoses[asset],
                              "energized": energized, "loads": loads})
     return {"mode": "SIMULATED", "transformers": transformers,
             "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; "
@@ -633,10 +606,11 @@ def hospital_projection(readings, diagnoses, scenario="normal", zone="Theatre"):
                        "certified protection settings."}
 
 
-def hospital_snapshot(scenario="normal", zone="Theatre"):
+def hospital_snapshot(scenario="normal", zone=None):
     """Three observed samples for a diagnostic rehearsal, outside the live control loop."""
     from datetime import datetime, timedelta, timezone
 
+    zone = zone or CATALOG.fault_zone
     telemetry = HospitalTelemetry()
     now = datetime.now(timezone.utc)
     telemetry.sample(scenario, zone, now - timedelta(milliseconds=500))

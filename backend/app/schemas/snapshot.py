@@ -109,6 +109,8 @@ class SiteIdentityResponse(BaseModel):
     revision: int
     profile: str
     catalog_version: str
+    config_hash: str
+    site_name: str
 
 class CrossRouteContract(BaseModel):
     identity: RunIdentity
