@@ -1,0 +1,9 @@
+{
+  "candidate_edge_id": null,
+  "applied_edge_id": "tie-ab",
+  "physical_confirmed_edge_id": null,
+  "stable_since": null,
+  "stable_evidence_count": 0,
+  "reason": "Recovery applied to modeled state; no physical switch confirmation is available.",
+  "provenance": "MODEL_DERIVED"
+}

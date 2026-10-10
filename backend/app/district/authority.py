@@ -210,6 +210,7 @@ class DistrictAuthority:
         if self.candidate_tie:
             reason = self._candidate_reason(self.candidate_tie) or reason
         return {"candidate_edge_id": self.candidate_tie, "applied_edge_id": self.closed_tie,
+                "physical_confirmed_edge_id": None,
                 "stable_since": self.stable_since, "stable_evidence_count": self.stable_evidence_count,
                 "reason": reason, "provenance": "MODEL_DERIVED"}
 

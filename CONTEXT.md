@@ -211,3 +211,25 @@ backend/tests/test_district_evidence.py -q`: **17 passed in 5.20 s**. The first
 run found an evidence-accounting bug (1 failed, 16 passed); corrected so an
 invalid candidate cannot prevent fresh fault-clear evidence. Next: explicit
 physical-confirmation contract and bounded deterministic stress report.
+
+### Issue #65 ? shared restoration contract and topology lifecycle
+
+DistrictRestoration is now a strict API DTO, generated into TypeScript in the
+same change as its frontend fixture. Candidate, applied modeled tie and physical
+confirmation are separate; physical_confirmed_edge_id is constrained to null.
+District snapshots have no serial translation or physical-switch consumer.
+Generation rejects an active fault/recovery study and a completing generation
+job cannot silently clear faults or apply a replacement graph. Apply/clear API
+rejections expose the evidence/capacity explanation.
+Final focused district + benchmark + OpenAPI/frontend fixture checks:
+`PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
+backend/tests/test_district_authority.py backend/tests/test_district_recovery.py
+backend/tests/test_district_recovery_fixtures.py
+backend/tests/test_district_recovery_benchmark.py
+backend/tests/test_district_evidence.py backend/tests/test_district_fixtures.py
+backend/tests/test_district_energy_fixture.py backend/tests/test_openapi_contract.py
+backend/tests/test_frontend_contract.py -q`: **31 passed in 18.53 s**.
+Tests use temporary history storage. Generated OpenAPI/TypeScript export passed;
+`npm.cmd run build --prefix frontend` passed (existing large-chunk warning), and
+`npm.cmd run test:contract --prefix frontend` passed. Next: commit the bounded
+benchmark and its reproducible per-case reports; hardware remains paused.
