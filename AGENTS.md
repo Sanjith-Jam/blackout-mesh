@@ -51,7 +51,7 @@ A and B both use contract v2 (`contracts/serial_protocol.md`); board B's `protoc
 1. Pick the next unfinished step from `PROGRESS_REPORT.md` and the current remaining implementation plan. Break it into commit-sized pieces; one piece = one commit.
 2. Read the code you touch and its callers.
 3. Make the smallest change that completes the step, plus its check if the logic is nontrivial.
-4. Run the relevant checks. Do not commit failing checks.
+4. Run only the focused checks for what you touched (the relevant test file plus `npx tsc -b`/`npm test` for frontend changes). Do not run the full backend suite on every commit; run it once before marking a PR ready. Do not commit failing checks.
 5. Commit: `git add <specific files>` then `git commit -m "<area>: <what>"`, e.g. `backend: exact allocator with 7 kW test`.
 6. Repeat. Do not batch unrelated changes or reformat files you didn't change.
 

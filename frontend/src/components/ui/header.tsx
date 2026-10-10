@@ -36,8 +36,11 @@ export function Header() {
         <SlideTabs tabs={[
           { label: "Overview", href: "/" },
           { label: "District", href: "/grid" },
+          { label: "Appliances", href: "/demo" },
+          { label: "City", href: "/city" },
           { label: "Hospital", href: "/hospital" },
-          { label: "Classrooms", href: "/classrooms" }
+          { label: "Classrooms", href: "/classrooms" },
+          { label: "Console", href: "/console" }
         ]} />
       </div>
       

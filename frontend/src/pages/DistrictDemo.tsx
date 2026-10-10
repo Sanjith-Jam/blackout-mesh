@@ -14,6 +14,7 @@ const TABS = [
 ] as const;
 type Tab = typeof TABS[number]['id'];
 const QUERY_KEY = ['district-study'];
+const EMERGENCY_EDGE = 'edge:junction:78.6583934:17.1624340:junction:78.6584455:17.1615332';
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return <div className="district-kpi"><span>{label}</span><strong>{value}</strong></div>;
@@ -182,6 +183,21 @@ export default function DistrictDemo() {
     observation: healthy === undefined ? undefined : observationRequest(current.state.restoration.last_observation_sequence, healthy),
   });
 
+  // One-click rehearsal: acknowledged, sequential backend actions (peak hour → fault → proposal).
+  const simulateEmergency = () => void submit(async current => {
+    let latest = await action(current, 'reset');
+    while (latest.energy.hour !== 20) latest = await action(latest, 'advance_hour');
+    const tie = (latest.topology.edges as DistrictEdge[]).find(edge => edge.kind === 'tie');
+    const candidates = (latest.topology.edges as DistrictEdge[]).filter(edge => edge.kind !== 'tie');
+    const preferred = candidates.find(edge => edge.id === EMERGENCY_EDGE) ?? candidates[0];
+    latest = await action(latest, 'inject_fault', preferred.id, 'line_open');
+    setIncident({ before: impactOf(current), fault: impactOf(latest) });
+    if (tie) latest = await action(latest, 'propose_recovery');
+    setSelected(preferred.id);
+    setTab('healing');
+    return latest;
+  }, updated => `Simulated emergency: peak hour, line fault, ${updated.state.critical_shortfall_w.toLocaleString()} W critical unmet; backend proposal ${updated.state.restoration.proposal?.solver_status ?? 'pending'}. Record fresh observations, then apply.`);
+
   if (!snapshot) return <div className="district-page district-empty"><h1>{district.isError ? 'District study unavailable' : 'Loading GNITC district…'}</h1>
     {district.isError && <><p role="alert">The local district API did not respond. Start the backend, then reload this snapshot.</p><button onClick={() => void district.refetch()}>Retry</button></>}</div>;
 
@@ -218,6 +234,7 @@ export default function DistrictDemo() {
       <p>Explore one district map through network, energy, recovery and transformer views.</p></div>
       <div className={`district-status${district.isError || district.isPlaceholderData ? ' is-stale' : ''}`} role="status"><span className="district-status-dot" />{statusText}<small>Run {snapshot.identity.run_id.slice(0, 8)} · revision {snapshot.identity.revision}</small></div>
     </header>
+    <div className="district-actions"><button className="is-danger" disabled={disabled} onClick={simulateEmergency}>Simulate emergency</button><button className="is-secondary" disabled={disabled} onClick={() => { setIncident({}); void submit(current => action(current, 'reset'), 'Scenario reset.'); }}>Reset scenario</button><span className="district-action-help">Simulated steps only; no hardware command or physical confirmation.</span></div>
     <p className="district-cue">Real geography; synthetic electrical assets and demand · {snapshot.profile.id} · profile {snapshot.profile.config_hash.slice(0, 12)}</p>
     {snapshot.audit.rehydration?.status === 'RESTORED' && <p className="district-alert" role="status">Restored revision {snapshot.audit.rehydration.from_revision} after a backend restart. Earlier observations are stale; fresh evidence is required before recovery.</p>}
     {district.isError && <p className="district-alert" role="alert">The connection failed. Controls are disabled and the last received snapshot remains visible. <button onClick={() => void district.refetch()}>Retry</button></p>}
