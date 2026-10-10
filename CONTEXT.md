@@ -1,5 +1,11 @@
 # Blackout Mesh — implementation context
 
+## Cross-route contract (#24) — 2026-10-10
+
+Campus snapshot, classroom and hospital views (GET and POST) and the `/ws/live` snapshot now build `contract` with one function, `SiteAuthority.contract()`: same identity (run, site revision, versions, observation time) and the same campus/zone totals from the campus model's published snapshot. Totals carry `scope` and `unit`; zone totals add up to campus totals; facility views add a route-local `view_totals` (`view:classroom_demo`, `view:hospital_demo`, `view:hospital_rehearsal`) that is not additive. Unused duplicate `schemas/contract.py` and `core/identity.py` removed. Rules and limitations: `docs/CROSS_ROUTE_CONTRACT.md`.
+
+Verification: backend suite **200 passed, 2 skipped** (Python 3.14) including `test_cross_route_contract.py` (5 tests, failing before the change); fixtures, `openapi.json` and `schema.d.ts` regenerated; `npm run build`, `npm run test:contract`, `npm test` (18) pass. Not done: UI rendering of scope labels, a profile-switch route.
+
 ## Person A sprint: evidence and backend — 2026-10-10
 
 Answers to the adversarial review, in five commits on `claude/peaceful-volta-r0k5cd`:
