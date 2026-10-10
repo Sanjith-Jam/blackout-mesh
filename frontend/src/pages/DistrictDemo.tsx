@@ -15,6 +15,12 @@ const TABS = [
 ] as const;
 type Tab = typeof TABS[number]['id'];
 const QUERY_KEY = ['district-study'];
+const NEXT_STEP: Record<string, string> = {
+  winding: 'Reduce loading, then check winding resistance and dissolved-gas analysis.',
+  cooling_system: 'Check radiator fans, oil flow and fin blockage before reloading.',
+  core: 'Schedule core insulation and excitation-current tests.',
+  insulation: 'Inspect bushings and run an insulation-resistance test.',
+};
 const EMERGENCY_EDGE = 'edge:junction:78.6583934:17.1624340:junction:78.6584455:17.1615332';
 
 function Kpi({ label, value }: { label: string; value: string }) {
@@ -199,6 +205,16 @@ export default function DistrictDemo() {
     return latest;
   }, updated => `Simulated emergency: peak hour, line fault, ${updated.state.critical_shortfall_w.toLocaleString()} W critical unmet; backend proposal ${updated.state.restoration.proposal?.solver_status ?? 'pending'}. Record fresh observations, then apply.`);
 
+  const inspectTransformerFault = (kind: 'overload' | 'cooling_failure') => {
+    const first = (snapshot?.topology.nodes as DistrictNode[] | undefined)?.find(node => node.role === 'transformer');
+    if (!first) return;
+    setSelected(first.id);
+    setTab('transformers');
+    setTransformerScenario(kind);
+    void submit(current => action(current, 'transformer_scenario', first.id, kind),
+      updated => `Simulated ${kind === 'overload' ? 'overload' : 'cooling failure'} observations applied to ${first.id}: ${updated.state.transformers.find(item => item.component_id === first.id)?.diagnosis.suspected_part ?? 'no suspected part'} highlighted.`);
+  };
+
   if (!snapshot) return <div className="district-page district-empty"><h1>{district.isError ? 'District study unavailable' : 'Loading GNITC district…'}</h1>
     {district.isError && <><p role="alert">The local district API did not respond. Start the backend, then reload this snapshot.</p><button onClick={() => void district.refetch()}>Retry</button></>}</div>;
 
@@ -235,7 +251,7 @@ export default function DistrictDemo() {
       <p>Explore one district map through network, energy, recovery and transformer views.</p></div>
       <div className={`district-status${district.isError || district.isPlaceholderData ? ' is-stale' : ''}`} role="status"><span className="district-status-dot" />{statusText}<small>Run {snapshot.identity.run_id.slice(0, 8)} · revision {snapshot.identity.revision}</small></div>
     </header>
-    <div className="district-actions"><button className="is-danger" disabled={disabled} onClick={simulateEmergency}>Simulate emergency</button><button className="is-secondary" disabled={disabled} onClick={() => { setIncident({}); void submit(current => action(current, 'reset'), 'Scenario reset.'); }}>Reset scenario</button><span className="district-action-help">Simulated steps only; no hardware command or physical confirmation.</span></div>
+    <div className="district-actions"><button className="is-danger" disabled={disabled} onClick={simulateEmergency}>Simulate emergency</button><button className="is-secondary" disabled={disabled} onClick={() => inspectTransformerFault('overload')}>Inspect transformer fault</button><button className="is-secondary" disabled={disabled} onClick={() => { setIncident({}); void submit(current => action(current, 'reset'), 'Scenario reset.'); }}>Reset scenario</button><span className="district-action-help">Simulated steps only; no hardware command or physical confirmation.</span></div>
     <p className="district-cue">Real geography; synthetic electrical assets and demand · {snapshot.profile.id} · profile {snapshot.profile.config_hash.slice(0, 12)}</p>
     {snapshot.audit.rehydration?.status === 'RESTORED' && <p className="district-alert" role="status">Restored revision {snapshot.audit.rehydration.from_revision} after a backend restart. Earlier observations are stale; fresh evidence is required before recovery.</p>}
     {district.isError && <p className="district-alert" role="alert">The connection failed. Controls are disabled and the last received snapshot remains visible. <button onClick={() => void district.refetch()}>Retry</button></p>}
@@ -291,6 +307,7 @@ export default function DistrictDemo() {
           {selectedTransformer ? <><TransformerCutaway componentId={selectedTransformer.component_id} suspectedPart={selectedTransformer.diagnosis.status === 'SUSPECTED' ? selectedTransformer.diagnosis.suspected_part : null} />
             <p className={selectedTransformer.diagnosis.suspected_part ? 'district-alert' : ''}>{selectedTransformer.diagnosis.status === 'UNKNOWN' || !selectedTransformer.diagnosis.suspected_part ? 'Unknown: no fresh evidence supports a suspected area.' : `Simulated observation indicates ${selectedTransformer.diagnosis.suspected_part}. This is not a physical diagnosis.`}</p>
             <div className="district-data-table"><table><caption>Transformer telemetry · source: {String(selectedTransformer.sensor.provenance || 'unknown')}</caption><tbody><tr><th>Oil temperature</th><td>{transformerReading(selectedTransformer.sensor, 'oil_temperature_c', '°C')}</td><th>Voltage</th><td>{transformerReading(selectedTransformer.sensor, 'voltage_v', 'V')}</td></tr><tr><th>Current</th><td>{transformerReading(selectedTransformer.sensor, 'current_a', 'A')}</td><th>Cooling</th><td>{selectedTransformer.sensor.status === 'STALE' ? <><span>Unknown</span><small>Stale last reading: {selectedTransformer.sensor.cooling_ok ? 'OK' : 'Not OK'}</small></> : selectedTransformer.sensor.cooling_ok == null ? 'Unknown' : selectedTransformer.sensor.cooling_ok ? 'OK' : 'Not OK'}</td></tr></tbody></table></div>
+            {selectedTransformer.diagnosis.status === 'SUSPECTED' && selectedTransformer.diagnosis.suspected_part && <p><strong>Next inspection step:</strong> {NEXT_STEP[selectedTransformer.diagnosis.suspected_part] ?? 'Inspect the highlighted area.'} Simulated observations only; not a physical diagnosis.</p>}
             <ul className="district-list">{selectedTransformer.diagnosis.evidence.map((item, index) => <li key={index}>{item}</li>)}</ul>
             <label className="district-scenario-label">Simulated observation scenario<select value={transformerScenario} onChange={event => setTransformerScenario(event.target.value)}><option value="overload">Overload</option><option value="cooling_failure">Cooling failure</option><option value="missing_sensor">Missing sensor</option><option value="stale_sensor">Stale sensor readings</option></select></label>
             <div className="district-actions"><button disabled={disabled} onClick={() => void submit(current => action(current, 'transformer_scenario', selectedTransformer.component_id, transformerScenario), 'Simulated transformer observations updated.')}>Apply scenario</button><button className="is-secondary" disabled={disabled} onClick={() => void submit(current => action(current, 'transformer_scenario', selectedTransformer.component_id, 'clear'), 'Simulated transformer scenario cleared.')}>Clear scenario</button></div>
