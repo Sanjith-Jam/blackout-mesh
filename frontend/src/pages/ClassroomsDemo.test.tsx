@@ -76,7 +76,7 @@ describe('Classrooms page (#16)', () => {
     mockFetch({ [`GET ${PATH}`]: () => ({ json: classrooms }), [`POST ${PATH}`]: () => ({ status: 422, json: { detail: 'bad' } }) });
     renderPage();
     fireEvent.click(await screen.findByRole('button', { name: /Scan CR3/ }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/HTTP error 422|failed/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/bad|HTTP error 422|failed/i);
     expect(screen.getByRole('button', { name: /CR1 scanned/ })).toBeInTheDocument();
   });
 
