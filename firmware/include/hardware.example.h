@@ -4,4 +4,6 @@
 // For each verified GPIO use #undef then #define, e.g.:
 // #undef BUTTON_END
 // #define BUTTON_END <verified GPIO>
+// #undef BUTTON_FALLBACK_A
+// #define BUTTON_FALLBACK_A <verified GPIO>   (RFID-fail fallback, starts room A)
 // Button defaults: INPUT_PULLUP, active LOW, switch between GPIO and GND.

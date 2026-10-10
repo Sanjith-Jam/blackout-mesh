@@ -22,6 +22,8 @@ int main() {
   input.sync(0);
   assert(input.button(0) == Action::IGNORED_NO_SELECTION);
   assert(input.button(1) == Action::SHORTAGE && input.button(2) == Action::RESTORE);
+  assert(input.button(4) == Action::START_SESSION && input.selected == 'A');  // RFID fallback button
+  assert(input.button(0) == Action::END_SESSION);
   input.disconnect(); assert(input.button(1) == Action::UNSYNCHRONIZED);
   Button button;
   assert(!button.poll(true, 0)); assert(!button.poll(false, 5));

@@ -11,6 +11,8 @@
 #define BUTTON_SHORTAGE 26
 #define BUTTON_RESTORE 27
 #define BUTTON_RESET 32
+// Fallback when the RFID reader fails: starts a session for room A without a card.
+#define BUTTON_FALLBACK_A 33
 #define BUTTON_ACTIVE_LEVEL 0
 #define RADIO_CHANNEL 1
 #define SERIAL_BAUD 115200
@@ -18,19 +20,21 @@
 #include "hardware.local.h"
 #endif
 namespace config {
-constexpr int buttons[] = {BUTTON_END, BUTTON_SHORTAGE, BUTTON_RESTORE, BUTTON_RESET};
+// Index order matters: 0 END, 1 SHORTAGE (deprived of kW), 2 RESTORE (normal), 3 RESET (hold), 4 FALLBACK room A.
+constexpr int buttons[] = {BUTTON_END, BUTTON_SHORTAGE, BUTTON_RESTORE, BUTTON_RESET, BUTTON_FALLBACK_A};
+constexpr int BUTTON_COUNT = sizeof(buttons) / sizeof(buttons[0]);
+constexpr int RESET_BUTTON_INDEX = 3;
 constexpr bool safeButton(int pin) {
   return pin == -1 || pin == 4 || pin == 13 || pin == 14 || pin == 25 ||
          pin == 26 || pin == 27 || pin == 32 || pin == 33;
 }
-static_assert(safeButton(BUTTON_END) && safeButton(BUTTON_SHORTAGE) &&
-              safeButton(BUTTON_RESTORE) && safeButton(BUTTON_RESET), "Unsafe button GPIO");
-static_assert((BUTTON_END < 0 || BUTTON_SHORTAGE < 0 || BUTTON_END != BUTTON_SHORTAGE) &&
-              (BUTTON_END < 0 || BUTTON_RESTORE < 0 || BUTTON_END != BUTTON_RESTORE) &&
-              (BUTTON_END < 0 || BUTTON_RESET < 0 || BUTTON_END != BUTTON_RESET) &&
-              (BUTTON_SHORTAGE < 0 || BUTTON_RESTORE < 0 || BUTTON_SHORTAGE != BUTTON_RESTORE) &&
-              (BUTTON_SHORTAGE < 0 || BUTTON_RESET < 0 || BUTTON_SHORTAGE != BUTTON_RESET) &&
-              (BUTTON_RESTORE < 0 || BUTTON_RESET < 0 || BUTTON_RESTORE != BUTTON_RESET), "Duplicate button GPIO");
+constexpr bool allSafe(int i = 0) { return i >= BUTTON_COUNT || (safeButton(buttons[i]) && allSafe(i + 1)); }
+constexpr bool distinctFrom(int i, int j) {
+  return j >= BUTTON_COUNT || ((buttons[i] < 0 || buttons[j] < 0 || buttons[i] != buttons[j]) && distinctFrom(i, j + 1));
+}
+constexpr bool allDistinct(int i = 0) { return i >= BUTTON_COUNT || (distinctFrom(i, i + 1) && allDistinct(i + 1)); }
+static_assert(allSafe(), "Unsafe button GPIO");
+static_assert(allDistinct(), "Duplicate button GPIO");
 }
 #if __has_include("secrets.h")
 #include "secrets.h"
