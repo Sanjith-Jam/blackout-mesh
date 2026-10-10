@@ -308,11 +308,17 @@ def diagnose(rated_current_a, current_a, temperature_c, input_voltage_v, output_
 
 
 HOSP_ZONES = ("ICU", "Theatre", "Wards")
+# Hospital equipment are the leaves of campus feeder A (docs/CATALOG_MIGRATION.md):
+# every essential leaf belongs to a T1 service (L0 essential circuit, L1 emergency lighting) and every
+# optional leaf to L2 (water pump and HVAC). reconcile_catalog() checks the sums at startup.
 HOSP_LOADS = {
-    "ICU": [("ventilator", "Ventilator", 300, True), ("monitor", "Patient Monitor", 100, True), ("infusion", "Infusion Pump", 50, True), ("lights", "Emergency Lights", 50, True), ("oxygen", "O2 System", 500, True)],
-    "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 800, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 1400, False)],
-    "Wards": [("bed_lights", "Bed Lights", 200, False), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 500, False), ("tv", "Patient TV", 200, False), ("ac", "Air Conditioning", 2000, False)],
+    "ICU": [("ventilator", "Ventilator", 300, True), ("monitor", "Patient Monitor", 100, True), ("infusion", "Infusion Pump", 50, True), ("lights", "Emergency Lights", 200, True), ("oxygen", "O2 System", 500, True)],
+    "Theatre": [("surgical_light", "Surgical Light", 500, True), ("anesthesia", "Anesthesia Unit", 200, True), ("esu", "Electrosurgical", 650, True), ("monitor", "Vital Monitor", 100, True), ("ac", "Climate Control", 900, False)],
+    "Wards": [("bed_lights", "Bed Lights", 300, True), ("nurse_call", "Nurse Call", 100, True), ("fans", "Ceiling Fans", 300, False), ("water_pump", "Water Pump", 600, False), ("ac", "Air Conditioning", 1200, False)],
 }
+HOSP_PARENT = {("ICU", "lights"): "L1", ("Theatre", "surgical_light"): "L1", ("Wards", "bed_lights"): "L1"}
+HOSP_PARENT.update({(z, item[0]): ("L0" if item[3] else "L2") for z, rows in HOSP_LOADS.items() for item in rows
+                    if (z, item[0]) not in HOSP_PARENT})
 HOSPITAL_LOADS = {zone: [(item[0], item[3]) for item in loads] for zone, loads in HOSP_LOADS.items()}
 HOSP_LOAD_KEYS = tuple((zone, item[0]) for zone in HOSP_ZONES for item in HOSP_LOADS[zone])
 
@@ -324,7 +330,7 @@ class HospitalPriorityDemo(ClassroomDemo):
     publishes; snapshot() is a read-only copy (#9, #10). Essential equipment is protected (#22).
     """
 
-    NORMAL_W, OVERLOAD_W, RANGE_W = 7000, 3000, (0, 7000)
+    NORMAL_W, OVERLOAD_W, RANGE_W = 6000, 4000, (0, 6000)
 
     def __init__(self, clock=None, model=None, replay=None):
         import time
@@ -336,7 +342,8 @@ class HospitalPriorityDemo(ClassroomDemo):
         self.replay = {} if replay is None else replay
         self.replay_length = 0  # no recorded activity evidence exists for hospital zones
         self.capacity = self.NORMAL_W
-        self.campus_limit_w = None  # not coupled: hospital zones have no reviewed campus mapping
+        self.campus_limit_w: int | None = None  # set by the site authority from campus feeder A service
+        self.campus_feeder_closed: bool | None = None  # set by the site authority: is campus feeder A available?
         self.scanned: list[str] = []
         self.gate = RestorationGate(clock)
         self.replay_running = False
@@ -417,8 +424,12 @@ class HospitalPriorityDemo(ClassroomDemo):
         essential = [(z, x) for z in HOSP_ZONES for x in HOSP_LOADS[z] if x[3]]
         safety = shortfall_status(sum(x[2] for _, x in essential), sum(x[2] for z, x in essential if (z, x[0]) in current))
         status = self.model.status() if hasattr(self.model, "status") else {}
+        limited_by = ("campus feeder A" if self.campus_limit_w is not None and self.campus_limit_w < self.capacity
+                      else "hospital limit")
         return {
             "capacity_w": self.capacity, "capacity_range_w": list(self.RANGE_W),
+            "hospital_limit_w": self.capacity, "campus_limit_w": self.campus_limit_w,
+            "effective_capacity_w": self.effective_capacity(), "limited_by": limited_by,
             "requested_w": requested, "served_w": served_w, "shortfall_w": requested - served_w,
             "selected_zone_id": self.scanned[-1] if self.scanned else None,
             "scanned_zone_ids": [z for z in HOSP_ZONES if z in self.scanned],
@@ -426,15 +437,19 @@ class HospitalPriorityDemo(ClassroomDemo):
             "transformers": transformers, "mode": "SIMULATED", "safety": safety, "edges": edges,
             "model": {"ready": bool(status.get("ready")), "model_version": status.get("model_version", "unavailable"), "fallback_reason": status.get("fallback_reason")},
             "replay": {"running": self.replay_running, "index": self.replay_index(), "length": self.replay_length, "step_s": REPLAY_STEP_S},
-            "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next."
+            "policy": "Hospital: the equipment decomposes campus feeder A (L0 essential circuit, L1 emergency "
+                      "lighting, L2 water pump and HVAC). Essential equipment is always served first; scanned "
+                      "zones' optional equipment next, within the feeder A power the campus allocated."
         }
 
     def _hospital_edges(self, target, current, readings, diagnoses):
         """Supply -> bus -> transformer -> equipment edges for the hospital drawing (#23)."""
-        edges = [power_edge("hospital:SUPPLY>BUS", "UTILITY", "BUS", connected=True, commanded=bool(target),
+        closed = self.campus_feeder_closed is not False
+        open_reason = "Open: campus feeder A is unavailable"
+        edges = [power_edge("hospital:SUPPLY>BUS", "UTILITY", "BUS", connected=closed, commanded=bool(target),
                             applied=bool(current), requested_w=sum(x[2] for rows in HOSP_LOADS.values() for x in rows),
                             served_w=sum(x[2] for z in HOSP_ZONES for x in HOSP_LOADS[z] if (z, x[0]) in current),
-                            reason=f"Utility supply; {self.effective_capacity():,} W hospital limit")]
+                            reason=open_reason if not closed else f"Campus feeder A; {self.effective_capacity():,} W available")]
         for i, z in enumerate(HOSP_ZONES):
             tx = f"TX{i+1}"
             vout = readings[tx].get("output_voltage_v")
@@ -444,19 +459,21 @@ class HospitalPriorityDemo(ClassroomDemo):
                         "note": "Voltage presence only; no measured branch current."}
             unknown = diagnosis.get("status") == "ABSTAINED" or vout is None
             zone_served = sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current)
-            edges.append(power_edge(f"hospital:BUS>{tx}", "BUS", tx, connected=True,
+            edges.append(power_edge(f"hospital:BUS>{tx}", "BUS", tx, connected=closed,
                                     commanded=any((z, x[0]) in target for x in HOSP_LOADS[z]),
                                     applied=any((z, x[0]) in current for x in HOSP_LOADS[z]),
                                     requested_w=sum(x[2] for x in HOSP_LOADS[z]), served_w=zone_served, observed=observed,
                                     evidence_unknown=unknown,
-                                    reason=(f"Diagnosis abstained: {diagnosis.get('cause')}" if unknown
+                                    reason=(open_reason if not closed else
+                                            f"Diagnosis abstained: {diagnosis.get('cause')}" if unknown
                                             else f"{zone_served:,} W of {z} equipment served")))
             for lid, name, watts, essential in HOSP_LOADS[z]:
                 key = (z, lid)
-                reason = (f"{name}: served ({'essential' if essential else 'optional'})" if key in current else
+                reason = (open_reason if not closed else
+                          f"{name}: served ({'essential' if essential else 'optional'})" if key in current else
                           f"{name}: commanded on, waiting for the restoration delay" if key in target else
                           f"{name}: shed by the allocator")
-                edges.append(power_edge(f"hospital:{tx}>{lid}", tx, f"{tx}.{lid}", connected=True,
+                edges.append(power_edge(f"hospital:{tx}>{lid}", tx, f"{tx}.{lid}", connected=closed,
                                         commanded=key in target, applied=key in current, requested_w=watts,
                                         served_w=watts if key in current else 0, reason=reason))
         return edges

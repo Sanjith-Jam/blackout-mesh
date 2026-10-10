@@ -1,22 +1,23 @@
 {
+ "campus_limit_w": 6000,
  "capacity_range_w": [
   0,
-  7000
+  6000
  ],
- "capacity_w": 7000,
+ "capacity_w": 6000,
  "command": null,
  "contract": {
   "campus_totals": null,
   "identity": {
    "catalog_version": "1.0",
-   "config_hash": "e7cb835f",
+   "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T00:48:43.678263+00:00",
+   "observation_time": "2026-10-10T01:03:06.255982+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791593323,
+   "server_epoch": 1791594186,
    "site_id": "Default Campus",
-   "state_revision": 5
+   "state_revision": 6
   },
   "zone_totals": {}
  },
@@ -30,9 +31,9 @@
    "observed": null,
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Utility supply; 7,000 W hospital limit",
-   "requested_w": 7000,
-   "served_w": 7000,
+   "reason": "Campus feeder A; 6,000 W available",
+   "requested_w": 6000,
+   "served_w": 6000,
    "state": "ENERGIZED",
    "to": "BUS",
    "unit": "W"
@@ -52,9 +53,9 @@
    },
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "1,000 W of ICU equipment served",
-   "requested_w": 1000,
-   "served_w": 1000,
+   "reason": "1,150 W of ICU equipment served",
+   "requested_w": 1150,
+   "served_w": 1150,
    "state": "ENERGIZED",
    "to": "TX1",
    "unit": "W"
@@ -117,8 +118,8 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Emergency Lights: served (essential)",
-   "requested_w": 50,
-   "served_w": 50,
+   "requested_w": 200,
+   "served_w": 200,
    "state": "ENERGIZED",
    "to": "TX1.lights",
    "unit": "W"
@@ -154,9 +155,9 @@
    },
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "3,000 W of Theatre equipment served",
-   "requested_w": 3000,
-   "served_w": 3000,
+   "reason": "2,350 W of Theatre equipment served",
+   "requested_w": 2350,
+   "served_w": 2350,
    "state": "ENERGIZED",
    "to": "TX2",
    "unit": "W"
@@ -203,8 +204,8 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Electrosurgical: served (essential)",
-   "requested_w": 800,
-   "served_w": 800,
+   "requested_w": 650,
+   "served_w": 650,
    "state": "ENERGIZED",
    "to": "TX2.esu",
    "unit": "W"
@@ -235,8 +236,8 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Climate Control: served (optional)",
-   "requested_w": 1400,
-   "served_w": 1400,
+   "requested_w": 900,
+   "served_w": 900,
    "state": "ENERGIZED",
    "to": "TX2.ac",
    "unit": "W"
@@ -256,9 +257,9 @@
    },
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "3,000 W of Wards equipment served",
-   "requested_w": 3000,
-   "served_w": 3000,
+   "reason": "2,500 W of Wards equipment served",
+   "requested_w": 2500,
+   "served_w": 2500,
    "state": "ENERGIZED",
    "to": "TX3",
    "unit": "W"
@@ -272,9 +273,9 @@
    "observed": null,
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Bed Lights: served (optional)",
-   "requested_w": 200,
-   "served_w": 200,
+   "reason": "Bed Lights: served (essential)",
+   "requested_w": 300,
+   "served_w": 300,
    "state": "ENERGIZED",
    "to": "TX3.bed_lights",
    "unit": "W"
@@ -305,8 +306,8 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Ceiling Fans: served (optional)",
-   "requested_w": 500,
-   "served_w": 500,
+   "requested_w": 300,
+   "served_w": 300,
    "state": "ENERGIZED",
    "to": "TX3.fans",
    "unit": "W"
@@ -316,15 +317,15 @@
    "commanded": true,
    "connected": true,
    "from": "TX3",
-   "id": "hospital:TX3>tv",
+   "id": "hospital:TX3>water_pump",
    "observed": null,
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
-   "reason": "Patient TV: served (optional)",
-   "requested_w": 200,
-   "served_w": 200,
+   "reason": "Water Pump: served (optional)",
+   "requested_w": 600,
+   "served_w": 600,
    "state": "ENERGIZED",
-   "to": "TX3.tv",
+   "to": "TX3.water_pump",
    "unit": "W"
   },
   {
@@ -337,21 +338,24 @@
    "physical": "NOT_CONNECTED",
    "provenance": "MODELED",
    "reason": "Air Conditioning: served (optional)",
-   "requested_w": 2000,
-   "served_w": 2000,
+   "requested_w": 1200,
+   "served_w": 1200,
    "state": "ENERGIZED",
    "to": "TX3.ac",
    "unit": "W"
   }
  ],
+ "effective_capacity_w": 6000,
  "generated_at": "<volatile>",
+ "hospital_limit_w": 6000,
+ "limited_by": "hospital limit",
  "mode": "SIMULATED",
  "model": {
   "fallback_reason": null,
   "model_version": "uci-occ-logistic-2026-10-09",
   "ready": true
  },
- "policy": "Hospital: Essential life-saving equipment always prioritized. Scanned wards' optional equipment next.",
+ "policy": "Hospital: the equipment decomposes campus feeder A (L0 essential circuit, L1 emergency lighting, L2 water pump and HVAC). Essential equipment is always served first; scanned zones' optional equipment next, within the feeder A power the campus allocated.",
  "priority_order": [],
  "replay": {
   "index": 0,
@@ -359,7 +363,7 @@
   "running": false,
   "step_s": 5.0
  },
- "requested_w": 7000,
+ "requested_w": 6000,
  "safety": {
   "fallback_order": [
    "hospital critical (L0, L1)",
@@ -367,19 +371,19 @@
    "optional loads in room rank order"
   ],
   "policy_version": "safety-2026-10-10.1",
-  "protected_requested_w": 2700,
-  "protected_served_w": 2700,
+  "protected_requested_w": 3000,
+  "protected_served_w": 3000,
   "protected_shortfall_w": 0,
   "status": "FEASIBLE"
  },
  "scanned_zone_ids": [],
  "selected_zone_id": null,
- "served_w": 7000,
+ "served_w": 6000,
  "shortfall_w": 0,
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 5,
+  "revision": 6,
   "run_id": "<volatile>"
  },
  "summary": null,
@@ -399,7 +403,7 @@
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 4.3 A within rating (4.8 A limit).",
+     "Current 5.0 A within rating (5.5 A limit).",
      "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
      "Input 230.0 V, Output 220.0 V."
@@ -444,7 +448,7 @@
      "name": "Emergency Lights",
      "reason": "served",
      "served": true,
-     "watts": 50
+     "watts": 200
     },
     {
      "essential": true,
@@ -457,11 +461,11 @@
    ],
    "name": "Transformer 1",
    "priority_rank": null,
-   "rated_current_a": 4.35,
+   "rated_current_a": 5.0,
    "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 4.35,
+    "current_a": 5.0,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
     "temperature_c": 60.0
@@ -483,7 +487,7 @@
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 13.0 A within rating (14.3 A limit).",
+     "Current 10.2 A within rating (11.2 A limit).",
      "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
      "Input 230.0 V, Output 220.0 V."
@@ -520,7 +524,7 @@
      "name": "Electrosurgical",
      "reason": "served",
      "served": true,
-     "watts": 800
+     "watts": 650
     },
     {
      "essential": true,
@@ -536,16 +540,16 @@
      "name": "Climate Control",
      "reason": "served",
      "served": true,
-     "watts": 1400
+     "watts": 900
     }
    ],
    "name": "Transformer 2",
    "priority_rank": null,
-   "rated_current_a": 13.04,
+   "rated_current_a": 10.22,
    "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 13.04,
+    "current_a": 10.22,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
     "temperature_c": 60.0
@@ -567,7 +571,7 @@
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 13.0 A within rating (14.3 A limit).",
+     "Current 10.9 A within rating (12.0 A limit).",
      "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
      "Input 230.0 V, Output 220.0 V."
@@ -583,12 +587,12 @@
    "id": "TX3",
    "loads": [
     {
-     "essential": false,
+     "essential": true,
      "id": "bed_lights",
      "name": "Bed Lights",
      "reason": "served",
      "served": true,
-     "watts": 200
+     "watts": 300
     },
     {
      "essential": true,
@@ -604,15 +608,15 @@
      "name": "Ceiling Fans",
      "reason": "served",
      "served": true,
-     "watts": 500
+     "watts": 300
     },
     {
      "essential": false,
-     "id": "tv",
-     "name": "Patient TV",
+     "id": "water_pump",
+     "name": "Water Pump",
      "reason": "served",
      "served": true,
-     "watts": 200
+     "watts": 600
     },
     {
      "essential": false,
@@ -620,16 +624,16 @@
      "name": "Air Conditioning",
      "reason": "served",
      "served": true,
-     "watts": 2000
+     "watts": 1200
     }
    ],
    "name": "Transformer 3",
    "priority_rank": null,
-   "rated_current_a": 13.04,
+   "rated_current_a": 10.87,
    "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 13.04,
+    "current_a": 10.87,
     "input_voltage_v": 230.0,
     "output_voltage_v": 220.0,
     "temperature_c": 60.0

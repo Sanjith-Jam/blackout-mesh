@@ -1119,6 +1119,14 @@ export interface components {
             capacity_w?: number | null;
             /** Capacity Range W */
             capacity_range_w?: number[] | null;
+            /** Hospital Limit W */
+            hospital_limit_w?: number | null;
+            /** Campus Limit W */
+            campus_limit_w?: number | null;
+            /** Effective Capacity W */
+            effective_capacity_w?: number | null;
+            /** Limited By */
+            limited_by?: ("hospital limit" | "campus feeder A") | null;
             /** Requested W */
             requested_w?: number | null;
             /** Served W */

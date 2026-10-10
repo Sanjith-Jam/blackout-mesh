@@ -81,3 +81,33 @@ def test_headroom_is_zero_without_feeder_b_and_capped_by_its_limit():
     assert classroom_headroom_w(grid) == 8000
     grid.set_feeder("B", False)
     assert classroom_headroom_w(grid) == 0
+
+
+def test_hospital_leaves_reconcile_with_campus_feeder_a():
+    from app.visualizers import HOSP_LOADS, HOSP_PARENT
+    feeder_a = {s["id"]: s for s in SERVICE_CATALOG if s["feeder"] == "A"}
+    for sid, svc in feeder_a.items():
+        leaves = [item for z, rows in HOSP_LOADS.items() for item in rows if HOSP_PARENT[(z, item[0])] == sid]
+        assert sum(item[2] for item in leaves) == svc["watts"]
+        assert all(item[3] == (svc["tier"] == "T1") for item in leaves)
+    campus, _, hospital = read_all()
+    assert hospital["requested_w"] == sum(s["watts"] for s in campus["services"] if s["feeder"] == "A") == 6000
+
+
+def test_feeder_a_trip_opens_the_hospital_view_in_the_same_revision():
+    client.post("/api/v1/simulation/feeder", json={"feeder": "A", "available": False})
+    campus, classroom, hospital = read_all()
+    assert len({(p["site"]["run_id"], p["site"]["revision"]) for p in (campus, classroom, hospital)}) == 1
+    assert hospital["campus_limit_w"] == 0 and hospital["served_w"] == 0
+    assert hospital["limited_by"] == "campus feeder A"
+    assert hospital["safety"]["status"] == "PROTECTED_SHORTFALL"
+    assert hospital["edges"] and all(e["state"] == "OPEN" for e in hospital["edges"])
+
+
+def test_campus_shortage_bounds_the_hospital_to_what_the_campus_served_on_feeder_a():
+    client.post("/api/v1/simulation/capacity", json={"capacity_w": 4000})
+    campus, _, hospital = read_all()
+    served_a = sum(s["watts"] for s in campus["services"] if s["feeder"] == "A" and s["modeled_served"])
+    assert hospital["campus_limit_w"] == served_a == hospital["effective_capacity_w"]
+    assert hospital["served_w"] <= served_a
+    assert hospital["safety"]["protected_served_w"] == 3000  # L0 + L1 essentials

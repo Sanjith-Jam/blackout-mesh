@@ -472,6 +472,10 @@ class HospitalDemoResponse(BaseModel):
     summary: Optional[str] = None
     capacity_w: Optional[int] = None
     capacity_range_w: Optional[List[int]] = None
+    hospital_limit_w: Optional[int] = None
+    campus_limit_w: Optional[int] = None
+    effective_capacity_w: Optional[int] = None
+    limited_by: Optional[Literal["hospital limit", "campus feeder A"]] = None
     requested_w: Optional[int] = None
     served_w: Optional[int] = None
     shortfall_w: Optional[int] = None

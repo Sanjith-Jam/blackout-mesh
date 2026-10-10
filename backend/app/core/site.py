@@ -14,7 +14,7 @@ from sqlmodel import Session
 from app.core.state import CLASSROOMS, SERVICE_CATALOG, site_profile
 from app.schemas.snapshot import SiteIdentityResponse
 from app.storage.models import Run
-from app.visualizers import LOADS as CLASSROOM_LEAVES
+from app.visualizers import HOSP_LOADS, HOSP_PARENT, LOADS as CLASSROOM_LEAVES
 
 CATALOG_VERSION = "site-catalog-2026-10-10.1"
 PROFILE = "campus"
@@ -26,6 +26,8 @@ class AuditUnavailable(RuntimeError):
 
 # Classroom appliance leaves decompose these campus services (no double counting).
 CLASSROOM_PARENT = {c["id"]: c["service_id"] for c in CLASSROOMS}
+# Hospital equipment leaves decompose every campus feeder A service.
+HOSPITAL_SERVICES = tuple(s["id"] for s in SERVICE_CATALOG if s["feeder"] == "A")
 
 
 def reconcile_catalog() -> list[str]:
@@ -38,6 +40,19 @@ def reconcile_catalog() -> list[str]:
             problems.append(f"{room}: leaves {leaves} W != {parent} {services[parent]['watts']} W")
         if services[parent]["feeder"] != "B":
             problems.append(f"{parent} is not on feeder B")
+    hospital = {sid: 0 for sid in HOSPITAL_SERVICES}
+    for zone, rows in HOSP_LOADS.items():
+        for lid, _name, watts, essential in rows:
+            parent = HOSP_PARENT.get((zone, lid))
+            if parent not in hospital:
+                problems.append(f"{zone}.{lid} has no hospital parent service")
+                continue
+            hospital[parent] += watts
+            if essential != (services[parent]["tier"] == "T1"):
+                problems.append(f"{zone}.{lid}: essential={essential} but {parent} is {services[parent]['tier']}")
+    for sid, leaves in hospital.items():
+        if leaves != services[sid]["watts"]:
+            problems.append(f"hospital leaves of {sid} {leaves} W != {services[sid]['watts']} W")
     return problems
 
 
@@ -49,6 +64,15 @@ def classroom_headroom_w(grid) -> int:
     feeder_a_served = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
                           if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
     return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - feeder_a_served))
+
+
+def hospital_headroom_w(grid) -> int:
+    """Feeder A power the campus allocated to hospital services, from its last published state."""
+    snap = grid.published
+    if snap is None or not grid.feeder_available.get("A", False):
+        return 0
+    return sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+               if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
 
 
 class SiteAuthority:
@@ -76,6 +100,8 @@ class SiteAuthority:
             self.classroom.campus_limit_w = classroom_headroom_w(self.grid)
             self.classroom.campus_feeder_closed = bool(self.grid.feeder_available.get("B", False))
             self.classroom.tick()
+            self.hospital.campus_limit_w = hospital_headroom_w(self.grid)
+            self.hospital.campus_feeder_closed = bool(self.grid.feeder_available.get("A", False))
             self.hospital.tick()
             seen = self._part_revisions()
             if seen != self._seen:
