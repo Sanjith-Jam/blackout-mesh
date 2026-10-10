@@ -142,3 +142,7 @@ Validation: 197 backend tests passed against temporary databases; 18 frontend co
 ### #19 ranked held-out v3 — 2026-10-10
 
 Ranked v2 could not be unsealed (frozen against a detector that changed before it ran). Froze `diag-bench-ranked-v3` (seeds 5000–5007) against the current detector, committed it, then unsealed it once. All fault families detected 8/8 with zero safety violations; top-1/top-3/MRR 1.0 on all 80 ranked cases; dropout and stuck-sensor abstention precision/recall 1.0 (8/8 each). Results in `backend/benchmarks/diagnosis/results/diagnosis_ranked_v3_heldout.{md,json}`; details in `docs/ISSUE_19_DELIVERY.md`. This supersedes the earlier "keep #19 open" notes. Synthetic, developer-held-out only.
+
+## Issue #26 configurable site profiles — 2026-10-10
+
+The active site is one validated JSON profile (`SITE_PROFILE`, default `backend/sites/default_campus.json`); `app/core/active_site.py` loads it once and every module derives its catalog from `CATALOG` (services, classrooms and appliances, hospital zones and equipment, LED bits, board A room letters, presets, protected T1 services). Validation is strict and lists every problem by asset before startup. `backend/sites/small_test_site.json` (4 services, 2 classrooms, 2 hospital zones) runs with no source edits. Snapshots, view identities and persisted decisions carry the profile's config hash. Real RFID UIDs go in the ignored `backend/sites/rfid_enrollment.local.json`. Details and limits: `docs/SITE_PROFILES.md`.

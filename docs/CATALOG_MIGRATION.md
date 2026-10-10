@@ -1,6 +1,6 @@
 # Site catalog inventory and migration table (#3)
 
-Catalog version `site-catalog-2026-10-10.1`. This file records every identifier, load, feeder, room mapping and route command that existed before the three demo authorities were placed under one site authority. It must be updated in the same commit as any catalog change.
+Catalog version `site-catalog-2026-10-10.1`, now `site-catalog-1.1` from `backend/sites/default_campus.json` (#26: the inventory below is defined by that profile; see `docs/SITE_PROFILES.md`). This file records every identifier, load, feeder, room mapping and route command that existed before the three demo authorities were placed under one site authority. It must be updated in the same commit as any catalog change.
 
 ## Before: three independent authorities
 
