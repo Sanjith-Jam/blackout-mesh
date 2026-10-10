@@ -17,6 +17,7 @@ NORMAL_SENSORS = (45.0, 58.0, 230.0, 220.0, True)
 HOSPITAL_FAULT_FIXTURES = {
     "overload": (130.0, 72.0, 230.0, 218.0, True),
     "cooling_failure": (45.0, 91.0, 230.0, 220.0, False),
+    "overload_cooling": (130.0, 91.0, 230.0, 218.0, False),
     "missing_sensor": (None, 55.0, 230.0, 220.0, True),
 }
 UPSTREAM_LOSS_SENSORS = (0.0, 40.0, 90.0, 20.0, True)
@@ -27,7 +28,7 @@ CAMPUS_FEEDERS = ("A", "B")
 NOMINAL_V = 230.0
 
 
-def hospital_readings(scenario: str, zone: str) -> dict[str, dict]:
+def hospital_readings(scenario: str, zone: str, sample: int = 0) -> dict[str, dict]:
     """Ground-truth sensor values per transformer for a named teaching scenario."""
     target = {"ICU": "TX1", "Theatre": "TX2", "Wards": "TX3"}.get(zone, "TX2")
     readings = {}
@@ -35,7 +36,8 @@ def hospital_readings(scenario: str, zone: str) -> dict[str, dict]:
         if scenario == "upstream_loss":
             values = UPSTREAM_LOSS_SENSORS
         elif asset == target:
-            values = HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS)
+            values = ((45.0, 58.0 + 4 * sample, 230.0, 220.0, True) if scenario == "stuck_sensor"
+                      else HOSPITAL_FAULT_FIXTURES.get(scenario, NORMAL_SENSORS))
         else:
             values = NORMAL_SENSORS
         readings[asset] = dict(zip(TRANSFORMER_FIELDS, values))

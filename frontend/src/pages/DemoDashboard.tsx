@@ -87,7 +87,7 @@ export default function DemoDashboard() {
         <div className="dash-brand">
           <Activity className="brand-icon" />
           <div>
-            <span className="brand-name">PriorityGrid</span>
+            <span className="brand-name">Blackout Mesh</span>
             <span className="brand-badge">{historyData.selection.mode} Console · run {snapshot.contract.identity.run_id}</span>
           </div>
         </div>

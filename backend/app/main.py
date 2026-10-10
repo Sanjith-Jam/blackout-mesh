@@ -39,7 +39,7 @@ from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.core.policy import AllocationPolicy
 from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
 from app.activity.model import FEATURES
-from app.visualizers import CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
+from app.visualizers import hospital_snapshot, CAPACITY_RANGE_W as CLASSROOM_CAPACITY_RANGE_W, ClassroomDemo, HospitalPriorityDemo
 
 class ClassroomDemoAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -69,8 +69,9 @@ class HospitalDemoAction(BaseModel):
     zone_id: Literal["ICU", "Theatre", "Wards"] | None = None
     capacity_w: StrictInt | None = None
     fault: Literal["overload", "cooling_failure", "overload_cooling", "upstream_loss", "sensor_dropout", "stuck_sensor"] | None = None
-    # Deprecated alias: a scenario now injects the matching persistent fault into the live view.
+    # Preserve the live scenario alias; rehearsals use isolated diagnostic fixtures.
     scenario: Literal["normal", "overload", "cooling_failure", "upstream_loss", "missing_sensor"] | None = None
+    rehearsal: Literal["normal", "overload", "cooling_failure", "overload_cooling", "upstream_loss", "missing_sensor", "stuck_sensor"] | None = None
 
 
 SCENARIO_FAULTS = {"overload": "overload", "cooling_failure": "cooling_failure", "upstream_loss": "upstream_loss",
@@ -398,6 +399,10 @@ async def get_hospital_demo(request: Request):
 async def act_hospital_demo(request: Request, req: HospitalDemoAction):
     site = request.app.state.site
     hospital_demo = request.app.state.hospital_demo
+    if req.rehearsal is not None:
+        if any(value is not None for value in (req.action, req.fault, req.scenario, req.zone_id, req.capacity_w)):
+            raise HTTPException(422, "rehearsal cannot be combined with live controls")
+        return with_contract(hospital_snapshot(req.rehearsal), site)
     action, fault = req.action, req.fault
     if req.scenario is not None:
         if action is not None or fault is not None:

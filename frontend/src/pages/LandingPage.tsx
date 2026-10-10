@@ -12,57 +12,12 @@ export default function LandingPage() {
       
       {/* HERO SECTION */}
       <HeroSection />
-      <div className="hidden">
-        <div className="hero-content">
-          <h1 className="hero-title">
-            Intelligent, Fault-Aware and Resilient<br />Power Management Network.
-          </h1>
-          <p className="hero-subtitle">
-            An intelligent power-management demonstration that combines fault diagnosis, priority-aware allocation, explainable decisions, and RFID-based classroom indicators.
-          </p>
-          <div className="workflow-steps">
-            <span>DETECT</span> <span className="arrow">→</span>
-            <span>DIAGNOSE</span> <span className="arrow">→</span>
-            <span>PRIORITIZE</span> <span className="arrow">→</span>
-            <span>OPTIMIZE</span> <span className="arrow">→</span>
-            <span>ACT</span> <span className="arrow">→</span>
-            <span>EXPLAIN</span> <span className="arrow">→</span>
-            <span>RECOVER</span>
-          </div>
-          <div className="hero-cta">
-            <Link to="/demo" className="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all active:scale-[0.98] focus-ring disabled:pointer-events-none disabled:opacity-50 bg-brand-sand hover:bg-brand-sand-dark text-gray-900 border border-brand-sand-dark/50 rounded-full font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] h-10 px-8">Launch Interactive Demo</Link>
-            <a href="#architecture" className="inline-flex items-center justify-center whitespace-nowrap text-sm transition-all active:scale-[0.98] focus-ring disabled:pointer-events-none disabled:opacity-50 border border-brand-forest text-brand-forest hover:bg-brand-forest/10 rounded-full font-medium h-10 px-8">Explore Architecture</a>
-          </div>
-        </div>
-        <div className="hero-visual">
-          <div className="network-diagram">
-            <div className="node source">
-              <Zap size={24} />
-              <span>Simulated Source</span>
-            </div>
-            <div className="lines">
-              <div className="line left"></div>
-              <div className="line right"></div>
-            </div>
-            <div className="feeders">
-              <div className="node feeder">
-                <span>Feeder A</span>
-                <small>6000 W</small>
-              </div>
-              <div className="node feeder">
-                <span>Feeder B</span>
-                <small>8000 W</small>
-              </div>
-            </div>
-          </div>
-          </div>
-        </div>
-      {/* WHY PRIORITYGRID */}
+      {/* WHY BLACKOUT MESH */}
       <section id="problem" className="content-section alternate">
         <div className="container">
-          <h2 className="section-heading">Why PriorityGrid?</h2>
+          <h2 className="section-heading">Why Blackout Mesh?</h2>
           <p className="section-text large">
-            When available capacity becomes limited, not every modeled service can necessarily run. PriorityGrid evaluates simulated conditions, protects essential services wherever constraints permit, and explains the decisions.
+            When available capacity becomes limited, not every modeled service can necessarily run. Blackout Mesh evaluates simulated conditions, protects essential services wherever constraints permit, and explains the decisions.
           </p>
         </div>
       </section>
@@ -111,7 +66,7 @@ export default function LandingPage() {
             <div>
               <h3>Prototype Limitations</h3>
               <p>
-                PriorityGrid is a locally hosted prototype. Electrical capacity, demand, fault conditions, load availability, and load shedding are <strong>simulated</strong>. RFID scans, ESP32 communication, and LED outputs are physical interactions when connected and verified. 
+                Blackout Mesh is a locally hosted prototype. Electrical capacity, demand, fault conditions, load availability, and load shedding are <strong>simulated</strong>. RFID scans, ESP32 communication, and LED outputs are physical interactions when connected and verified.
                 <br /><br />
                 The LEDs indicate modeled states, not actual power delivery. This does not represent certified hospital infrastructure or verified electrical-code compliance.
               </p>
@@ -133,7 +88,7 @@ export default function LandingPage() {
       <footer className="landing-footer relative z-10 p-8 border-t border-border bg-muted/50 backdrop-blur-md">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
           <div className="footer-brand flex items-center gap-2 font-bold">
-            <Activity size={20} /> PriorityGrid
+            <Activity size={20} /> Blackout Mesh
           </div>
           <div className="footer-disclaimer text-sm text-center">
             Offline decision console demonstration. Not for production life-safety use.

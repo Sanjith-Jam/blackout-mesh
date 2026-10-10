@@ -3664,6 +3664,26 @@
               }
             ],
             "title": "Scenario"
+          },
+          "rehearsal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "normal",
+                  "overload",
+                  "cooling_failure",
+                  "overload_cooling",
+                  "upstream_loss",
+                  "missing_sensor",
+                  "stuck_sensor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rehearsal"
           }
         },
         "additionalProperties": false,

@@ -38,8 +38,8 @@ Hardware is not integrated: A/B serial/radio contracts differ, physical ACK fiel
 
 ## Scope and authority
 
-- Remote current application plan: [remaining plan v2.0](PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
-- [Required ML plan](LAB_ACTIVITY_ML_PLAN.md) preserves the user's explicit trained-classifier requirement. Its nine-load catalog differs from the web app's six-load catalog; resolve this explicitly, keeping all values labeled by configuration.
+- Remote current application plan: [remaining plan v2.0](docs/planning/PRIORITYGRID_HACKATHON_REMAINING_PLAN.md) and [blueprint](docs/planning/PRIORITYGRID_FINAL_IMPLEMENTATION_BLUEPRINT.md).
+- [Required ML plan](docs/planning/LAB_ACTIVITY_ML_PLAN.md) preserves the user's explicit trained-classifier requirement. Its nine-load catalog differs from the web app's six-load catalog; resolve this explicitly, keeping all values labeled by configuration.
 - Physical first milestone: two ESP32s, one RFID reader, three cards, three classroom LEDs and four buttons. Full two-person plan is local-only in `/home/bread/blackout-mesh-local/`. Phase 0 stays complete.
 - Simulated power; real radio/LEDs only after verified. No real occupancy accuracy, power delivery, savings or multi-hop mesh claim.
 - Approximately 24-hour hackathon and ₹1,500 ceiling; no Arduino/displays. Unknown 12 V/amp/motor modules stay outside baseline.
@@ -53,7 +53,7 @@ When hardware resumes, agree one A/B transport and physical mapping before linki
 
 ## Pending-work planning — 2026-10-10
 
-[PENDING_IMPLEMENTATION_PLAN.md](PENDING_IMPLEMENTATION_PLAN.md) defines all 24 requested backlog items against `d1c58d7`, with six phases, dependencies, acceptance/verification criteria and scoped library choices. This is planning, not implementation completion. Hardware remains paused and existing reuse recommendations are unchanged. Runtime code and dependencies were not changed or tested in this planning task; plan structure and dependency graph were checked. GitHub issue links are recorded in the plan index.
+[docs/planning/PENDING_IMPLEMENTATION_PLAN.md](docs/planning/PENDING_IMPLEMENTATION_PLAN.md) defines all 24 requested backlog items against `d1c58d7`, with six phases, dependencies, acceptance/verification criteria and scoped library choices. This is planning, not implementation completion. Hardware remains paused and existing reuse recommendations are unchanged. Runtime code and dependencies were not changed or tested in this planning task; plan structure and dependency graph were checked. GitHub issue links are recorded in the plan index.
 
 ## Issue #5 delivered locally — 2026-10-10
 
@@ -100,3 +100,37 @@ Issue #19's frozen developer-held-out diagnostic split was unsealed and reported
 ## Issue #16 frontend tests — in progress
 
 Kept the shared live-state socket and server-history flow from `main`; integrated useful WIP fixtures and component tests without duplicating the socket implementation. Added tests for both facility visualizers and power-edge states, automated accessibility scans, API-shape fixture checks, and Playwright route navigation. Local tests pass; the issue remains open pending CI and any remaining acceptance gaps.
+
+## Person B city demo and predictive demand — 2026-10-10
+
+Added a causal 10–60-second Ridge demand forecast trained on reproducible synthetic sessions (80 train / 20 calibration / 20 test); inputs are previous requested watts, never post-shedding power. Synthetic 60-second MAE is 149.49 W versus 469.59 W persistence. Live forecasting waits for four 10-second readings and abstains on stale/gapped observations or abrupt demand changes. Rehearsal samples remain explicitly synthetic and cannot alter the grid. The API exposes one revision for source, hospital and classroom panels, candidate fixed-priority comparison, forecast and gateway-reported hardware status. The landing page now reads measured inference/allocation results from checked-in JSON rather than placeholder percentages.
+
+The new `/demo` city view preserves the six-service 14 kW electrical catalog and guides shortages, feeder trips, repair and staged recovery. `/console` retains history and engineering controls; facility drill-downs remain available. Hardware LED display now requires a fresh connected confirmation, including after stale links. B5 flashing, pairing, physical acceptance and hardware backup video remain deferred by the user's explicit request.
+
+Checks so far: 9 new backend forecasting/city tests pass; frontend production build passes with the existing bundle-size warning; 17 component tests pass. The real-backend browser smoke check exposed and fixed a feeder-toggle error, then a mobile hardware-input overflow; final rerun is pending. The concurrent full backend suite had two diagnosis failures during separate in-progress diagnosis edits; no passing full-suite result is claimed here. Final verification and remaining Person B work will be recorded below.
+
+### City demo verification and gateway lock ordering
+
+Final real-controller browser journey passed: shortage, shared revisions, forecast warning, feeder A trip, critical shortfall, repair, dwell and full requested-service recovery. The existing facility-navigation browser check also passed (2 browser tests total). All 18 frontend component tests and the production build pass; four history checks and the runtime contract check pass. Current backend suite: 179 passed. City reads now release the site lock before reading the gateway, preventing a site/gateway lock inversion; a regression check verifies that order. No physical hardware was queried, connected or flashed.
+
+### Hospital diagnostic rehearsal
+
+Added hospital drill-down controls for normal, overload, cooling failure, combined overload/cooling, upstream loss, dropout and stuck-sensor examples. They show ordered hypotheses, supporting evidence, uncalibrated evidence scores and explicit inspection instructions. The stuck-sensor example supplies three causal observations and returns ABSTAINED; its card says sensor evidence is untrusted. These are clearly labeled, read-only diagnostic rehearsals using the existing separate 100 A fixtures; they do not claim persistent fault injection into the city. A4 stateful injection and A3 reconciliation of the legacy 7 kW hospital equipment drill-down remain backend handoffs. Generated request types, example fixtures, API/shape checks and the UI regression test were updated together. Current full backend suite (179 tests), frontend component suite (18 tests), and production build pass.
+
+### Demo naming and copy cleanup
+
+Blackout Mesh now names the landing page, header, browser title and engineering console consistently. Removed the unused hidden duplicate hero. The visible hero advertises the implemented demand forecast and city recovery guide with synthetic-training and hardware-verification qualifications. Frontend production build and component checks pass; no hardware work.
+
+### Person B presentation handoff
+
+README now opens with the recorded software demo GIF, states real/simulated boundaries, reproduces the measured 6 kW comparison (including switches and unmet Wh), and gives local startup instructions. Planning documents moved to `docs/planning/`; AGENTS/context/progress references and new Markdown links were checked. See `docs/DEMO_GUIDE.md` for the city/forecast/recovery script, evidence provenance, test setup and B1–B7 status. Generated-client check and the final two browser checks pass after all UI changes. No push by this task. B5 remains on hold; A1/A3/A4 backend dependencies remain explicit rather than being presented as completed results.
+
+### Local preview refreshed
+
+Restarted this project's existing localhost backend with its original environment and hardware auto-connect disabled; the new city API is available at port 8000 and the frontend preview at `http://127.0.0.1:5173/demo`. No demo commands or physical connection were sent to the user's live instance. Added ignore rules for SQLite WAL/shared-memory sidecars created by normal application startup; existing local evidence files were preserved. `git check-ignore` confirms both sidecars are excluded.
+
+### PR integration with main — 2026-10-10
+
+Integrated main's A1 rank-dwell benchmark, A3 shared 6 kW hospital catalog and A4 persistent fault controls. Read-only diagnostic buttons now send an explicit `rehearsal` field; mixed rehearsal/live requests reject. Removed the duplicate stuck-sensor rule in favor of main's latched uncertainty and cooling-aware detection. Frozen ranked manifests/results retain their original detector identity; regression checks verify changed rules refuse unsealing rather than rewriting that provenance. No new held-out run was performed. README/demo guide now include the 385-run allocation evidence and rank-dwell comparison. Earlier pending A1/A3/A4 notes above are superseded by this integration. B5 remains on hold.
+
+Validation: 197 backend tests passed against temporary databases; 18 frontend component tests, 4 history tests, runtime contract check, production build and 2 real-browser checks passed. Dependency audit found zero vulnerabilities. The existing frontend bundle-size warning remains. Publication requested by the user; no merge or hardware operation authorized by this update.

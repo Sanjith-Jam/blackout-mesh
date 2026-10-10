@@ -161,3 +161,26 @@ def test_incident_open_and_resolve_are_replayable_timeline_events(tmp_path, monk
         history = grid.history.store.page("campus", grid.history.run_id, kind="event")
         assert [row["payload"]["event"]["type"] for row in history["items"]].count("INCIDENT_OPENED") == 1
         assert [row["payload"]["event"]["type"] for row in history["items"]].count("INCIDENT_RESOLVED") == 1
+
+
+def test_incident_history_persists_rank_changes_and_ranked_evidence(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    from app.storage.models import Incident
+    from sqlmodel import Session, select
+    monkeypatch.setenv("PRIORITYGRID_HISTORY_DB", str(tmp_path / "ranked-incidents.sqlite3"))
+    with TestClient(create_app()) as client:
+        grid = client.app.state.grid
+        overload = {"code": "OVERLOAD", "asset_id": "TX1", "severity": "high", "evidence_score": 0.9}
+        cooling = {"code": "COOLING_FAILURE", "asset_id": "TX1", "severity": "high", "evidence_score": 0.8}
+        grid._sync_incidents([overload, cooling])
+        grid._sync_incidents([cooling, overload])
+        with Session(grid.storage.engine) as session:
+            evidence = {row.code: row.evidence for row in session.exec(select(Incident)).all()}
+        assert evidence["COOLING_FAILURE"]["rank"] == 1
+        assert evidence["OVERLOAD"]["rank"] == 2
+        events = grid.history.store.page("campus", grid.run_id, kind="event")["items"]
+        ranked = [row["payload"]["inputs"]["ranked_hypotheses"] for row in events
+                  if row["payload"]["event"]["type"] == "DIAGNOSIS_UPDATED"]
+        assert [item["code"] for item in ranked[0]] == ["OVERLOAD", "COOLING_FAILURE"]
+        assert [item["code"] for item in ranked[1]] == ["COOLING_FAILURE", "OVERLOAD"]

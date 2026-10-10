@@ -18,7 +18,7 @@
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:24:44.369380+00:00",
+   "observation_time": "2026-10-10T01:48:49.143155+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",

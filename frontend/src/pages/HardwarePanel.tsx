@@ -20,6 +20,7 @@ export default function HardwarePanel({ hardware }: { hardware?: HardwareStatus 
   const [error, setError] = useState<string | null>(null);
   const hw = hardware ?? { link: 'NOT_CONFIGURED', commanded_mask: null, confirmed_mask: null };
   const configured = hw.link !== 'NOT_CONFIGURED';
+  const confirmedFresh = hw.link === 'CONNECTED' && hw.led_confirmed === true;
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true); setError(null);
@@ -39,14 +40,14 @@ export default function HardwarePanel({ hardware }: { hardware?: HardwareStatus 
         {ROOMS.map(([room, b]) => {
           const commanded = bit(hw.commanded_mask, b);
           const confirmed = bit(hw.confirmed_mask, b);
-          const state = hw.confirmed_mask == null ? 'unknown' : confirmed ? 'on' : 'off';
+          const state = !confirmedFresh ? 'unknown' : confirmed ? 'on' : 'off';
           return <span key={room} className={`hardware-panel__led is-${state}`}
-                       title={`Room ${room}: commanded ${commanded ? 'ON' : 'OFF'}, board B confirmed ${hw.confirmed_mask == null ? 'nothing yet' : confirmed ? 'ON' : 'OFF'}`}>
+                       title={`Room ${room}: commanded ${hw.commanded_mask == null ? 'unknown' : commanded ? 'ON' : 'OFF'}, board B confirmed ${!confirmedFresh ? 'nothing current' : confirmed ? 'ON' : 'OFF'}`}>
             <i />{room} <b>{state === 'unknown' ? '?' : state.toUpperCase()}</b>
           </span>;
         })}
       </div>
-      <p className="hardware-panel__note">{hw.led_confirmed ? 'LEDs confirmed by board B.' : 'Waiting for board B to confirm the latest command.'}</p>
+      <p className="hardware-panel__note">{confirmedFresh ? 'LEDs confirmed by board B.' : 'Waiting for board B to confirm the latest command.'}</p>
       {hw.recent_events && hw.recent_events.length > 0 && <p className="hardware-panel__note">Last input: {hw.recent_events[hw.recent_events.length - 1].action.replace(/_/g, ' ').toLowerCase()}{hw.recent_events[hw.recent_events.length - 1].room ? ` (room ${hw.recent_events[hw.recent_events.length - 1].room})` : ''}</p>}
       <button className="classroom-demo__button" disabled={busy} onClick={() => void run(disconnectHardware)}>Disconnect board A</button>
     </> : <>

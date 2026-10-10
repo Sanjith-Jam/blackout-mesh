@@ -34,7 +34,7 @@ sys.addaudithook(_audit)
 
 
 def truth_paths():
-    return {os.path.normcase(os.path.abspath(p)) for p in DATA_DIR.glob("*/truth.json")}
+    return {os.path.normcase(os.path.abspath(p)) for p in DATA_DIR.parent.rglob("truth.json")}
 
 
 class guarded:
@@ -79,7 +79,11 @@ class TelemetryDetector:
         out = {}
         for a in self.assets:
             d = diagnose_transformer(self.window, a, self.rating, now, low)
-            out[a] = {"code": d["code"], "status": d["status"]}
+            out[a] = {"code": d["code"], "status": d["status"],
+                      "hypotheses": [{"code": h["code"], "asset_id": h["asset_id"],
+                                      "severity": h["severity"], "evidence_score": h["evidence_score"],
+                                      "confirmation": h.get("confirmation", "ALARM")}
+                                     for h in d.get("hypotheses", [])]}
         return out
 
 

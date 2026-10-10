@@ -97,12 +97,15 @@ def register_demo(campus_snapshot, hardware_status):
         app = request.app
         site = app.state.site
         def project():
-            snap = campus_snapshot(site, app)
+            snap = campus_snapshot(site)
             forecast = app.state.demand_forecast.predict(snap.source.capacity_w, source, replay_index)
             if source == "LIVE_REQUESTED_DEMAND" and app.state.demand_forecast.run_id != site.run_id:
                 forecast.update(status="UNKNOWN", points=[], observations_w=[], first_shortage_s=None,
                                 reason="A new run is collecting fresh demand observations.")
-            return dict(snapshot=snap, forecast=forecast, hardware=hardware_status(app))
-        return site.read(project)[0]
+            return dict(snapshot=snap, forecast=forecast)
+        data = site.read(project)[0]
+        # Gateway events acquire the site lock; never take the gateway lock while holding it.
+        data["hardware"] = hardware_status(app)
+        return data
 
     return router
