@@ -213,6 +213,8 @@ def handle_gateway_event(app, action: str, room) -> bool:
         return False
     name, arg = commands[action]
     demo = app.state.classroom_demo
+    if action == "START_SESSION" and cid in demo.snapshot()["scanned_classroom_ids"]:
+        name = "unscan"  # pressing a room button (or tapping its card) again ends that room's session
     app.state.site.command(f"board_a.{action.lower()}", lambda: demo.act(name, arg, source="HARDWARE"), {"action": action, "room": room})
     return True
 

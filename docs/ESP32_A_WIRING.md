@@ -28,13 +28,13 @@ Step-by-step beginner version: [ESP32_A_CONNECTION_GUIDE.md](ESP32_A_CONNECTION_
 
 | Label | GPIO | Other switch terminal |
 |---|---|---|
-| END SELECTED | 25 | GND |
 | DEPRIVED (SIMULATE SHORTAGE) | 26 | GND |
 | NORMAL (RESTORE) | 27 | GND |
-| RESET — HOLD 2 SECONDS | 32 | GND |
-| RFID FALLBACK → ROOM A | 33 | GND |
+| ROOM A (RFID fallback) | 33 | GND |
+| ROOM B | 13 | GND |
+| ROOM C | 14 | GND |
 
-The fallback button sends the same `START_SESSION` event for room A that card A would, so the demo continues if the reader fails.
+Each room button sends the same `START_SESSION` event that room's card would, so the demo runs without cards if the reader fails. Pressing it (or tapping the card) again ends that room. END and RESET are not fitted (`-1` in `config.h`); set a GPIO there to add them back.
 
 Firmware uses `INPUT_PULLUP`: released reads HIGH, pressed connects to ground and
 reads LOW. No external pull-up or button series resistor is needed for this

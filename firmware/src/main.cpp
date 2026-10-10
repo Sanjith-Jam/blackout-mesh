@@ -135,7 +135,12 @@ void loop() {
   }
   for (int i = 0; i < config::BUTTON_COUNT; ++i) if (config::buttons[i] >= 0 &&
       buttons[i].poll(digitalRead(config::buttons[i]) == BUTTON_ACTIVE_LEVEL, now, i == config::RESET_BUTTON_INDEX)) {
-    if (i == 4 && host.input.synced) status(readerWasOk ? "fallback_room_a" : "fallback_room_a_reader_fault");
+    if (i >= config::FIRST_ROOM_BUTTON_INDEX && i < config::FIRST_ROOM_BUTTON_INDEX + 3 && host.input.synced) {
+      static const char* codes[3][2] = {{"fallback_room_a_reader_fault", "fallback_room_a"},
+                                        {"fallback_room_b_reader_fault", "fallback_room_b"},
+                                        {"fallback_room_c_reader_fault", "fallback_room_c"}};
+      status(codes[i - config::FIRST_ROOM_BUTTON_INDEX][readerWasOk ? 1 : 0]);
+    }
     action(host.input.button(i));
   }
   ReaderSample sample;
