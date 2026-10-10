@@ -207,3 +207,13 @@ def test_invalid_events_are_rejected_not_applied(rig):
     run(0.2)
     assert demo().snapshot()["scanned_classroom_ids"] == []
     assert any(m["type"] == "event_ack" and m["event"] == 99 and m["accepted"] is False for m in fake.sent)
+
+
+def test_pressing_a_room_button_again_ends_that_room(rig):
+    fake, bridge, run, _ = rig
+    fake.press("START_SESSION", "B")
+    run(0.3)
+    assert demo().snapshot()["scanned_classroom_ids"] == ["CR2"] and bridge.status()["confirmed_mask"] == 0b010000
+    fake.press("START_SESSION", "B")
+    run(0.3)
+    assert demo().snapshot()["scanned_classroom_ids"] == [] and bridge.status()["confirmed_mask"] == 0

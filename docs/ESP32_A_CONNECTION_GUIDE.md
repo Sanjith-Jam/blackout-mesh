@@ -42,17 +42,17 @@ Each button has **one side to its GPIO pin and the other side to GND**. That's a
 
 | Button label | ESP32 pin | What it does in the demo |
 |---|---|---|
-| **END SELECTED** | GPIO 25 | Ends the session of the room that was started last |
 | **DEPRIVED (kW shortage)** | GPIO 26 | Drops the classroom supply to the 3,400 W shortage level |
 | **NORMAL** | GPIO 27 | Restores the full 8,000 W supply |
-| **RESET (hold 2 s)** | GPIO 32 | Clears every session and starts a fresh run |
-| **ROOM A** | GPIO 33 | Starts room A's session exactly as card A would (RFID fallback) |
-| **ROOM B** | GPIO 13 | Starts room B's session exactly as card B would |
-| **ROOM C** | GPIO 14 | Starts room C's session exactly as card C would |
+| **ROOM A** | GPIO 33 | Starts room A's session exactly as card A would; press again to end it |
+| **ROOM B** | GPIO 13 | Same for room B |
+| **ROOM C** | GPIO 14 | Same for room C |
+
+There are no END or RESET buttons: press a room button again to end that room, and reset from the website.
 
 How to wire one button on a breadboard:
 1. Put the button across the breadboard's centre gap so its legs are in two different row groups.
-2. Jumper from the ESP32 pin (e.g. GPIO 25) to the row of **one** leg.
+2. Jumper from the ESP32 pin (e.g. GPIO 33) to the row of **one** leg.
 3. Jumper from the row of the **diagonally opposite** leg to the breadboard's blue (−) rail.
 4. Run **one** jumper from an ESP32 **GND** pin to that blue (−) rail. All buttons and the reader share it.
 
@@ -112,8 +112,8 @@ The two boards only talk to each other, encrypted. They need each other's addres
 | Tap card B | Rooms A and B on |
 | Press **DEPRIVED** | Supply drops to 3,400 W; only room A stays fully powered, so LED B goes off |
 | Press **NORMAL** | Supply back to 8,000 W; LED B comes back about 5–7 s later (staged restoration) |
-| Press **END SELECTED** | The last scanned room ends; its LED goes off |
-| Hold **RESET** 2 s | All rooms cleared, all LEDs off, a fresh run starts |
+| Press a room button again | That room ends; its LED goes off |
+| Press **Reset demo** on the website | All rooms cleared, all LEDs off |
 | **RFID failure:** unplug the reader's SDA wire (USB unplugged first), then power up | Panel shows "Card reader: FAULT" |
 | Press **ROOM A**, **ROOM B** or **ROOM C** | That room starts exactly as if its card had been tapped; its LED turns on |
 | Unplug board B | Link shows stale; board A reports board B not heard; LEDs keep their last state until B is back |

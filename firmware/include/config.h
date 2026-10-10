@@ -7,10 +7,10 @@
 #define RFID_SCK 18
 #define RFID_MISO 19
 #define RFID_MOSI 23
-#define BUTTON_END 25
+#define BUTTON_END -1  // not fitted: press a room button again to end it
 #define BUTTON_SHORTAGE 26
 #define BUTTON_RESTORE 27
-#define BUTTON_RESET 32
+#define BUTTON_RESET -1  // not fitted: reset from the website
 // Room buttons: start a session for that room without a card (RFID fallback / card-free demo).
 #define BUTTON_FALLBACK_A 33
 #define BUTTON_FALLBACK_B 13
