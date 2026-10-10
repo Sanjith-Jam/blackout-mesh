@@ -10,7 +10,8 @@ import {
   ClassroomDemoActionName,
   ClassroomDemoRoom,
   HospitalDemoSnapshot,
-  HospitalDemoActionName
+  HospitalDemoActionName,
+  HardwareStatus
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -100,6 +101,14 @@ export async function changeFeeder(feeder: string, available: boolean): Promise<
 
 export async function getClassroomDemo(signal?: AbortSignal): Promise<ClassroomDemoSnapshot> {
   return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', { signal });
+}
+
+export async function connectHardware(port: string): Promise<HardwareStatus> {
+  return fetchJson<HardwareStatus>('/api/v1/hardware/connect', { method: 'POST', body: JSON.stringify({ port }) });
+}
+
+export async function disconnectHardware(): Promise<HardwareStatus> {
+  return fetchJson<HardwareStatus>('/api/v1/hardware/disconnect', { method: 'POST' });
 }
 
 export async function postClassroomDemo(action: ClassroomDemoActionName, classroom_id?: ClassroomDemoRoom['id'], capacity_w?: number): Promise<ClassroomDemoSnapshot> {

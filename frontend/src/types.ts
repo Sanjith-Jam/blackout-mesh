@@ -212,6 +212,19 @@ export interface CommandReceipt {
   applied_revision: number;
 }
 
+/** Board A gateway bridge state (backend/app/hardware/gateway.py). */
+export interface HardwareStatus {
+  link: "NOT_CONFIGURED" | "CONNECTING" | "SYNCING" | "CONNECTED" | "STALE";
+  commanded_mask: number | null;
+  confirmed_mask: number | null;
+  led_confirmed?: boolean;
+  board_a?: { boot: number | null; reader_ok: boolean | null; radio_configured: boolean | null };
+  board_b?: { online: boolean; boot: number | null; radio_ready: boolean };
+  recent_events?: { event: number; action: string; room: string | null; accepted: boolean }[];
+  recent_status?: string[];
+  port_error?: string | null;
+}
+
 export interface SafetyStatus {
   policy_version: string;
   status: "FEASIBLE" | "PROTECTED_SHORTFALL";
@@ -261,6 +274,7 @@ export interface ClassroomDemoSnapshot {
   campus_limit_w: number | null;
   effective_capacity_w: number;
   limited_by: "classroom limit" | "campus feeder B";
+  hardware?: HardwareStatus;
   edges: PowerEdge[];
   generated_at?: string;
   site?: SiteIdentity;
