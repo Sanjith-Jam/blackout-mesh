@@ -23,7 +23,14 @@ EVIDENCE_DWELL_S = 5
 EVIDENCE_MAX_AGE_S = 30
 
 DATA = Path(__file__).with_name("data")
-SHIFT_PYTHON = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
+
+
+def shift_python() -> Path:
+    """DISTRICT_SHIFT_PYTHON wins; otherwise the repo-local `.venv-city` on POSIX or Windows."""
+    if configured := os.environ.get("DISTRICT_SHIFT_PYTHON"):
+        return Path(configured)
+    venv = Path(__file__).resolve().parents[3] / ".venv-city"
+    return next((path for path in (venv / "bin/python", venv / "Scripts/python.exe") if path.is_file()), venv / "bin/python")
 
 
 def diagnose_transformer(sensor):
@@ -45,10 +52,11 @@ def diagnose_transformer(sensor):
 
 @lru_cache(maxsize=1)
 def shift_runtime_probe():
-    if not SHIFT_PYTHON.is_file():
-        return False, "optional `.venv-city` SHIFT runtime is unavailable."
+    python = shift_python()
+    if not python.is_file():
+        return False, f"optional SHIFT runtime is unavailable (set DISTRICT_SHIFT_PYTHON; looked for {python.name} in {python.parent})."
     try:
-        subprocess.run([str(SHIFT_PYTHON), "-c", "import shift, networkx, shapely, infrasys"],
+        subprocess.run([str(python), "-c", "import shift, networkx, shapely, infrasys"],
                        check=True, capture_output=True, timeout=8)
     except (OSError, subprocess.SubprocessError) as exc:
         return False, f"SHIFT runtime import probe failed: {type(exc).__name__}."

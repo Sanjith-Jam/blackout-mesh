@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
 
-from app.district.authority import DistrictAuthority
+from app.district.authority import DistrictAuthority, shift_python
 
 
 class DistrictActionName(StrEnum):
@@ -356,7 +356,7 @@ def register_district():
                 raise HTTPException(422, "unsupported SHIFT secondary strategy")
             if district.generation.get("status") == "GENERATING":
                 raise HTTPException(409, "topology generation is already running")
-            python = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
+            python = shift_python()
             script = Path(__file__).resolve().parents[2] / "scripts/generate_district_topology.py"
             if not district.generation["available"] or not python.is_file():
                 district.revision += 1

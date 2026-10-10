@@ -237,3 +237,16 @@ def test_reset_invalidates_delayed_generation_from_previous_run(monkeypatch):
         assert district.generation["status"] == "CACHED"
 
     asyncio.run(scenario())
+
+
+def test_shift_interpreter_is_configurable_and_windows_layout_is_discovered(monkeypatch, tmp_path):
+    monkeypatch.setenv("DISTRICT_SHIFT_PYTHON", str(tmp_path / "custom-python"))
+    assert authority_module.shift_python() == tmp_path / "custom-python"
+    monkeypatch.delenv("DISTRICT_SHIFT_PYTHON")
+    fake_root = tmp_path / "repo" / "backend" / "app" / "district"
+    fake_root.mkdir(parents=True)
+    windows = tmp_path / "repo" / ".venv-city" / "Scripts" / "python.exe"
+    windows.parent.mkdir(parents=True)
+    windows.write_text("")
+    monkeypatch.setattr(authority_module, "__file__", str(fake_root / "authority.py"))
+    assert authority_module.shift_python() == windows
