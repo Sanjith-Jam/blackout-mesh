@@ -1167,6 +1167,82 @@
           }
         }
       }
+    },
+    "/api/v1/power-system": {
+      "get": {
+        "summary": "Get Power System",
+        "operationId": "get_api_v1_power_system",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PowerSystemResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/appliances/request": {
+      "post": {
+        "summary": "Request Appliance",
+        "operationId": "post_api_v1_appliances_request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplianceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplianceRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1203,6 +1279,39 @@
           "critical_unmet_wh"
         ],
         "title": "AblationRow"
+      },
+      "ActiveFault": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "target",
+          "description",
+          "provenance"
+        ],
+        "title": "ActiveFault"
       },
       "ActivityObservationRequest": {
         "properties": {
@@ -1543,6 +1652,281 @@
           "baseline_mask"
         ],
         "title": "AllocationSnapshot"
+      },
+      "Appliance": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "asset_id": {
+            "type": "string",
+            "title": "Asset Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "room_id": {
+            "type": "string",
+            "title": "Room Id"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "feeder": {
+            "type": "string",
+            "title": "Feeder"
+          },
+          "service_id": {
+            "type": "string",
+            "title": "Service Id"
+          },
+          "distribution_id": {
+            "type": "string",
+            "title": "Distribution Id"
+          },
+          "demand_w": {
+            "type": "integer",
+            "title": "Demand W"
+          },
+          "service_tier": {
+            "type": "string",
+            "title": "Service Tier"
+          },
+          "essential": {
+            "type": "boolean",
+            "title": "Essential"
+          },
+          "protected": {
+            "type": "boolean",
+            "title": "Protected"
+          },
+          "priority_class": {
+            "type": "string",
+            "title": "Priority Class"
+          },
+          "priority_label": {
+            "type": "string",
+            "title": "Priority Label"
+          },
+          "priority_rank": {
+            "type": "integer",
+            "title": "Priority Rank"
+          },
+          "requested": {
+            "type": "boolean",
+            "title": "Requested"
+          },
+          "reachable": {
+            "type": "boolean",
+            "title": "Reachable"
+          },
+          "commanded": {
+            "type": "boolean",
+            "title": "Commanded"
+          },
+          "served": {
+            "type": "boolean",
+            "title": "Served"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "SERVED",
+              "PENDING_RESTORATION",
+              "SHED",
+              "UNREACHABLE",
+              "NOT_REQUESTED"
+            ],
+            "title": "State"
+          },
+          "reason_code": {
+            "type": "string",
+            "title": "Reason Code"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "path": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Path"
+          },
+          "requires": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Requires"
+          },
+          "indivisible_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indivisible Group"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ApplianceEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "asset_id",
+          "key",
+          "name",
+          "room_id",
+          "zone",
+          "feeder",
+          "service_id",
+          "distribution_id",
+          "demand_w",
+          "service_tier",
+          "essential",
+          "protected",
+          "priority_class",
+          "priority_label",
+          "priority_rank",
+          "requested",
+          "reachable",
+          "commanded",
+          "served",
+          "served_w",
+          "state",
+          "reason_code",
+          "reason",
+          "path",
+          "requires",
+          "provenance",
+          "events"
+        ],
+        "title": "Appliance"
+      },
+      "ApplianceEvent": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "appliance_id": {
+            "type": "string",
+            "title": "Appliance Id"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "from_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From State"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "appliance_id",
+          "to",
+          "reason",
+          "provenance"
+        ],
+        "title": "ApplianceEvent"
+      },
+      "ApplianceRequest": {
+        "properties": {
+          "appliance_id": {
+            "type": "string",
+            "title": "Appliance Id"
+          },
+          "requested": {
+            "type": "boolean",
+            "title": "Requested"
+          }
+        },
+        "type": "object",
+        "required": [
+          "appliance_id",
+          "requested"
+        ],
+        "title": "ApplianceRequest"
+      },
+      "ApplianceRequestResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "appliance_id": {
+            "type": "string",
+            "title": "Appliance Id"
+          },
+          "requested": {
+            "type": "boolean",
+            "title": "Requested"
+          },
+          "site": {
+            "$ref": "#/components/schemas/SiteIdentityResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "appliance_id",
+          "requested",
+          "site"
+        ],
+        "title": "ApplianceRequestResponse"
       },
       "BoardAStatus": {
         "properties": {
@@ -2201,6 +2585,64 @@
         ],
         "title": "CommandReceipt"
       },
+      "ConstraintCheck": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "limit_w": {
+            "type": "integer",
+            "title": "Limit W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "exceeded": {
+            "type": "boolean",
+            "title": "Exceeded"
+          },
+          "deficit_w": {
+            "type": "integer",
+            "title": "Deficit W"
+          },
+          "headroom_w": {
+            "type": "integer",
+            "title": "Headroom W"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "scope",
+          "label",
+          "requested_w",
+          "limit_w",
+          "served_w",
+          "exceeded",
+          "deficit_w",
+          "headroom_w",
+          "provenance"
+        ],
+        "title": "ConstraintCheck"
+      },
       "ControlLoopHealth": {
         "properties": {
           "running": {
@@ -2625,6 +3067,56 @@
         ],
         "title": "DiagnosticHypothesisResponse"
       },
+      "Edge": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "from_node": {
+            "type": "string",
+            "title": "From Node"
+          },
+          "to_node": {
+            "type": "string",
+            "title": "To Node"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ENERGIZED",
+              "PENDING_RESTORATION",
+              "SHED",
+              "OPEN",
+              "UNKNOWN"
+            ],
+            "title": "State"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "from_node",
+          "to_node",
+          "kind",
+          "state",
+          "requested_w",
+          "served_w"
+        ],
+        "title": "Edge"
+      },
       "ElectricalInput": {
         "properties": {
           "topology_version": {
@@ -2962,6 +3454,49 @@
           "status"
         ],
         "title": "FaultDiagnosis"
+      },
+      "Feeder": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "limit_w": {
+            "type": "integer",
+            "title": "Limit W"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "commanded_w": {
+            "type": "integer",
+            "title": "Commanded W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "available",
+          "limit_w",
+          "requested_w",
+          "commanded_w",
+          "served_w"
+        ],
+        "title": "Feeder"
       },
       "FeederChangeRequest": {
         "properties": {
@@ -4335,6 +4870,50 @@
         ],
         "title": "HospitalZone"
       },
+      "Indicator": {
+        "properties": {
+          "led_bit": {
+            "type": "integer",
+            "title": "Led Bit"
+          },
+          "room_id": {
+            "type": "string",
+            "title": "Room Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "rule": {
+            "type": "string",
+            "title": "Rule"
+          },
+          "commanded": {
+            "type": "boolean",
+            "title": "Commanded"
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "led_bit",
+          "room_id",
+          "name",
+          "rule",
+          "commanded"
+        ],
+        "title": "Indicator"
+      },
       "ModelStatusResponse": {
         "properties": {
           "ready": {
@@ -4534,6 +5113,130 @@
         ],
         "title": "PowerEdgeObservation"
       },
+      "PowerSystemResponse": {
+        "properties": {
+          "site": {
+            "$ref": "#/components/schemas/SiteIdentityResponse"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "boundary": {
+            "type": "string",
+            "title": "Boundary"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "feeders": {
+            "items": {
+              "$ref": "#/components/schemas/Feeder"
+            },
+            "type": "array",
+            "title": "Feeders"
+          },
+          "zone_budgets": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneBudget"
+            },
+            "type": "array",
+            "title": "Zone Budgets"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/Room"
+            },
+            "type": "array",
+            "title": "Rooms"
+          },
+          "appliances": {
+            "items": {
+              "$ref": "#/components/schemas/Appliance"
+            },
+            "type": "array",
+            "title": "Appliances"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/Edge"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "optimizer": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Optimizer"
+          },
+          "diagnosis": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Diagnosis"
+          },
+          "constraint_checks": {
+            "items": {
+              "$ref": "#/components/schemas/ConstraintCheck"
+            },
+            "type": "array",
+            "title": "Constraint Checks"
+          },
+          "faults": {
+            "items": {
+              "$ref": "#/components/schemas/ActiveFault"
+            },
+            "type": "array",
+            "title": "Faults"
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/Indicator"
+            },
+            "type": "array",
+            "title": "Indicators"
+          },
+          "hardware_link": {
+            "type": "string",
+            "title": "Hardware Link"
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "appliance_events": {
+            "items": {
+              "$ref": "#/components/schemas/ApplianceEvent"
+            },
+            "type": "array",
+            "title": "Appliance Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "site",
+          "generated_at",
+          "boundary",
+          "source",
+          "feeders",
+          "zone_budgets",
+          "rooms",
+          "appliances",
+          "edges",
+          "optimizer",
+          "diagnosis",
+          "constraint_checks",
+          "faults",
+          "indicators",
+          "hardware_link",
+          "events",
+          "appliance_events"
+        ],
+        "title": "PowerSystemResponse"
+      },
       "ReplayActionRequest": {
         "properties": {
           "action": {
@@ -4696,6 +5399,108 @@
           "event_type"
         ],
         "title": "RfidScanResponse"
+      },
+      "Room": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "feeder": {
+            "type": "string",
+            "title": "Feeder"
+          },
+          "distribution_id": {
+            "type": "string",
+            "title": "Distribution Id"
+          },
+          "distribution_name": {
+            "type": "string",
+            "title": "Distribution Name"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Id"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "commanded_w": {
+            "type": "integer",
+            "title": "Commanded W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "session": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session"
+          },
+          "activity_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity State"
+          },
+          "evidence_status": {
+            "type": "string",
+            "title": "Evidence Status"
+          },
+          "evidence_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "zone",
+          "feeder",
+          "distribution_id",
+          "distribution_name",
+          "requested_w",
+          "commanded_w",
+          "served_w",
+          "evidence_status"
+        ],
+        "title": "Room"
       },
       "RunIdentity": {
         "properties": {
@@ -5059,6 +5864,54 @@
           "site"
         ],
         "title": "SiteScenariosResponse"
+      },
+      "Source": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "capacity_w": {
+            "type": "integer",
+            "title": "Capacity W"
+          },
+          "normal_capacity_w": {
+            "type": "integer",
+            "title": "Normal Capacity W"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "commanded_w": {
+            "type": "integer",
+            "title": "Commanded W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "provenance": {
+            "type": "string",
+            "title": "Provenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "capacity_w",
+          "normal_capacity_w",
+          "requested_w",
+          "commanded_w",
+          "served_w",
+          "provenance"
+        ],
+        "title": "Source"
       },
       "SourceInfo": {
         "properties": {
@@ -5593,6 +6446,39 @@
           "step_s"
         ],
         "title": "VisualizerReplay"
+      },
+      "ZoneBudget": {
+        "properties": {
+          "zone": {
+            "type": "string",
+            "title": "Zone"
+          },
+          "limit_w": {
+            "type": "integer",
+            "title": "Limit W"
+          },
+          "normal_limit_w": {
+            "type": "integer",
+            "title": "Normal Limit W"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "zone",
+          "limit_w",
+          "normal_limit_w",
+          "requested_w",
+          "served_w"
+        ],
+        "title": "ZoneBudget"
       },
       "WebSocketMessageEnvelope": {
         "properties": {

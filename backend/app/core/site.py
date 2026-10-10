@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from sqlmodel import Session
 
 from app.core.active_site import CATALOG
+from app.core.appliance_control import ApplianceController
+from app.core.appliances import APPLIANCES
 from app.core.state import CLASSROOMS, NORMAL_SOURCE_CAPACITY_W, SERVICE_CATALOG, site_profile
 from app.schemas.snapshot import SiteIdentityResponse
 from app.storage.models import Run
@@ -94,39 +96,23 @@ def reconcile_catalog() -> list[str]:
     return problems
 
 
-def _feeder_a_served_w(grid) -> int:
-    """Watts of the feeder A services the campus allocator applied this tick (whole services)."""
-    return sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-               if s["feeder"] == "A" and grid.last_allocation_mask & (1 << i))
+def _zone_served_w(appliances, zone: str) -> int:
+    return sum(a.demand_w for a in APPLIANCES if a.zone == zone and a.id in appliances.applied)
 
 
-def classroom_headroom_w(grid) -> int:
-    """Feeder B budget the campus grants the classroom leaf allocation: what the source has left after feeder A."""
+def classroom_headroom_w(grid, appliances) -> int:
+    """Feeder B power the classrooms could use: the feeder limit or what the source has left after the
+    hospital's applied appliances, whichever is lower (display bound; the optimizer enforces both)."""
     if not grid.feeder_available.get("B", False):
         return 0
-    return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - _feeder_a_served_w(grid)))
+    return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - _zone_served_w(appliances, "hospital")))
 
 
-def hospital_headroom_w(grid) -> int:
-    """Feeder A power the campus allocated to hospital services."""
+def hospital_headroom_w(grid, appliances) -> int:
+    """Feeder A power the hospital could use, bounded the same way."""
     if not grid.feeder_available.get("A", False):
         return 0
-    return _feeder_a_served_w(grid)
-
-
-def classroom_leaf_decision(classroom_snapshot) -> dict:
-    """Per campus service, the watts its classroom leaves request, are commanded and are served (#33).
-
-    This is the only feeder B decision: the campus publishes these watts for L3-L5 instead of whole rooms.
-    """
-    edges = {e["id"]: e for e in classroom_snapshot["edges"]}
-    out = {}
-    for room, parent in CLASSROOM_PARENT.items():
-        leaves = [edges[f"classroom:{room}>{item[0]}"] for item in CLASSROOM_LEAVES[room]]
-        out[parent] = {"requested_w": sum(e["requested_w"] for e in leaves),
-                       "commanded_w": sum(e["requested_w"] for e in leaves if e["commanded"] and e["connected"]),
-                       "served_w": sum(e["served_w"] for e in leaves)}
-    return out
+    return max(0, min(grid.feeder_limits_w["A"], grid.source_capacity_w - _zone_served_w(appliances, "classroom")))
 
 
 class SiteAuthority:
@@ -142,6 +128,8 @@ class SiteAuthority:
         self.revision = 0
         self.last_command = None
         self.scenario = DEFAULT_SCENARIO
+        self.appliances = ApplianceController(lambda: self.grid.clock())
+        self._pending_command = None
         self._seen = None
         self.tick()
 
@@ -149,17 +137,23 @@ class SiteAuthority:
         return (self.grid.published_revision, self.classroom.published_revision, self.hospital.published_revision)
 
     def tick(self):
-        """Advance every part in a fixed order: the campus decides feeder A and grants feeder B a budget,
-        the classroom leaves decide feeder B within it, and the campus publishes both as one decision."""
+        """Advance every part in a fixed order. The campus service-level allocator still runs as the
+        regression fixture and baseline; the appliance-level optimizer makes the decision, and the
+        classroom view, hospital view and campus publication are projections of it."""
         with self._lock:
             self.grid.advance()
-            self.classroom.campus_limit_w = classroom_headroom_w(self.grid)
+            self.classroom._advance_evidence()  # activity evidence ranks optional classroom loads
+            self.appliances.step(self.grid, self.classroom, self.hospital, self._pending_command)
+            self._pending_command = None
+            self.classroom.site_decision = self.appliances.view_decision("classroom")
+            self.classroom.campus_limit_w = classroom_headroom_w(self.grid, self.appliances)
             self.classroom.campus_feeder_closed = bool(self.grid.feeder_available.get("B", False))
             self.classroom.tick()
-            self.grid.feeder_b_leaves = classroom_leaf_decision(self.classroom.published)
-            self.hospital.campus_limit_w = hospital_headroom_w(self.grid)
+            self.hospital.site_decision = self.appliances.view_decision("hospital")
+            self.hospital.campus_limit_w = hospital_headroom_w(self.grid, self.appliances)
             self.hospital.campus_feeder_closed = bool(self.grid.feeder_available.get("A", False))
             self.hospital.tick()
+            self.grid.leaf_decision = self.appliances.service_watts()
             self.grid.publish()
             seen = self._part_revisions()
             if seen != self._seen:
@@ -183,6 +177,7 @@ class SiteAuthority:
             if not self.grid.save_command(name, payload or {}, command_id):
                 raise AuditUnavailable("Command audit storage is unavailable; no change was applied")
             result = apply()
+            self._pending_command = name
             if name in BUDGET_COMMANDS:
                 self.scenario = CUSTOM_SCENARIO
             revision = self.tick()
@@ -212,6 +207,7 @@ class SiteAuthority:
             self.classroom.capacity = settings["classroom_limit_w"]
             self.hospital.capacity = settings["hospital_limit_w"]
             self.hospital.fault = None
+            self.appliances.reset_requests()
             self.scenario = name
 
         return self.command("site.scenario", apply, {"scenario": name})[1]

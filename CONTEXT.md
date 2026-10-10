@@ -1,5 +1,10 @@
 # Blackout Mesh — implementation context
 
+## Appliance-level allocation and the new `/demo` — 2026-10-10
+
+- **One appliance-level decision.** CP-SAT decides all 31 appliances (lexicographic priority classes, then fewest switches); every plan is validated, a validated conservative fallback covers a non-optimal solve, and an exhaustive oracle checks it in tests. Campus, classroom and hospital views are projections of that one decision. This supersedes the feeder B leaf budget from #33 below.
+- **`/demo` is the power-system page** (Overview, Floor Plan, Electrical Network, Fault Detection, Electrical Laws) driven by `GET /api/v1/power-system`; the city page moved to `/city`. Details, verified outage/overload states and limitations: `docs/APPLIANCE_ALLOCATION.md`.
+
 ## One-authority migration follow-up (#33) — 2026-10-10
 
 - **One feeder B decision.** The campus allocator decides feeder A and grants feeder B a budget; the classroom leaf allocation is the only decision inside it. L3–L5 now publish `requested_w`/`served_w` from their leaves (partial service), and every total reconciles from leaves through feeders to the source on `/demo`, `/classrooms` and `/hospital`. Frontend totals use `served_w`.

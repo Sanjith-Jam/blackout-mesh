@@ -121,10 +121,12 @@ def test_hospital_commands_share_the_site_revision_and_reads_never_bump_it():
 
 
 def test_headroom_is_zero_without_feeder_b_and_capped_by_its_limit():
-    grid = main.app.state.site.grid
-    assert classroom_headroom_w(grid) == 8000
+    site = main.app.state.site
+    grid = site.grid
+    assert classroom_headroom_w(grid, site.appliances) <= 8000
     grid.set_feeder("B", False)
-    assert classroom_headroom_w(grid) == 0
+    assert classroom_headroom_w(grid, site.appliances) == 0
+    grid.set_feeder("B", True)
 
 
 def test_hospital_leaves_reconcile_with_campus_feeder_a():
@@ -164,7 +166,7 @@ def _rooms_by_service(classroom):
 
 
 def test_feeder_b_has_one_decision_with_partial_service_on_every_route():
-    """#33: campus L3-L5 watts are the classroom leaf decision, not a second whole-room decision."""
+    """Campus service watts are the appliance-level decision, not a second whole-service decision."""
     client.post("/api/v1/visualizers/classrooms", json={"action": "reset"})
     for capacity in (14000, 9000, 7000, 3500):
         client.post("/api/v1/simulation/capacity", json={"capacity_w": capacity})
@@ -178,7 +180,8 @@ def test_feeder_b_has_one_decision_with_partial_service_on_every_route():
         feeder = {e["to"]: e for e in campus["edges"] if e["from"] == "SRC"}
         assert feeder["B"]["served_w"] == classroom["served_w"] == sum(served for _, served in rooms.values())
         assert feeder["A"]["served_w"] == sum(s["served_w"] for s in campus["services"] if s["feeder"] == "A")
-        assert hospital["campus_limit_w"] == feeder["A"]["served_w"]
+        assert hospital["served_w"] == feeder["A"]["served_w"]
+        assert hospital["campus_limit_w"] == min(6000, capacity - classroom["served_w"])
         assert campus["allocation"]["served_w"] == feeder["A"]["served_w"] + feeder["B"]["served_w"] <= capacity
         assert campus["contract"]["campus_totals"]["served_w"] == campus["allocation"]["served_w"]
         assert campus["contract"]["zone_totals"]["classroom"]["served_w"] == classroom["served_w"]
@@ -188,7 +191,7 @@ def test_feeder_b_has_one_decision_with_partial_service_on_every_route():
     partial = [s for s in campus["services"] if s["feeder"] == "B" and 0 < s["served_w"] < s["requested_w"]]
     assert partial and all("Partly served" in s["model_reason"] for s in partial)
     decisions = {d["service_id"]: d for d in campus["allocation"]["explanation"]["decisions"]}
-    assert all(decisions[s]["decided_by"] == "classroom_leaf_allocation" for s in ("L3", "L4", "L5"))
+    assert all(decisions[s]["decided_by"] == "appliance_allocation" for s in ("L0", "L1", "L2", "L3", "L4", "L5"))
 
 
 def test_named_scenario_switches_every_route_in_one_revision():

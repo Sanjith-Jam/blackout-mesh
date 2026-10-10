@@ -1,3 +1,4 @@
+import type { components } from './schema';
 import { 
   Snapshot, 
   HealthResponse, 
@@ -157,4 +158,12 @@ export async function postHospitalDemo(action: HospitalDemoActionName, zone_id?:
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', {
     method: 'POST', body: JSON.stringify({ action, ...(zone_id ? { zone_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}), ...(fault ? { fault } : {}) })
   });
+}
+
+export async function getPowerSystem(signal?: AbortSignal): Promise<components['schemas']['PowerSystemResponse']> {
+  return fetchJson('/api/v1/power-system', { signal });
+}
+
+export async function requestAppliance(appliance_id: string, requested: boolean): Promise<components['schemas']['ApplianceRequestResponse']> {
+  return fetchJson('/api/v1/appliances/request', { method: 'POST', body: JSON.stringify({ appliance_id, requested }) });
 }

@@ -9,7 +9,7 @@ test('city shortage, forecast warning and guided recovery use the real controlle
     await route.fulfill({ response });
   });
   await page.routeWebSocket('**/ws/live', socket => socket.close());
-  await page.goto('/demo');
+  await page.goto('/city');
   await expect(page.getByRole('region', { name: 'City electrical grid' })).toBeVisible();
   await page.getByRole('button', { name: 'Request all rooms', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'All classroom sessions requested.' })).toBeVisible();

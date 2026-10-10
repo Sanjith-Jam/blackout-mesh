@@ -36,6 +36,7 @@ from app.core.state import CLASSROOMS, GridState
 from app.core.active_site import CATALOG
 from app.api.history import attach_history, register_history
 from app.api.demo import register_demo
+from app.api.power_system import register_power_system
 from app.forecast import DemandForecast
 from app.core.control_loop import ControlLoop
 from app.core.site import SCENARIOS, AuditUnavailable, SiteAuthority
@@ -683,6 +684,7 @@ def create_app():
     application.include_router(router)
     application.include_router(register_history(lambda request: request.app.state.site))
     application.include_router(register_demo(campus_snapshot, hardware_status))
+    application.include_router(register_power_system(hardware_status))
     return application
 
 
