@@ -32,6 +32,9 @@ class ServiceSnapshot(BaseModel):
     watts: int
     requested: bool
     modeled_served: bool
+    # Watts, so partial service is visible; L3-L5 come from the classroom leaf decision. None in older history.
+    requested_w: Optional[int] = None
+    served_w: Optional[int] = None
     indicator_confirmed: Optional[bool] = None
     model_reason: str
 

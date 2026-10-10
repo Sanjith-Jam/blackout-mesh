@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import ReactFlow, { Background, Controls, Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Snapshot } from '../types';
+import { Snapshot, servedWatts, serviceStatus } from '../types';
 
 interface TopologyGraphProps {
   snapshot: Snapshot;
@@ -49,7 +49,7 @@ export default function TopologyGraph({ snapshot }: TopologyGraphProps) {
         position: { x: 40 + i * 160, y: 280 },
         width: 140,
         height: 76,
-        data: { label: `${s.id}\n${s.watts} W\n${s.modeled_served ? 'Served' : 'Shed'}` },
+        data: { label: `${s.id}\n${servedWatts(s)} / ${s.watts} W\n${serviceStatus(s)}` },
         style: {
           width: 140, height: 76,
           background: s.modeled_served ? '#dbeafe' : '#fee2e2',
@@ -67,7 +67,7 @@ export default function TopologyGraph({ snapshot }: TopologyGraphProps) {
         position: { x: 560 + i * 160, y: 280 },
         width: 140,
         height: 76,
-        data: { label: `${s.id}\n${s.watts} W\n${s.modeled_served ? 'Served' : 'Shed'}` },
+        data: { label: `${s.id}\n${servedWatts(s)} / ${s.watts} W\n${serviceStatus(s)}` },
         style: {
           width: 140, height: 76,
           background: s.modeled_served ? '#dbeafe' : '#fee2e2',

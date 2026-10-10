@@ -59,23 +59,39 @@ def reconcile_catalog() -> list[str]:
     return problems
 
 
+def _feeder_a_served_w(grid) -> int:
+    """Watts of the feeder A services the campus allocator applied this tick (whole services)."""
+    return sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+               if s["feeder"] == "A" and grid.last_allocation_mask & (1 << i))
+
+
 def classroom_headroom_w(grid) -> int:
-    """Power the campus can make available to classroom loads on feeder B, from its last published state."""
-    snap = grid.published
-    if snap is None or not grid.feeder_available.get("B", False):
+    """Feeder B budget the campus grants the classroom leaf allocation: what the source has left after feeder A."""
+    if not grid.feeder_available.get("B", False):
         return 0
-    feeder_a_served = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-                          if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
-    return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - feeder_a_served))
+    return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - _feeder_a_served_w(grid)))
 
 
 def hospital_headroom_w(grid) -> int:
-    """Feeder A power the campus allocated to hospital services, from its last published state."""
-    snap = grid.published
-    if snap is None or not grid.feeder_available.get("A", False):
+    """Feeder A power the campus allocated to hospital services."""
+    if not grid.feeder_available.get("A", False):
         return 0
-    return sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-               if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
+    return _feeder_a_served_w(grid)
+
+
+def classroom_leaf_decision(classroom_snapshot) -> dict:
+    """Per campus service, the watts its classroom leaves request, are commanded and are served (#33).
+
+    This is the only feeder B decision: the campus publishes these watts for L3-L5 instead of whole rooms.
+    """
+    edges = {e["id"]: e for e in classroom_snapshot["edges"]}
+    out = {}
+    for room, parent in CLASSROOM_PARENT.items():
+        leaves = [edges[f"classroom:{room}>{item[0]}"] for item in CLASSROOM_LEAVES[room]]
+        out[parent] = {"requested_w": sum(e["requested_w"] for e in leaves),
+                       "commanded_w": sum(e["requested_w"] for e in leaves if e["commanded"] and e["connected"]),
+                       "served_w": sum(e["served_w"] for e in leaves)}
+    return out
 
 
 class SiteAuthority:
@@ -97,15 +113,18 @@ class SiteAuthority:
         return (self.grid.published_revision, self.classroom.published_revision, self.hospital.published_revision)
 
     def tick(self):
-        """Advance every part in a fixed order; campus first so its headroom bounds the classroom view."""
+        """Advance every part in a fixed order: the campus decides feeder A and grants feeder B a budget,
+        the classroom leaves decide feeder B within it, and the campus publishes both as one decision."""
         with self._lock:
-            self.grid.tick()
+            self.grid.advance()
             self.classroom.campus_limit_w = classroom_headroom_w(self.grid)
             self.classroom.campus_feeder_closed = bool(self.grid.feeder_available.get("B", False))
             self.classroom.tick()
+            self.grid.feeder_b_leaves = classroom_leaf_decision(self.classroom.published)
             self.hospital.campus_limit_w = hospital_headroom_w(self.grid)
             self.hospital.campus_feeder_closed = bool(self.grid.feeder_available.get("A", False))
             self.hospital.tick()
+            self.grid.publish()
             seen = self._part_revisions()
             if seen != self._seen:
                 self._seen = seen

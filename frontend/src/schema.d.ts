@@ -1577,6 +1577,10 @@ export interface components {
             requested: boolean;
             /** Modeled Served */
             modeled_served: boolean;
+            /** Requested W */
+            requested_w?: number | null;
+            /** Served W */
+            served_w?: number | null;
             /** Indicator Confirmed */
             indicator_confirmed?: boolean | null;
             /** Model Reason */

@@ -4772,6 +4772,28 @@
             "type": "boolean",
             "title": "Modeled Served"
           },
+          "requested_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested W"
+          },
+          "served_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Served W"
+          },
           "indicator_confirmed": {
             "anyOf": [
               {
