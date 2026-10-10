@@ -1,5 +1,13 @@
 # Blackout Mesh — implementation context
 
+## Selective licensed benchmark reuse — 2026-10-10
+
+Reused CityLearn's original NumPy equity-distribution method at pinned commit `834575c1a0194c8ae9d648ae858376a94dfceb78`, with its complete MIT notice under `backend/benchmarks/licenses/`. Allocation benchmark v2026-10-10.3 reports per-room occupied requested/served seconds, nullable service fractions and service Gini, including defined-run denominators in JSON/Markdown. This is offline evaluation; policy inputs and decisions are unchanged. No new dependencies or API/schema changes.
+
+Verification: full backend suite **201 passed**; final focused allocation suite **9 passed** after report-denominator changes. Allocation benchmark **385 runs, 0 constraint violations**; every pre-existing outcome field matches the frozen report exactly. Extracted method and license were checked against pinned source. New reports are local under `local-only/reuse-2026-10-10/verification/`; checked-in historical results were preserved.
+
+Five repository clones, pinned manifest and individual subagent reuse maps remain ignored under `sources/` and `local-only/reuse-2026-10-10/`. Broader assimilation is mapped, not delivered: geographic feeders require catalog/topology reconciliation, live RL lacks local hard constraints, and two source repositories lack project licenses. Next step is selecting those larger experiments and resolving their input/license gates. No upstream applications, frontend, held-out evaluation or physical hardware were run in this task; no push.
+
 ## Person A sprint: evidence and backend — 2026-10-10
 
 Answers to the adversarial review, in five commits on `claude/peaceful-volta-r0k5cd`:

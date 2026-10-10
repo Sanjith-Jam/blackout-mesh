@@ -4,6 +4,7 @@ import random
 import pytest
 
 from benchmarks import allocation as bench
+from benchmarks.run_allocation import markdown, summarize
 from app.core.allocator import allocate, feasible
 from app.core.state import SERVICE_CATALOG
 
@@ -18,6 +19,33 @@ def test_energy_integration_matches_a_hand_computed_fixture():
     assert out["essential_unmet_wh"] == pytest.approx(bench.ROOM_ESSENTIAL_W * hours, abs=1e-3)  # CR1 booked, unserved
     assert out["served_wh"] == pytest.approx(2000 * hours, abs=1e-3)
     assert out["occupied_service_fraction"] == 0.0 and out["worst_room_starvation_s"] == 3 * bench.STEP_S
+
+
+@pytest.mark.parametrize("masks, expected_gini", [([11, 11, 3], .5), ([11, 27, 19], 0), ([3, 3, 3], None)])
+def test_citylearn_service_equity_uses_per_room_fractions_and_preserves_unknown(masks, expected_gini):
+    bookings = [("CR1",), ("CR1", "CR2"), ("CR2",)]
+    steps = [bench.Step(k * bench.STEP_S, 14000, (("A", True), ("B", True)), rooms)
+             for k, rooms in enumerate(bookings)]
+    truth = [{r: r in rooms for r in bench.ROOMS} for rooms in bookings]
+    result = bench.evaluate(bench.Timeline("fixture", 0, steps, truth, {}), masks)
+    assert result["occupied_service_gini"] == expected_gini
+    assert result["occupied_service_by_room"]["CR1"]["requested_s"] == 2 * bench.STEP_S
+    assert result["occupied_service_by_room"]["CR2"]["requested_s"] == 2 * bench.STEP_S
+    assert result["occupied_service_by_room"]["CR3"] == {"requested_s": 0, "served_s": 0, "fraction": None}
+
+
+def test_citylearn_no_occupied_demand_remains_unknown_and_reports_render():
+    result = bench.evaluate(bench.Timeline("fixture", 0, [], [], {}), [])
+    assert result["occupied_service_gini"] is None
+    assert all(room["fraction"] is None for room in result["occupied_service_by_room"].values())
+    report = bench.run_benchmark(scenarios=["zero_supply"], seeds=[0])
+    for run in report["runs"]:
+        run["occupied_service_gini"] = None
+    derived = summarize(report)
+    assert all("occupied_service_gini" in row for row in derived["summary"].values())
+    assert all(row["occupied_service_gini_defined_runs"] == 0 for row in derived["summary"].values())
+    assert "Room service Gini" in markdown(report, derived, "test")
+    assert "— (0/1)" in markdown(report, derived, "test")
 
 
 class TruthTrap(list):
