@@ -77,9 +77,9 @@ export default function HospitalBlueprint({ snapshot, connected }: Props) {
 
             {/* Transformer box */}
             <rect x={x + 240} y="62" width="68" height="48" rx="4" fill={energized ? '#4a6e50' : '#6b6b6b'} stroke={energized ? '#2d4a32' : '#444'} strokeWidth="2" />
-            <text x={x + 274} y="80" textAnchor="middle" fill="#e8f0ea" style={{ fontSize: '8px', fontWeight: 800, fontFamily: 'ui-monospace, monospace' }}>{tx?.id ?? '?'}</text>
-            <text x={x + 274} y="96" textAnchor="middle" fill="#c4daca" style={{ fontSize: '6px', fontWeight: 600, fontFamily: 'ui-monospace, monospace' }}>{current != null ? `${current.toFixed(0)}A` : '—'} / {temp != null ? `${temp.toFixed(0)}°C` : '—'}</text>
-            <text x={x + 274} y="106" textAnchor="middle" fill="#c4daca" style={{ fontSize: '5px', fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>SIM SENSOR</text>
+            <text x={x + 274} y="80" textAnchor="middle" fill="#e8f0ea" style={{ fontSize: '8px', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>{tx?.id ?? '?'}</text>
+            <text x={x + 274} y="96" textAnchor="middle" fill="#c4daca" style={{ fontSize: '6px', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{current != null ? `${current.toFixed(0)}A` : '—'} / {temp != null ? `${temp.toFixed(0)}°C` : '—'}</text>
+            <text x={x + 274} y="106" textAnchor="middle" fill="#c4daca" style={{ fontSize: '5px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>SIM SENSOR</text>
 
             {/* Feed wire from bus into zone */}
             {wire(`hospital:BUS>${txId}`, `M${x + 32} 465V106`, true)}

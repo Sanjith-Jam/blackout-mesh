@@ -1,6 +1,6 @@
 .power-map { border: 1px solid var(--surface-border-strong); border-radius: var(--radius-md); overflow: hidden; background: var(--surface-color); }
 .power-map__toolbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; border-bottom:1px solid var(--surface-border); }
-.power-map__eyebrow { font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); font-weight:700; }
+.power-map__eyebrow { color:var(--text-muted); }
 .power-map h2 { margin:3px 0 0; font-size:1.15rem; }
 .power-map__legend { display:flex; flex-wrap:wrap; gap:14px; color:var(--text-muted); font-size:.75rem; }
 .power-map__legend span { display:flex; align-items:center; gap:6px; }
@@ -9,11 +9,11 @@
 .power-map__viewport { overflow-x:auto; overscroll-behavior-x:contain; }
 .power-map__viewport:focus-visible { outline:3px solid #2563eb; outline-offset:-3px; }
 .power-map__drawing { display:block; width:100%; min-width:800px; }
-.power-map__map-note { fill:#6c776b; font:600 9px ui-monospace,monospace; letter-spacing:.6px; }
-.power-map__room-name { fill:#36453c; font:800 16px ui-monospace,monospace; }
-.power-map__fixture-label { fill:#59665b; font:700 8px ui-monospace,monospace; letter-spacing:.3px; }
-.power-map__feed-label { fill:#59665b; font:600 10px ui-monospace,monospace; }
-.power-map__source-text { fill:#f4f2df; font:700 12px ui-monospace,monospace; }
+.power-map__map-note { fill:#6c776b; font:600 9px var(--font-mono); letter-spacing:.6px; }
+.power-map__room-name { fill:#36453c; font:800 16px var(--font-mono); }
+.power-map__fixture-label { fill:#59665b; font:700 8px var(--font-mono); letter-spacing:.3px; }
+.power-map__feed-label { fill:#59665b; font:600 10px var(--font-mono); }
+.power-map__source-text { fill:#f4f2df; font:700 12px var(--font-mono); }
 .power-map__circuit path { fill:none; stroke-linejoin:miter; stroke-linecap:square; }
 .power-map__cable-bed { stroke:#f9f8ed; stroke-width:9; opacity:.85; }
 .power-map__cable { stroke:#c29a48; stroke-width:5; }
@@ -36,7 +36,7 @@
 .power-map__loads { display:grid; gap:7px; }
 .power-map__loads > span { display:flex; align-items:center; gap:6px; font-size:.75rem; color:var(--text-muted); }
 .power-map__loads i { width:6px; height:6px; background:#c39031; }
-.power-map__loads b { margin-left:auto; font:700 .65rem ui-monospace,monospace; color:#966616; }
+.power-map__loads b { margin-left:auto; font:700 .65rem var(--font-mono); color:#966616; }
 .power-map__loads .is-off i { background:#9ca59c; }
 .power-map__loads .is-off b { color:#7c857d; }
 @keyframes power-travel { to { stroke-dashoffset:-40; } }

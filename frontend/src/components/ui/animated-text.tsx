@@ -12,7 +12,7 @@ export const AnimatedText = ({
 
   return (
     <motion.div
-      className={cn("flex flex-wrap items-center justify-center gap-2", className)}
+      className={cn("flex flex-wrap items-center justify-center gap-x-[0.26em]", className)}
       initial="hidden"
       animate="visible"
       variants={{

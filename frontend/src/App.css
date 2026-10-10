@@ -4,6 +4,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Type system: IBM Plex is self-hosted (offline demo). Sans for reading, Mono for labels, units and data.
+   One scale for every page: use these tokens instead of page-local sizes. */
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+:root {
+  --step--2: 0.75rem;    /* 12px  labels, eyebrows, footnotes */
+  --step--1: 0.8125rem;  /* 13px  secondary text, captions */
+  --step-0: 0.9375rem;   /* 15px  body and controls */
+  --step-1: 1.125rem;    /* 18px  panel headings */
+  --step-2: 1.375rem;    /* 22px  section headings, key numbers */
+  --step-3: 1.75rem;     /* 28px  large metrics */
+  --step-4: clamp(2rem, 3.6vw, 2.75rem);   /* page titles */
+  --step-5: clamp(2.5rem, 6vw, 4.25rem);   /* landing hero only */
+  --leading-tight: 1.15;
+  --leading-body: 1.6;
+  --tracking-label: 0.08em;
+}
+
 :root {
   /* Vintage Theme Tokens */
   --bg-vintage: #fffdf7;
@@ -144,7 +165,12 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: var(--leading-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   background-color: var(--bg-color);
   color: var(--text-main);
   /* Graph paper effect */
@@ -195,3 +221,17 @@ button {
 button:active:not(:disabled) {
   transform: scale(0.98);
 }
+
+/* Shared typography. Headings are semibold and tight; labels are uppercase mono; numbers line up. */
+h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.01em; line-height: var(--leading-tight); text-wrap: balance; }
+p, li { text-wrap: pretty; }
+code, kbd, samp, pre { font-family: var(--font-mono); font-size: 0.92em; }
+.type-eyebrow,
+.city-eyebrow, .classroom-demo__eyebrow, .hospital-eyebrow, .power-map__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+.hero-heading { font-size: var(--step-5); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; }

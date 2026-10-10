@@ -105,17 +105,12 @@
 .hospital-eyebrow {
   margin: 0 0 .55rem;
   color: var(--text-muted);
-  font-size: .73rem;
-  font-weight: 750;
-  letter-spacing: .085em;
-  text-transform: uppercase;
 }
 
 .hospital-title-row h1 {
   margin: 0;
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
-  line-height: 1.15;
-  letter-spacing: -.035em;
+  font-size: var(--step-4);
+  letter-spacing: -.02em;
 }
 
 .hospital-subtitle { max-width: 720px; margin: .55rem 0 0; color: var(--text-muted); line-height: 1.55; }
