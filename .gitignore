@@ -46,6 +46,10 @@ backend/sites/*.local.json
 
 # Optional isolated electrical studies
 .venv-electrical/
+.venv-city/
+.venv-citylearn/
+/.playwright-cli/
+/output/playwright/
 
 venv/
 # Playwright output
