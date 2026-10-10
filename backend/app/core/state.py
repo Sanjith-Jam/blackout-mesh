@@ -136,6 +136,7 @@ class GridState:
             self.events = []
 
         self.fault_diagnosis = None
+        self._diagnostic_signature = None
         self.telemetry_window = ObservationWindow()
         self.telemetry_sequence = 0
         self._active_incidents = {}
@@ -178,7 +179,7 @@ class GridState:
             log.exception("Command audit write failed")
             return False
 
-    def add_event(self, event_type: str, desc: str):
+    def add_event(self, event_type: str, desc: str, metadata=None):
         with self._lock:
             now = datetime.now(timezone.utc)
             event = SystemEvent(
@@ -191,7 +192,7 @@ class GridState:
             )
             if self.history:
                 try:
-                    self.history.event(event, self.history_inputs())
+                    self.history.event(event, self.history_inputs() | (metadata or {}))
                 except Exception:
                     log.exception("History event recording failed; live state transition continues")
             self.events.append(event)
@@ -247,11 +248,18 @@ class GridState:
 
     def _sync_incidents(self, hypotheses):
         current = {}
-        for hypothesis in hypotheses:
+        ranked = []
+        for rank, hypothesis in enumerate(hypotheses, 1):
             item = hypothesis.model_dump(mode="json") if hasattr(hypothesis, "model_dump") else dict(hypothesis)
             key = (item.get("code", "UNKNOWN"), item.get("asset_id", "unknown"))
+            item["rank"] = rank
             current[key] = item
-        if current.keys() == self._active_incidents.keys() or self.storage.degraded:
+            ranked.append(item)
+        signature = tuple((item["code"], item["asset_id"], item.get("confirmation"), item.get("severity"),
+                           item.get("sufficiency")) for item in ranked)
+        if self.storage.degraded:
+            return
+        if current.keys() == self._active_incidents.keys() and signature == self._diagnostic_signature:
             return
         now = datetime.now(timezone.utc)
         active = dict(self._active_incidents)
@@ -272,6 +280,12 @@ class GridState:
                         session.add(Incident(incident_id=incident_id, run_id=self.run_id, timestamp=now,
                             code=key[0], severity=str(evidence.get("severity", "unknown")), status="OPEN",
                             evidence=evidence | {"asset_id": key[1]}))
+                    else:
+                        incident = session.exec(select(Incident).where(Incident.incident_id == incident_id)).first()
+                        if incident is not None:
+                            incident.severity = str(evidence.get("severity", "unknown"))
+                            incident.evidence = evidence | {"asset_id": key[1]}
+                            session.add(incident)
                     next_active[key] = incident_id
                 if not self.storage.commit(session):
                     return
@@ -280,6 +294,13 @@ class GridState:
             for key in current.keys() - active.keys():
                 self.add_event("INCIDENT_OPENED", f"{key[0]} detected for {key[1]}")
             self._active_incidents = next_active
+            previous_signature = self._diagnostic_signature
+            if signature != previous_signature:
+                self._diagnostic_signature = signature
+                if ranked or previous_signature is not None:
+                    summary = ", ".join(f"#{h['rank']} {h['code']} at {h['asset_id']}" for h in ranked) or "No supported hypotheses"
+                    self.add_event("DIAGNOSIS_UPDATED", f"Ranked telemetry diagnosis: {summary}",
+                                   {"ranked_hypotheses": ranked})
         except Exception:
             log.exception("Incident history write failed")
 

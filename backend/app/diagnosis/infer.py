@@ -140,6 +140,26 @@ def diagnose_transformer(window: ObservationWindow, asset: str, rating: Transfor
         return abstain("Stale sensor evidence", stale=stale)
     missing = [q for q in TRANSFORMER_QUANTITIES if latest[q].value is None]
 
+    current_series = window.series(asset, "current_a")[-(CONFIRM_SAMPLES + 1):]
+    temperature_series = window.series(asset, "temperature_c")[-(CONFIRM_SAMPLES + 1):]
+    current_values = [o.value for o in current_series]
+    temperature_values = [o.value for o in temperature_series]
+    if (len(current_values) == CONFIRM_SAMPLES + 1 and len(temperature_values) == CONFIRM_SAMPLES + 1
+            and all(value is not None for value in current_values + temperature_values)
+            and max(current_values) - min(current_values) <= 0.01
+            and temperature_values[-1] - temperature_values[0] >= 4.0
+            and all(b >= a - 1.5 for a, b in zip(temperature_values, temperature_values[1:]))):
+        details = "Current is flat while transformer temperature is rising; a stuck current sensor is indistinguishable from a true load change."
+        recommendation = "Verify the current sensor with an independent meter before attributing or clearing the fault."
+        abstention = {"asset_id": asset, "reason": "CONTRADICTORY_EVIDENCE", "details": details,
+                      "missing_sensors": [], "contradictory_readings": ["Current remained flat across three observations.",
+                                                                               f"Temperature rose {temperature_values[-1] - temperature_values[0]:.1f} °C."],
+                      "indistinguishable_candidates": ["CURRENT_SENSOR_STUCK", "UNOBSERVED_LOAD_CHANGE"],
+                      "next_check_needed": recommendation}
+        return {**base, "status": "ABSTAINED", "hypotheses": [], "abstention": abstention,
+                "code": "UNKNOWN", "cause": details, "severity": "unknown", "missing": missing,
+                "evidence": abstention["contradictory_readings"], "recommendation": recommendation}
+
     results = [_relabel_supply_loss(_engine(rating, asset, r), peers_input_low) for r in rows]
     current = results[-1]
     out = {**base, **current, "missing": missing, "affected_assets": [asset]}

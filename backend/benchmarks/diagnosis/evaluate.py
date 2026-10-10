@@ -13,7 +13,10 @@ def evaluate(predictions: dict, truths: list[dict]) -> dict:
     per_family = {f: {"scenarios": 0, "fault_scenarios": 0, "detected": 0, "claims": 0, "correct_claims": 0,
                       "false_alarm_steps": 0, "normal_asset_steps": 0, "detect_steps": [], "location_errors": 0,
                       "abstained_steps": 0, "asset_steps": 0, "correct_abstentions": 0, "safety_violations": 0,
-                      "missed": []} for f in FAMILIES}
+                      "missed": [], "ranking_samples": 0, "top1_hits": 0, "top3_hits": 0,
+                      "reciprocal_ranks": [], "expected_hypotheses": 0, "ranked_hypotheses": 0,
+                      "expected_abstentions": 0, "evaluation_abstentions": 0,
+                      "correct_evaluation_abstentions": 0} for f in FAMILIES}
     for truth in truths:
         f = per_family[truth["family"]]
         preds = predictions[truth["id"]]
@@ -46,6 +49,28 @@ def evaluate(predictions: dict, truths: list[dict]) -> dict:
                 if (asset in faulty and fault_now and onset is not None and k >= onset + CONFIRM_STEPS
                         and p["status"] == "NORMAL"):
                     f["safety_violations"] += 1
+            if asset in faulty and onset is not None:
+                eval_step = next((k for k in range(onset + CONFIRM_STEPS, len(series))
+                                  if truth["fault_steps"][asset][k]), None)
+                if eval_step is not None:
+                    p = series[eval_step]
+                    expected_codes = expected - {"NORMAL", "ABSTAINED"}
+                    predicted_abstention = p["status"] == "ABSTAINED"
+                    f["evaluation_abstentions"] += int(predicted_abstention)
+                    if "ABSTAINED" in expected:
+                        f["expected_abstentions"] += 1
+                        f["correct_evaluation_abstentions"] += int(predicted_abstention)
+                    if expected_codes:
+                        ranked = [h["code"] for h in p.get("hypotheses", [])]
+                        reciprocal_rank = next((1 / rank for rank, code in enumerate(ranked, 1)
+                                                if code in expected_codes), 0.0)
+                        f["ranking_samples"] += 1
+                        f["top1_hits"] += int(reciprocal_rank == 1.0)
+                        f["top3_hits"] += int(reciprocal_rank >= 1 / 3)
+                        f["reciprocal_ranks"].append(reciprocal_rank)
+                        f["expected_hypotheses"] += len(expected_codes)
+                        f["ranked_hypotheses"] += len(ranked)
+                        f["correct_expected_hypotheses"] = f.get("correct_expected_hypotheses", 0) + len(expected_codes & set(ranked))
             for code in claimed_codes:
                 f["claims"] += 1
                 if asset in faulty and code in expected:
@@ -62,6 +87,7 @@ def evaluate(predictions: dict, truths: list[dict]) -> dict:
     report = {}
     for family, f in per_family.items():
         steps = f.pop("detect_steps")
+        rr = f.pop("reciprocal_ranks")
         report[family] = {
             **{k: v for k, v in f.items()},
             "recall": round(f["detected"] / f["fault_scenarios"], 3) if f["fault_scenarios"] else None,
@@ -70,5 +96,14 @@ def evaluate(predictions: dict, truths: list[dict]) -> dict:
             "time_to_detect_steps_median": statistics.median(steps) if steps else None,
             "time_to_detect_steps_max": max(steps) if steps else None,
             "coverage": round(1 - f["abstained_steps"] / f["asset_steps"], 4) if f["asset_steps"] else None,
+            "top1_recall": round(f["top1_hits"] / f["ranking_samples"], 4) if f["ranking_samples"] else None,
+            "top3_recall": round(f["top3_hits"] / f["ranking_samples"], 4) if f["ranking_samples"] else None,
+            "mean_reciprocal_rank": round(sum(rr) / len(rr), 4) if rr else None,
+            "ranked_hypothesis_precision": round(f.get("correct_expected_hypotheses", 0) / f["ranked_hypotheses"], 4)
+                if f["ranked_hypotheses"] else None,
+            "abstention_precision": round(f["correct_evaluation_abstentions"] / f["evaluation_abstentions"], 4)
+                if f["evaluation_abstentions"] else None,
+            "abstention_recall": round(f["correct_evaluation_abstentions"] / f["expected_abstentions"], 4)
+                if f["expected_abstentions"] else None,
         }
     return report
