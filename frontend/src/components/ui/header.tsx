@@ -25,7 +25,7 @@ export function Header() {
       }}
       animate={hidden ? "hidden" : "visible"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="site-header sticky top-0 w-full z-50 grid grid-cols-[1fr_auto_1fr] items-center py-4 px-6 md:px-8 bg-vintage/80 backdrop-blur-md border-b border-gray-200/50"
+      className="site-header sticky top-0 w-full z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2 items-center py-4 px-6 md:px-8 bg-vintage/80 backdrop-blur-md border-b border-gray-200/50"
     >
       <div className="flex items-center justify-start gap-2 text-brand-forest font-bold text-xl">
         <Activity className="text-brand-forest" />
