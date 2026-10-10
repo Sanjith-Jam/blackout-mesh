@@ -1559,13 +1559,43 @@
    "served_w": 3000
   }
  ],
+ "contract": {
+  "campus_totals": {
+   "capacity_w": 6000,
+   "requested_w": 14000,
+   "served_w": 3000
+  },
+  "identity": {
+   "catalog_version": "1.1",
+   "config_hash": "af574a50987d",
+   "model_version": "uci-occ-logistic-2026-10-09",
+   "observation_time": "2026-10-10T08:04:22.315995Z",
+   "policy_version": "allocation-v1",
+   "run_id": "<volatile>",
+   "server_epoch": "<volatile>",
+   "site_id": "Default Campus",
+   "state_revision": 13
+  },
+  "zone_totals": {
+   "classroom": {
+    "capacity_w": null,
+    "requested_w": 8000,
+    "served_w": 3000
+   },
+   "hospital": {
+    "capacity_w": null,
+    "requested_w": 6000,
+    "served_w": 0
+   }
+  }
+ },
  "diagnosis": {
   "campus": {
    "affected_assets": [
     "FEEDER_A"
    ],
    "detail": "Likely interruption on feeder A.",
-   "evaluated_at": "2026-10-10T03:15:55.663872+00:00",
+   "evaluated_at": "2026-10-10T08:04:22.431507+00:00",
    "hypotheses": [
     {
      "asset_id": "FEEDER_A",
@@ -2321,12 +2351,12 @@
   "proposed_violations": [],
   "restoration": {
    "after_shed_required_s": 3,
-   "since_last_shed_s": 0.06,
-   "stable_for_s": 0.02,
+   "since_last_shed_s": 0.12,
+   "stable_for_s": 0.03,
    "stable_required_s": 5,
    "step_s": 1
   },
-  "solve_ms": 8.76,
+  "solve_ms": 14.63,
   "solver": "OR-Tools CP-SAT 9.15.6755",
   "solves": 8,
   "stages": [
@@ -2481,7 +2511,7 @@
   "catalog_version": "site-catalog-1.1",
   "config_hash": "af574a50987d",
   "profile": "campus",
-  "revision": 12,
+  "revision": 13,
   "run_id": "<volatile>",
   "scenario": "custom",
   "site_name": "Default Campus"
