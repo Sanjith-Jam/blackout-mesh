@@ -212,3 +212,7 @@ README, demo guide and planning index now identify `/grid` as the primary distri
 ## Round 3 #69 shared allocator path budgets — 2026-10-10
 
 The existing appliance `Item`/`Problem` accepts an optional graph-edge path and edge limits. CP-SAT and the independent validator enforce every nested path budget, and reject service on an undeclared edge. Existing A/B callers keep empty paths and unchanged behavior. The compact path-budget test cross-checks the exhaustive oracle, plus existing allocator checks: 161 passed in 7.46 s. `git diff --check` passed. Next: the opt-in district mapping adapter; no new solver or dependency.
+
+## Round 3 #69 bounded appliance adapter — 2026-10-10
+
+Added an opt-in `gnitc-appliance-14kw-v1` profile: six explicit virtual room placements map all 31 catalog appliances onto real-geometry/synthetic-wiring building endpoints, and every other building explicitly has zero aggregate demand. Requests are integer W bounded by each rated maximum. The adapter reuses CP-SAT/independent validation with every graph-edge budget; the original campus A/B feeder grouping is not imposed on the district. No DER placement exists in this profile, so PV/storage is disabled and CityLearn totals are not rescaled. Pure adapter/profile checks: 6 passed in 0.85 s (normal, 6 kW shortage, zero supply, open source paths, missing rooms, overrated requests and complete leaf/edge reconciliation). API/UI wiring is the next slice; this commit alone does not activate the profile.

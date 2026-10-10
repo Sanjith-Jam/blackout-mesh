@@ -25,8 +25,9 @@ class DistrictProfile(BaseModel):
     provenance: Literal["CONFIGURED_SIMULATED_ASSUMPTION"]
     source_capacity_w: StrictInt = Field(ge=0, le=1_000_000)
     demand_basis: Literal["hourly_trace_weights", "appliance_inventory"]
-    local_supply_mode: Literal["grid_following"]
+    local_supply_mode: Literal["grid_following", "disabled"]
     buildings: list[BuildingPolicy]
+    appliance_requests_w: dict[StrictStr, StrictInt] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_buildings(self):
@@ -36,6 +37,10 @@ class DistrictProfile(BaseModel):
             raise ValueError("building and mapped room identities must be unique and nonempty")
         if self.demand_basis == "hourly_trace_weights" and (rooms or not any(row.demand_weight for row in self.buildings)):
             raise ValueError("hourly trace requires positive weights and no appliance mappings")
+        if self.demand_basis == "appliance_inventory" and (self.local_supply_mode != "disabled" or any(row.demand_weight for row in self.buildings)):
+            raise ValueError("appliance study requires disabled DER and zero aggregate weights")
+        if self.demand_basis == "hourly_trace_weights" and self.appliance_requests_w:
+            raise ValueError("hourly trace cannot also request appliances")
         return self
 
     @property
