@@ -32,9 +32,10 @@ def verify_manifest(split):
 
 
 def markdown(split, detector, report, manifest):
+    split_data = manifest.get("splits", {}).get(split, manifest)
     lines = [f"# Diagnosis benchmark: `{split}` split", "",
-             f"Protocol `{PROTOCOL}` · {manifest['process']} · detector: {detector}. "
-             f"{manifest['splits'][split]['scenarios']} scenarios (32 steps × 3 transformers each). "
+             f"Protocol `{manifest['protocol']}` · {manifest['process']} · detector: {detector}. "
+             f"{split_data['scenarios']} scenarios (32 steps × 3 transformers each). "
              "Synthetic telemetry only; this does not establish field accuracy.", "",
              "| Family | Scenarios | Recall | Precision | False alarms (rate) | Time to detect (median / max steps) | "
              "Location errors | Coverage | Correct abstentions | Safety violations | Missed |",
@@ -45,6 +46,17 @@ def markdown(split, detector, report, manifest):
                      f"{fmt(r['precision'])} ({r['correct_claims']}/{r['claims']}) | {r['false_alarm_steps']} ({fmt(r['false_alarm_rate'])}) | "
                      f"{fmt(r['time_to_detect_steps_median'])} / {fmt(r['time_to_detect_steps_max'])} | {r['location_errors']} | "
                      f"{fmt(r['coverage'])} | {r['correct_abstentions']} | {r['safety_violations']} | {len(r['missed'])} |")
+    lines += ["", "## Ranked hypotheses and abstention", "",
+              "Ranking is evaluated on the first faulty asset-step at or after onset + 2 steps. Top-k is cause recall "
+              "for any accepted expected code; scores are uncalibrated rule evidence, not probabilities.", "",
+              "| Family | Ranked cases | Top-1 | Top-3 | MRR | Candidate precision | Expected abstentions | Abstention precision / recall |",
+              "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for family, r in report.items():
+        lines.append(f"| {family} | {r['ranking_samples']} | {fmt(r['top1_recall'])} ({r['top1_hits']}/{r['ranking_samples']}) | "
+                     f"{fmt(r['top3_recall'])} ({r['top3_hits']}/{r['ranking_samples']}) | {fmt(r['mean_reciprocal_rank'])} | "
+                     f"{fmt(r['ranked_hypothesis_precision'])} ({r.get('correct_expected_hypotheses', 0)}/{r['ranked_hypotheses']}) | "
+                     f"{r['expected_abstentions']} | {fmt(r['abstention_precision'])} / {fmt(r['abstention_recall'])} "
+                     f"({r['correct_evaluation_abstentions']}/{r['evaluation_abstentions']}; {r['correct_evaluation_abstentions']}/{r['expected_abstentions']}) |")
     return "\n".join(lines) + "\n"
 
 

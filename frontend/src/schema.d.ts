@@ -1239,6 +1239,8 @@ export interface components {
             fault?: ("overload" | "cooling_failure" | "overload_cooling" | "upstream_loss" | "sensor_dropout" | "stuck_sensor") | null;
             /** Scenario */
             scenario?: ("normal" | "overload" | "cooling_failure" | "upstream_loss" | "missing_sensor") | null;
+            /** Rehearsal */
+            rehearsal?: ("normal" | "overload" | "cooling_failure" | "overload_cooling" | "upstream_loss" | "missing_sensor" | "stuck_sensor") | null;
         };
         /** HospitalDemoResponse */
         HospitalDemoResponse: {

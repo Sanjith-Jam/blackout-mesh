@@ -1,0 +1,286 @@
+{
+ "campus_limit_w": null,
+ "capacity_range_w": null,
+ "capacity_w": null,
+ "command": null,
+ "contract": {
+  "campus_totals": null,
+  "identity": {
+   "catalog_version": "1.0",
+   "config_hash": "157a248c",
+   "model_version": "uci-occ-logistic-2026-10-09",
+   "observation_time": "2026-10-10T01:48:49.143155+00:00",
+   "policy_version": "allocation-v1",
+   "run_id": "<volatile>",
+   "server_epoch": "<volatile>",
+   "site_id": "Default Campus",
+   "state_revision": 9
+  },
+  "zone_totals": {}
+ },
+ "edges": [],
+ "effective_capacity_w": null,
+ "fault": null,
+ "generated_at": null,
+ "hospital_limit_w": null,
+ "limited_by": null,
+ "mode": "SIMULATED",
+ "model": null,
+ "policy": null,
+ "priority_order": [],
+ "replay": null,
+ "requested_w": null,
+ "safety": null,
+ "scanned_zone_ids": [],
+ "selected_zone_id": null,
+ "served_w": null,
+ "shortfall_w": null,
+ "site": {
+  "catalog_version": "site-catalog-2026-10-10.1",
+  "profile": "campus",
+  "revision": 9,
+  "run_id": "<volatile>"
+ },
+ "summary": "Diagnosis uses only timestamped sensor observations and configured ratings; a cause is inferred after two consecutive agreeing readings. Thresholds are not certified protection settings.",
+ "transformers": [
+  {
+   "activity": null,
+   "diagnosis": {
+    "abstention": null,
+    "cause": "No configured demo threshold exceeded",
+    "code": "NORMAL",
+    "evidence": [
+     "Current 45.0 A within rating (110.0 A limit).",
+     "Temperature 58.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Cooling operational.",
+     "Input 230.0 V, Output 220.0 V."
+    ],
+    "hypotheses": [],
+    "missing": [],
+    "recommendation": "Continue monitoring.",
+    "severity": "normal",
+    "stale": [],
+    "status": "NORMAL"
+   },
+   "energized": true,
+   "id": "TX1",
+   "loads": [
+    {
+     "essential": null,
+     "id": "ventilator",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "monitor",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "infusion",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "lights",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "oxygen",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    }
+   ],
+   "name": "Transformer 1",
+   "priority_rank": null,
+   "rated_current_a": 100.0,
+   "rfid_active": null,
+   "sensors": {
+    "cooling_ok": true,
+    "current_a": 45.0,
+    "input_voltage_v": 230.0,
+    "output_voltage_v": 220.0,
+    "temperature_c": 58.0
+   },
+   "zone": "ICU"
+  },
+  {
+   "activity": null,
+   "diagnosis": {
+    "abstention": {
+     "asset_id": "TX2",
+     "contradictory_readings": [
+      "current_a",
+      "temperature_c"
+     ],
+     "details": "Current sensor suspected stuck: 45.0 A repeated on 3+ readings while temperature changed with cooling OK. Its reading cannot rule out an overload.",
+     "indistinguishable_candidates": [
+      "OVERLOAD",
+      "STUCK_CURRENT_SENSOR"
+     ],
+     "missing_sensors": [],
+     "next_check_needed": "Check the current transformer and its wiring, or measure the load with a clamp meter.",
+     "reason": "SUSPECTED_STUCK_SENSOR"
+    },
+    "cause": "Current sensor suspected stuck: 45.0 A repeated on 3+ readings while temperature changed with cooling OK. Its reading cannot rule out an overload.",
+    "code": "UNKNOWN",
+    "evidence": [
+     "Current sensor suspected stuck: 45.0 A repeated on 3+ readings while temperature changed with cooling OK. Its reading cannot rule out an overload."
+    ],
+    "hypotheses": [],
+    "missing": [],
+    "recommendation": "Check the current transformer and its wiring, or measure the load with a clamp meter.",
+    "severity": "unknown",
+    "stale": [],
+    "status": "ABSTAINED"
+   },
+   "energized": true,
+   "id": "TX2",
+   "loads": [
+    {
+     "essential": null,
+     "id": "surgical_light",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "anesthesia",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "esu",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "monitor",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "ac",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    }
+   ],
+   "name": "Transformer 2",
+   "priority_rank": null,
+   "rated_current_a": 100.0,
+   "rfid_active": null,
+   "sensors": {
+    "cooling_ok": true,
+    "current_a": 45.0,
+    "input_voltage_v": 230.0,
+    "output_voltage_v": 220.0,
+    "temperature_c": 70.0
+   },
+   "zone": "Theatre"
+  },
+  {
+   "activity": null,
+   "diagnosis": {
+    "abstention": null,
+    "cause": "No configured demo threshold exceeded",
+    "code": "NORMAL",
+    "evidence": [
+     "Current 45.0 A within rating (110.0 A limit).",
+     "Temperature 58.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Cooling operational.",
+     "Input 230.0 V, Output 220.0 V."
+    ],
+    "hypotheses": [],
+    "missing": [],
+    "recommendation": "Continue monitoring.",
+    "severity": "normal",
+    "stale": [],
+    "status": "NORMAL"
+   },
+   "energized": true,
+   "id": "TX3",
+   "loads": [
+    {
+     "essential": null,
+     "id": "bed_lights",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "nurse_call",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "fans",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "water_pump",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    },
+    {
+     "essential": null,
+     "id": "ac",
+     "name": null,
+     "reason": null,
+     "served": true,
+     "watts": null
+    }
+   ],
+   "name": "Transformer 3",
+   "priority_rank": null,
+   "rated_current_a": 100.0,
+   "rfid_active": null,
+   "sensors": {
+    "cooling_ok": true,
+    "current_a": 45.0,
+    "input_voltage_v": 230.0,
+    "output_voltage_v": 220.0,
+    "temperature_c": 58.0
+   },
+   "zone": "Wards"
+  }
+ ]
+}

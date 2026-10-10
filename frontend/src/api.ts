@@ -15,6 +15,7 @@ import {
   HardwareStatus
 } from './types';
 import type { CityDemoSnapshot, DemoEvidence, DemandForecast } from './types';
+import type { HospitalDemoScenario, HospitalFaultSnapshot } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -134,6 +135,10 @@ export async function postClassroomDemo(action: ClassroomDemoActionName, classro
 
 export async function getHospitalDemo(signal?: AbortSignal): Promise<HospitalDemoSnapshot> {
   return fetchJson<HospitalDemoSnapshot>('/api/v1/visualizers/hospital', { signal });
+}
+
+export function postHospitalScenario(rehearsal: NonNullable<HospitalDemoScenario>, signal?: AbortSignal): Promise<HospitalFaultSnapshot> {
+  return fetchJson('/api/v1/visualizers/hospital', { method: 'POST', body: JSON.stringify({ rehearsal }), signal });
 }
 
 export async function postHospitalDemo(action: HospitalDemoActionName, zone_id?: string, capacity_w?: number, fault?: HospitalDemoFault): Promise<HospitalDemoSnapshot> {

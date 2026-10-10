@@ -17,6 +17,10 @@ RATED_A = 100.0
 FIELDS = ("current_a", "temperature_c", "input_voltage_v", "output_voltage_v", "cooling_ok")
 UNITS = {"current_a": "A", "temperature_c": "degC", "input_voltage_v": "V", "output_voltage_v": "V", "cooling_ok": "bool"}
 DATA_DIR = Path(__file__).resolve().parent / "data"
+RANKED_PROTOCOL = "diag-bench-ranked-v2"
+RANKED_DATA_DIR = Path(__file__).resolve().parent / "ranked-v2"
+RANKED_REGIME = {"overload": [(1.41, 1.70)], "hot": [(95.1, 110.0)],
+                 "noise": (5.0, 2.5), "delay": 3, "seeds": range(4000, 4008)}
 
 FAMILIES = ("normal", "demand_change", "hot_ambient", "overload", "cooling_failure", "overload_and_cooling",
             "upstream_loss", "branch_interruption", "sensor_dropout", "stuck_sensor", "delay_reorder", "recovery_chatter")
@@ -45,9 +49,10 @@ def _pick(rng, ranges):
     return rng.uniform(lo, hi)
 
 
-def scenario(split: str, family: str, seed: int) -> tuple[dict, dict]:
-    regime = REGIMES[split]
-    rng = random.Random(f"{PROTOCOL}:{split}:{family}:{seed}")
+def scenario(split: str, family: str, seed: int, protocol: str = PROTOCOL,
+             regime_override: dict | None = None) -> tuple[dict, dict]:
+    regime = regime_override or REGIMES[split]
+    rng = random.Random(f"{protocol}:{split}:{family}:{seed}")
     sigma_i, sigma_t = regime["noise"]
     target = rng.choice(ASSETS)
     onset = rng.randint(6, 14)
@@ -101,7 +106,7 @@ def scenario(split: str, family: str, seed: int) -> tuple[dict, dict]:
     # delay_reorder delays some of the target's samples by up to `delay` steps; others arrive on time.
     delays = {a: [rng.randint(1, regime["delay"]) if family == "delay_reorder" and a == target and rng.random() < 0.4 else 0
                   for _ in range(STEPS)] for a in ASSETS}
-    sid = hashlib.sha256(f"{PROTOCOL}:{split}:{family}:{seed}".encode()).hexdigest()[:16]
+    sid = hashlib.sha256(f"{protocol}:{split}:{family}:{seed}".encode()).hexdigest()[:16]
     bundle = {"id": sid, "step_s": STEP_S, "steps": STEPS, "assets": list(ASSETS), "rated_current_a": RATED_A,
               "series": {a: {q: [values[a][k][q] for k in range(STEPS)] for q in FIELDS} for a in ASSETS},
               "arrival_delay": delays}
@@ -154,6 +159,32 @@ def write_all(data_dir: Path = DATA_DIR) -> dict:
             "seeds": [REGIMES[split]["seeds"].start, REGIMES[split]["seeds"].stop - 1],
             "regime": {k: v for k, v in REGIMES[split].items() if k != "seeds"},
             "observations_sha256": _sha(out / "observations.json"), "truth_sha256": _sha(out / "truth.json")}
+    (data_dir / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    return manifest
+
+
+def write_ranked_heldout(data_dir: Path = RANKED_DATA_DIR) -> dict:
+    out = data_dir / "heldout"
+    out.mkdir(parents=True, exist_ok=True)
+    bundles, truths = [], []
+    for family in FAMILIES:
+        for seed in RANKED_REGIME["seeds"]:
+            bundle, truth = scenario("heldout", family, seed, RANKED_PROTOCOL, RANKED_REGIME)
+            bundles.append(bundle)
+            truths.append(truth)
+    observations_path, truth_path = out / "observations.json", out / "truth.json"
+    observations_path.write_text(json.dumps(bundles, separators=(",", ":")), encoding="utf-8")
+    truth_path.write_text(json.dumps(truths, separators=(",", ":")), encoding="utf-8")
+    source_files = (Path(__file__).resolve().parents[2] / "app" / "diagnosis" / "infer.py",
+                    Path(__file__).resolve().parents[2] / "app" / "diagnostics" / "engine.py",
+                    Path(__file__).resolve().parents[2] / "app" / "diagnostics" / "rules.py")
+    manifest = {"protocol": RANKED_PROTOCOL,
+                "process": "developer-held-out frozen before first ranked-metric run; no independent custodian",
+                "detector_sha256": hashlib.sha256(b"".join(path.read_bytes() for path in source_files)).hexdigest(),
+                "scenarios": len(bundles), "families": {family: len(RANKED_REGIME["seeds"]) for family in FAMILIES},
+                "seeds": [RANKED_REGIME["seeds"].start, RANKED_REGIME["seeds"].stop - 1],
+                "regime": {key: value for key, value in RANKED_REGIME.items() if key != "seeds"},
+                "observations_sha256": _sha(observations_path), "truth_sha256": _sha(truth_path)}
     (data_dir / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
     return manifest
 

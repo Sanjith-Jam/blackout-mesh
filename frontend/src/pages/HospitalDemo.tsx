@@ -6,6 +6,7 @@ import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoActionName, HospitalDemoZone, HospitalDemoSnapshot } from '../types';
 import './ClassroomVisualizer.css';
 import HospitalBlueprint from './HospitalBlueprint';
+import HospitalFaultRehearsal from './HospitalFaultRehearsal';
 
 export default function HospitalDemo() {
   const [snapshot, setSnapshot] = useState<HospitalDemoSnapshot | null>(null);
@@ -167,6 +168,7 @@ export default function HospitalDemo() {
             <HospitalBlueprint snapshot={snapshot} connected={!error} />
           </div>
         </section>
+        <HospitalFaultRehearsal />
       </section>
       <aside className="classroom-demo__panel classroom-demo__controls" aria-labelledby="classzone-controls-title" aria-busy={pending}>
         <h2 id="classzone-controls-title">Demo controls</h2>

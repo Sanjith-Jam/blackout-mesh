@@ -110,6 +110,18 @@ def test_plausible_demand_change_within_rating_is_normal():
     assert diagnose_transformer(window, "TX", TransformerRating(), NOW)["code"] == "NORMAL"
 
 
+def test_flat_current_sensor_with_rising_temperature_abstains():
+    window = ObservationWindow()
+    for seq, (current, temperature) in enumerate(((48.0, 58.0), (44.5, 63.2), (44.5, 68.1), (44.5, 77.4)), start=1):
+        at = NOW - timedelta(seconds=(4 - seq) * 0.25)
+        for raw in sim.envelopes({"TX": tx(current_a=current, temperature_c=temperature)}, seq, at):
+            window.add(validate(raw, {"TX"}, NOW))
+    result = diagnose_transformer(window, "TX", TransformerRating(), NOW)
+    assert result["status"] == "ABSTAINED"
+    assert result["abstention"]["reason"] == "SUSPECTED_STUCK_SENSOR"
+    assert "sensor suspected stuck" in result["cause"]
+
+
 def test_shared_upstream_loss_versus_local_branch_interruption():
     shared = run_hospital(sim.hospital_readings("upstream_loss", "Theatre"))
     assert {d["code"] for d in shared.values()} == {"UPSTREAM_LOSS"}

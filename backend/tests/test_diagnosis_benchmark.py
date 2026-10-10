@@ -7,6 +7,7 @@ import pytest
 from benchmarks.diagnosis import fixtures
 from benchmarks.diagnosis.evaluate import evaluate
 from benchmarks.diagnosis.run import main as run_main
+from benchmarks.diagnosis.run_ranked import main as run_ranked_main
 from benchmarks.diagnosis.runner import LeakageError, TelemetryDetector, run_detector
 
 DATA = fixtures.DATA_DIR
@@ -27,6 +28,29 @@ def test_committed_fixtures_match_manifest_and_regenerate_identically(tmp_path):
             assert digest == entry[f"{kind}_sha256"] == regenerated["splits"][split][f"{kind}_sha256"]
         assert entry["scenarios"] == len(fixtures.FAMILIES) * 4
         assert set(entry["families"]) == set(fixtures.FAMILIES)
+
+
+def test_ranked_heldout_fixture_is_frozen_and_sealed(tmp_path):
+    manifest_path = fixtures.RANKED_DATA_DIR / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["protocol"] == fixtures.RANKED_PROTOCOL
+    assert "no independent custodian" in manifest["process"]
+    regenerated = fixtures.write_ranked_heldout(tmp_path / "ranked")
+    # Fixture bytes stay frozen; a later detector must not rewrite their recorded source hash.
+    fixture_fields = lambda value: {k: v for k, v in value.items() if k != "detector_sha256"}
+    assert json.loads(json.dumps(fixture_fields(regenerated))) == fixture_fields(manifest)
+    for kind in ("observations", "truth"):
+        path = fixtures.RANKED_DATA_DIR / "heldout" / f"{kind}.json"
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == manifest[f"{kind}_sha256"]
+    log = fixtures.RANKED_DATA_DIR / "UNSEALED.log"
+    before = log.read_bytes() if log.exists() else None
+    with pytest.raises(SystemExit) as exc:
+        run_ranked_main([])
+    assert "sealed" in str(exc.value)
+    if regenerated["detector_sha256"] != manifest["detector_sha256"]:
+        with pytest.raises(SystemExit, match="rules changed"):
+            run_ranked_main(["--unseal"])
+    assert (log.read_bytes() if log.exists() else None) == before
 
 
 def test_observation_bundles_carry_no_labels():
@@ -104,3 +128,23 @@ def test_evaluator_keeps_misses_and_counts_safety_violations():
     report = evaluate(perfect, truths)
     for family in fixtures.FAULT_FAMILIES:
         assert report[family]["recall"] == 1.0 and report[family]["false_alarm_steps"] == 0, family
+
+
+def test_rank_metrics_use_ordered_hypotheses_and_report_denominators():
+    truths = load("dev", "truth")
+    bundles = {b["id"]: b for b in load("dev", "observations")}
+    predictions = {t["id"]: {a: [{"code": "NORMAL", "status": "NORMAL", "hypotheses": []}
+                                 for _ in range(bundles[t["id"]]["steps"])]
+                              for a in bundles[t["id"]]["assets"]} for t in truths}
+    truth = next(t for t in truths if t["family"] == "overload_and_cooling")
+    asset = truth["faulty_assets"][0]
+    step = truth["onset_step"] + 2
+    predictions[truth["id"]][asset][step] = {
+        "code": "HIGH_TEMPERATURE", "status": "FAULT_DETECTED",
+        "hypotheses": [{"code": "HIGH_TEMPERATURE"}, {"code": "OVERLOAD"}],
+    }
+    report = evaluate(predictions, truths)["overload_and_cooling"]
+    assert report["ranking_samples"] == 4
+    assert report["top1_hits"] == 0 and report["top3_hits"] == 1
+    assert report["mean_reciprocal_rank"] == 0.125
+    assert report["ranked_hypothesis_precision"] == 0.5
