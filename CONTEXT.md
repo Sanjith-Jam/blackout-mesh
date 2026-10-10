@@ -88,3 +88,11 @@ Issue #19's frozen developer-held-out diagnostic split was unsealed and reported
 ## Issue #16 frontend tests — in progress
 
 Kept the shared live-state socket and server-history flow from `main`; integrated useful WIP fixtures and component tests without duplicating the socket implementation. Added tests for both facility visualizers and power-edge states, automated accessibility scans, API-shape fixture checks, and Playwright route navigation. Local tests pass; the issue remains open pending CI and any remaining acceptance gaps.
+
+## Person B city demo and predictive demand — 2026-10-10
+
+Added a causal 10–60-second Ridge demand forecast trained on reproducible synthetic sessions (80 train / 20 calibration / 20 test); inputs are previous requested watts, never post-shedding power. Synthetic 60-second MAE is 149.49 W versus 469.59 W persistence. Live forecasting waits for four 10-second readings and abstains on stale/gapped observations or abrupt demand changes. Rehearsal samples remain explicitly synthetic and cannot alter the grid. The API exposes one revision for source, hospital and classroom panels, candidate fixed-priority comparison, forecast and gateway-reported hardware status. The landing page now reads measured inference/allocation results from checked-in JSON rather than placeholder percentages.
+
+The new `/demo` city view preserves the six-service 14 kW electrical catalog and guides shortages, feeder trips, repair and staged recovery. `/console` retains history and engineering controls; facility drill-downs remain available. Hardware LED display now requires a fresh connected confirmation, including after stale links. B5 flashing, pairing, physical acceptance and hardware backup video remain deferred by the user's explicit request.
+
+Checks so far: 9 new backend forecasting/city tests pass; frontend production build passes with the existing bundle-size warning; 17 component tests pass. The real-backend browser smoke check exposed and fixed a feeder-toggle error, then a mobile hardware-input overflow; final rerun is pending. The concurrent full backend suite had two diagnosis failures during separate in-progress diagnosis edits; no passing full-suite result is claimed here. Final verification and remaining Person B work will be recorded below.

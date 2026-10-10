@@ -80,7 +80,7 @@
 .hardware-panel__led.is-on i { background: #f59e0b; box-shadow: 0 0 6px #fbbf24; }
 .hardware-panel__led.is-unknown i { background: transparent; border: 2px dotted #7c6fa8; }
 .hardware-panel__note { margin: 0 0 8px !important; font-size: .76rem !important; }
-.hardware-panel__connect { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: end; margin-bottom: 6px; }
+.hardware-panel__connect { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; margin-bottom: 6px; }
 .hardware-panel__connect label { grid-column: 1 / -1; font-size: .78rem; font-weight: 650; }
-.hardware-panel__connect input { min-height: 40px; padding: 6px 8px; border: 1px solid var(--surface-border-strong); border-radius: var(--radius-sm); font: inherit; }
+.hardware-panel__connect input { min-width: 0; width: 100%; min-height: 40px; padding: 6px 8px; border: 1px solid var(--surface-border-strong); border-radius: var(--radius-sm); font: inherit; }
 .hardware-panel__error { margin: 6px 0 0 !important; color: var(--status-err) !important; font-size: .76rem !important; }
