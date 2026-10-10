@@ -4818,6 +4818,14 @@
           "catalog_version": {
             "type": "string",
             "title": "Catalog Version"
+          },
+          "config_hash": {
+            "type": "string",
+            "title": "Config Hash"
+          },
+          "site_name": {
+            "type": "string",
+            "title": "Site Name"
           }
         },
         "type": "object",
@@ -4825,7 +4833,9 @@
           "run_id",
           "revision",
           "profile",
-          "catalog_version"
+          "catalog_version",
+          "config_hash",
+          "site_name"
         ],
         "title": "SiteIdentityResponse"
       },

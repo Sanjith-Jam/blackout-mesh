@@ -477,7 +477,7 @@
    },
    "served_w": 8000
   },
-  "config_hash": "157a248c",
+  "config_hash": "af574a50987d",
   "contract": {
    "campus_totals": {
     "capacity_w": 14000,
@@ -485,10 +485,10 @@
     "served_w": 8000
    },
    "identity": {
-    "catalog_version": "1.0",
-    "config_hash": "157a248c",
+    "catalog_version": "1.1",
+    "config_hash": "af574a50987d",
     "model_version": "uci-occ-logistic-2026-10-09",
-    "observation_time": "2026-10-10T01:48:49.143155+00:00",
+    "observation_time": "2026-10-10T02:23:20.824299+00:00",
     "policy_version": "allocation-v1",
     "run_id": "<volatile>",
     "server_epoch": "<volatile>",
@@ -823,10 +823,12 @@
    }
   ],
   "site": {
-   "catalog_version": "site-catalog-2026-10-10.1",
+   "catalog_version": "site-catalog-1.1",
+   "config_hash": "af574a50987d",
    "profile": "campus",
    "revision": 9,
-   "run_id": "<volatile>"
+   "run_id": "<volatile>",
+   "site_name": "Default Campus"
   },
   "source": {
    "capacity_w": 14000,

@@ -275,3 +275,9 @@ Validation: 197 backend tests passed against temporary databases; 18 frontend co
 ### #19 ranked held-out v3 — 2026-10-10
 
 Ranked v2 could not be unsealed (frozen against a detector that changed before it ran). Froze `diag-bench-ranked-v3` (seeds 5000–5007) against the current detector, committed it, then unsealed it once. All fault families detected 8/8 with zero safety violations; top-1/top-3/MRR 1.0 on all 80 ranked cases; dropout and stuck-sensor abstention precision/recall 1.0 (8/8 each). Results in `backend/benchmarks/diagnosis/results/diagnosis_ranked_v3_heldout.{md,json}`; details in `docs/ISSUE_19_DELIVERY.md`. This supersedes the earlier "keep #19 open" notes. Synthetic, developer-held-out only.
+
+## Configurable site profiles (#26) — 2026-10-10
+
+- Delivered: strict Pydantic site profile (`app/core/config.py`) with topology, unit and parent/leaf watt checks reported per asset; hospital equipment, presets, LED bits and board A room letters moved from Python constants into `default_campus.json`; a second site (`small_test_site.json`) runs from configuration only; config hash recorded in snapshot identity, view identity and every persisted decision; `python -m app.core.config <profile>` validates offline. Docs: `docs/SITE_PROFILES.md`.
+- Evidence: `backend/tests/test_config.py` (shipped profiles, reference catalog, 17-case invalid matrix, hash stability, private RFID override) and `backend/tests/test_alternate_site.py` (second site in a fresh process twice: same allocation and projections, its own rooms/zones, decisions carry its hash). Full backend suite and frontend build/tests pass.
+- Limits: two-feeder radial topology (A hospital, B classroom) is required; dashboard cards, blueprint drawings and city map are still drawn for the default campus.

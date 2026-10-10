@@ -1,51 +1,213 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "name": "Small Test Site",
+  "fault_zone": "Clinic",
   "assets": [
     {
       "id": "SOURCE",
       "type": "source",
-      "name": "Micro Grid",
-      "capacity_w": 5000
+      "name": "Annex Microgrid",
+      "capacity_w": 6000
     },
     {
       "id": "A",
       "type": "feeder",
-      "name": "Feeder A",
+      "name": "Feeder A (clinic)",
       "parent_id": "SOURCE",
-      "capacity_w": 3000
+      "capacity_w": 2500,
+      "shortage_preset_w": 1500
     },
     {
-      "id": "L0",
+      "id": "B",
+      "type": "feeder",
+      "name": "Feeder B (teaching)",
+      "parent_id": "SOURCE",
+      "capacity_w": 3500,
+      "shortage_preset_w": 2000
+    },
+    {
+      "id": "S0",
       "type": "service",
-      "name": "Main Lighting",
+      "name": "Clinic Essential Circuit",
       "parent_id": "A",
       "tier": "T1",
-      "rating_w": 1000,
+      "rating_w": 1200,
       "zone": "hospital"
     },
     {
-      "id": "L1",
+      "id": "S1",
       "type": "service",
-      "name": "Secondary Room",
+      "name": "Clinic Comfort",
       "parent_id": "A",
       "tier": "T2",
-      "rating_w": 2000,
+      "rating_w": 800,
+      "zone": "hospital"
+    },
+    {
+      "id": "S2",
+      "type": "service",
+      "name": "Lab Block",
+      "parent_id": "B",
+      "tier": "T2",
+      "rating_w": 1800,
+      "zone": "classroom"
+    },
+    {
+      "id": "S3",
+      "type": "service",
+      "name": "Seminar Room",
+      "parent_id": "B",
+      "tier": "T3",
+      "rating_w": 1200,
       "zone": "classroom"
     },
     {
       "id": "HR1",
       "type": "hospital_room",
-      "name": "Only Hospital Room",
-      "parent_id": "L0",
+      "name": "Clinic Room",
+      "parent_id": "S0",
       "led_bit": 0
     },
     {
-      "id": "CR1",
+      "id": "LAB",
       "type": "classroom",
-      "name": "Only Classroom",
-      "parent_id": "L1",
-      "led_bit": 1
+      "name": "Science Lab",
+      "parent_id": "S2",
+      "led_bit": 1,
+      "hardware_room": "A"
+    },
+    {
+      "id": "SEM",
+      "type": "classroom",
+      "name": "Seminar Room",
+      "parent_id": "S3",
+      "led_bit": 2,
+      "hardware_room": "B"
+    },
+    {
+      "id": "L_LAB_lighting",
+      "type": "load",
+      "name": "Lighting",
+      "parent_id": "LAB",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_LAB_computers",
+      "type": "load",
+      "name": "Computers",
+      "parent_id": "LAB",
+      "rating_w": 900,
+      "essential": true
+    },
+    {
+      "id": "L_LAB_projector",
+      "type": "load",
+      "name": "Projector",
+      "parent_id": "LAB",
+      "rating_w": 300,
+      "essential": false
+    },
+    {
+      "id": "L_LAB_ac",
+      "type": "load",
+      "name": "Air conditioning",
+      "parent_id": "LAB",
+      "rating_w": 500,
+      "essential": false
+    },
+    {
+      "id": "L_SEM_lighting",
+      "type": "load",
+      "name": "Lighting",
+      "parent_id": "SEM",
+      "rating_w": 100,
+      "essential": true
+    },
+    {
+      "id": "L_SEM_fans",
+      "type": "load",
+      "name": "Fans",
+      "parent_id": "SEM",
+      "rating_w": 200,
+      "essential": false
+    },
+    {
+      "id": "L_SEM_projector",
+      "type": "load",
+      "name": "Projector",
+      "parent_id": "SEM",
+      "rating_w": 300,
+      "essential": false
+    },
+    {
+      "id": "L_SEM_ac",
+      "type": "load",
+      "name": "Air conditioning",
+      "parent_id": "SEM",
+      "rating_w": 600,
+      "essential": false
+    },
+    {
+      "id": "TXC",
+      "type": "transformer",
+      "name": "Clinic Transformer",
+      "parent_id": "A",
+      "zone": "Clinic",
+      "rated_current_a": 40.0
+    },
+    {
+      "id": "TXP",
+      "type": "transformer",
+      "name": "Pharmacy Transformer",
+      "parent_id": "A",
+      "zone": "Pharmacy",
+      "rated_current_a": 25.0
+    },
+    {
+      "id": "L_TXC_monitor",
+      "type": "load",
+      "name": "Patient Monitor",
+      "parent_id": "TXC",
+      "service_id": "S0",
+      "rating_w": 300,
+      "essential": true
+    },
+    {
+      "id": "L_TXC_lights",
+      "type": "load",
+      "name": "Exam Lights",
+      "parent_id": "TXC",
+      "service_id": "S0",
+      "rating_w": 400,
+      "essential": true
+    },
+    {
+      "id": "L_TXC_ac",
+      "type": "load",
+      "name": "Air Conditioning",
+      "parent_id": "TXC",
+      "service_id": "S1",
+      "rating_w": 500,
+      "essential": false
+    },
+    {
+      "id": "L_TXP_fridge",
+      "type": "load",
+      "name": "Vaccine Fridge",
+      "parent_id": "TXP",
+      "service_id": "S0",
+      "rating_w": 500,
+      "essential": true
+    },
+    {
+      "id": "L_TXP_fans",
+      "type": "load",
+      "name": "Ceiling Fans",
+      "parent_id": "TXP",
+      "service_id": "S1",
+      "rating_w": 300,
+      "essential": false
     }
   ]
 }

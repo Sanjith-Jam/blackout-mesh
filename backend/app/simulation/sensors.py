@@ -7,10 +7,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from app.core.active_site import CATALOG
 from app.diagnosis.observations import QUANTITIES
 
-HOSPITAL_ZONES = ("ICU", "Theatre", "Wards")
-HOSPITAL_ASSETS = {f"TX{i}": zone for i, zone in enumerate(HOSPITAL_ZONES, start=1)}
+HOSPITAL_ZONES = CATALOG.hospital_zones
+HOSPITAL_ASSETS = dict(CATALOG.transformers)  # transformer id -> zone, from the site profile
 
 # (current_a, temperature_c, input_voltage_v, output_voltage_v, cooling_ok); None = sensor dropout
 NORMAL_SENSORS = (45.0, 58.0, 230.0, 220.0, True)
@@ -30,7 +31,8 @@ NOMINAL_V = 230.0
 
 def hospital_readings(scenario: str, zone: str, sample: int = 0) -> dict[str, dict]:
     """Ground-truth sensor values per transformer for a named teaching scenario."""
-    target = {"ICU": "TX1", "Theatre": "TX2", "Wards": "TX3"}.get(zone, "TX2")
+    by_zone = {z: asset for asset, z in HOSPITAL_ASSETS.items()}
+    target = by_zone.get(zone, by_zone.get(CATALOG.fault_zone))
     readings = {}
     for asset in HOSPITAL_ASSETS:
         if scenario == "upstream_loss":

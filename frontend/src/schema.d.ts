@@ -1592,6 +1592,10 @@ export interface components {
             profile: string;
             /** Catalog Version */
             catalog_version: string;
+            /** Config Hash */
+            config_hash: string;
+            /** Site Name */
+            site_name: string;
         };
         /** SourceInfo */
         SourceInfo: {

@@ -11,12 +11,15 @@ import uuid
 from datetime import datetime, timezone
 from sqlmodel import Session
 
+from app.core.active_site import CATALOG
 from app.core.state import CLASSROOMS, SERVICE_CATALOG, site_profile
 from app.schemas.snapshot import SiteIdentityResponse
 from app.storage.models import Run
 from app.visualizers import HOSP_LOADS, HOSP_PARENT, LOADS as CLASSROOM_LEAVES
 
-CATALOG_VERSION = "site-catalog-2026-10-10.1"
+# The active site profile names the catalog; its content hash pins exactly which inventory a run used (#26).
+CATALOG_VERSION = f"site-catalog-{CATALOG.version}"
+CONFIG_HASH = CATALOG.config_hash
 PROFILE = "campus"
 log = logging.getLogger(__name__)
 
@@ -171,4 +174,4 @@ class SiteAuthority:
     def identity(self) -> dict:
         with self._lock:
             return {"run_id": self.run_id, "revision": self.revision, "profile": PROFILE,
-                    "catalog_version": CATALOG_VERSION}
+                    "catalog_version": CATALOG_VERSION, "config_hash": CONFIG_HASH, "site_name": CATALOG.name}

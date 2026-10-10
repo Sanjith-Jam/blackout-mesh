@@ -15,10 +15,10 @@
  "contract": {
   "campus_totals": null,
   "identity": {
-   "catalog_version": "1.0",
-   "config_hash": "157a248c",
+   "catalog_version": "1.1",
+   "config_hash": "af574a50987d",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:48:49.143155+00:00",
+   "observation_time": "2026-10-10T02:23:20.824299+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
@@ -588,9 +588,11 @@
  "served_w": 3000,
  "shortfall_w": 5000,
  "site": {
-  "catalog_version": "site-catalog-2026-10-10.1",
+  "catalog_version": "site-catalog-1.1",
+  "config_hash": "af574a50987d",
   "profile": "campus",
   "revision": 8,
-  "run_id": "<volatile>"
+  "run_id": "<volatile>",
+  "site_name": "Default Campus"
  }
 }
