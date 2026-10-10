@@ -145,6 +145,8 @@ REPLAY_PATH = Path(__file__).resolve().parents[1] / "models" / "replay.json"
 
 
 def initialize_state(app: FastAPI):
+    from app.api.district import initialize_district
+    initialize_district(app)
     app.state.manager = ConnectionManager()
     app.state.replay_data = load_replay()
     app.state.grid = GridState()
@@ -679,12 +681,14 @@ async def hardware_ack(request: Request, req: HardwareAckRequest):
 def create_app():
     application = FastAPI(title="PriorityGrid API", version="1.0.0", lifespan=lifespan)
     application.add_exception_handler(AuditUnavailable, audit_unavailable_handler)
-    application.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    application.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
         allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
     application.include_router(router)
     application.include_router(register_history(lambda request: request.app.state.site))
     application.include_router(register_demo(campus_snapshot, hardware_status))
     application.include_router(register_power_system(hardware_status))
+    from app.api.district import register_district
+    application.include_router(register_district())
     return application
 
 
