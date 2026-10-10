@@ -7,7 +7,7 @@ import { servedWatts, type DemandForecast, type Snapshot } from '../types';
 import { BenchmarkCard } from '../components/ui/benchmark-card';
 import HardwarePanel from './HardwarePanel';
 import CityGrid, { feederState } from './CityGrid';
-import DemandForecastPanel from './DemandForecastPanel';
+import DemandForecastPanel, { ForecastAlert } from './DemandForecastPanel';
 import './CityDemo.css';
 
 export function decisionReason(snapshot: Snapshot, serviceId: string) {
@@ -54,10 +54,21 @@ export default function CityDemo() {
   ];
   return <div className="city-demo">
     <header className="city-heading"><div><span className="city-eyebrow">Blackout Mesh / city command center</span><h1>Navigate the outage.</h1><p>See what lost power, why it was cut, and what can safely recover next.</p></div><div className="city-live"><span className={`city-dot ${city.isError ? 'is-shed' : 'is-served'}`} />{city.isError ? 'Stale · last known state' : 'Live simulation'}<small>Run {snapshot.site?.run_id}</small></div></header>
+    <ForecastAlert forecast={city.data.forecast} />
     <p className="city-boundary">Illustrative city; electrical demand and outages are simulated at lab scale. USB / ESP-NOW status is physical only when a device reports it.</p>
     {city.isError && <p className="city-warning" role="alert">Connection lost. Controls are disabled; the grid shows the last known snapshot.</p>}
     <section className="city-events" aria-label="City event controls"><span><Zap size={18} aria-hidden="true" /> One event updates the whole grid</span>
       <button disabled={disabled} onClick={() => void act(async () => { for (const { id } of snapshot.zones?.classroom.classrooms ?? []) await changeClassroomLoad(id, true, snapshot.contract.identity.run_id); }, 'All classroom sessions requested.')}>Request all rooms</button>
+      <button className="city-emergency" disabled={disabled} onClick={() => void act(async () => {
+        // Each step awaits the backend acknowledgment before the next one is sent.
+        for (const { id } of snapshot.zones?.classroom.classrooms ?? []) await changeClassroomLoad(id, true, snapshot.contract.identity.run_id);
+        await changeCapacity(6000);
+        await changeFeeder('A', false);
+      }, 'Simulated emergency: all rooms requested, 6 kW shortage, feeder A tripped. Protected loads keep priority; follow the recovery steps below.')}>Simulate emergency</button>
+      <button disabled={disabled} onClick={() => void act(async () => {
+        for (const id of openFeeders) await changeFeeder(id, true);
+        await changeCapacity(14000);
+      }, 'Scenario reset: feeders repaired and 14 kW restored; loads return only after stable evidence.')}>Reset scenario</button>
       <button disabled={disabled} onClick={() => void act(() => changeCapacity(6000), '6,000 W shortage applied. Protected demand takes priority.')}>6 kW shortage</button>
       {['A', 'B'].map(id => <button key={id} disabled={disabled} onClick={() => void act(() => changeFeeder(id, openFeeders.includes(id)), `Feeder ${id} ${openFeeders.includes(id) ? 'repaired' : 'tripped'} in simulation.`)}>{openFeeders.includes(id) ? 'Repair' : 'Trip'} feeder {id}</button>)}
       <button disabled={disabled} onClick={() => void act(() => changeCapacity(14000), '14,000 W supply restored. Loads still wait for stable evidence.')}>Restore supply</button>

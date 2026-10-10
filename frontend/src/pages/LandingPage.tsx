@@ -22,6 +22,20 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ONE-MINUTE DEMO */}
+      <section id="one-minute" className="content-section" aria-labelledby="one-minute-heading">
+        <div className="container">
+          <h2 id="one-minute-heading" className="section-heading">The one-minute story</h2>
+          <ol className="landing-story">
+            <li><strong>1. Outage</strong>One click injects a modeled line fault at peak demand; affected loads turn red and dead lines grey.</li>
+            <li><strong>2. Decision</strong>Every permitted tie configuration is ranked by critical service, then checked with an unbalanced AC power flow.</li>
+            <li><strong>3. Validation</strong>Recovery waits for fresh, sequenced observations; a watt-feasible but overloaded tie is refused with its numbers.</li>
+            <li><strong>4. Recovery</strong>The modeled restoration is applied, audited in SQLite and compared before/after. No physical switching is claimed.</li>
+          </ol>
+          <p className="section-text"><Link to="/grid" className="font-semibold underline">Run it on the GNITC district →</Link> · Real geography; synthetic electrical assets and demand.</p>
+        </div>
+      </section>
+
       {/* TWO DEMONSTRATION ENVIRONMENTS */}
       <section id="hospital" className="content-section">
         <div className="container">

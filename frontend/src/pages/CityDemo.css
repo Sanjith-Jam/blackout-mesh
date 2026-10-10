@@ -83,3 +83,6 @@
 @media(max-width:1200px) { .city-main-grid { grid-template-columns:1fr; }.city-map-panel { overflow-x:auto; }.city-recovery ol { display:grid; grid-template-columns:1fr 1fr; gap:20px; }.city-map { min-width:720px; }.city-building { min-height:110px; } }
 @media(max-width:760px) { .city-heading { align-items:start; flex-direction:column; }.city-scope-grid { grid-template-columns:1fr; gap:8px; }.city-scope { grid-template-columns:1fr 1fr; align-items:center; gap:6px; padding:12px; }.city-scope small { grid-column:1/-1; }.city-bottom-grid { grid-template-columns:1fr; }.city-recovery ol { grid-template-columns:1fr; gap:0; }.city-comparison { grid-template-columns:1fr; }.city-panel { padding:16px; }.city-map-panel { padding-inline:0; }.city-events > span { flex-basis:100%; }.city-events button { flex:1 1 140px; }.city-panel-heading { flex-wrap:wrap; } }
 @media(prefers-reduced-motion:reduce) { .city-wire.is-powered { animation:none; }.city-demo button { transition:none; } }
+.city-forecast-alert { margin: .5rem 0 1rem; padding: .7rem 1rem; border: 2px solid #c0392b; border-radius: .6rem; background: #fdecea; color: #6b1d14; }
+.city-forecast-alert a { color: inherit; font-weight: 700; }
+.city-events .city-emergency { background:#c0392b; color:#fff; border-color:#c0392b; font-weight:700; }

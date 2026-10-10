@@ -1,5 +1,13 @@
 # Blackout Mesh — implementation context
 
+## Round 3 judge-response plan and GitHub issues — 2026-10-10
+
+Prepared [the three-workstream implementation plan](docs/planning/ROUND3_JUDGE_RESPONSE_PLAN.md) from the supplied review and current `87a9c11` baseline: [#69](https://github.com/Sanjith-Jam/blackout-mesh/issues/69) shared model/story, reproducible setup and district replay; [#70](https://github.com/Sanjith-Jam/blackout-mesh/issues/70) electrical validation, bounded optimization and fresh restoration evidence; [#71](https://github.com/Sanjith-Jam/blackout-mesh/issues/71) independent comparisons, realistic ML/data gates, operator value and economics. Each issue has ordered implementation tasks, affected consumers, measurable acceptance criteria, dependencies and claim limits. Existing #24/#51/#53/#63/#65/#66 are linked for reuse; #64 is optional. No implementation or hardware action was performed.
+
+Verification: `gh issue create` posted exactly three issues; `gh issue edit --body-file` cross-linked them; `gh issue view --json number,title,url,state,body` confirmed all three OPEN and exact full-body/title/link matches. `git diff --check` passed before the documentation commit. No publication/auth failures occurred. Runtime/browser tests, fresh-clone regeneration and final held-out evaluation were not run for this documentation-only task. Field data, operator feedback and independent reproduction remain evidence gates, not achieved results.
+
+Next: start #69's explicit scope/profile/identity contract and follow the plan's delivery gates before claiming optimized, electrically validated district recovery. Keep hardware paused and preserve local history databases.
+
 ## GNITC synthetic district demo — 2026-10-10
 
 Delivered `/grid` with shared SHIFT, Energy, Self-healing and Transformers views backed by the Python-owned district API. All tabs use one run, revision and graph. The map is an attributed OpenStreetMap snapshot (retrieved 2026-10-10, ODbL-1.0); building centroids act as virtual group centers. No electrical network, asset location, demand or rating is sourced from physical campus data.
@@ -192,3 +200,27 @@ Merged `origin/main` into `codex/issue-19-ranked-evaluation` after the ranked v3
 ### District audit follow-up — 2026-10-10
 
 Priority tiers are explicitly `CONFIGURED_SIMULATED_ASSUMPTION`: the first three loads by stable building-ID order are labeled critical for this demo, not as verified real-building criticality. The recovery view displays the tier rationale, and the KPI is labeled “Synthetic critical shortfall.” A stale transformer sensor action retains simulated readings but reports `STALE`; diagnosis remains `UNKNOWN` and no component is highlighted red. This was live-verified using the isolated backend on port 8002 and frontend on 5174. Focused checks passed: 11 backend tests and 4 DistrictDemo frontend tests. Final reruns passed: full backend suite 412 passed / 2 skipped; full frontend suite 39 passed across 10 files; production build passed. SHIFT generation runs PRSG, phase/voltage/equipment mappers, and `DistributionSystemBuilder`; GDM `to_json` persistence and electrical powerflow are outside the written plan. Hour advances use cached output from the actual pinned offline CityLearn battery simulation; no live CityLearn rerun or powerflow is claimed. This small code and documentation follow-up is not yet committed.
+
+## Round 3 #69 route/model accuracy — 2026-10-10
+
+README, demo guide and planning index now identify `/grid` as the primary district study, `/demo` as the appliance controller and `/city` as its legacy city story. The separate district 6 kW source and campus 14 kW rated catalog are explicit. Current production allocation is CP-SAT; historic 64-mask timings are labeled regression evidence. Reviewed routing and links; `git diff --check` passed. Documentation-only slice; runtime tests not applicable. Issue #69 remains open for integration/reproduction/history acceptance.
+
+## Round 3 #69 explicit district policy — 2026-10-10
+
+`DISTRICT_PROFILE` now selects a strictly validated district policy (default `gnitc_profile.json`): all 12 synthetic building tiers/rationales and demand weights are explicit; missing/duplicate buildings, invalid watts and unsupported island modes reject. Largest-remainder allocation conserves integer W. Cached CityLearn residual supply is explicitly grid-following and becomes zero on isolated buildings; disconnected PV/storage cannot invent island service. Generated topology must retain every configured building. This separate profile retains the 6,000 W source. Focused profile/authority/evidence checks: 14 passed using `/tmp/round3-69-history.sqlite`; `git diff --check` passed. Integrated appliance mapping and durable district replay remain next.
+
+## Round 3 #69 shared allocator path budgets — 2026-10-10
+
+The existing appliance `Item`/`Problem` accepts an optional graph-edge path and edge limits. CP-SAT and the independent validator enforce every nested path budget, and reject service on an undeclared edge. Existing A/B callers keep empty paths and unchanged behavior. The compact path-budget test cross-checks the exhaustive oracle, plus existing allocator checks: 161 passed in 7.46 s. `git diff --check` passed. Next: the opt-in district mapping adapter; no new solver or dependency.
+
+## Round 3 #69 bounded appliance adapter — 2026-10-10
+
+Added an opt-in `gnitc-appliance-14kw-v1` profile: six explicit virtual room placements map all 31 catalog appliances onto real-geometry/synthetic-wiring building endpoints, and every other building explicitly has zero aggregate demand. Requests are integer W bounded by each rated maximum. The adapter reuses CP-SAT/independent validation with every graph-edge budget; the original campus A/B feeder grouping is not imposed on the district. No DER placement exists in this profile, so PV/storage is disabled and CityLearn totals are not rescaled. Pure adapter/profile checks: 6 passed in 0.85 s (normal, 6 kW shortage, zero supply, open source paths, missing rooms, overrated requests and complete leaf/edge reconciliation). API/UI wiring is the next slice; this commit alone does not activate the profile.
+
+## Round 3 #69/#70/#71 continuation on PR #74 — 2026-10-10
+
+Done: pure switch-configuration evaluation; unbalanced three-phase AC check (power-grid-model, declared synthetic parameters in `gnitc_electrical.json`, losses inside the source budget via profile `loss_reserve_w`; transformers pass power HV→LV only); exhaustive lexicographic tie/load optimizer AC-validated in rank order (OPTIMAL only when the watt-relaxation rank-0 passes); immutable digested proposals revalidated at apply; sequenced/timestamped observation gate (2 samples ≥5 s apart, newest ≤30 s; hour steps never count); SQLite district journal with idempotent `action_id`, rollback on failed commit, restart rehydration (new run/epoch, stale observations) and read-only playback; configurable SHIFT interpreter; same-input recovery benchmark (`python -m benchmarks.run_district_recovery`, 120 scenarios: 0 accepted-invalid for all methods; optimizer better than first-benefit on critical service in 2/120, CI includes 0); judge-facing UI (dead-line styling, load status, impact summary, recovery stepper, before/after table, refusal reasons, one-click emergency, full nav).
+
+Checks: `.venv-city` full backend 477 passed / 15 skipped (before the last fixes); frontend `npm test` 47 passed, build passed; electrical tests incl. pandapower cross-check 9 passed in a pandapower env; live browser journey on isolated ports (fault → OPTIMAL/AC PASSED proposal → evidence → apply: critical unmet 1,551 → 0 W; restart restored revision 14 with stale evidence; duplicate `action_id` idempotent; old run 409).
+
+Not done / blocked: Windows and independent reproduction, second cached campus, operator feedback, rights-cleared real demand, economics, protection/inrush studies, AGENTS full-suite rerun in the uv env without SHIFT (`test_district_topology_generator` needs `gdm`, pre-existing).

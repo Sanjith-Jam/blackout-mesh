@@ -16,7 +16,7 @@ import {
   HardwareStatus
 } from './types';
 import type { CityDemoSnapshot, DemoEvidence, DemandForecast, SiteScenarios, SiteScenarioSwitch } from './types';
-import type { HospitalDemoScenario, HospitalFaultSnapshot, DistrictActionRequest, DistrictGenerationRequest, DistrictSnapshot } from './types';
+import type { HospitalDemoScenario, HospitalFaultSnapshot, DistrictActionRequest, DistrictGenerationRequest, DistrictHistoryPage, DistrictSnapshot } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -35,6 +35,16 @@ export class ApiError extends Error {
   }
 }
 
+/** FastAPI `detail` as readable text (string, or the first validation message). */
+async function errorDetail(response: Response) {
+  try {
+    const body = await response.json() as { detail?: unknown };
+    if (typeof body.detail === 'string') return body.detail;
+    if (Array.isArray(body.detail) && body.detail[0]?.msg) return String(body.detail[0].msg);
+  } catch { /* non-JSON body */ }
+  return `HTTP error ${response.status}`;
+}
+
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -47,7 +57,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T>
     });
 
     if (!response.ok) {
-      throw new ApiError(response.status, `HTTP error ${response.status}`);
+      throw new ApiError(response.status, await errorDetail(response));
     }
 
     return await response.json() as T;
@@ -85,6 +95,10 @@ export function getDistrictSnapshot(signal?: AbortSignal): Promise<DistrictSnaps
 
 export function districtAction(action: DistrictActionRequest): Promise<DistrictSnapshot> {
   return fetchJson<DistrictSnapshot>('/api/v1/district/action', { method: 'POST', body: JSON.stringify(action) });
+}
+
+export function getDistrictHistory(runId: string, signal?: AbortSignal): Promise<DistrictHistoryPage> {
+  return fetchJson<DistrictHistoryPage>(`/api/v1/district/history?run_id=${encodeURIComponent(runId)}&limit=200`, { signal });
 }
 
 export function generateDistrictTopology(request: DistrictGenerationRequest): Promise<DistrictSnapshot> {

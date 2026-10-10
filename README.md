@@ -2,11 +2,11 @@
 
 ![Software city-grid outage and recovery demo](docs/media/city-demo.gif)
 
-A local, explainable power-allocation demo: forecast requested demand, explore a city grid, trigger an outage, and follow staged recovery. The city drawing uses the existing six-service **14 kW lab model**; it does not claim city-scale electrical physics or multi-hop mesh routing.
+An offline campus outage-planning demonstration: given a declared topology, configured demand and an outage, explore which permitted recovery serves critical loads within modeled limits, and inspect its explanation. **Blackout Mesh** is the public name; PriorityGrid is the historical controller name. Geography is real; electrical assets, demand, switching and power delivery are synthetic.
 
-**Real software:** a trained occupancy proxy, a synthetic-trained demand forecaster, exact 64-plan allocation, recorded history and an ESP32 USB/ESP-NOW bridge. **Simulated:** city power, demand, faults, switching and recovery. Physical LED confirmation appears only when the connected gateway reports a fresh acknowledgment. Physical end-to-end acceptance remains pending; B5 flashing/pairing/video is on hold.
+**Real software:** a trained occupancy proxy, a synthetic-trained demand forecaster, 31-appliance OR-Tools CP-SAT allocation with independent validation, recorded history and an ESP32 USB/ESP-NOW bridge. **Simulated:** city power, demand, faults, switching and recovery. Physical LED confirmation appears only when the connected gateway reports a fresh acknowledgment. Physical end-to-end acceptance remains pending; B5 flashing/pairing/video is on hold.
 
-Recorded local medians: **0.17 ms** occupancy inference (100 warm calls), **1.59 ms** allocation (50 decisions), **0 constraint violations / 385 simulated runs**. These are different tasks, not a competing-controller speed comparison. [Measurement sources](docs/DEMO_GUIDE.md#evidence).
+Historical six-service benchmark medians (the 64-mask enumerator is now a regression fixture, not the production appliance solver): **0.17 ms** occupancy inference (100 warm calls), **1.59 ms** allocation (50 decisions), **0 constraint violations / 385 simulated runs**. These are different tasks, not a competing-controller speed comparison. [Measurement sources](docs/DEMO_GUIDE.md#evidence).
 
 The 60-second demand forecast averaged **149.49 W error** versus **469.59 W** for last-value persistence on 20 held-out **synthetic** sessions. It warns about capacity risk and cannot authorize switching. Neither model establishes campus accuracy.
 
@@ -30,7 +30,7 @@ The small occupied-service gain comes with more switches and unmet essential dem
 From the repository root:
 
 ```sh
-uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+uv run --no-project --python 3.14 --with-requirements backend/requirements.txt --with-requirements backend/requirements-ml.txt --with-requirements backend/requirements-electrical.txt python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
 In another terminal:
@@ -41,6 +41,15 @@ npm ci --no-audit --no-fund
 npm run dev
 ```
 
-Open [the city demo](http://127.0.0.1:5173/demo). Request all rooms → 6 kW shortage → trip feeder A → repair it → restore supply. Select the synthetic rising-demand rehearsal to see a forecast warning. No API key, training step or paid service is required.
+Open [the primary district planning demonstration](http://127.0.0.1:5173/grid) and click **Simulate emergency**: peak hour, a modeled line fault, affected loads turn red and dead lines grey, and the backend proposes the best permitted tie configuration after an unbalanced AC check. Record two simulated healthy observations at least 5 s apart, then **Apply validated proposal** and read the before/after table. **Rehearse weak tie** shows a watt-feasible tie refused by the AC check. Without `requirements-electrical.txt` the AC engine is absent and recovery is refused as `UNVALIDATED`. "Validated" means declared simulation checks passed with synthetic parameters, not operational safety. For the existing appliance controller, use `/demo`; the legacy city/forecast story is `/city`. No API key, training step or paid service is required.
+
+| Route | Model and demand catalog | Capacity and limits |
+|---|---|---|
+| `/grid` | GNITC real OSM geometry, synthetic district assets and 24 hourly demand/PV samples | Separately configured 6,000 W source (20 W loss reserve); W limits plus unbalanced AC check on declared synthetic parameters; no physical commands |
+| `/grid` with explicit `DISTRICT_PROFILE` opt-in | Six virtual rooms map all 31 catalog appliances into the synthetic GNITC graph | Separately named 14,000 W inventory study; graph path W budgets; PV/storage disabled |
+| `/demo`, `/city`, `/console` | Existing campus, six services and 31 appliances | 14,000 W rated demand; separately controlled source and feeder budgets |
+| `/hospital`, `/classrooms` | Equipment projections of the existing campus controller | Hospital 6,000 W; classrooms 8,000 W rated demand |
+
+Power uses integer W and energy uses Wh. Routes do not share district switching state or silently rescale capacities. The historical nine-service catalog is deferred. [Integration delivery and remaining gates](docs/ISSUE_69_DELIVERY.md).
 
 [Demo guide and checks](docs/DEMO_GUIDE.md) · [Planning](docs/planning/README.md) · [Model evidence](backend/models/MODEL_REPORT.md) · [Progress](PROGRESS_REPORT.md) · [Context](CONTEXT.md) · [Hardware guide](docs/ESP32_A_CONNECTION_GUIDE.md)

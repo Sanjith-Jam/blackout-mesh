@@ -1,0 +1,19 @@
+{
+  "schema_version": "district-electrical-v1",
+  "provenance": "SYNTHETIC_ENGINEERING_ASSUMPTION",
+  "note": "Declared synthetic steady-state parameters for a teaching study. Not surveyed GNITC equipment; not a protection, inrush, transient or interlock study.",
+  "frequency_hz": 50,
+  "voltage_basis": "line_to_line_rms",
+  "power_factor": 0.95,
+  "load_model": "constant_power",
+  "voltage_limits_pu": [0.94, 1.06],
+  "balance_tolerance_w": 1.0,
+  "source": {"u_ref_pu": 1.0, "sk_va": 250000000.0, "rx_ratio": 0.1, "z01_ratio": 1.0},
+  "line_types": {
+    "11000": {"r_ohm_per_km": 0.41, "x_ohm_per_km": 0.10, "r0_ohm_per_km": 1.64, "x0_ohm_per_km": 0.40},
+    "400": {"r_ohm_per_km": 0.32, "x_ohm_per_km": 0.07, "r0_ohm_per_km": 1.28, "x0_ohm_per_km": 0.28}
+  },
+  "transformer": {"vector_group": "Dyn11", "uk": 0.045, "pk_w": 1750.0, "p0_w": 0.0, "i0": 0.0,
+                  "no_load_loss_note": "Core (no-load) losses are omitted by declaration; a real 100 kVA unit adds roughly 0.2-0.3 kW each, more than this toy dispatch budget."},
+  "phase_split": {}
+}

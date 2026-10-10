@@ -57,6 +57,17 @@
 .district-map .wire { fill: none; stroke: #4d7656; stroke-width: 2.5; stroke-linecap: round; }
 .district-map .wire.is-open { stroke: #8a9387; stroke-dasharray: 4 4; }
 .district-map .wire.is-faulted { stroke: var(--district-alert); stroke-width: 4; }
+.district-map .wire.is-dead { stroke: #b9bdb6; stroke-dasharray: 2 3; }
+.district-map .node.load-served { fill: #4d9a5c; }
+.district-map .node.load-partial { fill: #e0a526; }
+.district-map .node.load-unserved { fill: var(--district-alert); }
+.district-impact { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: .4rem 0 .8rem; font-weight: 700; }
+.district-impact .is-bad { color: var(--district-alert); }
+.district-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; list-style: none; padding: 0; margin: .8rem 0; }
+.district-steps li { border: 1px solid var(--district-line); border-radius: .5rem; padding: .45rem; font-size: .8rem; background: #fff; }
+.district-steps li.is-done { border-color: #4d9a5c; background: #eef7ef; }
+.district-steps li.is-blocked { border-color: var(--district-alert); background: #fbeeee; }
+.district-steps strong { display: block; }
 .district-map .wire.is-tie { stroke: #8a6534; stroke-dasharray: 5 4; }
 .district-map .wire.is-selected { stroke-width: 5; filter: drop-shadow(0 0 3px #eacb70); }
 .district-map .node { fill: #fffdf7; stroke: var(--district-forest); stroke-width: 2; }

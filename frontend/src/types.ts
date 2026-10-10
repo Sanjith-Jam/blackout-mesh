@@ -82,12 +82,22 @@ export type HistoryRecord = components['schemas']['HistoryEventRecord'] |
 export type DistrictActionName = components['schemas']['DistrictActionName'];
 export type DistrictActionRequest = components['schemas']['DistrictAction'];
 export type DistrictGenerationRequest = components['schemas']['GenerationRequest'];
+export type DistrictHistoryPage = components['schemas']['DistrictHistoryPage'];
 type DistrictNode = { id: string; role: string; lon: number; lat: number; building_id?: string | null };
 type DistrictTopologyEdge = { id: string; from: string; to: string; kind: string };
 type DistrictEdgeState = { id: string; closed: boolean; faulted: boolean; energized: boolean; flow_w: number; provenance?: string };
 type DistrictLoad = components['schemas']['DistrictLoad'];
 type DistrictTransformer = { component_id: string; sensor: Record<string, string | number | boolean | null>; diagnosis: { status: string; suspected_part: string | null; evidence: string[] } };
-type DistrictRestoration = { candidate_edge_id?: string | null; applied_edge_id?: string | null; stable_since?: string | null; stable_evidence_count?: number; reason?: string | null; provenance?: string };
+export type DistrictAcCheck = { status: string; engine: string; engine_version: string | null; model: string; violations: { limit: string; component_id: string; value: number; limit_value: number; unit: string }[];
+  min_voltage_pu: number | null; max_voltage_pu: number | null; max_line_loading: number | null; max_transformer_loading: number | null; source_p_w: number | null; loss_w: number | null; balance_residual_w: number | null; reason: string | null; unmodeled_checks: string[]; safety_claim: string };
+type DistrictObjective = { critical_served_w: number; served_w: number; switching_actions: number };
+export type DistrictProposal = { proposal_id: string; proposed_revision: number; digest: string; solver_status: string; objective_definition: string; load_semantics: string;
+  configs_total: number; configs_evaluated: number; truncated: boolean; refused_configs: { edge_ids: string[]; reason: string }[];
+  evaluations: { rank: number; edge_ids: string[]; objective: DistrictObjective; ac_status: string; ac_reason: string | null; violations: DistrictAcCheck['violations'] }[];
+  baseline_objective: DistrictObjective | null; bound_objective: DistrictObjective | null; candidate_edge_ids: string[] | null;
+  switching_sequence: { operation: 'open' | 'close'; edge_id: string }[]; objective: DistrictObjective | null; ac: DistrictAcCheck | null };
+type DistrictRestoration = { candidate_edge_id?: string | null; candidate_edge_ids?: string[]; applied_edge_id?: string | null; applied_edge_ids?: string[]; stable_since?: string | null; stable_evidence_count?: number;
+  evidence_ready?: boolean; evidence_rule?: string; last_observation_sequence?: number | null; reason?: string | null; proposal?: DistrictProposal | null; proposal_stale?: boolean; provenance?: string; physical_confirmation?: null };
 type DistrictFault = { component_id: string; kind: string; provenance?: string };
 type DistrictState = Omit<components['schemas']['DistrictState'], 'edges' | 'loads' | 'faults' | 'restoration' | 'transformers'> & {
   edges: DistrictEdgeState[]; loads: DistrictLoad[]; faults: DistrictFault[]; restoration: DistrictRestoration; transformers: DistrictTransformer[];

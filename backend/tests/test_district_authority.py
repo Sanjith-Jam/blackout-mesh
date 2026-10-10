@@ -1,4 +1,6 @@
+import uuid
 import asyncio
+import pytest
 import copy
 import json
 from app.api.district import DistrictAction, DistrictActionName
@@ -10,7 +12,7 @@ from pathlib import Path
 
 
 def action(name, component_id=None, fault_kind=None):
-    return DistrictAction(run_id="test", expected_revision=1, action=name,
+    return DistrictAction(action_id=str(uuid.uuid4()), run_id="test", expected_revision=1, action=name,
                           component_id=component_id, fault_kind=fault_kind)
 
 
@@ -51,8 +53,9 @@ def test_citylearn_demand_and_grid_import_balance_into_graph_load_state():
     district.hour = 20
     peak = district.snapshot()
     assert peak["energy"]["grid_import_w"] == peak["state"]["grid_requested_w"] == 6200
-    assert peak["state"]["grid_served_w"] == 6000
-    assert peak["state"]["unmet_w"] == 200
+    # The declared 20 W loss reserve keeps AC losses inside the 6,000 W source budget.
+    assert peak["state"]["grid_served_w"] == 6000 - district.profile.loss_reserve_w == 5980
+    assert peak["state"]["unmet_w"] == 220
     assert sum(load["requested_w"] for load in peak["state"]["loads"]) == sum(
         load["served_w"] for load in peak["state"]["loads"]) + peak["state"]["unmet_w"]
     assert all(edge["flow_w"] <= peak["state"]["grid_served_w"] for edge in peak["state"]["edges"])
@@ -71,7 +74,22 @@ def test_citylearn_demand_and_grid_import_balance_into_graph_load_state():
                for edge in faulted["edges"])
 
 
+def healthy_evidence(district):
+    """Two distinct sequenced healthy samples six seconds apart (simulated adapter)."""
+    from datetime import datetime, timedelta, timezone
+    from app.api.district import DistrictObservation
+    sequence, last = district.last_observation or (0, None)
+    start = last + timedelta(seconds=1) if last else datetime.now(timezone.utc)
+    for index in range(2):
+        at = start + timedelta(seconds=6 * index)
+        district.clock = lambda at=at: at
+        assert district.apply_action(DistrictAction(action_id=str(uuid.uuid4()), run_id="test", expected_revision=1, action="record_observation",
+            observation=DistrictObservation(sequence=sequence + index + 1, observed_at=at.isoformat(),
+                                            healthy=True, source="SIMULATED_OBSERVATION_ADAPTER")))
+
+
 def test_fault_disconnects_edges_and_recovery_waits_for_stable_evidence():
+    pytest.importorskip("power_grid_model")
     district = DistrictAuthority()
     district.hour = 0
     tie = next(edge for edge in district.topology["edges"] if edge["kind"] == "tie")
@@ -110,15 +128,13 @@ def test_fault_disconnects_edges_and_recovery_waits_for_stable_evidence():
     assert next(edge for edge in broken["state"]["edges"] if edge["id"] == fault_id)["energized"] is False
     assert district.apply_action(action(DistrictActionName.propose_recovery))
     assert not district.apply_action(action(DistrictActionName.apply_recovery))
-    for _ in range(2):
-        assert district.apply_action(action(DistrictActionName.advance_hour))
+    healthy_evidence(district)
     assert district.apply_action(action(DistrictActionName.apply_recovery))
     restored = district.snapshot()
     assert restored["state"]["restoration"]["applied_edge_id"] == tie["id"]
     assert all(load["served_w"] <= load["requested_w"] for load in restored["state"]["loads"])
     assert not district.apply_action(action(DistrictActionName.clear_fault, fault_id, "line_open"))
-    for _ in range(2):
-        assert district.apply_action(action(DistrictActionName.advance_hour))
+    healthy_evidence(district)
     assert district.apply_action(action(DistrictActionName.clear_fault, fault_id, "line_open"))
     assert district.snapshot()["state"]["faults"] == []
 
@@ -141,7 +157,7 @@ def test_district_api_can_represent_stale_transformer_observations_as_unknown():
     with TestClient(create_app()) as client:
         snapshot = client.get("/api/v1/district").json()
         transformer_id = snapshot["state"]["transformers"][0]["component_id"]
-        response = client.post("/api/v1/district/action", json={
+        response = client.post("/api/v1/district/action", json={"action_id": str(uuid.uuid4()),
             "run_id": snapshot["identity"]["run_id"],
             "expected_revision": snapshot["identity"]["revision"],
             "action": "transformer_scenario", "component_id": transformer_id,
@@ -161,11 +177,11 @@ def test_district_api_validates_snapshot_and_rejects_stale_actions():
     with TestClient(create_app()) as client:
         snapshot = client.get("/api/v1/district").json()
         identity = snapshot["identity"]
-        result = client.post("/api/v1/district/action", json={"run_id": identity["run_id"],
+        result = client.post("/api/v1/district/action", json={"action_id": str(uuid.uuid4()), "run_id": identity["run_id"],
             "expected_revision": identity["revision"], "action": "advance_hour"})
         assert result.status_code == 200
         assert result.json()["energy"]["hour"] == (snapshot["energy"]["hour"] + 1) % 24
-        stale = client.post("/api/v1/district/action", json={"run_id": identity["run_id"],
+        stale = client.post("/api/v1/district/action", json={"action_id": str(uuid.uuid4()), "run_id": identity["run_id"],
             "expected_revision": identity["revision"], "action": "advance_hour"})
         assert stale.status_code == 409
 
@@ -221,3 +237,16 @@ def test_reset_invalidates_delayed_generation_from_previous_run(monkeypatch):
         assert district.generation["status"] == "CACHED"
 
     asyncio.run(scenario())
+
+
+def test_shift_interpreter_is_configurable_and_windows_layout_is_discovered(monkeypatch, tmp_path):
+    monkeypatch.setenv("DISTRICT_SHIFT_PYTHON", str(tmp_path / "custom-python"))
+    assert authority_module.shift_python() == tmp_path / "custom-python"
+    monkeypatch.delenv("DISTRICT_SHIFT_PYTHON")
+    fake_root = tmp_path / "repo" / "backend" / "app" / "district"
+    fake_root.mkdir(parents=True)
+    windows = tmp_path / "repo" / ".venv-city" / "Scripts" / "python.exe"
+    windows.parent.mkdir(parents=True)
+    windows.write_text("")
+    monkeypatch.setattr(authority_module, "__file__", str(fake_root / "authority.py"))
+    assert authority_module.shift_python() == windows

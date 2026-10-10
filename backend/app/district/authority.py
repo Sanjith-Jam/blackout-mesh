@@ -2,15 +2,35 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import os
 import subprocess
 import uuid
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
+from app.district.profile import load_profile
+from app.district.appliances import inventory_energy, validate_mapping
+from app.district import electrical
+from app.district.recovery import config_problem, evaluate, optimize
+from app.core.active_site import CATALOG
+
+SERVER_EPOCH = str(uuid.uuid4())
+EVIDENCE_MIN_SAMPLES = 2
+EVIDENCE_DWELL_S = 5
+EVIDENCE_MAX_AGE_S = 30
+
 DATA = Path(__file__).with_name("data")
-SHIFT_PYTHON = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
+
+
+def shift_python() -> Path:
+    """DISTRICT_SHIFT_PYTHON wins; otherwise the repo-local `.venv-city` on POSIX or Windows."""
+    if configured := os.environ.get("DISTRICT_SHIFT_PYTHON"):
+        return Path(configured)
+    venv = Path(__file__).resolve().parents[3] / ".venv-city"
+    return next((path for path in (venv / "bin/python", venv / "Scripts/python.exe") if path.is_file()), venv / "bin/python")
 
 
 def diagnose_transformer(sensor):
@@ -32,10 +52,11 @@ def diagnose_transformer(sensor):
 
 @lru_cache(maxsize=1)
 def shift_runtime_probe():
-    if not SHIFT_PYTHON.is_file():
-        return False, "optional `.venv-city` SHIFT runtime is unavailable."
+    python = shift_python()
+    if not python.is_file():
+        return False, f"optional SHIFT runtime is unavailable (set DISTRICT_SHIFT_PYTHON; looked for {python.name} in {python.parent})."
     try:
-        subprocess.run([str(SHIFT_PYTHON), "-c", "import shift, networkx, shapely, infrasys"],
+        subprocess.run([str(python), "-c", "import shift, networkx, shapely, infrasys"],
                        check=True, capture_output=True, timeout=8)
     except (OSError, subprocess.SubprocessError) as exc:
         return False, f"SHIFT runtime import probe failed: {type(exc).__name__}."
@@ -47,15 +68,29 @@ class DistrictAuthority:
         self.run_id = str(uuid.uuid4())
         self.revision = 1
         self.topology = json.loads((DATA / "gnitc_topology.json").read_text())
+        self.profile = load_profile(Path(os.environ.get("DISTRICT_PROFILE", DATA / "gnitc_profile.json")), self.topology)
         self.map = json.loads((DATA / "gnitc_map.geojson").read_text())
         self.energy_trace = json.loads((DATA / "gnitc_energy.json").read_text())
+        self.decision = {"solver": "integer weighted dispatch", "status": "MODEL_DERIVED",
+                         "validation": "WATT_BUDGET_ONLY", "physical_confirmation": None}
+        if self.profile.demand_basis == "appliance_inventory":
+            validate_mapping(self.profile)
+            self.energy_trace = inventory_energy(self.profile)
         self.hour = 12
         self.faults: set[str] = set()
-        self.closed_tie: str | None = None
-        self.candidate_tie: str | None = None
-        self.stable_evidence_count = 0
-        self.stable_since: str | None = None
+        electrical_path = Path(os.environ.get("DISTRICT_ELECTRICAL", DATA / "gnitc_electrical.json"))
+        self.electrical = electrical.load_params(electrical_path) if electrical_path.is_file() else None
+        self.closed_ties: frozenset[str] = frozenset()
+        self.proposal: dict | None = None
+        self.clock = lambda: datetime.now(timezone.utc)
+        self.last_observation: tuple[int, datetime] | None = None
+        self.evidence: list[tuple[int, datetime]] = []
         self.transformer_scenarios: dict[str, str] = {}
+        self.stale_transformers: set[str] = set()
+        self.accepted_actions: dict[str, int] = {}
+        self.weak_ties: dict[str, int] = {}
+        self.journal = None
+        self.rehydration: dict | None = None
         self.restoration_reason: str | None = None
         self.generation_task_id: str | None = None
         runtime_available, runtime_reason = shift_runtime_probe()
@@ -65,114 +100,126 @@ class DistrictAuthority:
             "reason": f"Cached topology is active; {runtime_reason}",
             "generated_at": None}
 
-    def _electrical_state(self):
-        topology = self.topology
-        edge_by_id = {edge["id"]: edge for edge in topology["edges"]}
-        states = {edge["id"]: {"id": edge["id"], "closed": (not edge["normally_open"] or edge["id"] == self.closed_tie),
-                             "faulted": edge["id"] in self.faults, "energized": False, "flow_w": 0}
-                  for edge in topology["edges"]}
-        adjacency = {}
-        for edge in topology["edges"]:
-            state = states[edge["id"]]
-            if state["closed"] and not state["faulted"]:
-                adjacency.setdefault(edge["from"], []).append((edge["to"], edge["id"]))
-                adjacency.setdefault(edge["to"], []).append((edge["from"], edge["id"]))
-
-        sources = sorted(node["id"] for node in topology["nodes"] if node["role"] == "source")
-        source = sources[0] if sources else None
-        parent, parent_edge = ({source: None}, {}) if source else ({}, {})
-        queue = [source] if source else []
-        for current in queue:
-            for neighbor, edge_id in sorted(adjacency.get(current, [])):
-                if neighbor not in parent:
-                    parent[neighbor], parent_edge[neighbor] = current, edge_id
-                    queue.append(neighbor)
-
-        # Split this hour's whole-district CityLearn totals deterministically by stable building ID.
-        loads = []
-        flows = {edge_id: 0 for edge_id in states}
-        source_capacity_w = 6000
-        grid_served_total = 0
-        requested = sorted((node for node in topology["nodes"] if node["role"] == "load"),
-                           key=lambda node: (node.get("building_id", node["id"])))
-        profile = self.energy_trace["profile"][self.hour]
-        count = len(requested)
-        demand_w = profile["demand_w"]
-        grid_requested_total_w = profile["grid_import_w"]
-        demand_base, demand_extra = divmod(demand_w, count) if count else (0, 0)
-        grid_base, grid_extra = divmod(grid_requested_total_w, count) if count else (0, 0)
-        for index, node in enumerate(requested):
-            path = []
-            cursor = node["id"]
-            while cursor in parent_edge:
-                edge_id = parent_edge[cursor]
-                path.append(edge_id)
-                cursor = parent[cursor]
-            connected = bool(source) and cursor == source
-            tier = "critical" if index < 3 else "noncritical"
-            requested_w = demand_base + (index < demand_extra)
-            grid_requested_w = grid_base + (index < grid_extra)
-            # CityLearn provides a district residual, allocated per building for this graph view.
-            local_supply_w = requested_w - grid_requested_w
-            path_capacity = min((edge_by_id[edge_id]["limit_w"] - flows[edge_id] for edge_id in path), default=source_capacity_w)
-            grid_served_w = min(grid_requested_w, source_capacity_w - grid_served_total, max(0, path_capacity)) if connected else 0
-            if grid_served_w:
-                grid_served_total += grid_served_w
-                for edge_id in path:
-                    flows[edge_id] += grid_served_w
-            served_w = local_supply_w + grid_served_w
-            loads.append({"building_id": node.get("building_id", node["id"]), "tier": tier,
-                          "requested_w": requested_w, "local_supply_w": local_supply_w,
-                          "grid_requested_w": grid_requested_w, "grid_served_w": grid_served_w,
-                          "served_w": served_w, "unmet_w": requested_w - served_w,
-                          "demand_provenance": self.energy_trace["provenance"],
-                          "tier_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
-                          "tier_rationale": "First three loads in stable building-ID order are labeled critical for this demo; this does not represent verified building criticality.",
-                          "local_supply_provenance": "MODEL_DERIVED",
-                          "local_supply_basis": "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING",
-                          "local_supply_semantics": "BEHIND_THE_METER_ALLOCATION_NO_FEEDER_PATH_REQUIRED",
-                          "grid_service_provenance": "MODEL_DERIVED", "unmet_provenance": "MODEL_DERIVED"})
-
-        for edge in topology["edges"]:
-            state = states[edge["id"]]
-            state["flow_w"] = flows[edge["id"]]
-            state["energized"] = edge["from"] in parent and edge["to"] in parent and state["closed"] and not state["faulted"]
-            state["provenance"] = "MODEL_DERIVED"
+    def _electrical_state(self, closed_ties=None):
+        states, loads, decision = evaluate(self.topology, self.profile, self.energy_trace, self.hour, self.faults,
+                                           self.closed_ties if closed_ties is None else closed_ties)
+        if closed_ties is None:
+            self.decision = decision
         return states, loads
 
-    def _tie_joins_components(self, tie_id):
-        tie = next((edge for edge in self.topology["edges"] if edge["id"] == tie_id and edge["kind"] == "tie"), None)
-        if tie is None:
+    MUTABLE = ("revision", "hour", "faults", "closed_ties", "proposal", "transformer_scenarios", "stale_transformers",
+               "restoration_reason", "last_observation", "evidence", "topology", "generation", "accepted_actions", "weak_ties")
+
+    def mutable_state(self):
+        """Deep copy of everything an action may change, for rollback when the audit commit fails."""
+        return copy.deepcopy({key: getattr(self, key) for key in self.MUTABLE})
+
+    def restore_mutable(self, state):
+        for key, value in state.items():
+            setattr(self, key, value)
+
+    def state_record(self):
+        """Complete modeled state persisted with each accepted revision (observations excluded)."""
+        generated = self.generation["status"] == "GENERATED"
+        return {"hour": self.hour, "faults": sorted(self.faults), "closed_ties": sorted(self.closed_ties),
+                "proposal": copy.deepcopy(self.proposal), "transformer_scenarios": dict(self.transformer_scenarios),
+                "restoration_reason": self.restoration_reason,
+                "last_observation_sequence": self.last_observation[0] if self.last_observation else None,
+                "generation": copy.deepcopy(self.generation), "topology": copy.deepcopy(self.topology) if generated or self.weak_ties else None,
+                "weak_ties": dict(self.weak_ties),
+                "hashes": {"profile": self.profile.config_hash,
+                           "electrical": self.electrical.config_hash if self.electrical else None,
+                           "topology": hashlib.sha256(json.dumps(self.topology, sort_keys=True).encode()).hexdigest()}}
+
+    def rehydrate(self, record):
+        """Restore the last committed revision under a new run and epoch; observations become stale."""
+        state = record["payload"]["state"]
+        if state["hashes"]["profile"] != self.profile.config_hash:
+            self.rehydration = {"status": "REJECTED", "from_run_id": record["run_id"], "from_revision": record["revision"],
+                                "reason": "Recorded profile hash differs from the configured profile; starting fresh."}
             return False
-        states, _ = self._electrical_state()
-        parent = {node["id"]: node["id"] for node in self.topology["nodes"]}
-        def root(node):
-            while parent[node] != node:
-                parent[node] = parent[parent[node]]
-                node = parent[node]
-            return node
-        for edge in self.topology["edges"]:
-            state = states[edge["id"]]
-            if edge["id"] == tie_id or not state["closed"] or state["faulted"]:
-                continue
-            left, right = root(edge["from"]), root(edge["to"])
-            if left != right:
-                parent[left] = right
-        return root(tie["from"]) != root(tie["to"])
+        if state["topology"] is not None:
+            self.profile.validate_topology(state["topology"])
+            self.topology = state["topology"]
+            self.generation.update({key: state["generation"][key] for key in ("status", "cluster_count", "secondary_strategy", "generated_at")})
+        elif state["hashes"]["topology"] != hashlib.sha256(json.dumps(self.topology, sort_keys=True).encode()).hexdigest():
+            self.rehydration = {"status": "REJECTED", "from_run_id": record["run_id"], "from_revision": record["revision"],
+                                "reason": "Recorded cached-topology hash differs from the shipped topology; starting fresh."}
+            return False
+        self.weak_ties = dict(state.get("weak_ties", {}))
+        self.revision = record["revision"]
+        self.hour, self.faults, self.closed_ties = state["hour"], set(state["faults"]), frozenset(state["closed_ties"])
+        self.proposal, self.transformer_scenarios = state["proposal"], dict(state["transformer_scenarios"])
+        self.stale_transformers = set(self.transformer_scenarios)
+        seq = state["last_observation_sequence"]
+        # Keep sequence monotonic across restart, but no pre-restart sample ever counts as fresh evidence.
+        self.last_observation = (seq, datetime.min.replace(tzinfo=timezone.utc)) if seq else None
+        self._reset_evidence()
+        self.restoration_reason = "Restored after restart; earlier observations are stale. Fresh evidence is required."
+        self.rehydration = {"status": "RESTORED", "from_run_id": record["run_id"], "from_revision": record["revision"],
+                            "reason": "Last committed revision restored under a new run and server epoch; observations are stale."}
+        return True
+
+    def _reset_evidence(self):
+        self.evidence = []
+
+    def _evidence_ready(self):
+        if len(self.evidence) < EVIDENCE_MIN_SAMPLES:
+            return False
+        first, last = self.evidence[0][1], self.evidence[-1][1]
+        return ((last - first).total_seconds() >= EVIDENCE_DWELL_S
+                and (self.clock() - last).total_seconds() <= EVIDENCE_MAX_AGE_S)
+
+    def _record_observation(self, action):
+        """Sequenced causal observations; duplicates, reordering and stale samples never count."""
+        observation = action.observation
+        if observation is None or action.component_id is not None or action.fault_kind is not None:
+            return False
+        observed_at = datetime.fromisoformat(observation.observed_at)
+        if observed_at.tzinfo is None:
+            return False
+        age = (self.clock() - observed_at).total_seconds()
+        if age > EVIDENCE_MAX_AGE_S or age < -2:
+            return False
+        if self.last_observation and (observation.sequence <= self.last_observation[0]
+                                      or observed_at <= self.last_observation[1]):
+            return False
+        self.last_observation = (observation.sequence, observed_at)
+        if observation.healthy:
+            self.evidence.append((observation.sequence, observed_at))
+        else:
+            self._reset_evidence()
+            self.restoration_reason = "An unhealthy observation reset the restoration evidence gate."
+        return True
+
+    def planning_digest(self):
+        """Inputs a proposal depends on; any change makes an earlier proposal stale."""
+        return hashlib.sha256(json.dumps({
+            "topology": hashlib.sha256(json.dumps(self.topology, sort_keys=True).encode()).hexdigest(),
+            "profile": self.profile.config_hash, "electrical": self.electrical.config_hash if self.electrical else None,
+            "faults": sorted(self.faults), "closed_ties": sorted(self.closed_ties), "hour": self.hour,
+            "energy": self.energy_trace["profile"][self.hour]}, sort_keys=True).encode()).hexdigest()
+
+    def _ac_check(self, closed_ties):
+        states, loads = self._electrical_state(closed_ties)
+        return electrical.check(self.topology, self.electrical, {load["building_id"]: load["grid_served_w"] for load in loads},
+                                states, self.profile.source_capacity_w)
 
     def _restoration(self, states):
+        candidate = (self.proposal or {}).get("candidate_edge_ids")
         reason = self.restoration_reason or "No recovery candidate proposed."
-        if self.candidate_tie:
-            tie = next((edge for edge in self.topology["edges"] if edge["id"] == self.candidate_tie), None)
-            if tie is None:
-                reason = "Candidate tie is absent from the current topology."
-            elif not self._tie_joins_components(tie["id"]):
-                reason = "Closing the tie would create a loop; the radial constraint rejects it."
-            else:
-                reason = "Candidate joins separate modeled sections within its synthetic rating."
-        return {"candidate_edge_id": self.candidate_tie, "applied_edge_id": self.closed_tie,
-                "stable_since": self.stable_since, "stable_evidence_count": self.stable_evidence_count,
-                "reason": reason, "provenance": "MODEL_DERIVED"}
+        stale = bool(self.proposal and self.proposal["digest"] != self.planning_digest())
+        if stale:
+            reason = "Proposal is stale: faults, switches, hour or model inputs changed; propose again."
+        return {"candidate_edge_id": min(candidate) if candidate else None, "candidate_edge_ids": candidate or [],
+                "applied_edge_id": min(self.closed_ties, default=None), "applied_edge_ids": sorted(self.closed_ties),
+                "stable_since": self.evidence[0][1].isoformat() if self.evidence else None,
+                "stable_evidence_count": len(self.evidence), "evidence_ready": self._evidence_ready(),
+                "evidence_rule": f"{EVIDENCE_MIN_SAMPLES} distinct healthy sequenced observations spanning at least "
+                                 f"{EVIDENCE_DWELL_S} s, newest within {EVIDENCE_MAX_AGE_S} s",
+                "last_observation_sequence": self.last_observation[0] if self.last_observation else None,
+                "reason": reason, "proposal": copy.deepcopy(self.proposal), "proposal_stale": stale, "provenance": "MODEL_DERIVED",
+                "physical_confirmation": None}
 
     def snapshot(self):
         topology = copy.deepcopy(self.topology)
@@ -207,13 +254,24 @@ class DistrictAuthority:
                 sensor.update(oil_temperature_c=105.0, voltage_v=380.0, current_a=60.0,
                               cooling_ok=False, status="STALE",
                               provenance="CONFIGURED_SIMULATED_ASSUMPTION")
+            if node["id"] in self.stale_transformers and sensor["status"] == "SIMULATED":
+                sensor["status"] = "STALE"  # recorded before the restart; never fresh evidence
             diagnosis = diagnose_transformer(sensor)
             transformers.append({"component_id": node["id"], "sensor": sensor, "diagnosis": diagnosis})
 
         profile = self.energy_trace["profile"]
         energy = profile[self.hour]
-        return {"schema_version": "district-v1",
-            "identity": {"site_id": "gnitc-demo", "run_id": self.run_id, "revision": self.revision},
+        return {"schema_version": "district-v2",
+            "identity": {"site_id": "gnitc-demo", "run_id": self.run_id, "revision": self.revision,
+                         "server_epoch": SERVER_EPOCH, "profile_hash": self.profile.config_hash},
+            "audit": {"journal": "SQLITE" if getattr(self, "journal", None) else "DISABLED",
+                      "rehydration": copy.deepcopy(self.rehydration)},
+            "profile": {"id": self.profile.id, "config_hash": self.profile.config_hash,
+                "demand_basis": self.profile.demand_basis, "local_supply_mode": self.profile.local_supply_mode,
+                "catalog_version": CATALOG.version if self.profile.demand_basis == "appliance_inventory" else None,
+                "catalog_hash": CATALOG.config_hash if self.profile.demand_basis == "appliance_inventory" else None,
+                "appliance_count": sum(len(load["appliances"]) for load in loads),
+                "decision": copy.deepcopy(self.decision)},
             "site": {"name": "Guru Nanak Institutions Technical Campus", "center": self.map["metadata"]["center"], "radius_m": 500},
             "map": {"radius_m": self.map["metadata"]["radius_m"],
                 "source": self.map["metadata"]["source"], "source_url": self.map["metadata"]["source_url"],
@@ -222,15 +280,17 @@ class DistrictAuthority:
                 "source_sha256": self.map["metadata"].get("source_sha256", ""), "features": features},
             "topology": topology,
             "generation": copy.deepcopy(self.generation),
-            "state": {"hour": self.hour, "source_capacity_w": 6000,
+            "state": {"hour": self.hour, "source_capacity_w": self.profile.source_capacity_w,
                 "source_capacity_provenance": "CONFIGURED_SIMULATED_ASSUMPTION",
                 "source_capacity_note": "Synthetic district dispatch limit; not a measured transformer rating.",
                 "grid_requested_w": sum(load["grid_requested_w"] for load in loads),
                 "grid_served_w": sum(load["grid_served_w"] for load in loads),
                 "unmet_w": sum(load["unmet_w"] for load in loads),
-                "source_available": bool(topology["nodes"]),
+                "source_available": any(node["role"] == "source" for node in topology["nodes"]),
                 "edges": list(edge_states.values()), "loads": loads,
-                "critical_shortfall_w": sum(load["unmet_w"] for load in loads if load["tier"] == "critical"),
+                "critical_shortfall_w": (sum(item["requested_w"] - item["served_w"] for load in loads for item in load["appliances"]
+                    if item["priority_class"] == "hospital_critical") if self.profile.demand_basis == "appliance_inventory"
+                    else sum(load["unmet_w"] for load in loads if load["tier"] == "critical")),
                 "faults": [{"component_id": edge_id, "kind": "line_open",
                             "provenance": "CONFIGURED_SIMULATED_ASSUMPTION"} for edge_id in sorted(self.faults)],
                 "restoration": self._restoration(edge_states), "transformers": transformers},
@@ -264,16 +324,33 @@ class DistrictAuthority:
         name = action.action.value
         edges = {edge["id"]: edge for edge in self.topology["edges"]}
         nodes = {node["id"]: node for node in self.topology["nodes"]}
+        if name != "record_observation" and getattr(action, "observation", None) is not None:
+            return False
         if name == "reset":
+            journal, revision = getattr(self, "journal", None), self.revision
             self.__init__()
+            self.journal, self.revision = journal, revision  # keep revisions monotonic for stale clients
             return True
         if name == "advance_hour":
             if action.component_id is not None or action.fault_kind is not None:
                 return False
+            # Demo time steps are not observations and never satisfy the restoration dwell.
             self.hour = (self.hour + 1) % 24
-            if self.candidate_tie or self.faults:
-                self.stable_evidence_count += 1
-                self.stable_since = self.stable_since or datetime.now(timezone.utc).isoformat()
+            return True
+        if name == "record_observation":
+            return self._record_observation(action)
+        if name == "weak_tie_rehearsal":
+            # Labeled rehearsal: declare a 1 A tie ampacity while leaving its W budget unchanged, so the
+            # watt check still admits the tie and only the AC loading check can refuse it.
+            tie = next((edge for edge in self.topology["edges"] if edge["id"] == action.component_id and edge["kind"] == "tie"), None)
+            if tie is None or action.fault_kind not in ("weak", "clear"):
+                return False
+            original = self.weak_ties.pop(tie["id"], None)
+            if action.fault_kind == "weak":
+                self.weak_ties[tie["id"]] = original if original is not None else tie["rating_a"]
+                tie.update(rating_a=1, rating_provenance="WEAK_TIE_REHEARSAL")
+            elif original is not None:
+                tie.update(rating_a=original, rating_provenance="SYNTHETIC_DEMO_ASSUMPTION")
             return True
         if name in ("inject_fault", "clear_fault"):
             edge = edges.get(action.component_id)
@@ -283,70 +360,60 @@ class DistrictAuthority:
                 if edge["id"] in self.faults:
                     return False
                 self.faults.add(edge["id"])
-                self.stable_evidence_count = 0
-                self.stable_since = None
+                self._reset_evidence()
             else:
                 if edge["id"] not in self.faults:
                     return False
-                if self.stable_evidence_count < 2:
+                if not self._evidence_ready():
                     return False
                 self.faults.remove(edge["id"])
-                self.candidate_tie = None
-                self.closed_tie = None
-                self.stable_evidence_count = 0
-                self.stable_since = None
+                self.proposal = None
+                self.closed_ties = frozenset()
+                self._reset_evidence()
             self.restoration_reason = None
             return True
         if name == "propose_recovery":
             if action.component_id is not None or action.fault_kind is not None:
                 return False
-            self.candidate_tie = None
-            self.restoration_reason = None
-            states, _ = self._electrical_state()
-            _, before_loads = self._electrical_state()
-            before_served = sum(load["served_w"] for load in before_loads)
-            for candidate in (edge for edge in self.topology["edges"] if edge["kind"] == "tie"):
-                if not self._tie_joins_components(candidate["id"]):
-                    self.restoration_reason = "Closing the declared tie would create a loop; radial constraint rejects the route."
-                    continue
-                previous_tie = self.closed_tie
-                self.closed_tie = candidate["id"]
-                _, proposed_loads = self._electrical_state()
-                self.closed_tie = previous_tie
-                if sum(load["served_w"] for load in proposed_loads) <= before_served:
-                    self.restoration_reason = "The declared tie does not increase served modeled load under source and line limits."
-                    continue
-                self.candidate_tie = candidate["id"]
-                self.restoration_reason = "Candidate joins separate modeled sections and increases served load within synthetic ratings."
-                break
-            if self.candidate_tie is None:
-                self.stable_evidence_count = 0
-                self.stable_since = None
-                return True
-            self.stable_evidence_count = 0
-            self.stable_since = None
+            result = optimize(self.topology, self.profile, self.energy_trace, self.hour, self.faults,
+                              self.closed_ties, self.electrical, electrical.check)
+            candidate = result["candidate_edge_ids"]
+            if candidate is not None and frozenset(candidate) == self.closed_ties:
+                result.update(candidate_edge_ids=None, switching_sequence=[])
+                refused = [row for row in result["evaluations"] if row["ac_status"] != "PASSED"]
+                self.restoration_reason = ("Electrical refusal: closing " + ", ".join(refused[0]["edge_ids"]) + " would serve more load but "
+                                           + refused[0]["ac_reason"] + " Current switches are kept.") if refused else \
+                    "The current switch configuration is already the best validated configuration."
+            elif candidate is None:
+                self.restoration_reason = {"UNVALIDATED": "No candidate can be electrically validated: "
+                                           + (result["evaluations"][-1]["ac_reason"] if result["evaluations"] else "no permitted configuration."),
+                                           "NO_VALIDATED_RECOVERY": "Every permitted configuration failed a declared electrical check."}[result["solver_status"]]
+            else:
+                self.restoration_reason = (f"{result['solver_status']} candidate under the declared objective; "
+                                           "passed the unbalanced AC check. Awaiting fresh healthy evidence.")
+            self.proposal = {**result, "proposal_id": str(uuid.uuid4()), "proposed_revision": self.revision,
+                             "digest": self.planning_digest()}
+            self._reset_evidence()
             return True
         if name == "apply_recovery":
-            if action.component_id is not None or action.fault_kind is not None or not self.candidate_tie:
+            candidate = (self.proposal or {}).get("candidate_edge_ids")
+            if action.component_id is not None or action.fault_kind is not None or not candidate:
                 return False
-            if self.stable_evidence_count < 2:
+            if not self._evidence_ready():
                 return False
-            if not self._tie_joins_components(self.candidate_tie):
-                self.restoration_reason = "Fresh topology evidence shows the candidate would create a loop."
+            if self.proposal["digest"] != self.planning_digest():
+                self.restoration_reason = "Proposal is stale: faults, switches, hour or model inputs changed; propose again."
                 return False
-            candidate = self.candidate_tie
-            previous_tie = self.closed_tie
-            self.closed_tie = candidate
-            proposed_states, proposed_loads = self._electrical_state()
-            edge_limits = {edge["id"]: edge["limit_w"] for edge in self.topology["edges"]}
-            if (sum(load["grid_served_w"] for load in proposed_loads) > 6000
-                    or any(state["flow_w"] > edge_limits[edge_id] for edge_id, state in proposed_states.items())):
-                self.closed_tie = previous_tie
-                self.restoration_reason = "Fresh capacity evidence rejects the candidate under source or line limits."
+            final = frozenset(candidate)
+            problem = config_problem(self.topology, self.faults, final)
+            ac = self._ac_check(final)
+            if problem or ac["status"] != "PASSED":
+                self.restoration_reason = f"Revalidation refused the candidate: {problem or ac['reason']}"
                 return False
-            self.candidate_tie = None
-            self.stable_evidence_count = 0
-            self.restoration_reason = "Recovery applied to modeled state; no physical switch confirmation is available."
+            self.closed_ties = final
+            self.proposal = None
+            self._reset_evidence()
+            self.restoration_reason = "Recovery applied to modeled state after AC revalidation; no physical switch confirmation is available."
             return True
         if name == "transformer_scenario":
             if action.component_id not in nodes or nodes[action.component_id]["role"] != "transformer":
@@ -357,5 +424,6 @@ class DistrictAuthority:
                 self.transformer_scenarios.pop(action.component_id, None)
             else:
                 self.transformer_scenarios[action.component_id] = action.fault_kind
+            self.stale_transformers.discard(action.component_id)
             return True
         return False

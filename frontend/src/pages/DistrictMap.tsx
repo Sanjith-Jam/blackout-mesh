@@ -19,13 +19,20 @@ type Props = {
   selected: string | null;
   onSelect: (id: string) => void;
   mode: 'shift' | 'energy' | 'healing' | 'transformers';
+  loadStatus?: Record<string, LoadStatus>;
 };
+export type LoadStatus = 'served' | 'partial' | 'unserved' | 'idle';
+
+/** Faulted > open > closed-but-dead > energized; a dead closed line must not look live. */
+export function wireState(state?: DistrictEdgeState) {
+  return !state ? '' : state.faulted ? ' is-faulted' : !state.closed ? ' is-open' : !state.energized ? ' is-dead' : '';
+}
 
 const WIDTH = 1000;
 const HEIGHT = 700;
 const PAD = 38;
 
-export default function DistrictMap({ features, nodes, edges, edgeStates, selected, onSelect, mode }: Props) {
+export default function DistrictMap({ features, nodes, edges, edgeStates, selected, onSelect, mode, loadStatus = {} }: Props) {
   const [extent, setExtent] = useState<'network' | 'area'>('network');
   const points = extent === 'network' ? nodes.map(n => [n.lon, n.lat]) : features.flatMap(f => f.paths.flatMap(p => p.coordinates)).concat(nodes.map(n => [n.lon, n.lat]));
   const lons = points.map(p => p[0]);
@@ -60,7 +67,7 @@ export default function DistrictMap({ features, nodes, edges, edgeStates, select
         const state = statesById.get(e.id);
         const [x1, y1] = project(a.lon, a.lat), [x2, y2] = project(b.lon, b.lat);
         return <g key={e.id}>
-          <path d={`M${x1} ${y1} L${x2} ${y2}`} className={`wire${e.kind === 'tie' ? ' is-tie' : ''}${state?.faulted ? ' is-faulted' : state?.closed === false ? ' is-open' : ''}${selected === e.id ? ' is-selected' : ''}`} />
+          <path d={`M${x1} ${y1} L${x2} ${y2}`} className={`wire${e.kind === 'tie' ? ' is-tie' : ''}${wireState(state)}${selected === e.id ? ' is-selected' : ''}`} />
         </g>;
       })}
       {[...edges.filter(e => e.kind === 'tie'), ...edges.filter(e => e.kind !== 'tie')].map(e => {
@@ -78,18 +85,18 @@ export default function DistrictMap({ features, nodes, edges, edgeStates, select
       {nodes.map(n => {
         const [x, y] = project(n.lon, n.lat);
         const radius = n.role === 'junction' ? 2.5 : n.role === 'load' ? 5 : 9;
-        return <g key={n.id} className="node-hit" role="button" tabIndex={0} aria-pressed={selected === n.id} aria-label={`${n.id} · synthetic ${n.role}`}
+        return <g key={n.id} className="node-hit" role="button" tabIndex={0} aria-pressed={selected === n.id} aria-label={`${n.id} · synthetic ${n.role}${loadStatus[n.id] ? ` · ${loadStatus[n.id]}` : ''}`}
           onClick={() => onSelect(n.id)} onKeyDown={event => activate(event, n.id)}>
           <circle cx={x} cy={y} r={Math.max(radius + 15, 24)} fill="transparent" pointerEvents="all" />
           {n.role === 'source' ? <path d={`M${x} ${y - radius} L${x + radius} ${y} L${x} ${y + radius} L${x - radius} ${y} Z`} className={`node is-source${selected === n.id ? ' is-selected' : ''}`} />
             : n.role === 'transformer' ? <rect x={x - radius} y={y - radius} width={radius * 2} height={radius * 2} rx="2" className={`node is-transformer${selected === n.id ? ' is-selected' : ''}`} />
-              : <circle cx={x} cy={y} r={radius} className={`node is-${n.role}${selected === n.id ? ' is-selected' : ''}`} />}
+              : <circle cx={x} cy={y} r={radius} className={`node is-${n.role}${loadStatus[n.id] ? ` load-${loadStatus[n.id]}` : ''}${selected === n.id ? ' is-selected' : ''}`} />}
           {(n.role === 'source' || n.role === 'transformer' || selected === n.id) && <text x={x + 12} y={y - 9} className="map-label">{n.role === 'source' ? 'Source' : n.role === 'transformer' ? `TX ${nodes.filter(item => item.role === 'transformer').indexOf(n) + 1}` : n.role === 'load' ? `Load ${nodes.filter(item => item.role === 'load').indexOf(n) + 1}` : 'Junction'}</text>}
         </g>;
       })}
       <text x={WIDTH - 46} y={45} textAnchor="middle" className="map-label">N ↑</text>
     </svg>
-    <p className="district-map-note">{mode === 'shift' ? 'Cached streets and buildings · SHIFT generated electrical topology' : mode === 'energy' ? 'Synthetic demand, PV and battery model on the same district' : mode === 'healing' ? 'Red = simulated fault · dashed = open or declared tie' : 'Select a transformer to inspect simulated observations'}</p>
+    <p className="district-map-note">{mode === 'shift' ? 'Cached streets and buildings · SHIFT generated electrical topology' : mode === 'energy' ? 'Synthetic demand, PV and battery model on the same district' : mode === 'healing' ? 'Red = simulated fault · grey = closed but de-energized · dashed = open or declared tie · load dots: green served, amber partial, red unserved' : 'Select a transformer to inspect simulated observations'}</p>
     <div className="district-map-tools" role="group" aria-label="Map extent"><button type="button" aria-pressed={extent === 'network'} onClick={() => setExtent('network')}>Fit network</button><button type="button" aria-pressed={extent === 'area'} onClick={() => setExtent('area')}>Full area</button></div>
   </div>;
 }

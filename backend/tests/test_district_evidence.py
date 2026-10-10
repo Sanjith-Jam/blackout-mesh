@@ -31,7 +31,7 @@ def test_energy_exposes_period_totals_and_one_hour_network_energy_without_claimi
     assert interval["unmet_fraction_of_requested"] == interval["unmet_wh"] / interval["requested_wh"]
 
 
-def test_open_feeder_isolates_grid_service_but_per_building_local_supply_remains_behind_meter():
+def test_open_feeder_blocks_grid_following_pv_and_storage():
     district = DistrictAuthority()
     district.hour = 12
     topology = district.topology
@@ -66,8 +66,8 @@ def test_open_feeder_isolates_grid_service_but_per_building_local_supply_remains
     assert next(edge for edge in state["edges"] if edge["id"] == fault_id)["flow_w"] == 0
     assert all(load["grid_served_w"] == 0 for load in islanded)
     assert all(load["served_w"] == load["local_supply_w"] for load in islanded)
-    assert any(load["local_supply_w"] > 0 for load in islanded)
-    assert all(load["local_supply_semantics"] == "BEHIND_THE_METER_ALLOCATION_NO_FEEDER_PATH_REQUIRED"
+    assert all(load["served_w"] == load["local_supply_w"] == 0 for load in islanded)
+    assert all(load["local_supply_semantics"] == "CONFIGURED_GRID_FOLLOWING_REQUIRES_SOURCE_REACHABILITY"
                and load["local_supply_basis"] == "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING"
                and load["local_supply_provenance"] == "MODEL_DERIVED"
                for load in islanded)
