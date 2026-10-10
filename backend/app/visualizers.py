@@ -10,7 +10,7 @@ from app.core.edges import edge as power_edge
 from app.core.restoration import RestorationGate
 from app.diagnosis.infer import ObservationWindow, TransformerRating, diagnose_transformer
 from app.diagnosis.observations import validate as validate_observation
-from app.simulation.sensors import HOSPITAL_ASSETS, HOSPITAL_FAULTS, TRANSFORMER_FIELDS, apply_fault, envelopes as sensor_envelopes, hospital_readings, zone_readings
+from app.simulation.sensors import HOSPITAL_ASSETS, HOSPITAL_FAULTS, TRANSFORMER_FIELDS, add_noise, apply_fault, envelopes as sensor_envelopes, hospital_readings, zone_readings
 from app.core.safety import ROOM_ESSENTIAL_LOADS, SAFETY_POLICY_VERSION, ActivityGuard, shortfall_status
 
 from app.core.state import site_profile
@@ -510,6 +510,8 @@ class HospitalPriorityDemo(ClassroomDemo):
         if self.fault:
             ratings = {f"TX{i+1}": self._rating(z).rated_current_a for i, z in enumerate(HOSP_ZONES)}
             readings = apply_fault(readings, self.fault, ratings, self.telemetry_sequence - self.fault["sequence"])
+        frozen = {(self.fault["asset"], "current_a")} if self.fault and self.fault["kind"] == "stuck_sensor" else set()
+        readings = add_noise(readings, self.telemetry_sequence, frozen)
         self._last_readings = readings
         self.telemetry_sequence += 1
         for raw in sensor_envelopes(readings, self.telemetry_sequence, now):

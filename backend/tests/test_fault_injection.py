@@ -73,3 +73,15 @@ def test_scenario_alias_is_persistent_and_reset_clears_the_fault():
 ])
 def test_invalid_fault_requests_are_rejected(body):
     assert client.post(URL, json=body).status_code == 422
+
+
+def test_stuck_current_sensor_abstains_and_stays_untrusted():
+    tick(6)
+    client.post(URL, json={"action": "inject_fault", "fault": "stuck_sensor", "zone_id": "Theatre"})
+    for n in range(10):
+        diagnosis = tx(tick(2), "TX2")["diagnosis"]
+        assert diagnosis["status"] != "NORMAL", f"stuck sensor reported NORMAL after {2 * (n + 1)} ticks"
+    assert diagnosis["status"] == "ABSTAINED"
+    assert diagnosis["abstention"]["reason"] == "SUSPECTED_STUCK_SENSOR"
+    # Healthy, noisy sensors on the other transformers are never flagged.
+    assert all(tx(tick(), a)["diagnosis"]["status"] == "NORMAL" for a in ("TX1", "TX3"))

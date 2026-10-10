@@ -74,7 +74,8 @@ def apply_fault(readings: dict[str, dict], fault: dict | None, rated_current_a: 
     values = out[target]
     if kind in ("overload", "overload_cooling", "stuck_sensor"):
         values["current_a"] = round(1.3 * rated_current_a[target], 2)
-        values["temperature_c"] = round(values["temperature_c"] + ramp * 20.0, 1)
+        # A hidden overload warms the transformer, but (in the stuck case) not yet past the 80 °C alarm.
+        values["temperature_c"] = round(values["temperature_c"] + ramp * (15.0 if kind == "stuck_sensor" else 20.0), 1)
     if kind in ("cooling_failure", "overload_cooling"):
         values["cooling_ok"] = False
         values["temperature_c"] = round(values["temperature_c"] + ramp * 35.0, 1)
@@ -82,6 +83,19 @@ def apply_fault(readings: dict[str, dict], fault: dict | None, rated_current_a: 
         values["current_a"] = None
     if kind == "stuck_sensor":
         values["current_a"] = fault["frozen_current_a"]
+    return out
+
+
+def add_noise(readings: dict[str, dict], sequence: int, frozen: set[tuple[str, str]] = frozenset()) -> dict[str, dict]:
+    """Small deterministic measurement noise: real sensors never repeat a reading exactly. A frozen sensor does."""
+    import random
+    rng = random.Random(f"hospital-sensors:{sequence}")
+    jitter = {"current_a": 0.05, "temperature_c": 0.2, "input_voltage_v": 0.5, "output_voltage_v": 0.5}
+    out = {asset: dict(values) for asset, values in readings.items()}
+    for asset, values in out.items():
+        for quantity, span in jitter.items():
+            if values.get(quantity) is not None and (asset, quantity) not in frozen:
+                values[quantity] = round(max(0.0, values[quantity] + rng.uniform(-span, span)), 2)
     return out
 
 
