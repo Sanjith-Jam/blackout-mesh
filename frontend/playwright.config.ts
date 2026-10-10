@@ -14,7 +14,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: { VITE_API_BASE_URL: 'http://127.0.0.1:5183' },
   }, {
-    command: 'python3 -m uvicorn app.main:app --app-dir ../backend --host 127.0.0.1 --port 8183',
+    command: `${process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3')} -m uvicorn app.main:app --app-dir ../backend --host 127.0.0.1 --port 8183`,
     url: 'http://127.0.0.1:8183/api/v1/health',
     env: { DATABASE_URL: 'sqlite://', PRIORITYGRID_HISTORY_DB: join(historyDirectory, 'history.sqlite3') },
   }],

@@ -99,7 +99,7 @@ export default function TopologyGraph({ snapshot }: TopologyGraphProps) {
   }, [services]);
 
   return (
-    <div style={{ height: '400px', width: '100%', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff' }}>
+    <div style={{ height: '400px', width: '100%', overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff' }}>
       <ReactFlow nodes={nodes} edges={edges} fitView>
         <Background color="#ccc" gap={16} />
         <Controls />

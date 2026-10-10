@@ -9,7 +9,7 @@ export default function IncidentTimeline({ events = [] }: Props) {
   return (
     <div className="incident-timeline">
       <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>Incident & Control Timeline</h3>
-      <div className="timeline-container">
+      <div className="timeline-container" tabIndex={0} role="region" aria-label="Incident and control events">
         {events.length === 0 ? (
           <div style={{ color: '#64748b', fontStyle: 'italic', padding: '10px' }}>No events recorded.</div>
         ) : (

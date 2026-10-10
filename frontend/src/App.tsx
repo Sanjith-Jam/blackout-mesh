@@ -5,7 +5,7 @@ import CityDemo from './pages/CityDemo';
 import HospitalPage from './pages/HospitalDemo';
 import ClassroomsPage from './pages/ClassroomsDemo';
 import { Header } from '@/components/ui/header';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { ChevronUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './App.css';
@@ -80,11 +80,13 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppShell>
-        <AppContent />
-      </AppShell>
-    </Router>
+    <MotionConfig reducedMotion="user">
+      <Router>
+        <AppShell>
+          <AppContent />
+        </AppShell>
+      </Router>
+    </MotionConfig>
   );
 }
 
