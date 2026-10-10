@@ -1,3 +1,9 @@
+## Transformer advisory compatibility (#66) ? 2026-10-10
+
+Implemented an offline, read-only causal feature adapter beside the district threshold baseline. Pinned upstream/source symbols, user-reported owner code permission, excluded artifacts, serving/training discrepancies and real-data evaluation gates: docs/TRANSFORMER_ADVISORY.md. No weights/data copied, no API/UI/control change; advisory always UNKNOWN with null probability until a rights-cleared evaluated model exists.
+
+Verification: PYTHONPATH=backend python -m pytest --noconftest backend/tests/test_transformer_advisory.py -q -p no:cacheprovider ? **10 passed**. PYTHONPATH=backend python -m benchmarks.transformer_compatibility ? **3/3 compatible synthetic fixtures, 3/3 advisory abstentions, 0 interface failures**; baseline UNKNOWN/SUSPECTED/SUSPECTED. No predictive accuracy evaluation. Normal pytest collection failed because this environment lacks ortools; focused tests ran without the application-wide conftest. Next: obtain separately rights-cleared real history/outcomes and freeze disjoint transformer/time evaluation partitions. No held-out data unsealed, hardware run or push.
+
 # Blackout Mesh — implementation context
 
 ## GNITC synthetic district demo — 2026-10-10
