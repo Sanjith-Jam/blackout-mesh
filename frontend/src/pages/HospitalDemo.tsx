@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Activity, AlertTriangle, Zap } from 'lucide-react';
+import { Activity, AlertTriangle } from 'lucide-react';
 import { getHospitalDemo, postHospitalDemo } from '../api';
 import { HospitalDemoActionName, HospitalDemoZone, HospitalDemoSnapshot } from '../types';
 import './ClassroomVisualizer.css';

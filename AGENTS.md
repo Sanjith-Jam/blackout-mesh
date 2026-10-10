@@ -107,3 +107,10 @@ Use Graphify and Security Auditor only when explicitly requested.
 ## Handoff
 
 When a step lands, update `CONTEXT.md` (done, commands run + results, failures, next step). Targets are not results.
+
+History checks (from repository root):
+- npm.cmd run test:history --prefix frontend: Node/DOM history and playback checks.
+- With PYTHONPATH=backend, python -m pytest backend/tests/test_history.py -q:
+  persistence, cursor, retention, restart and read-only API checks.
+Use a temporary PRIORITYGRID_HISTORY_DB for backend checks; the production database
+contains local evidence and must not be committed.

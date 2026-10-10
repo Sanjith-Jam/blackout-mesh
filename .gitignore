@@ -19,6 +19,7 @@ secrets.json
 *.sqlite
 *.sqlite3
 *.db
+backend/history.sqlite3*
 
 # Generated dependencies and output
 __pycache__/

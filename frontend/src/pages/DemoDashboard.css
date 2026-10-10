@@ -420,3 +420,13 @@
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.history-controls { margin: 1rem 2rem; padding: 1rem; border: 1px solid var(--surface-border-strong); background: var(--surface-color); border-radius: var(--radius-md); }
+.history-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.history-toolbar label { display: grid; gap: .25rem; font-size: .8rem; }
+.history-toolbar input, .history-toolbar select { padding: .5rem; max-width: 100%; border: 1px solid var(--surface-border); }
+.history-controls button { cursor: pointer; }
+.history-controls button:focus-visible, .history-controls input:focus-visible, .history-controls select:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.history-controls button[aria-pressed=true] { border: 2px solid var(--text-main); }
+.history-controls pre { max-height: 280px; overflow: auto; font-size: .8rem; }
+.history-controls button:disabled { opacity: .5; cursor: default; }

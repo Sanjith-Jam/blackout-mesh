@@ -71,6 +71,9 @@ class FacilityZones(BaseModel):
     classroom: ClassroomZone
 
 class SystemEvent(BaseModel):
+    event_id: str | None = None
+    run_id: str | None = None
+    revision: int = 0
     timestamp: str
     type: str
     description: str

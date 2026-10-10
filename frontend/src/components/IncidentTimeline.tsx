@@ -13,9 +13,9 @@ export default function IncidentTimeline({ events = [] }: Props) {
         {events.length === 0 ? (
           <div style={{ color: '#64748b', fontStyle: 'italic', padding: '10px' }}>No events recorded.</div>
         ) : (
-          events.slice().reverse().map((evt, idx) => (
-            <div key={idx} className="timeline-event">
-              <div className="event-time">{new Date(evt.timestamp).toLocaleTimeString()}</div>
+          events.slice().reverse().map((evt) => (
+            <div key={evt.event_id || evt.timestamp + evt.type} className="timeline-event">
+              <div className="event-time">{new Date(evt.timestamp).toLocaleString()}</div>
               <div className={`event-type type-${evt.type.toLowerCase().replace(/_/g, '-')}`}>{evt.type}</div>
               <div className="event-desc">{evt.description}</div>
             </div>

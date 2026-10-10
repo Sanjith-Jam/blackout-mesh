@@ -55,6 +55,10 @@ Versioned activity_first/water_first campus policies, bounded within-tier fairne
 
 Optional POST /api/v1/studies/electrical runs a balanced 400-V radial AC study on a worker thread; the campus source explicitly labels watt_budget limitations. Power Grid Model 1.13.193 is selected; NetworkX is connectivity-only and pandapower 3.5.6 is offline comparison-only. Result contracts include units, provenance, engine/version, convergence, independent I²R power-balance residual, null islands/failures and no restoration authorization. Observations pass through existing diagnosis validation; no thermal values are fabricated. Busy/timeout/stale-run-or-revision paths are covered, including keeping timed-out work serialized. Engine installed and tested in both the main Python 3.14.7 ML environment and isolated Python 3.12.15 benchmark environment. Detailed assumptions, licenses, matched cases, compatibility and latency evidence are in docs/ELECTRICAL_SIMULATION.md and backend/benchmarks/results/electrical_report.json. No hardware work or field-validation claim. Publication awaits explicit push.
 
+## Issue #25 integration
+
+Integrated PR #36 with current `main`, preserving the app-scoped state, shared WebSocket store, controller and hardware/UI work. SQLite history now drives chart data and read-only timeline playback; fault incidents are stored and emit durable open/resolve events. Current verification: 151 backend tests passed and the frontend production build passed. The history DOM suite is committed but could not run here because jsdom is absent and package downloads are blocked; the browser dashboard showed the updated controls, while the existing backend on port 8000 predates the new API. Keep #25 open pending its #12/#14 contract gates and history DOM check. Details: [docs/ISSUE_25_DELIVERY.md](docs/ISSUE_25_DELIVERY.md).
+
 ### Final verification for issues #5–#7
 
 - `PYTHONPATH=backend .venv-ml/bin/python -m pytest backend/tests -q` — **119 passed**, including optional PGM in the Python 3.14.7 ML runtime.
