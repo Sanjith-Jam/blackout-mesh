@@ -184,3 +184,14 @@ The active site is one validated JSON profile (`SITE_PROFILE`, default `backend/
 ## Main sync on issue #19 branch — 2026-10-10
 
 Merged `origin/main` into `codex/issue-19-ranked-evaluation` after the ranked v3 evaluation. The merge brings the configurable site profiles, appliance-level allocator and power-system `/demo` into the same branch as the held-out results. No unresolved paths or conflict markers remain; `git diff --check` passes. Full backend tests pass with a temporary `PRIORITYGRID_HISTORY_DB`: **395 passed, 2 skipped**. Frontend build and component tests passed during merge verification. No hardware checks or physical acceptance were run. Next: review the combined app in a browser, then continue the pending hardware A/B transport and catalog reconciliation work.
+
+## Issue #65 ? deterministic district fixtures
+
+Added two offline radial SHIFT-schema fixture shapes (star and chain), each with
+six virtual loads and two explicitly declared normally-open ties. These fixtures
+are synthetic test graphs, not newly executed SHIFT output or campus wiring.
+An independent traversal checks closed-graph radiality, grid reachability,
+flow conservation, zero flow on open/faulted edges, and source/line limits.
+Verification: `PYTHONPATH=backend backend/.venv/Scripts/python.exe -m pytest
+backend/tests/test_district_recovery_fixtures.py -q`: **2 passed in 2.94 s**.
+Next: land restoration revalidation regressions, then run the bounded evaluation.
