@@ -87,7 +87,7 @@ The campus allocator decides the feeder A services (L0–L2) as whole services a
 - `requested_w` / `served_w` on each service are the sums of its room's leaves; `served_w` can be partial (for example 2,100 W of essentials across three rooms).
 - `modeled_served` and the L3–L5 bits of `modeled_mask` mean "some of this room is energized"; `model_reason` says "Partly served" when it is not all of it.
 - Feeder, source, zone and allocation totals add leaf watts, so `/demo`, `/classrooms` and `/hospital` reconcile from leaves to feeders to the source in the same revision.
-- `allocation.explanation.decisions` marks L3–L5 `decided_by: classroom_leaf_allocation` with leaf `served_w` and `shortfall_w`. The allocator's own masks stay in `campus_proposed_mask` / `campus_applied_mask`; replay the restoration gate against those.
+- `allocation.explanation.decisions` marks L3–L5 `decided_by: classroom_leaf_allocation` with leaf `served_w` and `shortfall_w`; the reason keeps the allocator's binding constraint and adds the leaf watts when a room is only partly served, and `campus_allocator_applied` keeps the allocator's whole-room verdict. The allocator's own masks stay in `campus_proposed_mask` / `campus_applied_mask`; replay the restoration gate against those.
 - Room sessions (RFID, classroom scans, board A) rank rooms for optional loads. They no longer decide whether a whole room is requested, because the classroom view always requests every leaf and protects every room's essentials.
 
 `GridState` used alone (no site authority) keeps whole-service projection.
@@ -108,5 +108,5 @@ The site identity's `scenario` names the active scenario, or `custom` after a bu
 
 ## Remaining migration
 
-- Feeder A is still decided as whole services by the campus allocator; the hospital view decides equipment within the watts it granted. Deriving L0–L2 from hospital leaves the same way as feeder B is not done.
+- Feeder A is still decided as whole services by the campus allocator; the hospital view decides equipment within the watts it granted. Deriving L0–L2 from hospital leaves the same way was tried and backed out: the hospital view's own restoration gate then runs after the campus gate, and full recovery after a feeder A trip on `/demo` went from about 10 s to about 31 s. It needs one shared restoration gate first.
 - The feeder B budget comes from a whole-room campus solve over L3–L5, so the campus may shed L2 to make room for a classroom that the leaves then only partly fill.

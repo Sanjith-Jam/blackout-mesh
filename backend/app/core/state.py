@@ -636,8 +636,9 @@ class GridState:
     def tick(self) -> SystemSnapshot:
         """Advance control and publish. This is the only place time-dependent state moves forward.
         Readers call build_snapshot(). The site authority calls advance() and publish() separately so the
-        classroom leaf decision can be included in the same publication."""
+        classroom leaf decision can be included in the same publication; a standalone tick has none."""
         with self._lock:
+            self.feeder_b_leaves = None
             self.advance()
             return self.publish()
 
@@ -658,10 +659,20 @@ class GridState:
             leaf = leaves.get(row.get("service_id"))
             if leaf is not None:
                 served = served_w_of[index[row["service_id"]]]
+                reason = row["reason"]
+                if "not_requested" in row.get("binding_constraints", []):
+                    # The campus solve counts rooms with a session; the leaves always protect every room's essentials.
+                    reason = (f"No session in this room; the classroom leaf allocation serves {served:,} of "
+                              f"{leaf['requested_w']:,} W (essentials first, then any budget left)")
+                elif 0 < served < leaf["requested_w"]:
+                    partly = f"{served:,} of {leaf['requested_w']:,} W served by the classroom leaf allocation"
+                    reason = (f"Partly served: {partly} within the feeder B budget" if row.get("applied")
+                              else f"{reason}; {partly}")
+                elif served == 0 and row.get("applied"):
+                    reason = "Feeder B budget granted, but the classroom leaf allocation served none of this room"
                 row = {**row, "decided_by": "classroom_leaf_allocation", "served_w": served,
                        "shortfall_w": leaf["requested_w"] - served,
-                       "reason": "Feeder B budget granted by the campus allocator; appliances decided by the "
-                                 "classroom leaf allocation"}
+                       "campus_allocator_applied": row.get("applied"), "reason": reason}
             decisions.append(row)
         # The published masks include the leaf decision; replay the restoration gate against these.
         return {**self.allocation_explanation, "decisions": decisions,

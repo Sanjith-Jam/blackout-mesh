@@ -204,10 +204,11 @@
      {
       "applied": true,
       "binding_constraints": [],
+      "campus_allocator_applied": true,
       "counterfactual": "served",
       "decided_by": "classroom_leaf_allocation",
       "proposed": true,
-      "reason": "Feeder B budget granted by the campus allocator; appliances decided by the classroom leaf allocation",
+      "reason": "Partly served: 1,000 of 2,000 W served by the classroom leaf allocation within the feeder B budget",
       "requested": true,
       "score_terms": {
        "active": 0,
@@ -232,10 +233,11 @@
       "binding_constraints": [
        "restoration_dwell_or_stability"
       ],
+      "campus_allocator_applied": false,
       "counterfactual": "force-on violates restoration_dwell_or_stability",
       "decided_by": "classroom_leaf_allocation",
       "proposed": true,
-      "reason": "Feeder B budget granted by the campus allocator; appliances decided by the classroom leaf allocation",
+      "reason": "Selected but waiting for stable evidence and restoration dwell; 1,000 of 2,000 W served by the classroom leaf allocation",
       "requested": true,
       "score_terms": {
        "active": 0,
@@ -260,10 +262,11 @@
       "binding_constraints": [
        "not_requested"
       ],
+      "campus_allocator_applied": false,
       "counterfactual": "force-on violates not_requested",
       "decided_by": "classroom_leaf_allocation",
       "proposed": false,
-      "reason": "Feeder B budget granted by the campus allocator; appliances decided by the classroom leaf allocation",
+      "reason": "No session in this room; the classroom leaf allocation serves 1,000 of 4,000 W (essentials first, then any budget left)",
       "requested": false,
       "score_terms": {
        "active": 0,
@@ -496,7 +499,7 @@
     "catalog_version": "1.1",
     "config_hash": "af574a50987d",
     "model_version": "uci-occ-logistic-2026-10-09",
-    "observation_time": "2026-10-10T02:45:14.867265+00:00",
+    "observation_time": "2026-10-10T02:47:31.107286+00:00",
     "policy_version": "allocation-v1",
     "run_id": "<volatile>",
     "server_epoch": "<volatile>",
