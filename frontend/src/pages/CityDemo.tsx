@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Radio, ShieldCheck, Zap } from 'lucide-react';
 import { changeCapacity, changeClassroomLoad, changeFeeder, getCityDemo, getDemoEvidence } from '../api';
-import type { DemandForecast, Snapshot } from '../types';
+import { servedWatts, type DemandForecast, type Snapshot } from '../types';
 import { BenchmarkCard } from '../components/ui/benchmark-card';
 import HardwarePanel from './HardwarePanel';
 import CityGrid, { feederState } from './CityGrid';
@@ -42,9 +42,9 @@ export default function CityDemo() {
   if (!snapshot || !city.data) return <div className="city-demo city-loading"><Activity aria-hidden="true" /><h1>{city.isError ? 'City grid unavailable' : 'Connecting to the city grid…'}</h1>{city.isError && <><p role="alert">Start the local backend to load the simulated city.</p><button onClick={() => void city.refetch()}>Try again</button></>}</div>;
   const openFeeders = ['A', 'B'].filter(id => feederState(snapshot, id) === 'OPEN');
   const requested = snapshot.services.filter(s => s.requested);
-  const shed = requested.filter(s => !s.modeled_served);
+  const shed = requested.filter(s => servedWatts(s) < (s.requested_w ?? s.watts));
   const servedW = snapshot.allocation.served_w;
-  const requestedW = requested.reduce((sum, s) => sum + s.watts, 0);
+  const requestedW = requested.reduce((sum, s) => sum + (s.requested_w ?? s.watts), 0);
   const selectedService = snapshot.services.find(s => s.id === selected);
   const recovering = snapshot.proposed_mask !== snapshot.modeled_mask;
   const disabled = pending || city.isError || city.isPlaceholderData;
@@ -63,7 +63,7 @@ export default function CityDemo() {
       <button disabled={disabled} onClick={() => void act(() => changeCapacity(14000), '14,000 W supply restored. Loads still wait for stable evidence.')}>Restore supply</button>
     </section><p className="city-feedback" role="status">{feedback || 'Start with “Request all rooms”, then trigger a shortage or feeder trip.'}</p>
     <div className="city-scope-grid">
-      {[{ label: 'Source power state', title: 'City source', capacity: snapshot.source.capacity_w, watts: servedW }, ...['A', 'B'].map(id => ({ label: id === 'A' ? 'Hospital power state' : 'Classroom power state', title: `Feeder ${id} · ${id === 'A' ? 'Hospital' : 'Classrooms'}`, capacity: snapshot.feeder_limits_w[id], watts: snapshot.services.filter(s => s.feeder === id && s.modeled_served).reduce((sum, s) => sum + s.watts, 0) }))].map(scope => <section className="city-scope" key={scope.title} aria-label={scope.label} data-revision={snapshot.site?.revision}>
+      {[{ label: 'Source power state', title: 'City source', capacity: snapshot.source.capacity_w, watts: servedW }, ...['A', 'B'].map(id => ({ label: id === 'A' ? 'Hospital power state' : 'Classroom power state', title: `Feeder ${id} · ${id === 'A' ? 'Hospital' : 'Classrooms'}`, capacity: snapshot.feeder_limits_w[id], watts: snapshot.services.filter(s => s.feeder === id).reduce((sum, s) => sum + servedWatts(s), 0) }))].map(scope => <section className="city-scope" key={scope.title} aria-label={scope.label} data-revision={snapshot.site?.revision}>
         <span>{scope.title}</span><strong>{scope.watts.toLocaleString()} / {scope.capacity.toLocaleString()} W</strong><small>Served / configured limit · revision {snapshot.site?.revision}</small>
       </section>)}
     </div>
@@ -77,7 +77,7 @@ export default function CityDemo() {
       </section></div>
     <section className="city-panel city-decisions" aria-label="Power decision explanations"><h2>Every cut has a reason</h2>
       {selectedService && <p className="city-selected"><strong>Selected: {selectedService.name}</strong> — {decisionReason(snapshot, selectedService.id)}</p>}
-      {shed.length ? shed.map(service => <article key={service.id} className="city-shed-reason"><strong>{service.name} · {service.watts.toLocaleString()} W shed</strong><p>{decisionReason(snapshot, service.id)}</p><details><summary>More decision detail</summary><p>{service.model_reason} · {service.tier} · feeder {service.feeder}</p></details></article>) : <p>All requested services are served.</p>}
+      {shed.length ? shed.map(service => <article key={service.id} className="city-shed-reason"><strong>{service.name} · {((service.requested_w ?? service.watts) - servedWatts(service)).toLocaleString()} W shed</strong><p>{decisionReason(snapshot, service.id)}</p><details><summary>More decision detail</summary><p>{service.model_reason} · {service.tier} · feeder {service.feeder}</p></details></article>) : <p>All requested services are served.</p>}
     </section>
     <div className="city-bottom-grid"><DemandForecastPanel forecast={city.data.forecast} evidence={evidence.data} source={source} onSource={setSource} replayIndex={replayIndex} onNext={() => setReplayIndex(index => index === 7 ? 3 : index + 1)} />
       <section className="city-panel" aria-label="Real-time hardware monitoring"><header className="city-panel-heading"><div><h2><Radio size={19} aria-hidden="true" /> Real-time hardware monitoring</h2><p>Board A USB bridge and board B LED acknowledgments</p></div></header>

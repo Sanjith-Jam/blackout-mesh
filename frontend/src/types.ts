@@ -5,7 +5,14 @@ export type DemandForecast = components['schemas']['DemandForecastResponse'];
 export type DemoEvidence = components['schemas']['DemoEvidence'];
 
 export type SourceInfo = components['schemas']['SourceInfo'];
+export type SiteScenarios = components['schemas']['SiteScenariosResponse'];
+export type SiteScenarioSwitch = components['schemas']['SiteScenarioResponse'];
 export type Service = components['schemas']['ServiceSnapshot'];
+
+/** Modeled watts a service receives; feeder B services can be partly served by the classroom leaves (#33). */
+export const servedWatts = (s: Service) => s.served_w ?? (s.modeled_served ? s.watts : 0);
+export const serviceStatus = (s: Service) =>
+  !s.requested ? 'Not requested' : !s.modeled_served ? 'Shed' : servedWatts(s) < (s.requested_w ?? s.watts) ? 'Partly served' : 'Served';
 export type HospitalRoom = components['schemas']['HospitalRoom'];
 export type HospitalZone = components['schemas']['HospitalZone'];
 export type ClassroomInfo = components['schemas']['ClassroomInfo'];

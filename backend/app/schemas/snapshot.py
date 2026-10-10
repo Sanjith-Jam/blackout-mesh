@@ -32,6 +32,9 @@ class ServiceSnapshot(BaseModel):
     watts: int
     requested: bool
     modeled_served: bool
+    # Watts, so partial service is visible; L3-L5 come from the classroom leaf decision. None in older history.
+    requested_w: Optional[int] = None
+    served_w: Optional[int] = None
     indicator_confirmed: Optional[bool] = None
     model_reason: str
 
@@ -113,6 +116,7 @@ class SiteIdentityResponse(BaseModel):
     catalog_version: str
     config_hash: str
     site_name: str
+    scenario: Optional[str] = None  # named teaching scenario (#33), or "custom"; None in older history
 
 class CrossRouteContract(BaseModel):
     identity: RunIdentity
@@ -283,6 +287,30 @@ class CommandReceipt(BaseModel):
     name: str
     run_id: str
     applied_revision: int
+
+
+class SiteScenarioInfo(BaseModel):
+    name: str
+    description: str
+    source_w: int
+    feeders: Dict[str, bool]
+    classroom_limit_w: int
+    hospital_limit_w: int
+
+
+class SiteScenariosResponse(BaseModel):
+    active: str  # a scenario name, or "custom" after a budget was changed by hand
+    scenarios: List[SiteScenarioInfo]
+    site: SiteIdentityResponse
+
+
+class SiteScenarioRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    scenario: StrictStr = Field(min_length=1, max_length=64)
+
+
+class SiteScenarioResponse(SiteScenariosResponse):
+    command: CommandReceipt
 
 
 class PowerEdge(BaseModel):

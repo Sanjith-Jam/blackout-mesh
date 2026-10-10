@@ -12,15 +12,50 @@ from datetime import datetime, timezone
 from sqlmodel import Session
 
 from app.core.active_site import CATALOG
-from app.core.state import CLASSROOMS, SERVICE_CATALOG, site_profile
+from app.core.state import CLASSROOMS, NORMAL_SOURCE_CAPACITY_W, SERVICE_CATALOG, site_profile
 from app.schemas.snapshot import SiteIdentityResponse
 from app.storage.models import Run
-from app.visualizers import HOSP_LOADS, HOSP_PARENT, LOADS as CLASSROOM_LEAVES
+from app.visualizers import (HOSP_LOADS, HOSP_PARENT, LOADS as CLASSROOM_LEAVES, NORMAL_CAPACITY_W as CLASSROOM_NORMAL_W,
+                             OVERLOAD_CAPACITY_W as CLASSROOM_OVERLOAD_W, HospitalPriorityDemo)
 
 # The active site profile names the catalog; its content hash pins exactly which inventory a run used (#26).
 CATALOG_VERSION = f"site-catalog-{CATALOG.version}"
 CONFIG_HASH = CATALOG.config_hash
 PROFILE = "campus"
+DEFAULT_SCENARIO = "normal"
+CUSTOM_SCENARIO = "custom"  # any budget changed by hand after a scenario was applied
+
+
+def _scenarios() -> dict:
+    """Named teaching scenarios (#33), derived from the active site profile's limits and presets.
+
+    Each one sets every budget, so switching is deterministic and never leaves part of the previous
+    scenario behind. Sessions and recorded replay are left alone.
+    """
+    feeders = {f: True for f in CATALOG.feeder_limits_w}
+    base = {"source_w": NORMAL_SOURCE_CAPACITY_W, "feeders": feeders, "classroom_limit_w": CLASSROOM_NORMAL_W,
+            "hospital_limit_w": HospitalPriorityDemo.NORMAL_W}
+    shortage = CATALOG.feeder_limits_w["A"]
+    return {
+        "normal": {**base, "description": "Full supply, every feeder closed, no sub-limits."},
+        "source_shortage": {**base, "source_w": shortage,
+                            "description": f"Source drops to {shortage:,} W; protected services first, the rest "
+                                           "share what is left."},
+        "feeder_b_trip": {**base, "feeders": {**feeders, "B": False},
+                          "description": "Feeder B is open; every classroom load loses supply."},
+        "classroom_overload": {**base, "classroom_limit_w": CLASSROOM_OVERLOAD_W,
+                               "description": f"Classrooms limited to {CLASSROOM_OVERLOAD_W:,} W; essentials first, "
+                                              "then scanned rooms."},
+        "hospital_overload": {**base, "hospital_limit_w": HospitalPriorityDemo.OVERLOAD_W,
+                              "description": f"Hospital limited to {HospitalPriorityDemo.OVERLOAD_W:,} W; essential "
+                                             "equipment first."},
+    }
+
+
+SCENARIOS = _scenarios()
+# Commands that change a budget a scenario sets; after one, the site no longer matches its scenario.
+BUDGET_COMMANDS = {"campus.capacity", "campus.feeder", "classroom.set_capacity", "classroom.normal", "classroom.reset",
+                   "classroom.overload", "hospital.set_capacity", "hospital.normal", "hospital.overload", "hospital.reset"}
 log = logging.getLogger(__name__)
 
 
@@ -59,23 +94,39 @@ def reconcile_catalog() -> list[str]:
     return problems
 
 
+def _feeder_a_served_w(grid) -> int:
+    """Watts of the feeder A services the campus allocator applied this tick (whole services)."""
+    return sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
+               if s["feeder"] == "A" and grid.last_allocation_mask & (1 << i))
+
+
 def classroom_headroom_w(grid) -> int:
-    """Power the campus can make available to classroom loads on feeder B, from its last published state."""
-    snap = grid.published
-    if snap is None or not grid.feeder_available.get("B", False):
+    """Feeder B budget the campus grants the classroom leaf allocation: what the source has left after feeder A."""
+    if not grid.feeder_available.get("B", False):
         return 0
-    feeder_a_served = sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-                          if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
-    return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - feeder_a_served))
+    return max(0, min(grid.feeder_limits_w["B"], grid.source_capacity_w - _feeder_a_served_w(grid)))
 
 
 def hospital_headroom_w(grid) -> int:
-    """Feeder A power the campus allocated to hospital services, from its last published state."""
-    snap = grid.published
-    if snap is None or not grid.feeder_available.get("A", False):
+    """Feeder A power the campus allocated to hospital services."""
+    if not grid.feeder_available.get("A", False):
         return 0
-    return sum(s["watts"] for i, s in enumerate(SERVICE_CATALOG)
-               if s["feeder"] == "A" and snap.modeled_mask & (1 << i))
+    return _feeder_a_served_w(grid)
+
+
+def classroom_leaf_decision(classroom_snapshot) -> dict:
+    """Per campus service, the watts its classroom leaves request, are commanded and are served (#33).
+
+    This is the only feeder B decision: the campus publishes these watts for L3-L5 instead of whole rooms.
+    """
+    edges = {e["id"]: e for e in classroom_snapshot["edges"]}
+    out = {}
+    for room, parent in CLASSROOM_PARENT.items():
+        leaves = [edges[f"classroom:{room}>{item[0]}"] for item in CLASSROOM_LEAVES[room]]
+        out[parent] = {"requested_w": sum(e["requested_w"] for e in leaves),
+                       "commanded_w": sum(e["requested_w"] for e in leaves if e["commanded"] and e["connected"]),
+                       "served_w": sum(e["served_w"] for e in leaves)}
+    return out
 
 
 class SiteAuthority:
@@ -90,6 +141,7 @@ class SiteAuthority:
         self.run_id = grid.run_id
         self.revision = 0
         self.last_command = None
+        self.scenario = DEFAULT_SCENARIO
         self._seen = None
         self.tick()
 
@@ -97,15 +149,18 @@ class SiteAuthority:
         return (self.grid.published_revision, self.classroom.published_revision, self.hospital.published_revision)
 
     def tick(self):
-        """Advance every part in a fixed order; campus first so its headroom bounds the classroom view."""
+        """Advance every part in a fixed order: the campus decides feeder A and grants feeder B a budget,
+        the classroom leaves decide feeder B within it, and the campus publishes both as one decision."""
         with self._lock:
-            self.grid.tick()
+            self.grid.advance()
             self.classroom.campus_limit_w = classroom_headroom_w(self.grid)
             self.classroom.campus_feeder_closed = bool(self.grid.feeder_available.get("B", False))
             self.classroom.tick()
+            self.grid.feeder_b_leaves = classroom_leaf_decision(self.classroom.published)
             self.hospital.campus_limit_w = hospital_headroom_w(self.grid)
             self.hospital.campus_feeder_closed = bool(self.grid.feeder_available.get("A", False))
             self.hospital.tick()
+            self.grid.publish()
             seen = self._part_revisions()
             if seen != self._seen:
                 self._seen = seen
@@ -128,6 +183,8 @@ class SiteAuthority:
             if not self.grid.save_command(name, payload or {}, command_id):
                 raise AuditUnavailable("Command audit storage is unavailable; no change was applied")
             result = apply()
+            if name in BUDGET_COMMANDS:
+                self.scenario = CUSTOM_SCENARIO
             revision = self.tick()
             self.last_command = {"command_id": command_id, "name": name, "run_id": self.run_id,
                                  "applied_revision": revision}
@@ -141,6 +198,23 @@ class SiteAuthority:
             revision = self.tick()
             self.last_command = {**receipt, "applied_revision": revision}
             return dict(self.last_command)
+
+    def apply_scenario(self, name: str) -> dict:
+        """Switch the whole site to a named scenario in one command and one revision."""
+        if name not in SCENARIOS:
+            raise ValueError(f"unknown scenario {name!r}")
+        settings = SCENARIOS[name]
+
+        def apply():
+            self.grid.set_capacity(settings["source_w"])
+            for feeder, available in settings["feeders"].items():
+                self.grid.set_feeder(feeder, available)
+            self.classroom.capacity = settings["classroom_limit_w"]
+            self.hospital.capacity = settings["hospital_limit_w"]
+            self.hospital.fault = None
+            self.scenario = name
+
+        return self.command("site.scenario", apply, {"scenario": name})[1]
 
     def commit(self, name: str, payload=None) -> dict:
         """For handlers that already applied their mutation: tick all parts and record the receipt."""
@@ -174,4 +248,5 @@ class SiteAuthority:
     def identity(self) -> dict:
         with self._lock:
             return {"run_id": self.run_id, "revision": self.revision, "profile": PROFILE,
-                    "catalog_version": CATALOG_VERSION, "config_hash": CONFIG_HASH, "site_name": CATALOG.name}
+                    "catalog_version": CATALOG_VERSION, "config_hash": CONFIG_HASH, "site_name": CATALOG.name,
+                    "scenario": self.scenario}

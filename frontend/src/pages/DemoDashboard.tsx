@@ -10,6 +10,7 @@ import AllocationHistoryChart from '../components/AllocationHistoryChart';
 import IncidentTimeline from '../components/IncidentTimeline';
 import './DemoDashboard.css';
 import { useServerHistory } from '../history';
+import { servedWatts as servedW, serviceStatus } from '../types';
 import HistoryControls from '../components/HistoryControls';
 
 export default function DemoDashboard() {
@@ -67,7 +68,7 @@ export default function DemoDashboard() {
 
   const { services, zones, source, control_revision, indicator_command_mask, indicator_confirmed_mask } = snapshot;
 
-  const servedWatts = services.filter(s => s.modeled_served).reduce((sum, s) => sum + s.watts, 0);
+  const servedWatts = services.reduce((sum, s) => sum + servedW(s), 0);
   const servedCount = services.filter(s => s.modeled_served).length;
 
   const getService = (id: string) => services.find(s => s.id === id);
@@ -251,7 +252,7 @@ export default function DemoDashboard() {
                       <div className="state-line">
                         <span className="label">Modeled Service:</span>
                         <span className={`value ${svc?.modeled_served ? 'text-ok' : 'text-err'}`}>
-                          {svc?.modeled_served ? 'Served' : 'Shed'}
+                          {svc ? serviceStatus(svc) : 'Shed'}
                         </span>
                       </div>
                       <div className="state-line">

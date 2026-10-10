@@ -28,6 +28,9 @@ from app.schemas.snapshot import (
     FeederChangeResponse,
     ActivityObservationRequest,
     ReplayActionRequest,
+    SiteScenarioRequest,
+    SiteScenarioResponse,
+    SiteScenariosResponse,
 )
 from app.core.state import CLASSROOMS, GridState
 from app.core.active_site import CATALOG
@@ -35,7 +38,7 @@ from app.api.history import attach_history, register_history
 from app.api.demo import register_demo
 from app.forecast import DemandForecast
 from app.core.control_loop import ControlLoop
-from app.core.site import AuditUnavailable, SiteAuthority
+from app.core.site import SCENARIOS, AuditUnavailable, SiteAuthority
 from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
 from app.core.policy import AllocationPolicy
 from app.simulation.electrical import ElectricalInput, ElectricalStudyResponse, solve as solve_electrical, diagnose_study
@@ -584,6 +587,27 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+def _site_scenarios(site):
+    scenarios = [{"name": name, **settings} for name, settings in SCENARIOS.items()]
+    return {"active": site.scenario, "scenarios": scenarios, "site": site.identity()}
+
+
+@router.get("/api/v1/site/scenarios", response_model=SiteScenariosResponse)
+async def read_site_scenarios(request: Request):
+    site = request.app.state.site
+    return site.read(lambda: _site_scenarios(site))[0]
+
+
+@router.post("/api/v1/site/scenario", response_model=SiteScenarioResponse)
+async def switch_site_scenario(request: Request, req: SiteScenarioRequest):
+    """Switch the whole site to a named scenario: one command, one revision on every route (#33)."""
+    site = request.app.state.site
+    if req.scenario not in SCENARIOS:
+        raise HTTPException(422, f"unknown scenario {req.scenario!r}; choose one of {sorted(SCENARIOS)}")
+    receipt = site.apply_scenario(req.scenario)
+    return {**site.read(lambda: _site_scenarios(site))[0], "command": receipt}
+
 
 @router.get("/api/v1/allocation/policy", response_model=AllocationPolicyResponse)
 async def read_allocation_policy(request: Request):

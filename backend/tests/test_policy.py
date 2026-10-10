@@ -68,8 +68,10 @@ def test_applied_decision_restoration_replay():
         replay = explanation['restoration_replay']
         gate = RestorationGate(lambda: replay['now_s'])
         vars(gate).update(replay['before'])
-        assert gate.update(payload['proposed_mask'], replay['signature'], replay['order'], now=replay['now_s']) == payload['modeled_mask']
-        assert sum(d['shortfall_w'] for d in explanation['decisions']) == sum(s['watts'] for s in payload['services'] if s['requested'] and not s['modeled_served'])
+        assert gate.update(explanation['campus_proposed_mask'], replay['signature'], replay['order'],
+                           now=replay['now_s']) == explanation['campus_applied_mask']
+        assert sum(d['shortfall_w'] for d in explanation['decisions']) == sum(
+            s['requested_w'] - s['served_w'] for s in payload['services'])
 
 
 def test_waiting_age_only_accumulates_for_unserved_requests():

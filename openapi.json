@@ -630,6 +630,83 @@
         }
       }
     },
+    "/api/v1/site/scenarios": {
+      "get": {
+        "summary": "Read Site Scenarios",
+        "operationId": "get_api_v1_site_scenarios",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteScenariosResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/site/scenario": {
+      "post": {
+        "summary": "Switch Site Scenario",
+        "description": "Switch the whole site to a named scenario: one command, one revision on every route (#33).",
+        "operationId": "post_api_v1_site_scenario",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteScenarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteScenarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/allocation/policy": {
       "get": {
         "summary": "Read Allocation Policy",
@@ -4772,6 +4849,28 @@
             "type": "boolean",
             "title": "Modeled Served"
           },
+          "requested_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested W"
+          },
+          "served_w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Served W"
+          },
           "indicator_confirmed": {
             "anyOf": [
               {
@@ -4826,6 +4925,17 @@
           "site_name": {
             "type": "string",
             "title": "Site Name"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
           }
         },
         "type": "object",
@@ -4838,6 +4948,117 @@
           "site_name"
         ],
         "title": "SiteIdentityResponse"
+      },
+      "SiteScenarioInfo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "source_w": {
+            "type": "integer",
+            "title": "Source W"
+          },
+          "feeders": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Feeders"
+          },
+          "classroom_limit_w": {
+            "type": "integer",
+            "title": "Classroom Limit W"
+          },
+          "hospital_limit_w": {
+            "type": "integer",
+            "title": "Hospital Limit W"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "source_w",
+          "feeders",
+          "classroom_limit_w",
+          "hospital_limit_w"
+        ],
+        "title": "SiteScenarioInfo"
+      },
+      "SiteScenarioRequest": {
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Scenario"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scenario"
+        ],
+        "title": "SiteScenarioRequest"
+      },
+      "SiteScenarioResponse": {
+        "properties": {
+          "active": {
+            "type": "string",
+            "title": "Active"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/SiteScenarioInfo"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "site": {
+            "$ref": "#/components/schemas/SiteIdentityResponse"
+          },
+          "command": {
+            "$ref": "#/components/schemas/CommandReceipt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active",
+          "scenarios",
+          "site",
+          "command"
+        ],
+        "title": "SiteScenarioResponse"
+      },
+      "SiteScenariosResponse": {
+        "properties": {
+          "active": {
+            "type": "string",
+            "title": "Active"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/SiteScenarioInfo"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "site": {
+            "$ref": "#/components/schemas/SiteIdentityResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active",
+          "scenarios",
+          "site"
+        ],
+        "title": "SiteScenariosResponse"
       },
       "SourceInfo": {
         "properties": {
