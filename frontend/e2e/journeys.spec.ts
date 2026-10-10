@@ -37,7 +37,7 @@ test('keyboard-only classroom journey survives a backend outage and a page reloa
   await page.keyboard.press('Enter');
   await expect(controls.getByRole('button', { name: /CR1 scanned/ })).toHaveAttribute('aria-pressed', 'true');
 
-  await tabTo(page, byText('Overload preset · 3,400 W'));
+  await tabTo(page, byText('Overload preset'));
   await page.keyboard.press('Space');
   const slider = page.getByRole('slider');
   await expect(slider).toHaveAttribute('aria-valuenow', '3400');
