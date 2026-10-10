@@ -12,7 +12,7 @@
    "catalog_version": "1.1",
    "config_hash": "af574a50987d",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T02:47:31.107286+00:00",
+   "observation_time": "2026-10-10T03:06:36.332281+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
    "server_epoch": "<volatile>",
@@ -426,7 +426,7 @@
      "essential": true,
      "id": "ventilator",
      "name": "Ventilator",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 300
     },
@@ -434,7 +434,7 @@
      "essential": true,
      "id": "monitor",
      "name": "Patient Monitor",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 100
     },
@@ -442,7 +442,7 @@
      "essential": true,
      "id": "infusion",
      "name": "Infusion Pump",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 50
     },
@@ -450,7 +450,7 @@
      "essential": true,
      "id": "lights",
      "name": "Emergency Lights",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 200
     },
@@ -458,7 +458,7 @@
      "essential": true,
      "id": "oxygen",
      "name": "O2 System",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 500
     }
@@ -510,7 +510,7 @@
      "essential": true,
      "id": "surgical_light",
      "name": "Surgical Light",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 500
     },
@@ -518,7 +518,7 @@
      "essential": true,
      "id": "anesthesia",
      "name": "Anesthesia Unit",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 200
     },
@@ -526,7 +526,7 @@
      "essential": true,
      "id": "esu",
      "name": "Electrosurgical",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 650
     },
@@ -534,7 +534,7 @@
      "essential": true,
      "id": "monitor",
      "name": "Vital Monitor",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 100
     },
@@ -542,7 +542,7 @@
      "essential": false,
      "id": "ac",
      "name": "Climate Control",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital support (T2 water pump and HVAC)).",
      "served": true,
      "watts": 900
     }
@@ -594,7 +594,7 @@
      "essential": true,
      "id": "bed_lights",
      "name": "Bed Lights",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 300
     },
@@ -602,7 +602,7 @@
      "essential": true,
      "id": "nurse_call",
      "name": "Nurse Call",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital critical (T1, protected)).",
      "served": true,
      "watts": 100
     },
@@ -610,7 +610,7 @@
      "essential": false,
      "id": "fans",
      "name": "Ceiling Fans",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital support (T2 water pump and HVAC)).",
      "served": true,
      "watts": 300
     },
@@ -618,7 +618,7 @@
      "essential": false,
      "id": "water_pump",
      "name": "Water Pump",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital support (T2 water pump and HVAC)).",
      "served": true,
      "watts": 600
     },
@@ -626,7 +626,7 @@
      "essential": false,
      "id": "ac",
      "name": "Air Conditioning",
-     "reason": "served",
+     "reason": "Served by the optimizer (Hospital support (T2 water pump and HVAC)).",
      "served": true,
      "watts": 1200
     }

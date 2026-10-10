@@ -164,11 +164,10 @@ class ClassroomDemo:
             self.published = candidate
         return self.snapshot()
 
-    def _project(self):
-        order = self._room_order()
+    def _standalone_allocation(self, order, effective):
+        """Greedy fill used only when the view runs without the site authority (unit tests, rehearsals)."""
         priority = self._priority(order)
         target: set[tuple[str, str]] = set()
-        effective = self.effective_capacity()
         remaining = effective
         shortfall_note: dict[tuple[str, str], str] = {}
         for room, item in priority:
@@ -182,13 +181,27 @@ class ClassroomDemo:
         bit_order = [LOAD_KEYS.index((room, item[0])) for room, item in priority]
         applied = self.gate.update(proposed, self._signature(order), bit_order)
         current = {key for bit, key in enumerate(LOAD_KEYS) if applied & (1 << bit)}
+        return target, current, shortfall_note
+
+    def _project(self):
+        order = self._room_order()
+        effective = self.effective_capacity()
+        decision = getattr(self, "site_decision", None)
+        if decision is not None:
+            # Live app: the site authority's appliance-level optimizer decides; this view projects it.
+            target = {key for key, (commanded, _, reachable, _) in decision.items() if commanded and reachable}
+            current = {key for key, (_, applied, _, _) in decision.items() if applied}
+            shortfall_note = {key: reason for key, (commanded, _, _, reason) in decision.items() if not commanded}
+        else:
+            target, current, shortfall_note = self._standalone_allocation(order, effective)
         rooms = []
         for cid in ROOMS:
             loads = []
             for lid, name, watts, essential in LOADS[cid]:
                 key = (cid, lid)
                 on = key in current
-                reason = ("served by classroom demo" if on else
+                reason = (decision[key][3] if decision is not None else
+                          "served by classroom demo" if on else
                           "Waiting for simulated restoration delay" if key in target else
                           "Insufficient capacity for essential load" if essential else
                           "Shed by classroom demo policy")
@@ -401,18 +414,24 @@ class HospitalPriorityDemo(ClassroomDemo):
 
     def _project(self):
         order = self._room_order()
-        priority = self._priority(order)
-        target = set()
-        remaining = self.effective_capacity()
-        for z, item in priority:
-            key = (z, item[0])
-            if item[2] <= remaining:
-                target.add(key)
-                remaining -= item[2]
-        proposed = sum(1 << HOSP_LOAD_KEYS.index(key) for key in target)
-        bit_order = [HOSP_LOAD_KEYS.index((z, item[0])) for z, item in priority]
-        applied = self.gate.update(proposed, self._signature(order), bit_order)
-        current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
+        decision = getattr(self, "site_decision", None)
+        if decision is not None:
+            # Live app: the site authority's appliance-level optimizer decides; this view projects it.
+            target = {key for key, (commanded, _, reachable, _) in decision.items() if commanded and reachable}
+            current = {key for key, (_, applied, _, _) in decision.items() if applied}
+        else:
+            priority = self._priority(order)
+            target = set()
+            remaining = self.effective_capacity()
+            for z, item in priority:
+                key = (z, item[0])
+                if item[2] <= remaining:
+                    target.add(key)
+                    remaining -= item[2]
+            proposed = sum(1 << HOSP_LOAD_KEYS.index(key) for key in target)
+            bit_order = [HOSP_LOAD_KEYS.index((z, item[0])) for z, item in priority]
+            applied = self.gate.update(proposed, self._signature(order), bit_order)
+            current = {key for bit, key in enumerate(HOSP_LOAD_KEYS) if applied & (1 << bit)}
         readings, diagnoses = self._sense_and_diagnose(current)
         edges = self._hospital_edges(target, current, readings, diagnoses)
 
@@ -423,6 +442,8 @@ class HospitalPriorityDemo(ClassroomDemo):
                 key = (z, lid)
                 on = key in current
                 reason = ("served" if on else "waiting" if key in target else "shed")
+                if decision is not None:
+                    reason = decision[key][3]
                 loads.append({"id": lid, "name": name, "watts": watts, "essential": essential, "served": on, "reason": reason})
             act = self.activity(z)
             transformers.append({
