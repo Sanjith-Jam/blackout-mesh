@@ -46,6 +46,7 @@ Open [the primary district planning demonstration](http://127.0.0.1:5173/grid). 
 | Route | Model and demand catalog | Capacity and limits |
 |---|---|---|
 | `/grid` | GNITC real OSM geometry, synthetic district assets and 24 hourly demand/PV samples | Separately configured 6,000 W source; synthetic W limits; no AC authorization or physical commands |
+| `/grid` with explicit `DISTRICT_PROFILE` opt-in | Six virtual rooms map all 31 catalog appliances into the synthetic GNITC graph | Separately named 14,000 W inventory study; graph path W budgets; PV/storage disabled |
 | `/demo`, `/city`, `/console` | Existing campus, six services and 31 appliances | 14,000 W rated demand; separately controlled source and feeder budgets |
 | `/hospital`, `/classrooms` | Equipment projections of the existing campus controller | Hospital 6,000 W; classrooms 8,000 W rated demand |
 

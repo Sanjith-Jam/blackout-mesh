@@ -1096,6 +1096,38 @@ export interface components {
          * @enum {string}
          */
         DistrictActionName: "inject_fault" | "clear_fault" | "propose_recovery" | "apply_recovery" | "advance_hour" | "transformer_scenario" | "reset";
+        /** DistrictAppliance */
+        DistrictAppliance: {
+            /** Id */
+            id: string;
+            /** Service Id */
+            service_id: string;
+            /** Room Id */
+            room_id: string;
+            /** Rated Max W */
+            rated_max_w: number;
+            /** Requested W */
+            requested_w: number;
+            /** Served W */
+            served_w: number;
+            /** Priority Class */
+            priority_class: string;
+            /** Reachable */
+            reachable: boolean;
+            /** Path Edge Ids */
+            path_edge_ids: string[];
+        };
+        /** DistrictDispatch */
+        DistrictDispatch: {
+            /** Solver */
+            solver: string;
+            /** Status */
+            status: string;
+            /** Validation */
+            validation: string;
+            /** Physical Confirmation */
+            physical_confirmation: null;
+        };
         /** DistrictEnergy */
         DistrictEnergy: {
             /** Hour */
@@ -1194,9 +1226,15 @@ export interface components {
             run_id: string;
             /** Revision */
             revision: number;
+            /** Server Epoch */
+            server_epoch: string;
+            /** Profile Hash */
+            profile_hash: string;
         };
         /** DistrictLoad */
         DistrictLoad: {
+            /** Appliances */
+            appliances: components["schemas"]["DistrictAppliance"][];
             /** Building Id */
             building_id: string;
             /** Tier */
@@ -1286,6 +1324,24 @@ export interface components {
             /** Coordinates */
             coordinates: number[][];
         };
+        /** DistrictProfileInfo */
+        DistrictProfileInfo: {
+            /** Id */
+            id: string;
+            /** Config Hash */
+            config_hash: string;
+            /** Demand Basis */
+            demand_basis: string;
+            /** Local Supply Mode */
+            local_supply_mode: string;
+            /** Catalog Version */
+            catalog_version: string | null;
+            /** Catalog Hash */
+            catalog_hash: string | null;
+            /** Appliance Count */
+            appliance_count: number;
+            decision: components["schemas"]["DistrictDispatch"];
+        };
         /** DistrictSite */
         DistrictSite: {
             /** Name */
@@ -1302,6 +1358,7 @@ export interface components {
             /** Schema Version */
             schema_version: string;
             identity: components["schemas"]["DistrictIdentity"];
+            profile: components["schemas"]["DistrictProfileInfo"];
             site: components["schemas"]["DistrictSite"];
             map: components["schemas"]["DistrictMap"];
             topology: components["schemas"]["DistrictTopology"];

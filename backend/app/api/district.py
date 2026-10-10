@@ -44,6 +44,7 @@ class DistrictSnapshot(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     schema_version: StrictStr
     identity: "DistrictIdentity"
+    profile: "DistrictProfileInfo"
     site: "DistrictSite"
     map: "DistrictMap"
     topology: "DistrictTopology"
@@ -60,6 +61,38 @@ class DistrictIdentity(StrictDTO):
     site_id: StrictStr
     run_id: StrictStr
     revision: StrictInt
+    server_epoch: StrictStr
+    profile_hash: StrictStr
+
+
+class DistrictDispatch(StrictDTO):
+    solver: StrictStr
+    status: StrictStr
+    validation: StrictStr
+    physical_confirmation: None
+
+
+class DistrictProfileInfo(StrictDTO):
+    id: StrictStr
+    config_hash: StrictStr
+    demand_basis: StrictStr
+    local_supply_mode: StrictStr
+    catalog_version: StrictStr | None
+    catalog_hash: StrictStr | None
+    appliance_count: StrictInt
+    decision: DistrictDispatch
+
+
+class DistrictAppliance(StrictDTO):
+    id: StrictStr
+    service_id: StrictStr
+    room_id: StrictStr
+    rated_max_w: StrictInt
+    requested_w: StrictInt
+    served_w: StrictInt
+    priority_class: StrictStr
+    reachable: StrictBool
+    path_edge_ids: list[StrictStr]
 
 
 class DistrictSite(StrictDTO):
@@ -115,6 +148,7 @@ class DistrictGeneration(StrictDTO):
 
 
 class DistrictLoad(StrictDTO):
+    appliances: list[DistrictAppliance]
     building_id: StrictStr
     tier: StrictStr
     tier_provenance: StrictStr
@@ -209,55 +243,60 @@ def register_district():
 
     @router.get("", response_model=DistrictSnapshot)
     async def district_snapshot(request: Request):
-        return request.app.state.district.snapshot()
+        async with request.app.state.district_lock:
+            return await asyncio.to_thread(request.app.state.district.snapshot)
 
     @router.post("/action", response_model=DistrictSnapshot)
     async def district_action(body: DistrictAction, request: Request):
-        district: DistrictAuthority = request.app.state.district
-        if body.run_id != district.run_id or body.expected_revision != district.revision:
-            raise HTTPException(409, "district run or revision is stale")
-        if district.generation.get("status") == "GENERATING" and body.action != DistrictActionName.reset:
-            raise HTTPException(409, "district topology generation is in progress")
-        result = district.apply_action(body)
-        if not result:
-            raise HTTPException(422, "action is invalid for the current district state")
-        district.revision += 1
-        return district.snapshot()
+        async with request.app.state.district_lock:
+            district: DistrictAuthority = request.app.state.district
+            if body.run_id != district.run_id or body.expected_revision != district.revision:
+                raise HTTPException(409, "district run or revision is stale")
+            if district.generation.get("status") == "GENERATING" and body.action != DistrictActionName.reset:
+                raise HTTPException(409, "district topology generation is in progress")
+            result = await asyncio.to_thread(district.apply_action, body)
+            if not result:
+                raise HTTPException(422, "action is invalid for the current district state")
+            district.revision += 1
+            return await asyncio.to_thread(district.snapshot)
 
     @router.post("/generation", response_model=DistrictSnapshot)
     async def generate_topology(body: GenerationRequest, request: Request):
-        district: DistrictAuthority = request.app.state.district
-        if body.run_id != district.run_id or body.expected_revision != district.revision:
-            raise HTTPException(409, "district run or revision is stale")
-        if body.secondary_strategy not in {"RadialStrategy", "MeshSteinerStrategy"}:
-            raise HTTPException(422, "unsupported SHIFT secondary strategy")
-        if district.generation.get("status") == "GENERATING":
-            raise HTTPException(409, "topology generation is already running")
-        python = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
-        script = Path(__file__).resolve().parents[2] / "scripts/generate_district_topology.py"
-        if not district.generation["available"] or not python.is_file():
+        async with request.app.state.district_lock:
+            district: DistrictAuthority = request.app.state.district
+            if body.run_id != district.run_id or body.expected_revision != district.revision:
+                raise HTTPException(409, "district run or revision is stale")
+            if body.secondary_strategy not in {"RadialStrategy", "MeshSteinerStrategy"}:
+                raise HTTPException(422, "unsupported SHIFT secondary strategy")
+            if district.generation.get("status") == "GENERATING":
+                raise HTTPException(409, "topology generation is already running")
+            python = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
+            script = Path(__file__).resolve().parents[2] / "scripts/generate_district_topology.py"
+            if not district.generation["available"] or not python.is_file():
+                district.revision += 1
+                district.generation.update(status="UNAVAILABLE", available=False,
+                    reason="Optional SHIFT runtime is unavailable; cached topology remains active.")
+                return await asyncio.to_thread(district.snapshot)
+            district.generation.update(status="GENERATING", available=True,
+                cluster_count=body.cluster_count, secondary_strategy=body.secondary_strategy,
+                reason=None, generated_at=None)
+            task_id = district.generation_task_id = str(uuid.uuid4())
+            run_id = district.run_id
             district.revision += 1
-            district.generation.update(status="UNAVAILABLE", available=False,
-                reason="Optional SHIFT runtime is unavailable; cached topology remains active.")
-            return district.snapshot()
-        district.generation.update(status="GENERATING", available=True,
-            cluster_count=body.cluster_count, secondary_strategy=body.secondary_strategy,
-            reason=None, generated_at=None)
-        task_id = district.generation_task_id = str(uuid.uuid4())
-        run_id = district.run_id
-        district.revision += 1
-        revision = district.revision
-        asyncio.create_task(_run_generation(district, python, script, body, run_id, task_id, revision))
-        return district.snapshot()
+            revision = district.revision
+            asyncio.create_task(_run_generation(district, python, script, body, run_id, task_id, revision, request.app.state.district_lock))
+            return await asyncio.to_thread(district.snapshot)
 
     return router
 
 
 def initialize_district(app):
     app.state.district = DistrictAuthority()
+    app.state.district_lock = asyncio.Lock()
 
 
-async def _run_generation(district, python, script, body, run_id, task_id, revision):
+async def _run_generation(district, python, script, body, run_id, task_id, revision, lock=None):
+    lock = lock or asyncio.Lock()
     def current_job():
         return district.run_id == run_id and district.generation_task_id == task_id and district.revision == revision
 
@@ -301,18 +340,20 @@ async def _run_generation(district, python, script, body, run_id, task_id, revis
             queue.extend(adjacency.get(node, set()) - reached)
         if reached != node_ids:
             raise RuntimeError("generated primary topology is disconnected")
-        if not current_job():
-            return
-        district.profile.validate_topology(result)
-        district.topology = result
-        district.generation.update(status="GENERATED", cluster_count=body.cluster_count,
-            secondary_strategy=body.secondary_strategy, generated_at=datetime.now(timezone.utc).isoformat(),
-            reason=None)
-        district.revision += 1
-    except Exception as exc:
-        if current_job():
-            district.generation.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}", generated_at=None)
+        async with lock:
+            if not current_job():
+                return
+            district.profile.validate_topology(result)
+            district.topology = result
+            district.generation.update(status="GENERATED", cluster_count=body.cluster_count,
+                secondary_strategy=body.secondary_strategy, generated_at=datetime.now(timezone.utc).isoformat(),
+                reason=None)
             district.revision += 1
+    except Exception as exc:
+        async with lock:
+            if current_job():
+                district.generation.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}", generated_at=None)
+                district.revision += 1
     finally:
         if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)

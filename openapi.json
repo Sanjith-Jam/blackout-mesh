@@ -3259,6 +3259,92 @@
         ],
         "title": "DistrictActionName"
       },
+      "DistrictAppliance": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "service_id": {
+            "type": "string",
+            "title": "Service Id"
+          },
+          "room_id": {
+            "type": "string",
+            "title": "Room Id"
+          },
+          "rated_max_w": {
+            "type": "integer",
+            "title": "Rated Max W"
+          },
+          "requested_w": {
+            "type": "integer",
+            "title": "Requested W"
+          },
+          "served_w": {
+            "type": "integer",
+            "title": "Served W"
+          },
+          "priority_class": {
+            "type": "string",
+            "title": "Priority Class"
+          },
+          "reachable": {
+            "type": "boolean",
+            "title": "Reachable"
+          },
+          "path_edge_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Path Edge Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "service_id",
+          "room_id",
+          "rated_max_w",
+          "requested_w",
+          "served_w",
+          "priority_class",
+          "reachable",
+          "path_edge_ids"
+        ],
+        "title": "DistrictAppliance"
+      },
+      "DistrictDispatch": {
+        "properties": {
+          "solver": {
+            "type": "string",
+            "title": "Solver"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "validation": {
+            "type": "string",
+            "title": "Validation"
+          },
+          "physical_confirmation": {
+            "type": "null",
+            "title": "Physical Confirmation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "solver",
+          "status",
+          "validation",
+          "physical_confirmation"
+        ],
+        "title": "DistrictDispatch"
+      },
       "DistrictEnergy": {
         "properties": {
           "hour": {
@@ -3537,6 +3623,14 @@
           "revision": {
             "type": "integer",
             "title": "Revision"
+          },
+          "server_epoch": {
+            "type": "string",
+            "title": "Server Epoch"
+          },
+          "profile_hash": {
+            "type": "string",
+            "title": "Profile Hash"
           }
         },
         "additionalProperties": false,
@@ -3544,12 +3638,21 @@
         "required": [
           "site_id",
           "run_id",
-          "revision"
+          "revision",
+          "server_epoch",
+          "profile_hash"
         ],
         "title": "DistrictIdentity"
       },
       "DistrictLoad": {
         "properties": {
+          "appliances": {
+            "items": {
+              "$ref": "#/components/schemas/DistrictAppliance"
+            },
+            "type": "array",
+            "title": "Appliances"
+          },
           "building_id": {
             "type": "string",
             "title": "Building Id"
@@ -3618,6 +3721,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "appliances",
           "building_id",
           "tier",
           "tier_provenance",
@@ -3802,6 +3906,68 @@
         ],
         "title": "DistrictPath"
       },
+      "DistrictProfileInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "config_hash": {
+            "type": "string",
+            "title": "Config Hash"
+          },
+          "demand_basis": {
+            "type": "string",
+            "title": "Demand Basis"
+          },
+          "local_supply_mode": {
+            "type": "string",
+            "title": "Local Supply Mode"
+          },
+          "catalog_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Version"
+          },
+          "catalog_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Hash"
+          },
+          "appliance_count": {
+            "type": "integer",
+            "title": "Appliance Count"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/DistrictDispatch"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "config_hash",
+          "demand_basis",
+          "local_supply_mode",
+          "catalog_version",
+          "catalog_hash",
+          "appliance_count",
+          "decision"
+        ],
+        "title": "DistrictProfileInfo"
+      },
       "DistrictSite": {
         "properties": {
           "name": {
@@ -3836,6 +4002,9 @@
           "identity": {
             "$ref": "#/components/schemas/DistrictIdentity"
           },
+          "profile": {
+            "$ref": "#/components/schemas/DistrictProfileInfo"
+          },
           "site": {
             "$ref": "#/components/schemas/DistrictSite"
           },
@@ -3860,6 +4029,7 @@
         "required": [
           "schema_version",
           "identity",
+          "profile",
           "site",
           "map",
           "topology",

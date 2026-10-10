@@ -60,3 +60,48 @@ def test_mapping_rejects_missing_rooms_and_overrated_requests():
     requests[APPLIANCES[0].id] += 1
     with pytest.raises(ValueError, match="rated maximum"):
         validate_mapping(profile.model_copy(update={"appliance_requests_w": requests}))
+
+
+def test_opt_in_profile_uses_one_revision_and_validates_the_full_api_contract(monkeypatch):
+    from app.api.district import DistrictSnapshot
+    from app.district import authority
+
+    monkeypatch.setenv("DISTRICT_PROFILE", str(DATA / "gnitc_appliance_profile.json"))
+    district = DistrictAuthority()
+    first = DistrictSnapshot.model_validate(district.snapshot())
+    assert first.profile.appliance_count == 31
+    assert first.profile.id == "gnitc-appliance-14kw-v1"
+    assert first.identity.profile_hash == first.profile.config_hash
+    assert first.profile.catalog_version and first.profile.catalog_hash
+    assert first.state.grid_requested_w == first.state.grid_served_w == 14000
+    assert first.energy.grid_import_w == 14000 and first.energy.pv_used_w == 0
+    assert first.profile.decision.validation == "PASSED"
+    assert first.profile.decision.physical_confirmation is None
+    monkeypatch.setattr(authority, "dispatch", lambda *args: pytest.fail("unchanged snapshot ran a second allocation"))
+    second = DistrictSnapshot.model_validate(district.snapshot())
+    assert second.identity == first.identity
+    assert second.state.loads == first.state.loads
+
+
+def test_district_api_dispatch_runs_outside_publication_event_loop(monkeypatch):
+    import asyncio
+    from fastapi.testclient import TestClient
+    from app.district import authority
+    from app.main import create_app
+
+    monkeypatch.setenv("DISTRICT_PROFILE", str(DATA / "gnitc_appliance_profile.json"))
+    original = authority.dispatch
+    calls = []
+
+    def checked(*args):
+        with pytest.raises(RuntimeError, match="no running event loop"):
+            asyncio.get_running_loop()
+        calls.append(True)
+        return original(*args)
+
+    monkeypatch.setattr(authority, "dispatch", checked)
+    with TestClient(create_app()) as client:
+        response = client.get("/api/v1/district")
+        assert response.status_code == 200
+        assert response.json()["profile"]["appliance_count"] == 31
+        assert calls

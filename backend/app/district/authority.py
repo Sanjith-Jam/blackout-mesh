@@ -11,6 +11,10 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.district.profile import apportion, load_profile
+from app.district.appliances import dispatch, inventory_energy, validate_mapping
+from app.core.active_site import CATALOG
+
+SERVER_EPOCH = str(uuid.uuid4())
 
 DATA = Path(__file__).with_name("data")
 SHIFT_PYTHON = Path(__file__).resolve().parents[3] / ".venv-city/bin/python"
@@ -53,6 +57,13 @@ class DistrictAuthority:
         self.profile = load_profile(Path(os.environ.get("DISTRICT_PROFILE", DATA / "gnitc_profile.json")), self.topology)
         self.map = json.loads((DATA / "gnitc_map.geojson").read_text())
         self.energy_trace = json.loads((DATA / "gnitc_energy.json").read_text())
+        self._allocation_cache = None
+        self._allocation_key = None
+        self.decision = {"solver": "integer weighted dispatch", "status": "MODEL_DERIVED",
+                         "validation": "WATT_BUDGET_ONLY", "physical_confirmation": None}
+        if self.profile.demand_basis == "appliance_inventory":
+            validate_mapping(self.profile)
+            self.energy_trace = inventory_energy(self.profile)
         self.hour = 12
         self.faults: set[str] = set()
         self.closed_tie: str | None = None
@@ -91,6 +102,18 @@ class DistrictAuthority:
                 if neighbor not in parent:
                     parent[neighbor], parent_edge[neighbor] = current, edge_id
                     queue.append(neighbor)
+
+        if self.profile.demand_basis == "appliance_inventory":
+            key = (tuple(sorted(parent_edge.items())), tuple((edge["id"], edge["limit_w"]) for edge in topology["edges"]))
+            if key != self._allocation_key:
+                self._allocation_cache = dispatch(self.profile, topology, parent, parent_edge, source)
+                self._allocation_key = key
+            flows, loads, self.decision = copy.deepcopy(self._allocation_cache)
+            for edge in topology["edges"]:
+                state = states[edge["id"]]
+                state.update(flow_w=flows[edge["id"]], provenance="MODEL_DERIVED",
+                             energized=edge["from"] in parent and edge["to"] in parent and state["closed"] and not state["faulted"])
+            return states, loads
 
         # Allocate the hourly trace using declared per-building policy weights.
         loads = []
@@ -136,7 +159,7 @@ class DistrictAuthority:
                           "local_supply_provenance": "MODEL_DERIVED",
                           "local_supply_basis": "CITYLEARN_DISTRICT_ENERGY_BALANCE_RESIDUAL_ALLOCATED_PER_BUILDING",
                           "local_supply_semantics": "CONFIGURED_GRID_FOLLOWING_REQUIRES_SOURCE_REACHABILITY",
-                          "grid_service_provenance": "MODEL_DERIVED", "unmet_provenance": "MODEL_DERIVED"})
+                          "grid_service_provenance": "MODEL_DERIVED", "unmet_provenance": "MODEL_DERIVED", "appliances": []})
 
         for edge in topology["edges"]:
             state = states[edge["id"]]
@@ -217,8 +240,15 @@ class DistrictAuthority:
 
         profile = self.energy_trace["profile"]
         energy = profile[self.hour]
-        return {"schema_version": "district-v1",
-            "identity": {"site_id": "gnitc-demo", "run_id": self.run_id, "revision": self.revision},
+        return {"schema_version": "district-v2",
+            "identity": {"site_id": "gnitc-demo", "run_id": self.run_id, "revision": self.revision,
+                         "server_epoch": SERVER_EPOCH, "profile_hash": self.profile.config_hash},
+            "profile": {"id": self.profile.id, "config_hash": self.profile.config_hash,
+                "demand_basis": self.profile.demand_basis, "local_supply_mode": self.profile.local_supply_mode,
+                "catalog_version": CATALOG.version if self.profile.demand_basis == "appliance_inventory" else None,
+                "catalog_hash": CATALOG.config_hash if self.profile.demand_basis == "appliance_inventory" else None,
+                "appliance_count": sum(len(load["appliances"]) for load in loads),
+                "decision": copy.deepcopy(self.decision)},
             "site": {"name": "Guru Nanak Institutions Technical Campus", "center": self.map["metadata"]["center"], "radius_m": 500},
             "map": {"radius_m": self.map["metadata"]["radius_m"],
                 "source": self.map["metadata"]["source"], "source_url": self.map["metadata"]["source_url"],
@@ -233,9 +263,11 @@ class DistrictAuthority:
                 "grid_requested_w": sum(load["grid_requested_w"] for load in loads),
                 "grid_served_w": sum(load["grid_served_w"] for load in loads),
                 "unmet_w": sum(load["unmet_w"] for load in loads),
-                "source_available": bool(topology["nodes"]),
+                "source_available": any(node["role"] == "source" for node in topology["nodes"]),
                 "edges": list(edge_states.values()), "loads": loads,
-                "critical_shortfall_w": sum(load["unmet_w"] for load in loads if load["tier"] == "critical"),
+                "critical_shortfall_w": (sum(item["requested_w"] - item["served_w"] for load in loads for item in load["appliances"]
+                    if item["priority_class"] == "hospital_critical") if self.profile.demand_basis == "appliance_inventory"
+                    else sum(load["unmet_w"] for load in loads if load["tier"] == "critical")),
                 "faults": [{"component_id": edge_id, "kind": "line_open",
                             "provenance": "CONFIGURED_SIMULATED_ASSUMPTION"} for edge_id in sorted(self.faults)],
                 "restoration": self._restoration(edge_states), "transformers": transformers},

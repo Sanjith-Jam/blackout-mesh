@@ -2,7 +2,7 @@
 
 ## Primary district planning story
 
-Start at `/grid`: real GNITC geography supports a synthetic topology, configured demand and a separately limited 6,000 W source. Inspect a building and transformer, inject a modeled line outage, propose recovery and inspect the reason before applying it. Electrical limits currently mean W budgets; AC engineering acceptance is tracked in issue #70. This view cannot issue hardware commands. District crash replay remains an explicit issue #69 acceptance gate.
+Start at `/grid`: real GNITC geography supports a synthetic topology, configured demand and a separately limited 6,000 W source. Inspect a building and transformer, inject a modeled line outage, propose recovery and inspect the reason before applying it. Electrical limits currently mean W budgets; AC engineering acceptance is tracked in issue #70. This view cannot issue hardware commands. Set the explicit [integrated profile](ISSUE_69_DELIVERY.md) before backend startup to trace transformer selections to all 31 appliance decisions at the same revision, with requested/rated/served watts shown separately. That profile is a named 14 kW inventory study with no DER placement; the default remains the 6 kW CityLearn aggregate study. District crash replay remains an explicit issue #69 acceptance gate.
 
 The `/demo` appliance controller, `/city` illustration and `/console` history share the separate six-service, 31-appliance campus model with 14,000 W rated demand. Hospital and classroom drill-downs belong to that campus model. A 6,000 W shortage on that controller is a scenario, not the district source identity. See the [route/model table](../README.md).
 
