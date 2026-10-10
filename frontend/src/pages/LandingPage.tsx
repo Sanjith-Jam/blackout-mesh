@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Activity, ShieldCheck, HeartPulse, Cpu, Wifi, BookOpen, Home, Settings, Grid } from 'lucide-react';
+import { ShieldAlert, Zap, Activity, HeartPulse, BookOpen } from 'lucide-react';
 import { HeroSection } from '@/components/ui/hero-section';
-import { Dock, DockItem } from '@/components/ui/dock';
-import { SlideTabs } from '@/components/ui/slide-tabs';
 import { BenchmarkCard } from '@/components/ui/benchmark-card';
 import { CircuitBoard } from '@/components/ui/circuit-board';
 import './LandingPage.css';

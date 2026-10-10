@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "seq": 1,
+      "record_id": "event-example",
+      "site_id": "campus",
+      "run_id": "example-run",
+      "kind": "event",
+      "timestamp": "2026-10-10T00:00:00.000000Z",
+      "revision": 1,
+      "provenance": "SIMULATED",
+      "payload": {
+        "event": {
+          "event_id": "event-example",
+          "run_id": "example-run",
+          "revision": 1,
+          "timestamp": "2026-10-10T00:00:00+00:00",
+          "type": "CAPACITY_CHANGE",
+          "description": "Source capacity set to 6000W"
+        },
+        "inputs": {
+          "capacity_w": 6000
+        }
+      }
+    }
+  ],
+  "next_cursor": null,
+  "retention_gap": false,
+  "pruned_through": 0
+}

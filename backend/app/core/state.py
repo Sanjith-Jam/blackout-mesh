@@ -3,6 +3,7 @@ from app.storage.db import Storage
 from app.storage.models import Run, Command, Decision, Transition, Incident, Acknowledgment, Observation
 from sqlmodel import Session, select
 import uuid
+import logging
 
 import threading
 import time
@@ -28,6 +29,8 @@ from app.core.safety import ActivityGuard, CAMPUS_PROTECTED_SERVICES, normalize_
 from app.schemas.snapshot import CrossRouteContract, ScopeTotals
 from app.core.config import load_site_profile, load_rfid_enrollment, AssetType, get_config_hash
 import os
+
+log = logging.getLogger(__name__)
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_SITE_PATH = os.environ.get("SITE_PROFILE", os.path.join(_BASE_DIR, "sites", "default_campus.json"))
@@ -110,6 +113,7 @@ class GridState:
         self.restoration_gate = RestorationGate(lambda: self.clock())
 
         self.storage = storage or Storage()
+        self.history = None
         self.storage.init()
         self.run_id = str(uuid.uuid4())
         self.server_epoch = int(time.time())
@@ -130,6 +134,7 @@ class GridState:
         self.fault_diagnosis = None
         self.telemetry_window = ObservationWindow()
         self.telemetry_sequence = 0
+        self._active_incidents = {}
         self.restoration_gate.update(0b111111, (self.source_capacity_w, tuple(sorted(self.feeder_limits_w.items())),
                                                   tuple(sorted(self.feeder_available.items())),), range(6))
         self.last_allocation_mask = 0b111111
@@ -167,10 +172,18 @@ class GridState:
         with self._lock:
             now = datetime.now(timezone.utc)
             event = SystemEvent(
+                event_id=str(uuid.uuid4()),
+                run_id=self.history.run_id if self.history else None,
+                revision=self.control_revision,
                 timestamp=now.isoformat(),
                 type=event_type,
                 description=desc
             )
+            if self.history:
+                try:
+                    self.history.event(event, self.history_inputs())
+                except Exception:
+                    log.exception("History event recording failed; live state transition continues")
             self.events.append(event)
             if len(self.events) > 50:
                 self.events.pop(0)
@@ -211,6 +224,7 @@ class GridState:
             now = datetime.now(timezone.utc)
             self.sample_telemetry(now)
             result = diagnose_campus(self.telemetry_window, CAMPUS_BUS, list(CAMPUS_FEEDERS), FeederRating(), now)
+            self._sync_incidents(result.get("hypotheses", []))
             constraint = (f"Configured supply limit {self.source_capacity_w} W (operating constraint, not a diagnosed fault)."
                           if self.source_capacity_w < NORMAL_SOURCE_CAPACITY_W else None)
             if result["status"] == "NORMAL" and constraint is None:
@@ -220,6 +234,51 @@ class GridState:
                 has_fault=result["has_fault"], diagnosis=result["diagnosis"], severity=result["severity"],
                 status=result["status"], hypotheses=result["hypotheses"], affected_assets=result["affected_assets"],
                 supply_constraint=constraint)
+
+    def _sync_incidents(self, hypotheses):
+        current = {}
+        for hypothesis in hypotheses:
+            item = hypothesis.model_dump(mode="json") if hasattr(hypothesis, "model_dump") else dict(hypothesis)
+            key = (item.get("code", "UNKNOWN"), item.get("asset_id", "unknown"))
+            current[key] = item
+        if current.keys() == self._active_incidents.keys() or self.storage.degraded:
+            return
+        now = datetime.now(timezone.utc)
+        active = dict(self._active_incidents)
+        try:
+            with Session(self.storage.engine) as session:
+                for key, incident_id in active.items():
+                    if key in current:
+                        continue
+                    incident = session.exec(select(Incident).where(Incident.incident_id == incident_id)).first()
+                    if incident is not None:
+                        incident.status = "RESOLVED"
+                        session.add(incident)
+                next_active = {}
+                for key, evidence in current.items():
+                    incident_id = active.get(key)
+                    if incident_id is None:
+                        incident_id = str(uuid.uuid4())
+                        session.add(Incident(incident_id=incident_id, run_id=self.run_id, timestamp=now,
+                            code=key[0], severity=str(evidence.get("severity", "unknown")), status="OPEN",
+                            evidence=evidence | {"asset_id": key[1]}))
+                    next_active[key] = incident_id
+                if not self.storage.commit(session):
+                    return
+            for key in active.keys() - current.keys():
+                self.add_event("INCIDENT_RESOLVED", f"{key[0]} resolved for {key[1]}")
+            for key in current.keys() - active.keys():
+                self.add_event("INCIDENT_OPENED", f"{key[0]} detected for {key[1]}")
+            self._active_incidents = next_active
+        except Exception:
+            log.exception("Incident history write failed")
+
+    def history_inputs(self):
+        return {"capacity_w": self.source_capacity_w, "feeder_limits_w": self.feeder_limits_w.copy(),
+                "feeder_available": self.feeder_available.copy(), "active_sessions": sorted(self.active_sessions),
+                "activity": self.current_activity(), "catalog": SERVICE_CATALOG,
+                "model_identity": {key: getattr(self.model, "_manifest", {}).get(key) for key in
+                                   ("model_version", "sha256", "features", "decision_threshold", "abstain_margin")}}
 
 
     def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:

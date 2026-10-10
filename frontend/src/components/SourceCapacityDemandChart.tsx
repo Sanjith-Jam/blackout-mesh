@@ -12,6 +12,7 @@ export default function SourceCapacityDemandChart({ data }: ChartProps) {
     xAxis: {
       type: 'category',
       boundaryGap: false,
+      axisLabel: { formatter: (value: string) => new Date(value).toLocaleTimeString() },
       data: data.map(d => d.time),
     },
     yAxis: { type: 'value' },

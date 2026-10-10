@@ -6,6 +6,7 @@ carries the same run_id and revision. See docs/CATALOG_MIGRATION.md for the cata
 from __future__ import annotations
 
 import itertools
+import logging
 import threading
 import uuid
 
@@ -14,6 +15,7 @@ from app.visualizers import LOADS as CLASSROOM_LEAVES
 
 CATALOG_VERSION = "site-catalog-2026-10-10.1"
 PROFILE = "campus"
+log = logging.getLogger(__name__)
 
 # Classroom appliance leaves decompose these campus services (no double counting).
 CLASSROOM_PARENT = {c["id"]: c["service_id"] for c in CLASSROOMS}
@@ -73,6 +75,14 @@ class SiteAuthority:
             if seen != self._seen:
                 self._seen = seen
                 self.revision += 1
+            if self.grid.history:
+                self._sync_history_run()
+                snapshot = self.grid.build_snapshot()
+                snapshot.site = self.identity()
+                try:
+                    self.grid.history.capture(snapshot, self.grid.history_inputs())
+                except Exception:
+                    log.exception("History snapshot recording failed; live controller continues")
             return self.revision
 
     def command(self, name: str, apply):
@@ -94,9 +104,16 @@ class SiteAuthority:
         with self._lock:
             return project(), self.identity()
 
+    def _sync_history_run(self):
+        if self.grid.history and self.grid.history.run_id != self.run_id:
+            from app.storage.recorder import HistoryRecorder
+            previous = self.grid.history
+            self.grid.history = HistoryRecorder(previous.store, self.run_id, previous.clock)
+
     def new_run(self):
         with self._lock:
             self.run_id = uuid.uuid4().hex[:12]
+            self._sync_history_run()
             return self.run_id
 
     def identity(self) -> dict:

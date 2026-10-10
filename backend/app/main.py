@@ -27,6 +27,7 @@ from app.schemas.snapshot import (
     ReplayActionRequest,
 )
 from app.core.state import GridState
+from app.api.history import attach_history, register_history
 from app.core.control_loop import ControlLoop
 from app.core.site import SiteAuthority
 from app.hardware.gateway import GatewayBridge, GatewayThread, SerialTransport
@@ -93,6 +94,7 @@ def initialize_state(app: FastAPI):
     app.state.classroom_demo = ClassroomDemo(model=app.state.grid.model, replay=app.state.replay_data)
     app.state.hospital_demo = HospitalPriorityDemo(model=app.state.grid.model, replay=app.state.replay_data)
     app.state.site = SiteAuthority(app.state.grid, app.state.classroom_demo, app.state.hospital_demo)
+    attach_history(app.state.grid, app.state.site.run_id)
     app.state.replay_generation = 0
     app.state.replay_task = None
     app.state.electrical_study_lock = asyncio.Lock()
@@ -217,6 +219,7 @@ async def run_replay(app, generation):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     initialize_state(app)
+    app.state.site.tick()  # capture the initial canonical publication before serving reads
     app.state.control_loop.start()
     if os.environ.get("BLACKOUT_GATEWAY_PORT"):
         try:
@@ -238,6 +241,8 @@ async def lifespan(app: FastAPI):
             await connection.close()
         app.state.manager.active_connections.clear()
         app.state.grid.storage.engine.dispose()
+        if app.state.grid.history:
+            app.state.grid.history.store.engine.dispose()
 
 
 def get_grid_state(request: Request) -> GridState:
@@ -546,6 +551,7 @@ def create_app():
     application.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
         allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
     application.include_router(router)
+    application.include_router(register_history(lambda request: request.app.state.site))
     return application
 
 

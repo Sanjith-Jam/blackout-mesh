@@ -56,6 +56,9 @@ export interface FacilityZones {
 }
 
 export interface SystemEvent {
+  event_id?: string | null;
+  run_id?: string | null;
+  revision?: number;
   timestamp: string;
   type: string;
   description: string;

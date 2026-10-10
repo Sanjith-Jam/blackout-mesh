@@ -1,6 +1,4 @@
 import { AnimatedText } from "./animated-text";
-import { Button } from "./button";
-import { BackgroundGradient } from "./background-gradient";
 
 export function HeroSection() {
   return (
