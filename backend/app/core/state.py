@@ -88,6 +88,8 @@ class GridState:
         self.feeder_available = {"A": True, "B": True}
         self.control_revision = 0
         self.active_sessions = {}
+        self.session_event_ids = {}
+        self.last_session_event_at = {}
         self.rfid_map = DEFAULT_RFID_MAP.copy()
         self.indicator_confirmed_mask = None
         self.model = ActivityModel()
@@ -291,31 +293,57 @@ class GridState:
                                    ("model_version", "sha256", "features", "decision_threshold", "abstain_margin")}}
 
 
-    def process_rfid_scan(self, uid: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
+    def _cached_session_event(self, event_id, fingerprint):
+        if not event_id or event_id not in self.session_event_ids:
+            return None
+        previous_fingerprint, result = self.session_event_ids[event_id]
+        if previous_fingerprint != fingerprint:
+            raise ValueError("event_id was already used for a different session event")
+        return result
+
+    def _remember_session_event(self, event_id, fingerprint, result):
+        if event_id:
+            self.session_event_ids[event_id] = (fingerprint, result)
+            if len(self.session_event_ids) > 2048:
+                self.session_event_ids.pop(next(iter(self.session_event_ids)))
+
+    def process_rfid_scan(self, uid: str, event_id: str | None = None, event_time: datetime | None = None) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
         with self._lock:
             now = time.time()
-
             classroom_id = self.rfid_map.get(uid)
+            fingerprint = ("rfid", classroom_id)
+            cached = self._cached_session_event(event_id, fingerprint)
+            if cached is not None:
+                return cached
             if not classroom_id:
                 self.control_revision += 1
-                self.add_event("RFID_SCAN", f"Unknown RFID card scanned: {uid[:4] + '***' if uid else 'none'}")
-                return RfidEventType.UNKNOWN_CARD.value, None, None, None
+                self.add_event("RFID_SCAN", "Unknown RFID card scanned")
+                result = (RfidEventType.UNKNOWN_CARD.value, None, None, None)
+                self._remember_session_event(event_id, fingerprint, result)
+                return result
+            if event_time is not None:
+                if event_time.tzinfo is None or event_time.astimezone(timezone.utc).timestamp() <= self.last_session_event_at.get(classroom_id, 0):
+                    raise ValueError("stale or out-of-order session event")
 
             if classroom_id in self.active_sessions:
                 session = self.active_sessions[classroom_id]
                 if now - session["last_scan"] < RFID_SCAN_COOLDOWN_SECONDS:
                     session["last_scan"] = now
-                    return RfidEventType.DUPLICATE_SUPPRESSED.value, None, None, None
+                    if event_time is not None:
+                        self.last_session_event_at[classroom_id] = event_time.astimezone(timezone.utc).timestamp()
+                    result = (RfidEventType.DUPLICATE_SUPPRESSED.value, None, None, None)
+                    self._remember_session_event(event_id, fingerprint, result)
+                    return result
                 else:
-                    del self.active_sessions[classroom_id]
-                    self.control_revision += 1
-                    self.add_event("SESSION_END", f"Session ended for {classroom_id} via RFID")
-                    return "SESSION_ENDED", classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
+                    self.set_classroom_load(classroom_id, False, source="RFID", event_time=event_time)
+                    result = ("SESSION_ENDED", classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), ""))
+                    self._remember_session_event(event_id, fingerprint, result)
+                    return result
             else:
-                self.active_sessions[classroom_id] = {"source": "RFID", "started_at": now, "last_scan": now}
-                self.control_revision += 1
-                self.add_event("SESSION_START", f"Session started for {classroom_id} via RFID")
-                return RfidEventType.CARD_RECOGNIZED.value, classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), "")
+                self.set_classroom_load(classroom_id, True, source="RFID", event_time=event_time)
+                result = (RfidEventType.CARD_RECOGNIZED.value, classroom_id, next((c["name"] for c in CLASSROOMS if c["id"] == classroom_id), ""), next((c["service_id"] for c in CLASSROOMS if c["id"] == classroom_id), ""))
+                self._remember_session_event(event_id, fingerprint, result)
+                return result
 
 
             self.add_event("RFID_SCAN", f"RFID scan recognized for unknown classroom ID: {classroom_id}")
@@ -335,17 +363,49 @@ class GridState:
                 status = "connected" if available else "disconnected"
                 self.add_event("FEEDER_CHANGE", f"Feeder {feeder} {status}")
 
-    def set_classroom_load(self, classroom_id: str, active: bool):
+    def set_classroom_load(self, classroom_id: str, active: bool, source: str = "UI", event_id: str | None = None,
+                           event_time: datetime | None = None):
         with self._lock:
+            if classroom_id not in {c["id"] for c in CLASSROOMS}:
+                raise ValueError(f"unknown classroom {classroom_id!r}")
+            fingerprint = ("session", classroom_id, bool(active))
+            cached = self._cached_session_event(event_id, fingerprint)
+            if cached is not None:
+                return cached
+            occurred = event_time or datetime.now(timezone.utc)
+            if occurred.tzinfo is None:
+                raise ValueError("session event time must include a UTC offset")
+            occurred = occurred.astimezone(timezone.utc)
+            occurred_s = occurred.timestamp()
+            if occurred_s <= self.last_session_event_at.get(classroom_id, 0):
+                raise ValueError("stale or out-of-order session event")
             now = time.time()
+            changed = (classroom_id not in self.active_sessions) if active else (classroom_id in self.active_sessions)
+            self.software_mode = True
+            self.last_session_event_at[classroom_id] = occurred_s
+            if not changed:
+                if active:
+                    self.active_sessions[classroom_id]["last_scan"] = now
+                self._remember_session_event(event_id, fingerprint, False)
+                return False
             if active:
-                self.active_sessions[classroom_id] = {"source": "UI", "started_at": now, "last_scan": now}
+                self.active_sessions[classroom_id] = {"source": source, "started_at": now, "last_scan": now,
+                                                      "last_event_at": occurred_s}
             else:
-                if classroom_id in self.active_sessions:
-                    del self.active_sessions[classroom_id]
+                del self.active_sessions[classroom_id]
             self.control_revision += 1
             status = "active" if active else "inactive"
-            self.add_event("LOAD_CHANGE", f"Classroom {classroom_id} load became {status}")
+            self.add_event("SESSION_START" if active else "SESSION_END", f"Session for {classroom_id} became {status} via {source}")
+            self._remember_session_event(event_id, fingerprint, True)
+            return True
+
+    def reset_sessions(self):
+        with self._lock:
+            self.active_sessions.clear()
+            self.session_event_ids.clear()
+            self.last_session_event_at.clear()
+            self.software_mode = False
+            self.control_revision += 1
 
     def record_activity(self, classroom_id, features, observed_at, source, recorded_at=None):
         """Store evidence and apply only the inference matching its current revision."""

@@ -45,8 +45,12 @@ export default function DemoDashboard() {
     }
   };
 
-  const doRfidScan = (uid: string) => handleAction(() => processRfidScan(uid), `RFID Scan processed for ${uid}`);
-  const doClassroomLoad = (cid: string, active: boolean) => handleAction(() => changeClassroomLoad(cid, active), `Classroom ${cid} load set to ${active}`);
+  const doRfidScan = (uid: string) => handleAction(() => snapshot?.site?.run_id
+    ? processRfidScan(uid, snapshot.site.run_id) : Promise.reject(new Error('Live site identity is unavailable')),
+  `RFID Scan processed for ${uid}`);
+  const doClassroomLoad = (cid: string, active: boolean) => handleAction(() => snapshot?.site?.run_id
+    ? changeClassroomLoad(cid, active, snapshot.site.run_id) : Promise.reject(new Error('Live site identity is unavailable')),
+  `Classroom ${cid} load set to ${active}`);
   const doCapacity = (watts: number) => handleAction(() => changeCapacity(watts), `Capacity set to ${watts}W`);
   const doFeeder = (feeder: string, available: boolean) => handleAction(() => changeFeeder(feeder, available), `Feeder ${feeder} available: ${available}`);
 

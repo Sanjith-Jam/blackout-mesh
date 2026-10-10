@@ -12,12 +12,12 @@
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:06:38.280153+00:00",
+   "observation_time": "2026-10-10T01:24:44.369380+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791594398,
+   "server_epoch": "<volatile>",
    "site_id": "Default Campus",
-   "state_revision": 6
+   "state_revision": 9
   },
   "zone_totals": {}
  },
@@ -48,7 +48,7 @@
     "diagnosis_status": "NORMAL",
     "energized": true,
     "note": "Voltage presence only; no measured branch current.",
-    "output_voltage_v": 220.0,
+    "output_voltage_v": 219.56,
     "provenance": "SIMULATED_SENSOR"
    },
    "physical": "NOT_CONNECTED",
@@ -150,7 +150,7 @@
     "diagnosis_status": "NORMAL",
     "energized": true,
     "note": "Voltage presence only; no measured branch current.",
-    "output_voltage_v": 220.0,
+    "output_voltage_v": 220.11,
     "provenance": "SIMULATED_SENSOR"
    },
    "physical": "NOT_CONNECTED",
@@ -252,7 +252,7 @@
     "diagnosis_status": "NORMAL",
     "energized": true,
     "note": "Voltage presence only; no measured branch current.",
-    "output_voltage_v": 220.0,
+    "output_voltage_v": 220.07,
     "provenance": "SIMULATED_SENSOR"
    },
    "physical": "NOT_CONNECTED",
@@ -384,7 +384,7 @@
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 6,
+  "revision": 9,
   "run_id": "<volatile>"
  },
  "summary": null,
@@ -405,9 +405,9 @@
     "code": "NORMAL",
     "evidence": [
      "Current 5.0 A within rating (5.5 A limit).",
-     "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Temperature 59.9 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
-     "Input 230.0 V, Output 220.0 V."
+     "Input 229.6 V, Output 219.6 V."
     ],
     "hypotheses": [],
     "missing": [],
@@ -466,10 +466,10 @@
    "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 5.0,
-    "input_voltage_v": 230.0,
-    "output_voltage_v": 220.0,
-    "temperature_c": 60.0
+    "current_a": 5.01,
+    "input_voltage_v": 229.62,
+    "output_voltage_v": 219.56,
+    "temperature_c": 59.9
    },
    "zone": "ICU"
   },
@@ -488,10 +488,10 @@
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 10.2 A within rating (11.2 A limit).",
-     "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Current 10.3 A within rating (11.2 A limit).",
+     "Temperature 60.1 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
-     "Input 230.0 V, Output 220.0 V."
+     "Input 229.9 V, Output 220.1 V."
     ],
     "hypotheses": [],
     "missing": [],
@@ -550,10 +550,10 @@
    "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 10.22,
-    "input_voltage_v": 230.0,
-    "output_voltage_v": 220.0,
-    "temperature_c": 60.0
+    "current_a": 10.27,
+    "input_voltage_v": 229.86,
+    "output_voltage_v": 220.11,
+    "temperature_c": 60.07
    },
    "zone": "Theatre"
   },
@@ -572,10 +572,10 @@
     "cause": "No configured demo threshold exceeded",
     "code": "NORMAL",
     "evidence": [
-     "Current 10.9 A within rating (12.0 A limit).",
-     "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Current 10.8 A within rating (12.0 A limit).",
+     "Temperature 60.2 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
-     "Input 230.0 V, Output 220.0 V."
+     "Input 229.5 V, Output 220.1 V."
     ],
     "hypotheses": [],
     "missing": [],
@@ -634,10 +634,10 @@
    "rfid_active": false,
    "sensors": {
     "cooling_ok": true,
-    "current_a": 10.87,
-    "input_voltage_v": 230.0,
-    "output_voltage_v": 220.0,
-    "temperature_c": 60.0
+    "current_a": 10.84,
+    "input_voltage_v": 229.5,
+    "output_voltage_v": 220.07,
+    "temperature_c": 60.19
    },
    "zone": "Wards"
   }

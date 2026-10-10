@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.core.state import GridState
 from app.core.restoration import RestorationGate
+from conftest import session_request
 import time
 
 
@@ -58,7 +59,7 @@ def test_hospital_rooms_follow_l0(client):
 
 def test_rfid_registered_card_selection(client):
     # Scan Card 1 (CR1)
-    response = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
+    response = client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"}))
     assert response.status_code == 200
     assert response.json()["active_classroom_id"] == "CR1"
     assert response.json()["event_type"] == "CARD_RECOGNIZED"
@@ -66,12 +67,13 @@ def test_rfid_registered_card_selection(client):
     # Check snapshot
     snap = client.get("/api/v1/snapshot").json()
     assert snap["zones"]["classroom"]["active_classroom_id"] == "CR1"
+    assert all("UNKNOWN_CARD_UID" not in event.description for event in app.state.grid.events)
 
 def test_rfid_unknown_card_is_nondestructive(client):
-    client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
+    client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"}))
 
     # Scan unknown card
-    response = client.post("/api/v1/rfid/scan", json={"uid": "UNKNOWN_CARD_UID"})
+    response = client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "UNKNOWN_CARD_UID"}))
     assert response.status_code == 200
     assert response.json()["active_classroom_id"] is None
     assert response.json()["event_type"] == "UNKNOWN_CARD"
@@ -84,16 +86,75 @@ def test_duplicate_scan_suppressed(client):
     # Unscan first
     time.sleep(2.1)
     # Fresh state, first scan
-    r1 = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
+    r1 = client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"}))
     assert r1.json()["accepted"] is True
 
-    r2 = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
+    r2 = client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"}))
     assert r2.json()["accepted"] is False
     assert r2.json()["event_type"] == "DUPLICATE_SUPPRESSED"
 
+def test_rfid_event_id_is_idempotent_and_reuse_is_rejected(client):
+    from datetime import datetime, timezone
+    run_id = client.get("/api/v1/snapshot").json()["site"]["run_id"]
+    event = {"event_id": "evt-1", "run_id": run_id, "observed_at": datetime.now(timezone.utc).isoformat()}
+    first = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID", **event})
+    repeated = client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID", **event})
+    assert first.json() == repeated.json()
+    conflict = client.post("/api/v1/rfid/scan", json={"uid": "CARD_2_UID", **event})
+    assert conflict.status_code == 409
+    assert client.get("/api/v1/visualizers/classrooms").json()["scanned_classroom_ids"] == ["CR1"]
+
+def test_session_mutations_reject_missing_identity(client):
+    assert client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"}).status_code == 422
+    assert client.post("/api/v1/simulation/classroom-load", json={
+        "classroom_id": "CR1", "active": True
+    }).status_code == 422
+    assert client.post("/api/v1/visualizers/classrooms", json={
+        "action": "scan", "classroom_id": "CR1"
+    }).status_code == 422
+
+def test_session_event_ids_and_order_are_enforced(client):
+    from datetime import datetime, timedelta, timezone
+
+    url = "/api/v1/visualizers/classrooms"
+    run_id = client.get("/api/v1/snapshot").json()["site"]["run_id"]
+    now = datetime.now(timezone.utc)
+    start = {"action": "scan", "classroom_id": "CR2", "event_id": "session-1", "observed_at": now.isoformat(), "run_id": run_id}
+    assert client.post(url, json=start).status_code == 200
+    assert client.post(url, json=start).status_code == 200
+    wrong_reuse = {**start, "action": "unscan"}
+    assert client.post(url, json=wrong_reuse).status_code == 409
+    stale_order = {"action": "unscan", "classroom_id": "CR2",
+                   "observed_at": (now - timedelta(seconds=1)).isoformat(), "run_id": run_id,
+                   "event_id": "session-2"}
+    assert client.post(url, json=stale_order).status_code == 409
+    too_old = {"action": "unscan", "classroom_id": "CR2",
+               "observed_at": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(), "run_id": run_id}
+    assert client.post(url, json=too_old).status_code == 422
+    assert client.get(url).json()["scanned_classroom_ids"] == ["CR2"]
+
+def test_session_event_from_previous_run_is_rejected(client):
+    from datetime import datetime, timezone
+
+    run_id = client.get("/api/v1/snapshot").json()["site"]["run_id"]
+    started = client.post("/api/v1/visualizers/classrooms", json={
+        "action": "scan", "classroom_id": "CR1", "run_id": run_id,
+        "event_id": "current-run-event", "observed_at": datetime.now(timezone.utc).isoformat()
+    })
+    assert started.status_code == 200
+    app.state.site.new_run()
+    response = client.post("/api/v1/visualizers/classrooms", json={
+        "action": "scan", "classroom_id": "CR1", "run_id": run_id,
+        "event_id": "old-run-event", "observed_at": datetime.now(timezone.utc).isoformat()
+    })
+    assert response.status_code == 409
+    assert client.get("/api/v1/visualizers/classrooms").json()["scanned_classroom_ids"] == []
+    projections = [client.get(path).json() for path in ("/api/v1/snapshot", "/api/v1/visualizers/classrooms", "/api/v1/visualizers/hospital")]
+    assert len({item["site"]["run_id"] for item in projections}) == 1
+
 def test_classroom_led_isolation(client):
     # 1. Scan Card 1 (CR1)
-    client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
+    client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"}))
 
     # A card scan DOES turn on the LED because session = requested load
     snap = client.get("/api/v1/snapshot").json()
@@ -102,7 +163,7 @@ def test_classroom_led_isolation(client):
     assert (cmd_mask & 0b001000) != 0
 
     # 2. Activate load for CR1
-    client.post("/api/v1/simulation/classroom-load", json={"classroom_id": "CR1", "active": True})
+    client.post("/api/v1/simulation/classroom-load", json=session_request(client, {"classroom_id": "CR1", "active": True}))
 
     snap = client.get("/api/v1/snapshot").json()
     cmd_mask = snap["indicator_command_mask"]
@@ -110,7 +171,7 @@ def test_classroom_led_isolation(client):
     assert (cmd_mask & 0b111000) == 0b001000  # bit 3 is 1, bits 4,5 are 0
 
     # 3. Scan Card 2 (CR2) -> Switches selection. CR1 LED must turn OFF, CR2 LED evaluated
-    client.post("/api/v1/rfid/scan", json={"uid": "CARD_2_UID"})
+    client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_2_UID"}))
     snap = client.get("/api/v1/snapshot").json()
     cmd_mask = snap["indicator_command_mask"]
     # CR1 LED is now OFF because it's no longer the active classroom.
@@ -119,8 +180,8 @@ def test_classroom_led_isolation(client):
 
 def test_classroom_led_shed_condition(client):
     # CR1 selected and load active
-    client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"})
-    client.post("/api/v1/simulation/classroom-load", json={"classroom_id": "CR1", "active": True})
+    client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"}))
+    client.post("/api/v1/simulation/classroom-load", json=session_request(client, {"classroom_id": "CR1", "active": True}))
 
     snap = client.get("/api/v1/snapshot").json()
     assert (snap["indicator_command_mask"] & 0b111000) == 0b001000 # LED 3 ON

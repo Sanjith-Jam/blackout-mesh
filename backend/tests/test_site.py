@@ -1,7 +1,9 @@
 """One site authority over campus, classroom and hospital (#3, first step)."""
 from fastapi.testclient import TestClient
+import time
 
 import app.main as main
+from conftest import session_request
 from app.core.site import CATALOG_VERSION, classroom_headroom_w, reconcile_catalog
 from app.core.state import SERVICE_CATALOG
 from app.visualizers import LOADS
@@ -50,12 +52,50 @@ def test_campus_shortage_bounds_the_classroom_view():
 
 def test_multi_scan_shortage_keeps_essentials_and_ranks_within_campus_budget():
     for cid in ("CR1", "CR2"):
-        client.post("/api/v1/visualizers/classrooms", json={"action": "scan", "classroom_id": cid})
+        client.post("/api/v1/visualizers/classrooms", json=session_request(client, {"action": "scan", "classroom_id": cid}))
     client.post("/api/v1/simulation/capacity", json={"capacity_w": 9000})
     _, classroom, _ = read_all()
     assert classroom["scanned_classroom_ids"] == ["CR1", "CR2"]
     assert classroom["safety"]["protected_served_w"] == 2100
     assert classroom["served_w"] <= classroom["effective_capacity_w"] < 8000
+
+
+def test_rfid_and_classroom_view_share_sessions_and_requested_loads():
+    client.post("/api/v1/visualizers/classrooms", json={"action": "reset"})
+    classroom = client.post("/api/v1/visualizers/classrooms", json=session_request(
+        client, {"action": "scan", "classroom_id": "CR1"})).json()
+    campus = client.get("/api/v1/snapshot").json()
+    services = {item["id"]: item for item in campus["services"]}
+    assert classroom["scanned_classroom_ids"] == ["CR1"]
+    assert campus["zones"]["classroom"]["active_classroom_id"] == "CR1"
+    assert services["L3"]["requested"] and not services["L4"]["requested"]
+
+    client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_2_UID"}))
+    classroom = client.get("/api/v1/visualizers/classrooms").json()
+    assert classroom["scanned_classroom_ids"] == ["CR1", "CR2"]
+
+    client.post("/api/v1/visualizers/classrooms", json=session_request(
+        client, {"action": "unscan", "classroom_id": "CR1"}))
+    campus = client.get("/api/v1/snapshot").json()
+    classroom = client.get("/api/v1/visualizers/classrooms").json()
+    services = {item["id"]: item for item in campus["services"]}
+    assert classroom["scanned_classroom_ids"] == ["CR2"]
+    assert campus["zones"]["classroom"]["active_classroom_id"] == "CR2"
+    assert not services["L3"]["requested"] and services["L4"]["requested"]
+
+
+def test_board_gateway_events_and_expiry_share_the_same_room_sessions():
+    client.post("/api/v1/visualizers/classrooms", json={"action": "reset"})
+    assert main.handle_gateway_event(main.app, "START_SESSION", "C")
+    assert client.get("/api/v1/visualizers/classrooms").json()["scanned_classroom_ids"] == ["CR3"]
+    assert main.handle_gateway_event(main.app, "START_SESSION", "B")
+    grid = main.app.state.grid
+    grid.active_sessions["CR3"]["last_scan"] = time.time() - 7201
+    grid.expire_sessions()
+    main.app.state.site.tick()
+    assert client.get("/api/v1/visualizers/classrooms").json()["scanned_classroom_ids"] == ["CR2"]
+    assert main.handle_gateway_event(main.app, "END_SESSION", "B")
+    assert client.get("/api/v1/visualizers/classrooms").json()["scanned_classroom_ids"] == []
 
 
 def test_slider_still_limits_below_campus_headroom():

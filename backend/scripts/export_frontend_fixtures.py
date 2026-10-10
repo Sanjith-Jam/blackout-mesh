@@ -7,10 +7,13 @@ backend/tests/test_frontend_contract.py fails if the API shape drifts from these
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
+import uuid
 
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "frontend" / "src" / "test" / "fixtures"
-VOLATILE = {"generated_at", "sent_at", "run_id", "last_tick_at", "timestamp", "observed_at", "recorded_at"}
+VOLATILE = {"generated_at", "sent_at", "run_id", "last_tick_at", "timestamp", "observed_at", "recorded_at",
+            "server_epoch", "event_id", "command_id", "decision_id", "last_restored", "last_shed", "stable_since", "now_s"}
 
 
 def scrub(value):
@@ -30,8 +33,11 @@ def build() -> dict:
         post = lambda path, body: client.post(path, json=body)
         post("/api/v1/visualizers/classrooms", {"action": "reset"})
         post("/api/v1/visualizers/classrooms", {"action": "replay_pause"})
-        post("/api/v1/visualizers/classrooms", {"action": "scan", "classroom_id": "CR1"})
-        post("/api/v1/visualizers/classrooms", {"action": "scan", "classroom_id": "CR2"})
+        run_id = client.get("/api/v1/snapshot").json()["site"]["run_id"]
+        for classroom_id in ("CR1", "CR2"):
+            post("/api/v1/visualizers/classrooms", {"action": "scan", "classroom_id": classroom_id,
+                 "run_id": run_id, "event_id": str(uuid.uuid4()),
+                 "observed_at": datetime.now(timezone.utc).isoformat()})
         classrooms = post("/api/v1/visualizers/classrooms", {"action": "set_capacity", "capacity_w": 3000}).json()
         post("/api/v1/visualizers/hospital", {"action": "reset"})
         hospital = client.get("/api/v1/visualizers/hospital").json()

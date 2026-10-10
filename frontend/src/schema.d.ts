@@ -330,10 +330,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/demo/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Evidence */
+        get: operations["get_api_v1_demo_evidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get City Demo */
+        get: operations["get_api_v1_demo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AblationRow */
+        AblationRow: {
+            /** Policy */
+            policy: string;
+            /** Occupied Service Pct */
+            occupied_service_pct: number;
+            /** Switching Count */
+            switching_count: number;
+            /** Essential Unmet Wh */
+            essential_unmet_wh: number;
+            /** Critical Unmet Wh */
+            critical_unmet_wh: number;
+        };
         /** ActivityObservationRequest */
         ActivityObservationRequest: {
             /** Classroom Id */
@@ -481,6 +528,12 @@ export interface components {
             /** Control Revision */
             control_revision: number;
         };
+        /** CityDemoResponse */
+        CityDemoResponse: {
+            snapshot: components["schemas"]["SystemSnapshot"];
+            forecast: components["schemas"]["DemandForecastResponse"];
+            hardware: components["schemas"]["HardwareStatusResponse"];
+        };
         /** ClassroomDemoAction */
         ClassroomDemoAction: {
             /**
@@ -492,6 +545,12 @@ export interface components {
             classroom_id?: ("CR1" | "CR2" | "CR3") | null;
             /** Capacity W */
             capacity_w?: number | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Observed At */
+            observed_at?: string | null;
+            /** Run Id */
+            run_id?: string | null;
         };
         /** ClassroomDemoLoadResponse */
         ClassroomDemoLoadResponse: {
@@ -595,6 +654,15 @@ export interface components {
             classroom_id: string;
             /** Active */
             active: boolean;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Run Id */
+            run_id: string;
         };
         /** ClassroomLoadResponse */
         ClassroomLoadResponse: {
@@ -657,6 +725,63 @@ export interface components {
             zone_totals: {
                 [key: string]: components["schemas"]["ScopeTotals"];
             };
+        };
+        /** DemandForecastResponse */
+        DemandForecastResponse: {
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "LIVE_REQUESTED_DEMAND" | "SYNTHETIC_REPLAY";
+            /** Model Version */
+            model_version: string;
+            /** Sample S */
+            sample_s: number;
+            /** Sample Age S */
+            sample_age_s: number | null;
+            /** Observations W */
+            observations_w: number[];
+            /** Points */
+            points: components["schemas"]["ForecastPoint"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "UNKNOWN" | "SHORTAGE_RISK" | "WITHIN_CAPACITY";
+            /** Reason */
+            reason: string;
+            /** First Shortage S */
+            first_shortage_s: number | null;
+            /** Capacity W */
+            capacity_w: number;
+        };
+        /** DemoEvidence */
+        DemoEvidence: {
+            /** Inference Median Ms */
+            inference_median_ms?: number | null;
+            /** Inference Calls */
+            inference_calls?: number | null;
+            /** Allocation Median Ms */
+            allocation_median_ms?: number | null;
+            /** Allocation Calls */
+            allocation_calls?: number | null;
+            /** Masks */
+            masks?: number | null;
+            /** Allocation Runs */
+            allocation_runs?: number | null;
+            /** Constraint Violations */
+            constraint_violations?: number | null;
+            /** Forecast Mae 60S W */
+            forecast_mae_60s_w?: number | null;
+            /** Persistence Mae 60S W */
+            persistence_mae_60s_w?: number | null;
+            /** Forecast Test Sessions */
+            forecast_test_sessions?: number | null;
+            /**
+             * Ablation
+             * @default []
+             */
+            ablation: components["schemas"]["AblationRow"][];
         };
         /** DiagnosticAbstentionResponse */
         DiagnosticAbstentionResponse: {
@@ -870,6 +995,17 @@ export interface components {
             available: boolean;
             /** Control Revision */
             control_revision: number;
+        };
+        /** ForecastPoint */
+        ForecastPoint: {
+            /** Ahead S */
+            ahead_s: number;
+            /** Demand W */
+            demand_w: number;
+            /** Lower W */
+            lower_w: number;
+            /** Upper W */
+            upper_w: number;
         };
         /** GatewayConnect */
         GatewayConnect: {
@@ -1358,7 +1494,14 @@ export interface components {
             /** Uid */
             uid: string;
             /** Event Id */
-            event_id?: string | null;
+            event_id: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Run Id */
+            run_id: string;
         };
         /** RfidScanResponse */
         RfidScanResponse: {
@@ -2469,6 +2612,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HistoryPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_demo_evidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoEvidence"];
+                };
+            };
+            /** @description API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["APIErrorResponse"];
+                };
+            };
+        };
+    };
+    get_api_v1_demo: {
+        parameters: {
+            query?: {
+                source?: "LIVE_REQUESTED_DEMAND" | "SYNTHETIC_REPLAY";
+                replay_index?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CityDemoResponse"];
                 };
             };
             /** @description Validation Error */

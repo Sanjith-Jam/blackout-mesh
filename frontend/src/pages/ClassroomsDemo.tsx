@@ -67,13 +67,18 @@ export default function ClassroomsDemo() {
 
   const runAction = async (action: ClassroomDemoActionName, classroomId?: ClassroomDemoRoom['id'], capacity?: number) => {
     if (actionInFlight.current) return;
+    const runId = snapshot?.site?.run_id;
+    if ((action === 'scan' || action === 'unscan') && !runId) {
+      setError('The live site identity is unavailable.');
+      return;
+    }
     actionInFlight.current = true;
     requestVersion.current += 1;
     setPending(true);
     setError(null);
     setFeedback(null);
     try {
-      const next = await postClassroomDemo(action, classroomId, capacity);
+      const next = await postClassroomDemo(action, classroomId, capacity, runId);
       if (mounted.current) {
         setSnapshot(next);
         setFeedback(describe(action, classroomId, capacity));

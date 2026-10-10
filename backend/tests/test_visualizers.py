@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.visualizers import ClassroomDemo, diagnose, hospital_snapshot
+from conftest import session_request
 
 
 def test_classroom_demo_exact_shortage_and_isolated_reset():
@@ -9,7 +10,8 @@ def test_classroom_demo_exact_shortage_and_isolated_reset():
         normal = client.post("/api/v1/visualizers/classrooms", json={"action": "normal"}).json()
         assert normal["capacity_w"] == 8000
         assert normal["served_w"] == 8000
-        scanned = client.post("/api/v1/visualizers/classrooms", json={"action": "scan", "classroom_id": "CR1"}).json()
+        scanned = client.post("/api/v1/visualizers/classrooms", json=session_request(
+            client, {"action": "scan", "classroom_id": "CR1"})).json()
         assert scanned["capacity_w"] == 8000 and scanned["served_w"] == 8000
         overloaded = client.post("/api/v1/visualizers/classrooms", json={"action": "overload"}).json()
         assert overloaded["capacity_w"] == 3400
@@ -29,6 +31,7 @@ def test_classroom_demo_exact_shortage_and_isolated_reset():
 def test_classroom_demo_validation_and_constraints():
     with TestClient(app) as client:
         assert client.post("/api/v1/visualizers/classrooms", json={"action": "scan", "classroom_id": "CR4"}).status_code == 422
+        assert client.post("/api/v1/visualizers/classrooms", json={"action": "scan", "classroom_id": "CR1"}).status_code == 422
         assert client.post("/api/v1/visualizers/classrooms", json={"action": "scan"}).status_code == 422
         assert client.post("/api/v1/visualizers/classrooms", json={"action": "normal", "extra": True}).status_code == 422
         assert client.post("/api/v1/visualizers/classrooms", json={"action": "normal", "classroom_id": "CR1"}).status_code == 422
@@ -218,7 +221,8 @@ def test_capacity_slider_validation():
         assert client.post(url, json={"action": "set_capacity", "capacity_w": True}).status_code == 422
         assert client.post(url, json={"action": "normal", "capacity_w": 5000}).status_code == 422
         assert client.post(url, json={"action": "unscan"}).status_code == 422
-        both = [client.post(url, json={"action": "scan", "classroom_id": cid}).json() for cid in ("CR1", "CR2")][-1]
+        both = [client.post(url, json=session_request(
+            client, {"action": "scan", "classroom_id": cid})).json() for cid in ("CR1", "CR2")][-1]
         assert both["scanned_classroom_ids"] == ["CR1", "CR2"]
         assert all(room["activity"]["state"] in ("ACTIVE", "INACTIVE", "UNKNOWN") for room in both["rooms"])
         client.post(url, json={"action": "reset"})

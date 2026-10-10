@@ -6,8 +6,8 @@
  ],
  "capacity_w": 6000,
  "command": {
-  "applied_revision": 7,
-  "command_id": "6b6aed9b-ace6-4d13-b7cc-5fab4fcdc026",
+  "applied_revision": 10,
+  "command_id": "<volatile>",
   "name": "hospital.inject_fault",
   "run_id": "<volatile>"
  },
@@ -17,12 +17,12 @@
    "catalog_version": "1.0",
    "config_hash": "157a248c",
    "model_version": "uci-occ-logistic-2026-10-09",
-   "observation_time": "2026-10-10T01:06:38.280153+00:00",
+   "observation_time": "2026-10-10T01:24:44.369380+00:00",
    "policy_version": "allocation-v1",
    "run_id": "<volatile>",
-   "server_epoch": 1791594398,
+   "server_epoch": "<volatile>",
    "site_id": "Default Campus",
-   "state_revision": 7
+   "state_revision": 10
   },
   "zone_totals": {}
  },
@@ -53,7 +53,7 @@
     "diagnosis_status": "NORMAL",
     "energized": true,
     "note": "Voltage presence only; no measured branch current.",
-    "output_voltage_v": 220.0,
+    "output_voltage_v": 219.66,
     "provenance": "SIMULATED_SENSOR"
    },
    "physical": "NOT_CONNECTED",
@@ -155,7 +155,7 @@
     "diagnosis_status": "ABSTAINED",
     "energized": true,
     "note": "Voltage presence only; no measured branch current.",
-    "output_voltage_v": 220.0,
+    "output_voltage_v": 219.68,
     "provenance": "SIMULATED_SENSOR"
    },
    "physical": "NOT_CONNECTED",
@@ -257,7 +257,7 @@
     "diagnosis_status": "NORMAL",
     "energized": true,
     "note": "Voltage presence only; no measured branch current.",
-    "output_voltage_v": 220.0,
+    "output_voltage_v": 220.08,
     "provenance": "SIMULATED_SENSOR"
    },
    "physical": "NOT_CONNECTED",
@@ -394,7 +394,7 @@
  "site": {
   "catalog_version": "site-catalog-2026-10-10.1",
   "profile": "campus",
-  "revision": 7,
+  "revision": 10,
   "run_id": "<volatile>"
  },
  "summary": null,
@@ -415,9 +415,9 @@
     "code": "NORMAL",
     "evidence": [
      "Current 5.0 A within rating (5.5 A limit).",
-     "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
+     "Temperature 59.9 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
-     "Input 230.0 V, Output 220.0 V."
+     "Input 229.9 V, Output 219.7 V."
     ],
     "hypotheses": [],
     "missing": [],
@@ -477,9 +477,9 @@
    "sensors": {
     "cooling_ok": true,
     "current_a": 5.0,
-    "input_voltage_v": 230.0,
-    "output_voltage_v": 220.0,
-    "temperature_c": 60.0
+    "input_voltage_v": 229.87,
+    "output_voltage_v": 219.66,
+    "temperature_c": 59.91
    },
    "zone": "ICU"
   },
@@ -570,9 +570,9 @@
    "sensors": {
     "cooling_ok": true,
     "current_a": null,
-    "input_voltage_v": 230.0,
-    "output_voltage_v": 220.0,
-    "temperature_c": 60.0
+    "input_voltage_v": 229.96,
+    "output_voltage_v": 219.68,
+    "temperature_c": 59.93
    },
    "zone": "Theatre"
   },
@@ -594,7 +594,7 @@
      "Current 10.9 A within rating (12.0 A limit).",
      "Temperature 60.0 \u00b0C below 80.0 \u00b0C threshold.",
      "Cooling operational.",
-     "Input 230.0 V, Output 220.0 V."
+     "Input 229.9 V, Output 220.1 V."
     ],
     "hypotheses": [],
     "missing": [],
@@ -654,9 +654,9 @@
    "sensors": {
     "cooling_ok": true,
     "current_a": 10.87,
-    "input_voltage_v": 230.0,
-    "output_voltage_v": 220.0,
-    "temperature_c": 60.0
+    "input_voltage_v": 229.92,
+    "output_voltage_v": 220.08,
+    "temperature_c": 60.04
    },
    "zone": "Wards"
   }

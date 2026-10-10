@@ -93,6 +93,7 @@ def demo():
 def rig(monkeypatch):
     now = [0.0]
     classroom = ClassroomDemo(lambda: now[0])
+    classroom.bind_sessions(APP.state.grid.active_sessions, APP.state.grid.set_classroom_load)
     APP.state.classroom_demo = classroom
     APP.state.site.classroom = classroom
     fake = FakeBoardA()
@@ -134,6 +135,9 @@ def test_fallback_button_lights_room_a_and_is_confirmed(rig):
     run(0.3)
     assert demo().snapshot()["scanned_classroom_ids"] == ["CR1"]
     assert bridge.status()["confirmed_mask"] == 0b001000 and bridge.status()["led_confirmed"]
+    campus = TestClient(APP).get("/api/v1/snapshot").json()
+    assert campus["zones"]["classroom"]["active_classroom_id"] == "CR1"
+    assert next(s for s in campus["services"] if s["id"] == "L3")["requested"]
     assert any(m["type"] == "event_ack" and m["accepted"] for m in fake.sent)
     hw = TestClient(APP).get("/api/v1/visualizers/classrooms").json()["hardware"]
     assert hw["link"] == "CONNECTED" and hw["confirmed_mask"] == 8

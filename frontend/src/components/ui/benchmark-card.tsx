@@ -1,26 +1,25 @@
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { useQuery } from '@tanstack/react-query';
+import { getDemoEvidence } from '../../api';
 
-export function BenchmarkCard({ title, stats }: { title: string; stats: { label: string; value: number }[] }) {
-  return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <h3 className="text-xl font-semibold text-card-foreground">{title}</h3>
-      <div className="flex flex-col gap-3">
-        {stats.map((stat, i) => (
-          <div key={i} className="flex items-center gap-4">
-            <span className="w-24 text-sm text-muted-foreground">{stat.label}</span>
-            <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-secondary">
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: `${stat.value}%` }}
-                transition={{ duration: 1, delay: i * 0.2 }}
-                className={cn("absolute inset-y-0 left-0 bg-primary", stat.value > 80 ? "bg-emerald-500" : "bg-primary")}
-              />
-            </div>
-            <span className="w-12 text-right text-sm font-medium">{stat.value}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+export function BenchmarkCard() {
+  const { data, isError } = useQuery({ queryKey: ['demo-evidence'], queryFn: ({ signal }) => getDemoEvidence(signal), staleTime: Infinity });
+  const ms = (value: number | null | undefined) => value == null ? 'Unavailable' : `${value.toFixed(2)} ms`;
+  const stats = [
+    { label: 'Occupancy inference', value: ms(data?.inference_median_ms), detail: `Warm single reading · median of ${data?.inference_calls ?? '—'} calls` },
+    { label: 'Exact allocation', value: ms(data?.allocation_median_ms), detail: `${data?.masks ?? '—'} plans · median of ${data?.allocation_calls ?? '—'} decisions` },
+    { label: 'Constraint violations', value: data?.constraint_violations == null ? 'Unavailable' : `${data.constraint_violations} / ${data.allocation_runs} runs`, detail: 'Simulated benchmark outcomes; not a field safety guarantee' },
+  ];
+  return <section className="rounded-2xl border border-border bg-card p-6 text-card-foreground" aria-label="Measured software benchmarks">
+    <h2 className="text-xl font-semibold">Measured software benchmarks</h2>
+    <p className="mt-2 text-sm text-muted-foreground">Recorded on the benchmark machine. These measure different tasks, not competing controller speeds.</p>
+    {isError && <p role="status">Benchmark evidence could not be loaded.</p>}
+    <dl className="mt-5 grid gap-5 sm:grid-cols-3">{stats.map(stat => <div key={stat.label}>
+      <dt className="text-sm font-medium">{stat.label}</dt>
+      <dd className="mt-1 text-2xl font-bold">{stat.value}</dd>
+      <dd className="mt-2 text-sm text-muted-foreground">{stat.detail}</dd>
+    </div>)}</dl>
+    <details className="mt-4 text-sm"><summary className="cursor-pointer">Measurement sources</summary>
+      <p>backend/models/evaluation.json · backend/benchmarks/results/allocation_profile.json · allocation_report.json</p>
+    </details>
+  </section>;
 }

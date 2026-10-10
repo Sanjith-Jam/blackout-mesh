@@ -1,4 +1,5 @@
 from app.storage.history import HistoryStore
+from conftest import session_request
 STAMP = "2026-10-10T00:00:00.000000Z"
 
 def test_pagination_duplicates_equal_timestamps_restart(tmp_path):
@@ -89,7 +90,7 @@ def test_session_commands_never_persist_raw_card_uid(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'uid.db'}")
     with TestClient(create_app()) as client:
         app = client.app
-        assert client.post("/api/v1/rfid/scan", json={"uid": "CARD_1_UID"}).status_code == 200
+        assert client.post("/api/v1/rfid/scan", json=session_request(client, {"uid": "CARD_1_UID"})).status_code == 200
         with Session(app.state.grid.storage.engine) as session:
             payloads = " ".join(str(row.payload) for row in session.exec(select(Command)).all())
         assert "CARD_1_UID" not in payloads

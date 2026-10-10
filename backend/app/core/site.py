@@ -159,11 +159,13 @@ class SiteAuthority:
             self.run_id = uuid.uuid4().hex[:12]
             self.grid.run_id = self.run_id
             self.grid.pending_command_identity = None
+            self.grid.reset_sessions()
             with Session(self.grid.storage.engine) as session:
                 session.add(Run(site_id=site_profile.name, run_id=self.run_id,
                                 server_epoch=self.grid.server_epoch, started_at=datetime.now(timezone.utc)))
                 self.grid.storage.commit(session)
             self._sync_history_run()
+            self.tick()
             return self.run_id
 
     def identity(self) -> dict:

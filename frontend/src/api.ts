@@ -14,6 +14,7 @@ import {
   HospitalDemoFault,
   HardwareStatus
 } from './types';
+import type { CityDemoSnapshot, DemoEvidence, DemandForecast } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -64,6 +65,14 @@ export async function fetchSnapshot(signal?: AbortSignal): Promise<Snapshot> {
   return fetchJson<Snapshot>('/api/v1/snapshot', { signal });
 }
 
+export function getCityDemo(source: DemandForecast['source'], replayIndex: number, signal?: AbortSignal): Promise<CityDemoSnapshot> {
+  return fetchJson(`/api/v1/demo?source=${source}&replay_index=${replayIndex}`, { signal });
+}
+
+export function getDemoEvidence(signal?: AbortSignal): Promise<DemoEvidence> {
+  return fetchJson('/api/v1/demo/evidence', { signal });
+}
+
 export async function fetchModelStatus(signal?: AbortSignal): Promise<ModelStatus> {
   return fetchJson<ModelStatus>('/api/v1/model/status', { signal });
 }
@@ -72,10 +81,14 @@ export async function setReplayAction(action: 'start' | 'pause' | 'reset'): Prom
   await fetchJson('/api/v1/replay', { method: 'POST', body: JSON.stringify({ action }) });
 }
 
-export async function processRfidScan(uid: string): Promise<RfidScanResponse> {
+function sessionEventIdentity(run_id: string) {
+  return { run_id, event_id: crypto.randomUUID(), observed_at: new Date().toISOString() };
+}
+
+export async function processRfidScan(uid: string, run_id: string): Promise<RfidScanResponse> {
   return fetchJson<RfidScanResponse>('/api/v1/rfid/scan', {
     method: 'POST',
-    body: JSON.stringify({ uid })
+    body: JSON.stringify({ uid, ...(run_id ? sessionEventIdentity(run_id) : {}) })
   });
 }
 
@@ -86,10 +99,10 @@ export async function changeCapacity(capacity_w: number): Promise<CapacityChange
   });
 }
 
-export async function changeClassroomLoad(classroom_id: string, active: boolean): Promise<ClassroomLoadResponse> {
+export async function changeClassroomLoad(classroom_id: string, active: boolean, run_id: string): Promise<ClassroomLoadResponse> {
   return fetchJson<ClassroomLoadResponse>('/api/v1/simulation/classroom-load', {
     method: 'POST',
-    body: JSON.stringify({ classroom_id, active })
+    body: JSON.stringify({ classroom_id, active, ...(run_id ? sessionEventIdentity(run_id) : {}) })
   });
 }
 
@@ -112,9 +125,10 @@ export async function disconnectHardware(): Promise<HardwareStatus> {
   return fetchJson<HardwareStatus>('/api/v1/hardware/disconnect', { method: 'POST' });
 }
 
-export async function postClassroomDemo(action: ClassroomDemoActionName, classroom_id?: ClassroomDemoRoom['id'], capacity_w?: number): Promise<ClassroomDemoSnapshot> {
+export async function postClassroomDemo(action: ClassroomDemoActionName, classroom_id?: ClassroomDemoRoom['id'], capacity_w?: number, run_id?: string): Promise<ClassroomDemoSnapshot> {
   return fetchJson<ClassroomDemoSnapshot>('/api/v1/visualizers/classrooms', {
-    method: 'POST', body: JSON.stringify({ action, ...(classroom_id ? { classroom_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}) })
+    method: 'POST', body: JSON.stringify({ action, ...(classroom_id ? { classroom_id } : {}), ...(capacity_w !== undefined ? { capacity_w } : {}),
+      ...(run_id && (action === 'scan' || action === 'unscan') ? sessionEventIdentity(run_id) : {}) })
   });
 }
 
