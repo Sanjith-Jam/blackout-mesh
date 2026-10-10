@@ -531,6 +531,10 @@ class HospitalPriorityDemo(ClassroomDemo):
         served = {ZONE_ASSET[z]: sum(x[2] for x in HOSP_LOADS[z] if (z, x[0]) in current) for z in HOSP_ZONES}
         demand = {ZONE_ASSET[z]: sum(x[2] for x in HOSP_LOADS[z]) for z in HOSP_ZONES}
         readings = zone_readings(served, demand)
+        if self.campus_feeder_closed is False:
+            # Simulation side: an open campus feeder A removes every transformer's incoming supply, so the
+            # sensors read what an upstream loss reads. The diagnosis still sees only these envelopes.
+            readings = apply_fault(readings, {"kind": "upstream_loss", "asset": None}, {}, 0)
         if self.fault:
             ratings = {ZONE_ASSET[z]: self._rating(z).rated_current_a for z in HOSP_ZONES}
             readings = apply_fault(readings, self.fault, ratings, self.telemetry_sequence - self.fault["sequence"])
