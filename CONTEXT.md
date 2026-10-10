@@ -112,3 +112,7 @@ Blackout Mesh now names the landing page, header, browser title and engineering 
 ### Person B presentation handoff
 
 README now opens with the recorded software demo GIF, states real/simulated boundaries, reproduces the measured 6 kW comparison (including switches and unmet Wh), and gives local startup instructions. Planning documents moved to `docs/planning/`; AGENTS/context/progress references and new Markdown links were checked. See `docs/DEMO_GUIDE.md` for the city/forecast/recovery script, evidence provenance, test setup and B1–B7 status. Generated-client check and the final two browser checks pass after all UI changes. No push by this task. B5 remains on hold; A1/A3/A4 backend dependencies remain explicit rather than being presented as completed results.
+
+### Local preview refreshed
+
+Restarted this project's existing localhost backend with its original environment and hardware auto-connect disabled; the new city API is available at port 8000 and the frontend preview at `http://127.0.0.1:5173/demo`. No demo commands or physical connection were sent to the user's live instance. Added ignore rules for SQLite WAL/shared-memory sidecars created by normal application startup; existing local evidence files were preserved. `git check-ignore` confirms both sidecars are excluded.

@@ -19,6 +19,8 @@ secrets.json
 *.sqlite
 *.sqlite3
 *.db
+*.db-wal
+*.db-shm
 backend/history.sqlite3*
 
 # Generated dependencies and output
